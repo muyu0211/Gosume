@@ -1,0 +1,97 @@
+import { useResumeStore } from '../../stores/resumeStore'
+import { Plus, Trash2, Languages, GripVertical } from 'lucide-react'
+import { useDragReorder } from '../../hooks/useDragReorder'
+
+export function LanguageSection() {
+  const items = useResumeStore((s) => s.resume?.languages) || []
+  const addItem = useResumeStore((s) => s.addLanguage)
+  const updateItem = useResumeStore((s) => s.updateLanguage)
+  const removeItem = useResumeStore((s) => s.removeLanguage)
+  const moveItem = useResumeStore((s) => s.moveLanguage)
+
+  const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
+
+  return (
+    <div className="form-section">
+      <div className="form-section-header">
+        <div className="flex items-center gap-2">
+          <Languages className="w-4 h-4 text-primary-600" />
+          <span className="form-section-title">语言能力</span>
+          <span className="text-xs text-slate-400">({items.length})</span>
+        </div>
+        <button onClick={addItem} className="btn-primary btn-xs">
+          <Plus className="w-3 h-3" />
+          添加
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {items.map((lang, idx) => (
+          <div
+            key={lang.id}
+            className={`border rounded-lg p-3 transition-colors ${
+              overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-slate-200'
+            } ${draggedIdx === idx ? 'opacity-40' : ''}`}
+            onDragOver={(e) => onDragOver(e, idx)}
+            onDrop={() => onDrop(idx)}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                draggable
+                onDragStart={() => onDragStart(idx)}
+                onDragEnd={onDragEnd}
+                className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-slate-200 transition-colors flex-shrink-0 self-start mt-5 ${draggedIdx === idx ? 'text-primary-500' : 'text-slate-300'}`}
+              >
+                <GripVertical className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="form-label">语言名称 *</label>
+                  <input
+                    className="form-input"
+                    value={lang.name || ''}
+                    onChange={(e) => updateItem(idx, { name: e.target.value })}
+                    placeholder="如：英语、日语"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">熟练程度 *</label>
+                  <select
+                    className="form-input"
+                    value={lang.level || ''}
+                    onChange={(e) => updateItem(idx, { level: e.target.value })}
+                  >
+                    <option value="">请选择</option>
+                    <option value="母语">母语</option>
+                    <option value="流利">流利</option>
+                    <option value="熟练">熟练</option>
+                    <option value="良好">良好</option>
+                    <option value="基础">基础</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={() => removeItem(idx)} className="p-1.5 text-slate-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-2">
+              <label className="form-label">补充说明</label>
+              <input
+                className="form-input"
+                value={lang.proficiency || ''}
+                onChange={(e) => updateItem(idx, { proficiency: e.target.value })}
+                placeholder="如：CET-6 580分、JLPT N1"
+              />
+            </div>
+          </div>
+        ))}
+
+        {items.length === 0 && (
+          <div className="text-center py-6 text-sm text-slate-400">
+            暂无内容，点击上方"添加"按钮开始
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

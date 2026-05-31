@@ -1,0 +1,40 @@
+{
+    "id": "modern",
+    "name": "现代专业风",
+    "name_en": "Modern Professional",
+    "version": "1.0.0",
+    "author": {
+        "name": "Resume Craft",
+        "email": "team@resume-craft.app"
+    },
+    "description": "适合互联网行业求职者，简洁干净的双栏布局，突出技能标签和项目亮点",
+    "description_en": "Clean two-column layout for tech professionals, highlights skills and projects",
+    "category": "tech",
+    "tags": ["简洁", "双栏", "科技", "modern", "two-column"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 2,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#2563EB",
+        "secondary": "#1E40AF",
+        "text": "#1F2937",
+        "background": "#FFFFFF",
+        "accent": "#DBEAFE"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

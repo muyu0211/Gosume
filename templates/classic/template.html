@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="{{.Meta.Language}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Personal.FullName}} - 简历</title>
+    <style>{{template "styles.css" .}}</style>
+</head>
+<body class="resume-page">
+    <div class="resume-container">
+        <!-- Personal Information -->
+        <div class="header">
+            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+            <h1>{{.Personal.FullName}}</h1>
+            {{if .Personal.EnglishName}}<div class="english-name">英文名：{{.Personal.EnglishName}}</div>{{end}}
+            {{if .Personal.JobTitle}}<div class="contact-line" style="margin-top:4pt;"><span>职位：{{.Personal.JobTitle}}</span></div>{{end}}
+            {{if .Personal.YearsOfExp}}<div class="contact-line"><span>工作年限：{{.Personal.YearsOfExp}}年</span></div>{{end}}
+            <div class="contact-line">
+                {{if .Personal.Email}}<span>邮箱：{{.Personal.Email}}</span>{{end}}
+                {{if .Personal.Phone}}<span>手机：{{.Personal.Phone}}</span>{{end}}
+                {{if .Personal.Wechat}}<span>微信：{{.Personal.Wechat}}</span>{{end}}
+                {{if .Personal.QQ}}<span>QQ：{{.Personal.QQ}}</span>{{end}}
+                {{if .Personal.Location}}<span>城市：{{.Personal.Location}}</span>{{end}}
+            </div>
+            <div class="contact-line">
+                {{if .Personal.Website}}<span>网站：{{.Personal.Website}}</span>{{end}}
+                {{if .Personal.GitHub}}<span>GitHub：{{.Personal.GitHub}}</span>{{end}}
+                {{if .Personal.LinkedIn}}<span>LinkedIn：{{.Personal.LinkedIn}}</span>{{end}}
+            </div>
+        </div>
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="summary">个人总结：{{nl2br .Summary}}</div>
+        {{end}}
+
+        <!-- Work Experience -->
+        {{if .Jobs}}
+        <div class="section-title">工作经历</div>
+        {{range .Jobs}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <div>
+                    <span class="employer">公司：{{.Company}}</span>
+                    {{if .Title}}— <span class="role">职位：{{.Title}}</span>{{end}}
+                </div>
+                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+            </div>
+            {{if .Location}}<div class="exp-location">地点：{{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">概述：{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Education -->
+        {{if .Education}}
+        <div class="section-title">教育背景</div>
+        {{range .Education}}
+        <div class="education-item">
+            <div class="edu-header">
+                <span class="school">学校：{{.School}}</span>
+                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+            </div>
+            <div class="edu-detail">学位：{{.Degree}} · 专业：{{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-title">专业技能</div>
+        {{range .Skills}}
+        <div class="skill-category">
+            <h4>技能分类：{{.Category}}</h4>
+            <div class="skill-list">
+                {{range .Items}}
+                <span class="skill-item">
+                    <span class="skill-name">{{.Name}}</span>
+                    {{if .Level}}<span class="skill-level">({{skillLevel .Level}})</span>{{end}}
+                </span>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-title">语言能力</div>
+        <div class="inline-list">
+            {{range .Languages}}
+            <span><span class="label">{{.Name}}:</span> {{.Level}}</span>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Projects -->
+        {{if .Projects}}
+        <div class="section-title">项目经历</div>
+        {{range .Projects}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <span class="employer">项目：{{.Name}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
+            </div>
+            {{if .Role}}<div class="exp-location">角色: {{.Role}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Awards -->
+        {{if .Awards}}
+        <div class="section-title">奖项荣誉</div>
+        {{range .Awards}}
+        <div class="custom-item">
+            <h4>奖项：{{.Title}}</h4>
+            <div class="subtitle">日期：{{.Date}}{{if .Issuer}} · 颁发机构：{{.Issuer}}{{end}}</div>
+            {{if .Summary}}<div class="exp-summary">说明：{{.Summary}}</div>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Custom Sections -->
+        {{if .Custom}}
+        {{range .Custom}}
+        <div class="section-title">{{.Title}}</div>
+        {{range .Items}}
+        <div class="custom-item">
+            <h4>{{.Title}}</h4>
+            {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
+            {{if .Description}}<div class="exp-summary">{{nl2br .Description}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+        {{end}}
+    </div>
+</body>
+</html>

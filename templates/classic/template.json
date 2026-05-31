@@ -1,0 +1,40 @@
+{
+    "id": "classic",
+    "name": "经典正式风",
+    "name_en": "Classic Formal",
+    "version": "1.0.0",
+    "author": {
+        "name": "Resume Craft",
+        "email": "team@resume-craft.app"
+    },
+    "description": "适合传统行业和正式场合，单栏布局，沉稳大气，层次分明",
+    "description_en": "Traditional single-column layout for conservative industries, clean and formal",
+    "category": "business",
+    "tags": ["经典", "单栏", "正式", "classic", "single-column"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 2,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#1F2937",
+        "secondary": "#374151",
+        "text": "#111827",
+        "background": "#FFFFFF",
+        "accent": "#F3F4F6"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

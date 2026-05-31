@@ -1,0 +1,54 @@
+# --- Task runner ---
+.task
+
+# --- Build output ---
+bin/
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+
+# --- Frontend ---
+frontend/dist/
+frontend/node_modules/
+frontend/bindings/
+
+# --- Go ---
+*.exe
+*.exe~
+*.test
+*.out
+*.prof
+
+# --- Database (local dev data) ---
+*.sqlite
+*.sqlite3
+*.db
+
+# --- IDE / Editor ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# --- Environment ---
+.env
+.env.local
+.env.*.local
+
+# --- Claude Code ---
+.claude/
+
+# --- Temp files ---
+*.tmp
+*.temp
+*.log

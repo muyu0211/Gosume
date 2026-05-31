@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #F8FAFC;
+  --sidebar-bg: #1E293B;
+  --sidebar-text: #E2E8F0;
+  --sidebar-active: #3B82F6;
+  --toolbar-height: 48px;
+  --statusbar-height: 28px;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--app-bg);
+  color: #1F2937;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Editor form styles */
+.form-section {
+  @apply bg-white rounded-lg border border-slate-200 p-4 mb-3;
+}
+.form-section-header {
+  @apply flex items-center justify-between mb-3 pb-2 border-b border-slate-100;
+}
+.form-section-title {
+  @apply text-sm font-semibold text-slate-700 uppercase tracking-wide;
+}
+.form-label {
+  @apply text-xs font-medium text-slate-500 mb-1 block;
+}
+.form-input {
+  @apply w-full px-3 py-1.5 text-sm border border-slate-200 rounded-md
+         focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
+         transition-colors;
+}
+.form-textarea {
+  @apply w-full px-3 py-1.5 text-sm border border-slate-200 rounded-md
+         focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
+         transition-colors resize-none;
+}
+.btn {
+  @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium
+         rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1;
+}
+.btn-primary {
+  @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+}
+.btn-secondary {
+  @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 focus:ring-slate-300;
+}
+.btn-ghost {
+  @apply btn text-slate-600 hover:bg-slate-100 focus:ring-slate-300;
+}
+.btn-danger {
+  @apply btn bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-300;
+}
+.btn-sm {
+  @apply px-2 py-1 text-xs;
+}
+.btn-xs {
+  @apply px-1.5 py-0.5 text-xs rounded;
+}

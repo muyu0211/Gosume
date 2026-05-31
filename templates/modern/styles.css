@@ -1,0 +1,262 @@
+/* Modern Professional Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10pt;
+    --line-height: 1.5;
+    --primary-color: #2563EB;
+    --heading-color: #1E40AF;
+    --text-color: #1F2937;
+    --muted-color: #6B7280;
+    --border-color: #E5E7EB;
+    --bg-accent: #F0F7FF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 15mm;
+    background: #fff;
+}
+
+.resume-container {
+    max-width: 100%;
+}
+
+/* Header / Personal Info */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16pt;
+    padding-bottom: 12pt;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.header-left h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 4pt;
+}
+
+.header-left .job-title {
+    font-size: 11pt;
+    color: var(--muted-color);
+    margin-bottom: 8pt;
+}
+
+.contact-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt 16pt;
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.header-avatar { flex-shrink: 0; }
+.header-avatar img { width: 72pt; height: 96pt; object-fit: cover; border-radius: 4pt; border: 1px solid var(--border-color); }
+.contact-label { font-weight: 600; color: var(--heading-color); }
+.english-name { font-size: 10pt; color: var(--muted-color); margin-bottom: 4pt; }
+.years-exp { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 6pt; }
+.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
+
+/* Summary */
+.summary {
+    margin-bottom: 14pt;
+    padding: 8pt 12pt;
+    background: var(--bg-accent);
+    border-radius: 4pt;
+    font-size: 9.5pt;
+    line-height: 1.6;
+}
+
+/* Section titles */
+.section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 8pt;
+    padding-bottom: 4pt;
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+}
+
+/* Jobs & Experience */
+.experience-item {
+    margin-bottom: 12pt;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 10.5pt;
+}
+
+.exp-header .title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.exp-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.exp-summary {
+    font-size: 9.5pt;
+    margin-bottom: 4pt;
+    color: #4B5563;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 12pt;
+    margin-bottom: 2pt;
+    font-size: 9.5pt;
+    line-height: 1.5;
+}
+
+.highlights li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Skills */
+.skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12pt;
+}
+
+.skill-category {
+    flex: 1;
+    min-width: 120pt;
+}
+
+.skill-category h4 {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 4pt;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2pt;
+    font-size: 9pt;
+}
+
+.skill-dots {
+    display: flex;
+    gap: 2pt;
+}
+
+.skill-dot {
+    width: 7pt;
+    height: 7pt;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
+.skill-dot.filled {
+    background: var(--primary-color);
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 8pt;
+}
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 10pt;
+}
+
+.edu-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 9.5pt;
+    color: #4B5563;
+}
+
+/* Languages & Awards */
+.inline-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt 16pt;
+    font-size: 9.5pt;
+}
+
+.inline-list .label {
+    font-weight: 600;
+}
+
+/* Custom Section */
+.custom-item {
+    margin-bottom: 8pt;
+}
+
+.custom-item h4 {
+    font-size: 10pt;
+    font-weight: 600;
+}
+
+.custom-item .subtitle {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Print styles */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: 18mm 15mm;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}
