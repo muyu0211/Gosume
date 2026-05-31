@@ -83,7 +83,7 @@ func main() {
 	systemService := &service.SystemService{}
 
 	app := application.New(application.Options{
-		Name:        "Resume Craft",
+		Name:        "Gosume",
 		Description: "桌面级简历制作工具",
 		Services: []application.Service{
 			application.NewService(resumeService),
@@ -107,7 +107,7 @@ func main() {
 	application.RegisterEvent[string]("config:datadir-changed")
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Resume Craft",
+		Title:     "Gosume",
 		Width:     1280,
 		Height:    800,
 		MinWidth:  960,

@@ -195,9 +195,9 @@ export function SettingsPage() {
             </div>
           </div>
           <div className="p-3 text-sm text-slate-600 space-y-1">
-            <p><span className="font-medium">Resume Craft</span> v1.0.0</p>
+            <p><span className="font-medium">Gosume</span> v1.0.0</p>
             <p className="text-xs text-slate-400">桌面级简历制作工具</p>
-            <p className="text-xs text-slate-400 mt-2">基于 Wails v3 + React + Go 构建</p>
+            <p className="text-xs text-slate-400 mt-2">基于 Wails v3构建</p>
           </div>
         </section>
       </div>
