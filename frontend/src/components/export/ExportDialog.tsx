@@ -1,7 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, FileEdit, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
-import { callService } from '../../services/backend'
 
 interface Props {
   onClose: () => void
@@ -14,14 +13,35 @@ const formats = [
 ]
 
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
+type Phase = 'entering' | 'open' | 'exiting'
 
 export function ExportDialog({ onClose }: Props) {
   const resume = useResumeStore((s) => s.resume)
-  const previewHtml = useResumeStore((s) => s.previewHtml)
   const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'docx' | 'png'>('pdf')
   const [scale, setScale] = useState(1.5)
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [phase, setPhase] = useState<Phase>('entering')
+  const closingTimeout = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPhase('open'))
+    })
+    return () => {
+      if (closingTimeout.current) clearTimeout(closingTimeout.current)
+    }
+  }, [])
+
+  const handleClose = useCallback(() => {
+    setPhase('exiting')
+  }, [])
+
+  const handleTransitionEnd = () => {
+    if (phase === 'exiting') {
+      onClose()
+    }
+  }
 
   const handleExport = useCallback(async () => {
     if (!resume) return
@@ -29,64 +49,71 @@ export function ExportDialog({ onClose }: Props) {
     setErrorMsg('')
 
     try {
-      // Try Go backend export service
-      const resumeJSON = JSON.stringify(resume)
-      let result: string | null = null
-
       switch (selectedFormat) {
-        case 'pdf':
-          result = await callService<string>('ExportService', 'ExportPDF', resumeJSON, scale, '')
-          break
+        case 'pdf': {
+          // Use browser native print-to-PDF for real PDF output.
+          // Generate fresh HTML from the template engine with current resume data.
+          const tmpl = await import('../../services/templateService').then((m) =>
+            m.loadTemplateContent(resume.meta.template_id || 'modern'),
+          )
+          const { renderTemplate } = await import('../../lib/template-engine')
+          const html = renderTemplate(tmpl, resume)
+          printPreview(html)
+          setStatus('done')
+          closingTimeout.current = setTimeout(() => handleClose(), 500)
+          return
+        }
+
         case 'docx':
-          result = await callService<string>('ExportService', 'ExportDOCX', resumeJSON)
-          break
+          setErrorMsg('DOCX 导出功能将在后续版本中提供，请使用 PDF 格式导出')
+          setStatus('error')
+          return
+
         case 'png':
-          result = await callService<string>('ExportService', 'ExportPNG', resumeJSON, scale)
-          break
+          setErrorMsg('PNG 导出功能将在后续版本中提供，请使用 PDF 格式导出')
+          setStatus('error')
+          return
       }
-
-      if (result) {
-        setStatus('done')
-        setTimeout(() => onClose(), 800)
-        return
-      }
-
-      // Fallback: use browser print for PDF
-      if (selectedFormat === 'pdf' && previewHtml) {
-        printPreview(previewHtml)
-        setStatus('done')
-        setTimeout(() => onClose(), 500)
-        return
-      }
-
-      // Fallback: download HTML for other formats
-      downloadAsHtml(previewHtml || '', resume.personal.full_name || 'resume')
-      setStatus('done')
-      setTimeout(() => onClose(), 500)
     } catch (err) {
       console.error('Export failed:', err)
       setErrorMsg(err instanceof Error ? err.message : '导出失败，请重试')
       setStatus('error')
     }
-  }, [resume, previewHtml, selectedFormat, scale, onClose])
+  }, [resume, selectedFormat, handleClose])
+
+  const isActive = phase === 'open' || phase === 'entering'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[480px] max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
+        isActive ? 'bg-black/30 backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
+      }`}
+      onClick={handleClose}
+    >
+      <div
+        onTransitionEnd={handleTransitionEnd}
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white rounded-xl shadow-2xl w-[480px] max-h-[90vh] overflow-auto transition-all duration-200 ${
+          phase === 'entering'
+            ? 'opacity-0 scale-95 translate-y-1'
+            : phase === 'open'
+            ? 'opacity-100 scale-100 translate-y-0'
+            : 'opacity-0 scale-95 translate-y-1'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <Download className="w-5 h-5 text-primary-600" />
             <h2 className="text-lg font-semibold text-slate-800">导出简历</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+          <button onClick={handleClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-5 space-y-4">
-          {/* Format Selection */}
           <div>
             <label className="text-sm font-medium text-slate-600 mb-2 block">选择格式</label>
             <div className="space-y-2">
@@ -117,7 +144,6 @@ export function ExportDialog({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Scale option (PNG only) */}
           {selectedFormat === 'png' && (
             <div>
               <label className="text-sm font-medium text-slate-600 mb-2 block">清晰度</label>
@@ -143,16 +169,14 @@ export function ExportDialog({ onClose }: Props) {
             </div>
           )}
 
-          {/* DOCX notice */}
           {selectedFormat === 'docx' && (
             <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
               <p className="text-sm text-amber-700">
-                DOCX 导出需要 Go 后端支持。如果未启动完整应用，建议先使用 PDF 格式导出。
+                DOCX 导出功能开发中，请使用 PDF 格式导出。
               </p>
             </div>
           )}
 
-          {/* Status */}
           {status === 'exporting' && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200">
               <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
@@ -177,7 +201,7 @@ export function ExportDialog({ onClose }: Props) {
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-200">
-          <button onClick={onClose} className="btn-secondary" disabled={status === 'exporting'}>
+          <button onClick={handleClose} className="btn-secondary" disabled={status === 'exporting'}>
             取消
           </button>
           <button
@@ -210,16 +234,4 @@ function printPreview(html: string) {
   printWindow.document.close()
   printWindow.focus()
   setTimeout(() => printWindow.print(), 300)
-}
-
-function downloadAsHtml(html: string, name: string) {
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${name}_简历.html`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }

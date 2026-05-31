@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings } from 'lucide-react'
+import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List } from 'lucide-react'
+import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
+import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { loadTemplateMetas, loadTemplateContent } from '../services/templateService'
 import { renderTemplate } from '../lib/template-engine'
 import { createSampleResume } from '../services/sampleData'
@@ -13,6 +15,7 @@ import type { ResumeListItem } from '../types/resume'
 export function WelcomePage() {
   const navigate = useNavigate()
   const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
+  const [showDrawer, setShowDrawer] = useState(false)
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
@@ -21,6 +24,7 @@ export function WelcomePage() {
   const loadResume = useResumeStore((s) => s.loadResume)
   const setResumeList = useResumeStore((s) => s.setResumeList)
   const setResume = useResumeStore((s) => s.setResume)
+  const clearResume = useResumeStore((s) => s.clearResume)
 
   useEffect(() => {
     loadData()
@@ -58,12 +62,14 @@ export function WelcomePage() {
   }
 
   const handleNewResume = async (templateId: string) => {
+    clearResume()
     setActiveTemplate(templateId)
     await newResume(templateId)
     navigate('/editor')
   }
 
   const handleOpenRecent = async (id: string) => {
+    clearResume()
     const resume = await loadResume(id)
     if (resume && resume.meta?.template_id) {
       setActiveTemplate(resume.meta.template_id)
@@ -72,6 +78,7 @@ export function WelcomePage() {
   }
 
   const handleOpenFile = async () => {
+    clearResume()
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: any = await callService('FileService', 'OpenProject')
@@ -85,8 +92,18 @@ export function WelcomePage() {
     }
   }
 
+  const handleOpenFromDrawer = async (id: string) => {
+    setShowDrawer(false)
+    clearResume()
+    const resume = await loadResume(id)
+    if (resume && resume.meta?.template_id) {
+      setActiveTemplate(resume.meta.template_id)
+    }
+    navigate('/editor')
+  }
+
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <AnimatedPage className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-3">
@@ -105,6 +122,13 @@ export function WelcomePage() {
             title="设置"
           >
             <Settings className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowDrawer(true)}
+            className="btn-secondary btn-sm"
+          >
+            <List className="w-4 h-4" />
+            全部简历
           </button>
           <button
             onClick={handleOpenFile}
@@ -169,7 +193,13 @@ export function WelcomePage() {
           Resume Craft v1.0.0 — 专注于内容，让简历排版变得简单
         </p>
       </footer>
-    </div>
+
+      <ResumeListDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        onOpenResume={handleOpenFromDrawer}
+      />
+    </AnimatedPage>
   )
 }
 

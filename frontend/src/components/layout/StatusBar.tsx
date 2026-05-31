@@ -19,11 +19,13 @@ export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
   const statusText =
     saveStatus === 'saving' ? '保存中...' :
     saveStatus === 'saved' ? '已保存' :
+    saveStatus === 'error' ? '保存失败' :
     isDirty ? '未保存' : '已保存'
 
   const statusColor =
     saveStatus === 'saving' ? 'text-blue-400 fill-blue-400' :
     saveStatus === 'saved' ? 'text-green-400 fill-green-400' :
+    saveStatus === 'error' ? 'text-red-400 fill-red-400' :
     isDirty ? 'text-yellow-400 fill-yellow-400' : 'text-green-400 fill-green-400'
 
   return (

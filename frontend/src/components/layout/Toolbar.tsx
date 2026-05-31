@@ -17,6 +17,7 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
   const isDirty = useResumeStore((s) => s.isDirty)
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
+  const clearResume = useResumeStore((s) => s.clearResume)
 
   const projectName = resume?.meta?.name || ''
   const [editingName, setEditingName] = useState(false)
@@ -55,7 +56,7 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
     <div className="h-12 flex items-center gap-1 px-3 bg-white border-b border-slate-200 flex-shrink-0">
       {/* Left */}
       <div className="flex items-center gap-1">
-        <button onClick={() => navigate('/')} className="btn-ghost btn-sm" title="返回首页">
+        <button onClick={() => { clearResume(); navigate('/') }} className="btn-ghost btn-sm" title="返回首页">
           <Home className="w-4 h-4" />
         </button>
         <div className="w-px h-5 bg-slate-200 mx-1" />
@@ -74,7 +75,7 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
             <Save className="w-4 h-4" />
           )}
           <span className="hidden sm:inline">
-            {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '已保存' : '保存'}
+            {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : '保存'}
           </span>
           {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
         </button>

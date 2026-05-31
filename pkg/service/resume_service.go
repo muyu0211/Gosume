@@ -18,6 +18,7 @@ type ResumeService struct {
 	renderer  *render.HTMLRenderer
 	current   *model.Resume
 	currentID string
+	persisted bool // true when current resume has been persisted to DB at least once
 	mu        sync.RWMutex
 }
 
@@ -32,7 +33,8 @@ func (s *ResumeService) Inject(resumeStore *store.ResumeStore, renderer *render.
 	s.renderer = renderer
 }
 
-// NewResume creates a new blank resume, persists it to SQLite, and returns it.
+// NewResume creates a new blank resume in memory only.
+// It does NOT persist to SQLite — persistence is deferred until ExplicitSave is called.
 func (s *ResumeService) NewResume(templateID string, language string) (*model.Resume, error) {
 	now := time.Now()
 	resume := &model.Resume{
@@ -48,16 +50,13 @@ func (s *ResumeService) NewResume(templateID string, language string) (*model.Re
 		Personal: model.Personal{},
 	}
 
-	id, err := s.store.Create(resume)
-	if err != nil {
-		return nil, fmt.Errorf("create resume: %w", err)
-	}
-
 	s.mu.Lock()
 	s.current = resume
-	s.currentID = id
+	s.currentID = ""
+	s.persisted = false
 	s.mu.Unlock()
 
+	log.Info("[resume_service] NewResume: template=%s (memory only, NOT persisted)", templateID)
 	return resume, nil
 }
 
@@ -75,20 +74,12 @@ func (s *ResumeService) GetCurrentID() string {
 	return s.currentID
 }
 
-// SetResume replaces the current resume and persists it to SQLite.
+// SetResume replaces the current resume in memory without persisting.
 func (s *ResumeService) SetResume(resume *model.Resume) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
 	resume.Meta.UpdatedAt = time.Now()
-	id, err := s.store.Create(resume)
-	if err != nil {
-		s.current = resume
-		s.currentID = ""
-		return
-	}
 	s.current = resume
-	s.currentID = id
 }
 
 // UpdateField updates a field in the current resume by path.
@@ -119,7 +110,6 @@ func (s *ResumeService) RenderPreview() (string, error) {
 		log.Error("[resume_service] no resume loaded")
 		return "", fmt.Errorf("no resume loaded")
 	}
-
 	return s.renderer.Render(s.current)
 }
 
@@ -128,7 +118,8 @@ func (s *ResumeService) AutoSave() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if s.current == nil || s.currentID == "" {
+	if s.current == nil || s.currentID == "" || !s.persisted {
+		log.Debug("[resume_service] AutoSave skipped: not persisted (currentID=%q, persisted=%v)", s.currentID, s.persisted)
 		return nil
 	}
 
@@ -136,6 +127,7 @@ func (s *ResumeService) AutoSave() error {
 		log.Error("[resume_service] auto save resume: %v", err)
 		return fmt.Errorf("auto save resume: %w", err)
 	}
+	log.Info("[resume_service] AutoSave: updated id=%s", s.currentID)
 	return nil
 }
 
@@ -169,24 +161,47 @@ func (s *ResumeService) LoadResume(id string) (*model.Resume, error) {
 	s.mu.Lock()
 	s.current = resume
 	s.currentID = id
+	s.persisted = true
 	s.mu.Unlock()
 
 	return resume, nil
 }
 
-// SaveResume persists the current resume to SQLite.
-func (s *ResumeService) SaveResume() error {
+// ExplicitSave is the ONLY exported method that persists to SQLite.
+// It is called exclusively from the frontend when the user explicitly saves (Ctrl+S or save button).
+// The unexported saveResume is not reachable from the Wails frontend binding.
+func (s *ResumeService) ExplicitSave() error {
+	log.Info("[resume_service] ExplicitSave: user-initiated save")
+	return s.saveResume()
+}
+
+// saveResume persists the current resume to SQLite.
+// On first save it creates a new row; on subsequent saves it updates the existing row.
+// This method is UNEXPORTED — it cannot be called from the Wails frontend.
+func (s *ResumeService) saveResume() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.current == nil {
 		return fmt.Errorf("no resume loaded")
 	}
-	if s.currentID == "" {
-		return fmt.Errorf("no resume ID — call NewResume first")
-	}
 
 	s.current.Meta.UpdatedAt = time.Now()
+
+	if s.currentID == "" {
+		log.Info("[resume_service] saveResume: CREATING new resume (first persist)")
+		id, err := s.store.Create(s.current)
+		if err != nil {
+			return fmt.Errorf("create resume: %w", err)
+		}
+		s.currentID = id
+		s.persisted = true
+		log.Info("[resume_service] saveResume: created id=%s", id)
+		return nil
+	}
+
+	log.Info("[resume_service] saveResume: UPDATING existing id=%s", s.currentID)
+	s.persisted = true
 	return s.store.Update(s.currentID, s.current)
 }
 
@@ -198,6 +213,7 @@ func (s *ResumeService) DeleteResume(id string) error {
 	if s.currentID == id {
 		s.current = nil
 		s.currentID = ""
+		s.persisted = false
 	}
 
 	return s.store.SoftDelete(id)

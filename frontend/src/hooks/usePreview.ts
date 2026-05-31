@@ -3,7 +3,6 @@ import { useResumeStore } from '../stores/resumeStore'
 import { useTemplateStore } from '../stores/templateStore'
 import { renderTemplate } from '../lib/template-engine'
 import { loadTemplateContent } from '../services/templateService'
-import { callService } from '../services/backend'
 
 export function usePreview() {
   const resume = useResumeStore((s) => s.resume)
@@ -17,14 +16,9 @@ export function usePreview() {
 
     setPreviewLoading(true)
     try {
-      // Try Go backend first
-      const html = await callService<string>('ResumeService', 'RenderPreview')
-      if (html) {
-        setPreviewHtml(html)
-        return
-      }
-
-      // Fallback: client-side rendering
+      // Always use client-side rendering for live preview so it reflects
+      // the current Zustand state immediately (Go backend memory is only
+      // synced on explicit save, not on every keystroke).
       const tmpl = await loadTemplateContent(activeTemplateId || 'modern')
       const rendered = renderTemplate(tmpl, resume)
       setPreviewHtml(rendered)

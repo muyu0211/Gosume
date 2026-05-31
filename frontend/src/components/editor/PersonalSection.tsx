@@ -1,6 +1,45 @@
 import { useResumeStore } from '../../stores/resumeStore'
-import { User, Camera, Trash2 } from 'lucide-react'
+import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
+
+const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
+const MAX_PHOTO_DIMENSION = 400 // max width/height in px
+const PHOTO_QUALITY = 0.8 // JPEG compression quality
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const { width, height } = img
+      let w = width
+      let h = height
+      if (w > h && w > MAX_PHOTO_DIMENSION) {
+        h = Math.round((h * MAX_PHOTO_DIMENSION) / w)
+        w = MAX_PHOTO_DIMENSION
+      } else if (h > MAX_PHOTO_DIMENSION) {
+        w = Math.round((w * MAX_PHOTO_DIMENSION) / h)
+        h = MAX_PHOTO_DIMENSION
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas context not available'))
+        return
+      }
+      ctx.drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY))
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load image'))
+    }
+    img.src = url
+  })
+}
 
 export function PersonalSection() {
   const resume = useResumeStore((s) => s.resume)
@@ -8,6 +47,7 @@ export function PersonalSection() {
   const p = resume?.personal
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
   if (!p) return null
 
@@ -15,18 +55,29 @@ export function PersonalSection() {
     updateField(`personal.${field}`, e.target.value)
   }
 
-  const readFile = (file: File) => {
-    if (!file.type.startsWith('image/')) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      updateField('personal.avatar', reader.result as string)
+  const readFile = async (file: File) => {
+    setPhotoError(null)
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('仅支持 JPG/PNG 格式的图片')
+      return
     }
-    reader.readAsDataURL(file)
+    if (file.size > MAX_PHOTO_SIZE) {
+      setPhotoError('照片大小不能超过 3MB，请压缩后重试')
+      return
+    }
+    try {
+      const compressed = await compressImage(file)
+      updateField('personal.avatar', compressed)
+    } catch {
+      setPhotoError('照片处理失败，请重试')
+    }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) readFile(file)
+    // Reset so re-selecting the same file triggers onChange
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -46,6 +97,7 @@ export function PersonalSection() {
   }, [])
 
   const removeAvatar = () => {
+    setPhotoError(null)
     updateField('personal.avatar', '')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -94,8 +146,14 @@ export function PersonalSection() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-slate-700">个人照片</p>
           <p className="text-xs text-slate-400 mt-0.5">
-            点击或拖拽上传证件照，支持 JPG/PNG 格式
+            点击或拖拽上传证件照，支持 JPG/PNG 格式，最大 3MB
           </p>
+          {photoError && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              {photoError}
+            </p>
+          )}
           <input
             ref={fileInputRef}
             type="file"

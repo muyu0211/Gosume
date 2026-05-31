@@ -12,6 +12,7 @@ interface ResumeState {
   resumeList: ResumeListItem[]
   currentId: string | null
 
+  clearResume: () => void
   newResume: (templateId: string) => Promise<void>
   setResume: (resume: Resume) => void
   updateField: (path: string, value: unknown) => void
@@ -61,15 +62,20 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   resumeList: [],
   currentId: null,
 
+  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null }),
+
   newResume: async (templateId) => {
     try {
       const resume = await callService<Resume>('ResumeService', 'NewResume', templateId, 'zh-CN')
       if (resume) {
         const id = await callService<string>('ResumeService', 'GetCurrentID')
+        console.log('[resumeStore] newResume: backend OK, currentId =', id || '(empty)')
         set({ resume, isDirty: false, filePath: null, currentId: id || null })
         return
       }
-    } catch { /* fall back to local-only */ }
+    } catch (err) {
+      console.error('[resumeStore] newResume: backend failed, using local fallback:', err)
+    }
     set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null })
   },
 
@@ -105,8 +111,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 
   saveCurrent: async () => {
     try {
-      await callService('ResumeService', 'SaveResume')
-      set({ isDirty: false })
+      console.trace('[resumeStore] saveCurrent: CALL STACK - who called saveCurrent?')
+      await callService('ResumeService', 'ExplicitSave')
+      const id = await callService<string>('ResumeService', 'GetCurrentID')
+      console.log('[resumeStore] saveCurrent: done, new currentId =', id || '(empty)')
+      set({ isDirty: false, currentId: id || null })
     } catch (err) {
       console.error('SaveCurrent failed:', err)
     }

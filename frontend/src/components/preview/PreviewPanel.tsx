@@ -1,11 +1,13 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useEditorStore } from '../../stores/editorStore'
 
 export function PreviewPanel() {
   const previewHtml = useResumeStore((s) => s.previewHtml)
   const zoom = useEditorStore((s) => s.zoom)
+  const setZoom = useEditorStore((s) => s.setZoom)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (iframeRef.current && previewHtml) {
@@ -17,6 +19,22 @@ export function PreviewPanel() {
       }
     }
   }, [previewHtml])
+
+  // Ctrl+wheel zoom on the overlay (captures events over the iframe)
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (e.ctrlKey) {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.05 : 0.05
+      setZoom(useEditorStore.getState().zoom + delta)
+    }
+  }, [setZoom])
+
+  useEffect(() => {
+    const el = overlayRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel, previewHtml])
 
   // Listen for zoom events from toolbar/keyboard shortcuts
   useEffect(() => {
@@ -52,16 +70,23 @@ export function PreviewPanel() {
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
-          width: `${210 * 3.78}px`, // A4 width in px at 96dpi
+          width: `${210 * 3.78}px`,
+          position: 'relative',
         }}
         className="bg-white shadow-xl transition-transform"
       >
         <iframe
           ref={iframeRef}
           className="w-full border-none"
-          style={{ height: `${297 * 3.78}px` }} // A4 height
+          style={{ height: `${297 * 3.78}px` }}
           title="简历预览"
           sandbox="allow-same-origin"
+        />
+        {/* Transparent overlay over the iframe to capture wheel events */}
+        <div
+          ref={overlayRef}
+          className="absolute top-0 left-0 w-full"
+          style={{ height: `${297 * 3.78}px` }}
         />
         {/* Page indicator */}
         <div className="text-center py-1.5 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">

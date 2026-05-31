@@ -26,6 +26,14 @@ export async function callService<T>(
   methodName: string,
   ...args: unknown[]
 ): Promise<T | null> {
+  // Trace all service calls to diagnose unexpected persistence
+  const isMutating = methodName === 'ExplicitSave' || methodName === 'AutoSave' || methodName === 'SetResume'
+  if (isMutating) {
+    console.trace(`[Backend] 🔴 MUTATING call: ${serviceName}.${methodName}`)
+  } else {
+    console.debug(`[Backend] ${serviceName}.${methodName}`)
+  }
+
   if (isWails()) {
     try {
       const fullName = `gosume/pkg/service.${serviceName}.${methodName}`

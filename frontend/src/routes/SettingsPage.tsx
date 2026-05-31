@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { useResumeStore } from '../stores/resumeStore'
 import { callService } from '../services/backend'
 
@@ -70,7 +71,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
+    <AnimatedPage className="h-screen flex flex-col bg-slate-50">
       {/* Header */}
       <header className="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200">
         <button
@@ -200,6 +201,6 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
-    </div>
+    </AnimatedPage>
   )
 }

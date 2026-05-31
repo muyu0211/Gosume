@@ -1,10 +1,12 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"gosume/pkg/export"
+	"gosume/pkg/model"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -28,18 +30,42 @@ func (s *ExportService) Inject(app *application.App, manager *export.ExportManag
 	s.resumeService = resumeSvc
 }
 
-// Export executes the full export pipeline: render + save dialog + write to disk.
-func (s *ExportService) Export(opts export.ExportOptions) error {
-	resume := s.resumeService.GetResume()
-	if resume == nil {
-		return fmt.Errorf("no resume to export")
+// ExportPDF exports the resume as a PDF file.
+func (s *ExportService) ExportPDF(resumeJSON string, scale float64, pageRange string) (string, error) {
+	return s.doExport(resumeJSON, export.ExportOptions{
+		Format:    export.FormatPDF,
+		Scale:     scale,
+		PageRange: pageRange,
+	})
+}
+
+// ExportDOCX exports the resume as a DOCX file.
+func (s *ExportService) ExportDOCX(resumeJSON string) (string, error) {
+	return s.doExport(resumeJSON, export.ExportOptions{
+		Format: export.FormatDOCX,
+		Scale:  1,
+	})
+}
+
+// ExportPNG exports the resume as a PNG file.
+func (s *ExportService) ExportPNG(resumeJSON string, scale float64) (string, error) {
+	return s.doExport(resumeJSON, export.ExportOptions{
+		Format: export.FormatPNG,
+		Scale:  scale,
+	})
+}
+
+func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (string, error) {
+	var resume model.Resume
+	if err := json.Unmarshal([]byte(resumeJSON), &resume); err != nil {
+		return "", fmt.Errorf("parse resume: %w", err)
 	}
 
 	s.wailsApp.Event.Emit("export:progress", 10)
 
-	data, err := s.exportManager.Export(resume, opts)
+	data, err := s.exportManager.Export(&resume, opts)
 	if err != nil {
-		return fmt.Errorf("export: %w", err)
+		return "", fmt.Errorf("export: %w", err)
 	}
 
 	s.wailsApp.Event.Emit("export:progress", 70)
@@ -54,18 +80,18 @@ func (s *ExportService) Export(opts export.ExportOptions) error {
 		},
 	}).PromptForSingleSelection()
 	if err != nil || filePath == "" {
-		return err
+		return "", err
 	}
 
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return fmt.Errorf("write file: %w", err)
+		return "", fmt.Errorf("write file: %w", err)
 	}
 
 	resume.Meta.ExportCount++
 	s.wailsApp.Event.Emit("export:progress", 100)
 	s.wailsApp.Event.Emit("export:completed", filePath)
 
-	return nil
+	return filePath, nil
 }
 
 func getFilterName(f export.ExportFormat) string {

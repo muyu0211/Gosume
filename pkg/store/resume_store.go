@@ -84,11 +84,11 @@ func (s *ResumeStore) initSchema() error {
 
 // nameFromResume returns the name to use for a resume.
 func (s *ResumeStore) nameFromResume(resume *model.Resume) string {
-	if resume.Personal.FullName != "" {
-		return resume.Personal.FullName
-	}
 	if resume.Meta.Name != "" {
 		return resume.Meta.Name
+	}
+	if resume.Personal.FullName != "" {
+		return resume.Personal.FullName
 	}
 	return "未命名简历"
 }
@@ -113,6 +113,7 @@ func (s *ResumeStore) Create(resume *model.Resume) (string, error) {
 		return "", fmt.Errorf("insert resume: %w", err)
 	}
 
+	log.Info("[resume_store] DB INSERT: id=%s name=%q template=%s", id, name, resume.Meta.TemplateID)
 	return id, nil
 }
 

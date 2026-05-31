@@ -42,8 +42,10 @@ export function EditorPanel() {
   }
 
   return (
-    <div className="space-y-2">
-      {renderSection()}
+    <div className="space-y-2" key={activeSection}>
+      <div className="animate-section-enter">
+        {renderSection()}
+      </div>
     </div>
   )
 }
