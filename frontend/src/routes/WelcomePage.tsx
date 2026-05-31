@@ -233,7 +233,6 @@ function TemplateCard({ template, previewHtml, onSelect }: { template: TemplateM
         {previewHtml ? (
           <iframe
             srcDoc={previewHtml}
-            scrolling="no"
             className="absolute border-0 pointer-events-none"
             style={{
               width: IFRAME_W,

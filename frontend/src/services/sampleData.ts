@@ -1,5 +1,6 @@
 import type { Resume } from '../types/resume'
 import { generateId } from '../types/resume'
+import avatarUrl from '../assets/svg/identity.svg'
 
 export function createSampleResume(templateId: string): Resume {
   return {
@@ -21,6 +22,7 @@ export function createSampleResume(templateId: string): Resume {
       phone: '138-0000-1234',
       wechat: 'zhangmingyuan_dev',
       location: '上海市浦东新区',
+      avatar: avatarUrl,
       github: 'github.com/mingyuan-zhang',
       job_title: '高级前端工程师',
       years_of_exp: 6,
