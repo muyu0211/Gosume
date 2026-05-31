@@ -111,7 +111,7 @@ export function WelcomePage() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Resume Craft</h1>
+            <h1 className="text-lg font-bold text-slate-800">Gosume</h1>
             <p className="text-xs text-slate-400">桌面级简历制作工具</p>
           </div>
         </div>
@@ -190,7 +190,7 @@ export function WelcomePage() {
       {/* Footer */}
       <footer className="px-8 py-3 border-t border-slate-200 text-center">
         <p className="text-xs text-slate-400">
-          Resume Craft v1.0.0 — 专注于内容，让简历排版变得简单
+          Gosume v0.1 — 专注于内容，让简历排版变得简单
         </p>
       </footer>
 

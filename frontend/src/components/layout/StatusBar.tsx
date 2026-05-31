@@ -47,7 +47,7 @@ export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
         )}
         {skillCount > 0 && <span>{skillCount} 项技能</span>}
         <span>|</span>
-        <span>Resume Craft v1.0.0</span>
+        <span>Gosume v1.0.0</span>
       </div>
     </div>
   )
