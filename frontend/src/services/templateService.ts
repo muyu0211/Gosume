@@ -2,23 +2,30 @@ import type { TemplateMeta } from '../types/template'
 import type { TemplateSet } from '../lib/template-engine'
 
 const TEMPLATES_KEY = 'resume-craft-templates'
+const TEMPLATES_VERSION = 1
 
 /**
  * Loads template metadata and content. In Wails mode, calls Go TemplateService.
  * In dev mode, loads built-in templates from the bundled definitions.
  */
 export async function loadTemplateMetas(): Promise<TemplateMeta[]> {
-  // Try loading from localStorage cache first
-  const cached = localStorage.getItem(TEMPLATES_KEY)
-  if (cached) {
-    try {
-      return JSON.parse(cached)
-    } catch { /* ignore */ }
+  const versionKey = `${TEMPLATES_KEY}-version`
+
+  // Try loading from localStorage cache if version matches
+  const cachedVersion = localStorage.getItem(versionKey)
+  if (cachedVersion === String(TEMPLATES_VERSION)) {
+    const cached = localStorage.getItem(TEMPLATES_KEY)
+    if (cached) {
+      try {
+        return JSON.parse(cached)
+      } catch { /* ignore */ }
+    }
   }
 
   // Use built-in defaults (synced with templates/ directory + WelcomePage defaults)
   const defaults = getDefaultTemplates()
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(defaults))
+  localStorage.setItem(versionKey, String(TEMPLATES_VERSION))
   return defaults
 }
 
