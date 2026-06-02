@@ -72,11 +72,11 @@ ManifestDPIAware true
 
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
-InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}" # Default installing folder ($PROGRAMFILES is Program Files folder).
 ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+   StrCpy $INSTDIR "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
 FunctionEnd
 
 Section
@@ -87,6 +87,11 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
+
+    ; Create initial config.json for portable mode
+    FileOpen $0 "$INSTDIR\config.json" w
+    FileWrite $0 "{}"
+    FileClose $0
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

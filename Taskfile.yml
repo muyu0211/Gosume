@@ -41,7 +41,7 @@ tasks:
 
   build:server:
     summary: Builds the application in server mode (no GUI, HTTP server only)
-    cmds:
+  cmds:
       - task: common:build:server
 
   run:server:

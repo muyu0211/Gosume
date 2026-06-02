@@ -24,7 +24,7 @@ var assets embed.FS
 func main() {
 	// Config.json lives at the root of the default directory, which never changes.
 	// User data defaults to a "data" subdirectory but can be changed by the user.
-	configRoot := service.GetDefaultDataDir()
+	configRoot := service.GetConfigRoot()
 	os.MkdirAll(configRoot, 0755)
 	configPath := filepath.Join(configRoot, "config.json")
 

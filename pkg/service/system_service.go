@@ -120,10 +120,16 @@ func (s *SystemService) SetDataDir(newDir string) error {
 	return nil
 }
 
-// GetDefaultDataDir returns the OS-specific config root directory.
-// Config files (config.json) are stored here. User data goes into a
-// "data" subdirectory by default, which can be changed via SetDataDir.
-func GetDefaultDataDir() string {
+// GetConfigRoot returns the config directory root.
+// If config.json exists next to the executable, uses portable mode (exe dir).
+// Otherwise falls back to the OS user config directory.
+func GetConfigRoot() string {
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		if _, err := os.Stat(filepath.Join(exeDir, "config.json")); err == nil {
+			return exeDir
+		}
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		configDir = filepath.Join(os.Getenv("HOME"), ".config")
