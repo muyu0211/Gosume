@@ -106,13 +106,15 @@ func main() {
 	application.RegisterEvent[string]("file:saved")
 	application.RegisterEvent[string]("config:datadir-changed")
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	win := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:      "main",
 		Title:     "Gosume",
 		Width:     1280,
 		Height:    800,
 		MinWidth:  960,
 		MinHeight: 600,
 		URL:       "/",
+		Frameless: true,
 	})
 
 	// 依赖注入
@@ -120,7 +122,7 @@ func main() {
 	templateService.Inject(templateLoader)
 	exportService.Inject(app, exportManager, resumeService)
 	fileService.Inject(app, projectStore, resumeService)
-	systemService.Inject(app, configMgr)
+	systemService.Inject(app, configMgr, win)
 
 	// Register hot-reload callback for data directory changes.
 	configMgr.OnChange(func(oldDir, newDir string) {

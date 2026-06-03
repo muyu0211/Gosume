@@ -87,6 +87,24 @@ func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 	}, nil
 }
 
+// TemplateContent is the HTML+CSS content for a template.
+type TemplateContent struct {
+	HTML string `json:"html"`
+	CSS  string `json:"css"`
+}
+
+// GetTemplateContent returns a template's HTML and CSS content.
+func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error) {
+	t, err := s.loader.LoadByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &TemplateContent{
+		HTML: t.HTML,
+		CSS:  t.CSS,
+	}, nil
+}
+
 // ValidateForTemplate checks if the current resume data satisfies template requirements.
 func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.Resume) *template.ValidationResult {
 	t, err := s.loader.LoadByID(templateID)

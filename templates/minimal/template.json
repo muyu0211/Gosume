@@ -1,30 +1,30 @@
 {
-    "id": "classic",
-    "name": "经典正式风",
-    "name_en": "Classic Formal",
+    "id": "minimal",
+    "name": "极简清新风",
+    "name_en": "Minimal Clean",
     "version": "1.0.0",
     "author": {
         "name": "Gosume",
         "email": "team@resume-craft.app"
     },
-    "description": "适合传统行业和正式场合，单栏布局，沉稳大气，层次分明",
-    "description_en": "Traditional single-column layout for conservative industries, clean and formal",
-    "category": "business",
-    "tags": ["经典", "单栏", "正式", "classic", "single-column"],
+    "description": "极简留白设计，细线分隔，适合注重内容表达的求职者，干净利落",
+    "description_en": "Minimalist design with generous whitespace and thin separators, perfect for content-focused professionals",
+    "category": "creative",
+    "tags": ["极简", "留白", "干净", "minimal", "clean", "单栏"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
-        "max": 5,
+        "max": 4,
         "default": 1
     },
     "paper_size": "A4",
     "orientations": ["portrait"],
     "colors": {
-        "primary": "#1F2937",
-        "secondary": "#374151",
-        "text": "#111827",
+        "primary": "#334155",
+        "secondary": "#64748B",
+        "text": "#1E293B",
         "background": "#FFFFFF",
-        "accent": "#F3F4F6"
+        "accent": "#F1F5F9"
     },
     "features": {
         "avatar": false,

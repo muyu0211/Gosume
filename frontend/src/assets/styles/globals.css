@@ -9,6 +9,8 @@
   --sidebar-active: #3B82F6;
   --toolbar-height: 48px;
   --statusbar-height: 28px;
+  --titlebar-height: 32px;
+  --titlebar-bg: #0F172A;
 }
 
 html, body, #root {
@@ -152,4 +154,70 @@ body {
 
 .animate-loading-bar {
   animation: loading-bar 2s ease-in-out infinite;
+}
+
+/* ── Title Bar ────────────────────────────── */
+.titlebar {
+  height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--titlebar-bg);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.titlebar-drag {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.titlebar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.01em;
+}
+
+.titlebar-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.titlebar-btn {
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+}
+
+.titlebar-btn:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.titlebar-btn-close:hover {
+  background: #DC2626;
+  color: #fff;
+}
+
+.titlebar-btn-close:active {
+  background: #B91C1C;
 }

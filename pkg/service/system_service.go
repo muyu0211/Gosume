@@ -18,6 +18,7 @@ import (
 type SystemService struct {
 	wailsApp  *application.App
 	configMgr *config.Manager
+	win       *application.WebviewWindow
 }
 
 // ServiceName returns the service name.
@@ -26,9 +27,34 @@ func (s *SystemService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *SystemService) Inject(app *application.App, configMgr *config.Manager) {
+func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, win *application.WebviewWindow) {
 	s.wailsApp = app
 	s.configMgr = configMgr
+	s.win = win
+}
+
+// MinimizeWindow minimizes the application window.
+func (s *SystemService) MinimizeWindow() {
+	s.win.Minimise()
+}
+
+// MaximizeWindow toggles the window between maximized and restored states.
+func (s *SystemService) MaximizeWindow() {
+	if s.win.IsMaximised() {
+		s.win.UnMaximise()
+	} else {
+		s.win.Maximise()
+	}
+}
+
+// IsWindowMaximised returns whether the window is currently maximized.
+func (s *SystemService) IsWindowMaximised() bool {
+	return s.win.IsMaximised()
+}
+
+// CloseWindow closes the application window.
+func (s *SystemService) CloseWindow() {
+	s.win.Close()
 }
 
 // GetAppVersion returns the application version.

@@ -1,16 +1,16 @@
 {
-    "id": "classic",
-    "name": "经典正式风",
-    "name_en": "Classic Formal",
+    "id": "executive",
+    "name": "高管精英风",
+    "name_en": "Executive Elite",
     "version": "1.0.0",
     "author": {
         "name": "Gosume",
         "email": "team@resume-craft.app"
     },
-    "description": "适合传统行业和正式场合，单栏布局，沉稳大气，层次分明",
-    "description_en": "Traditional single-column layout for conservative industries, clean and formal",
+    "description": "沉稳大气的深蓝金色搭配，衬线标题字体，适合管理、金融、咨询等高端岗位",
+    "description_en": "Elegant navy and gold palette with serif headings, perfect for management, finance, and consulting roles",
     "category": "business",
-    "tags": ["经典", "单栏", "正式", "classic", "single-column"],
+    "tags": ["高端", "商务", "管理", "executive", "navy", "elegant"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
@@ -20,11 +20,11 @@
     "paper_size": "A4",
     "orientations": ["portrait"],
     "colors": {
-        "primary": "#1F2937",
-        "secondary": "#374151",
-        "text": "#111827",
+        "primary": "#1A2332",
+        "secondary": "#C8A45C",
+        "text": "#2D3748",
         "background": "#FFFFFF",
-        "accent": "#F3F4F6"
+        "accent": "#F7F3EB"
     },
     "features": {
         "avatar": false,

@@ -71,7 +71,7 @@ export function SettingsPage() {
   }
 
   return (
-    <AnimatedPage className="h-screen flex flex-col bg-slate-50">
+    <AnimatedPage className="h-full flex flex-col bg-slate-50">
       {/* Header */}
       <header className="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200">
         <button

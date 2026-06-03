@@ -79,7 +79,7 @@ export function EditorPage() {
   }
 
   return (
-    <AnimatedPage className="h-screen flex flex-col bg-slate-50">
+    <AnimatedPage className="h-full flex flex-col bg-slate-50">
       {/* Toolbar */}
       <Toolbar
         onSave={handleSave}
@@ -141,7 +141,7 @@ export function EditorPage() {
 
 function EditorSkeleton() {
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
+    <div className="h-full flex flex-col bg-slate-50">
       {/* Toolbar skeleton */}
       <div className="h-12 flex items-center gap-2 px-3 bg-white border-b border-slate-200 flex-shrink-0">
         <div className="w-8 h-8 rounded bg-slate-200 animate-pulse" />

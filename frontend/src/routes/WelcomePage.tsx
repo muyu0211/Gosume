@@ -103,7 +103,7 @@ export function WelcomePage() {
   }
 
   return (
-    <AnimatedPage className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <AnimatedPage className="h-full flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-3">

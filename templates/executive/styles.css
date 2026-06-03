@@ -1,0 +1,317 @@
+/* Executive Elite Template Styles */
+:root {
+    --font-family-heading: 'PingFang SC', 'Microsoft YaHei', 'Noto Serif SC', 'SimSun', serif;
+    --font-family-body: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10.5pt;
+    --line-height: 1.6;
+    --primary-color: #1A2332;
+    --gold-color: #C8A45C;
+    --heading-color: #1A2332;
+    --text-color: #2D3748;
+    --muted-color: #718096;
+    --border-color: #E2E8F0;
+    --accent-bg: #F7F3EB;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 18mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 20pt;
+}
+
+.header-rule {
+    height: 1.5pt;
+    background: var(--gold-color);
+    width: 60%;
+    margin: 0 auto 12pt auto;
+}
+
+.header-rule.bottom {
+    margin: 12pt auto 0 auto;
+}
+
+.header h1 {
+    font-family: var(--font-family-heading);
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    letter-spacing: 3pt;
+    margin-bottom: 4pt;
+}
+
+.english-name {
+    font-family: var(--font-family-heading);
+    font-size: 10pt;
+    color: var(--gold-color);
+    font-style: italic;
+    margin-bottom: 4pt;
+    letter-spacing: 1pt;
+}
+
+.job-title {
+    font-size: 11pt;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 4pt;
+}
+
+.years-exp {
+    font-size: 9.5pt;
+    color: var(--muted-color);
+    margin-bottom: 8pt;
+}
+
+.contact-line {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4pt 22pt;
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 18pt;
+    text-align: justify;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: var(--text-color);
+    padding: 10pt 14pt;
+    background: var(--accent-bg);
+    border-left: 2pt solid var(--gold-color);
+}
+
+/* Section titles */
+.section-title {
+    font-family: var(--font-family-heading);
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8pt;
+    padding-bottom: 3pt;
+    border-bottom: 1pt solid var(--gold-color);
+    letter-spacing: 1pt;
+}
+
+/* Experience */
+.experience-item {
+    margin-bottom: 14pt;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .title {
+    font-weight: 500;
+    font-style: italic;
+    color: var(--primary-color);
+}
+
+.exp-header .date {
+    font-size: 9pt;
+    color: var(--gold-color);
+    font-family: var(--font-family-heading);
+}
+
+.exp-location {
+    font-size: 9pt;
+    color: var(--muted-color);
+    margin-bottom: 3pt;
+}
+
+.exp-summary {
+    font-size: 9.5pt;
+    color: var(--text-color);
+    margin-bottom: 4pt;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 14pt;
+    margin-bottom: 2pt;
+    font-size: 9.5pt;
+    line-height: 1.5;
+}
+
+.highlights li::before {
+    content: "◆";
+    position: absolute;
+    left: 0;
+    color: var(--gold-color);
+    font-size: 5pt;
+    top: 4pt;
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 10pt;
+}
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 10pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 9pt;
+    color: var(--gold-color);
+    font-family: var(--font-family-heading);
+}
+
+.edu-detail {
+    font-size: 9.5pt;
+    color: var(--muted-color);
+}
+
+/* Skills */
+.skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10pt 24pt;
+}
+
+.skill-category {
+    min-width: 100pt;
+    margin-bottom: 6pt;
+}
+
+.skill-category h4 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 3pt;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9pt;
+    margin-bottom: 2pt;
+}
+
+.skill-dots {
+    display: flex;
+    gap: 2pt;
+}
+
+.skill-dot {
+    width: 6pt;
+    height: 6pt;
+    border: 1px solid var(--gold-color);
+    background: transparent;
+}
+
+.skill-dot.filled {
+    background: var(--gold-color);
+}
+
+/* Languages */
+.inline-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt 20pt;
+    font-size: 9.5pt;
+}
+
+.inline-list .label {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Awards */
+.award-item {
+    margin-bottom: 8pt;
+}
+
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.award-title {
+    font-weight: 600;
+    font-size: 10pt;
+}
+
+.award-issuer {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Custom */
+.custom-item {
+    margin-bottom: 10pt;
+}
+
+.custom-item h4 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.custom-subtitle {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Print */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: 18mm 18mm;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}

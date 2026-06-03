@@ -1,0 +1,323 @@
+/* Creative Designer Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 9.5pt;
+    --line-height: 1.5;
+    --primary-color: #6366F1;
+    --heading-color: #4338CA;
+    --text-color: #334155;
+    --muted-color: #64748B;
+    --border-color: #E0E7FF;
+    --sidebar-bg: #EEF2FF;
+    --sidebar-text: #4338CA;
+    --accent-bg: #F5F3FF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+}
+
+/* Two-column layout */
+.resume-layout {
+    display: flex;
+    min-height: 297mm;
+}
+
+/* ── Left Sidebar ── */
+.resume-sidebar {
+    width: 38%;
+    background: var(--sidebar-bg);
+    padding: 20mm 8mm 16mm 12mm;
+    color: var(--sidebar-text);
+}
+
+.sidebar-avatar {
+    text-align: center;
+    margin-bottom: 12pt;
+}
+
+.sidebar-avatar img {
+    width: 88pt;
+    height: 110pt;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--primary-color);
+}
+
+.resume-sidebar h1 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 2pt;
+}
+
+.sidebar-eng-name {
+    font-size: 9pt;
+    color: var(--muted-color);
+    margin-bottom: 2pt;
+}
+
+.sidebar-job {
+    font-size: 10pt;
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 14pt;
+    padding-bottom: 10pt;
+    border-bottom: 1.5px solid var(--primary-color);
+}
+
+.sidebar-section {
+    margin-bottom: 14pt;
+}
+
+.sidebar-section-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5pt;
+    color: var(--primary-color);
+    margin-bottom: 6pt;
+}
+
+.sidebar-contact {
+    font-size: 8.5pt;
+    margin-bottom: 3pt;
+    display: flex;
+    gap: 4pt;
+    color: var(--text-color);
+}
+
+.sc-label {
+    font-weight: 600;
+    color: var(--heading-color);
+    min-width: 32pt;
+}
+
+.sidebar-skill-group {
+    margin-bottom: 6pt;
+}
+
+.sidebar-skill-cat {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 3pt;
+}
+
+.sidebar-skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 8pt;
+    margin-bottom: 2pt;
+}
+
+.skill-dots {
+    display: flex;
+    gap: 1.5pt;
+}
+
+.skill-dot {
+    width: 5pt;
+    height: 5pt;
+    border-radius: 50%;
+    background: #C7D2FE;
+}
+
+.skill-dot.filled {
+    background: var(--primary-color);
+}
+
+.sidebar-lang {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8.5pt;
+    margin-bottom: 2pt;
+}
+
+/* ── Main Content ── */
+.resume-main {
+    flex: 1;
+    padding: 20mm 14mm 16mm 14mm;
+}
+
+.summary {
+    margin-bottom: 14pt;
+    font-size: 9pt;
+    line-height: 1.6;
+    color: var(--text-color);
+    padding: 8pt 10pt;
+    background: var(--accent-bg);
+    border-radius: 4pt;
+    border-left: 3px solid var(--primary-color);
+}
+
+/* Section titles */
+.section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 8pt;
+    padding-bottom: 3pt;
+    border-bottom: 1.5px solid var(--border-color);
+}
+
+/* Experience */
+.experience-item {
+    margin-bottom: 12pt;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 10pt;
+    color: var(--heading-color);
+}
+
+.exp-header .title {
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.exp-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.exp-location {
+    font-size: 8pt;
+    color: var(--muted-color);
+    margin-bottom: 2pt;
+}
+
+.exp-role {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+    margin-bottom: 2pt;
+}
+
+.exp-summary {
+    font-size: 8.5pt;
+    color: var(--text-color);
+    margin-bottom: 3pt;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 10pt;
+    margin-bottom: 1.5pt;
+    font-size: 8.5pt;
+    line-height: 1.5;
+}
+
+.highlights li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-size: 7pt;
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 8pt;
+}
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+}
+
+/* Awards */
+.award-item {
+    margin-bottom: 6pt;
+}
+
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.award-title {
+    font-weight: 600;
+    font-size: 9pt;
+}
+
+.award-issuer {
+    font-size: 8pt;
+    color: var(--muted-color);
+}
+
+.award-desc {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+}
+
+/* Custom */
+.custom-item {
+    margin-bottom: 8pt;
+}
+
+.custom-item h4 {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.custom-subtitle {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+}
+
+/* Print */
+@media print {
+    .resume-page { width: 100%; margin: 0; }
+    @page { size: A4; margin: 0; }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}

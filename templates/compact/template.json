@@ -1,34 +1,34 @@
 {
-    "id": "classic",
-    "name": "经典正式风",
-    "name_en": "Classic Formal",
+    "id": "compact",
+    "name": "紧凑高效风",
+    "name_en": "Compact Efficient",
     "version": "1.0.0",
     "author": {
         "name": "Gosume",
         "email": "team@resume-craft.app"
     },
-    "description": "适合传统行业和正式场合，单栏布局，沉稳大气，层次分明",
-    "description_en": "Traditional single-column layout for conservative industries, clean and formal",
-    "category": "business",
-    "tags": ["经典", "单栏", "正式", "classic", "single-column"],
+    "description": "高密度紧凑排版，多栏技能布局，适合经验丰富、信息量大的技术岗位",
+    "description_en": "High-density compact layout with multi-column skills, ideal for experienced tech professionals with extensive content",
+    "category": "tech",
+    "tags": ["紧凑", "高效", "密集", "compact", "dense", "多栏"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
-        "max": 5,
+        "max": 3,
         "default": 1
     },
     "paper_size": "A4",
     "orientations": ["portrait"],
     "colors": {
-        "primary": "#1F2937",
-        "secondary": "#374151",
-        "text": "#111827",
+        "primary": "#0F766E",
+        "secondary": "#0D9488",
+        "text": "#1F2937",
         "background": "#FFFFFF",
-        "accent": "#F3F4F6"
+        "accent": "#CCFBF1"
     },
     "features": {
         "avatar": false,
-        "skill_bars": false,
+        "skill_bars": true,
         "qr_code": false,
         "links_clickable": true
     },

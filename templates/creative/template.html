@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="{{.Meta.Language}}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Personal.FullName}} - 简历</title>
+    <style>{{template "styles.css" .}}</style>
+</head>
+<body class="resume-page">
+    <div class="resume-layout">
+        <!-- Left Sidebar -->
+        <div class="resume-sidebar">
+            {{if .Personal.Avatar}}<div class="sidebar-avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+            <h1>{{.Personal.FullName}}</h1>
+            {{if .Personal.EnglishName}}<div class="sidebar-eng-name">{{.Personal.EnglishName}}</div>{{end}}
+            {{if .Personal.JobTitle}}<div class="sidebar-job">{{.Personal.JobTitle}}</div>{{end}}
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">联系方式</div>
+                {{if .Personal.Email}}<div class="sidebar-contact"><span class="sc-label">邮箱</span>{{.Personal.Email}}</div>{{end}}
+                {{if .Personal.Phone}}<div class="sidebar-contact"><span class="sc-label">手机</span>{{.Personal.Phone}}</div>{{end}}
+                {{if .Personal.Location}}<div class="sidebar-contact"><span class="sc-label">城市</span>{{.Personal.Location}}</div>{{end}}
+                {{if .Personal.Wechat}}<div class="sidebar-contact"><span class="sc-label">微信</span>{{.Personal.Wechat}}</div>{{end}}
+                {{if .Personal.Website}}<div class="sidebar-contact"><span class="sc-label">网站</span>{{.Personal.Website}}</div>{{end}}
+                {{if .Personal.GitHub}}<div class="sidebar-contact"><span class="sc-label">GitHub</span>{{.Personal.GitHub}}</div>{{end}}
+                {{if .Personal.LinkedIn}}<div class="sidebar-contact"><span class="sc-label">LinkedIn</span>{{.Personal.LinkedIn}}</div>{{end}}
+            </div>
+
+            {{if .Skills}}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">专业技能</div>
+                {{range .Skills}}
+                <div class="sidebar-skill-group">
+                    <div class="sidebar-skill-cat">{{.Category}}</div>
+                    {{range .Items}}
+                    <div class="sidebar-skill-item">
+                        <span>{{.Name}}</span>
+                        {{if .Level}}<div class="skill-dots">{{skillLevel .Level}}</div>{{end}}
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+
+            {{if .Languages}}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">语言能力</div>
+                {{range .Languages}}
+                <div class="sidebar-lang"><span>{{.Name}}</span><span>{{.Level}}</span></div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Main Content -->
+        <div class="resume-main">
+            {{if .Summary}}
+            <div class="section-title">个人总结</div>
+            <div class="summary">{{nl2br .Summary}}</div>
+            {{end}}
+
+            {{if .Jobs}}
+            <div class="section-title">工作经历</div>
+            {{range .Jobs}}
+            <div class="experience-item">
+                <div class="exp-header">
+                    <div>
+                        <span class="company">{{.Company}}</span>
+                        {{if .Title}}<span class="title">&nbsp;· {{.Title}}</span>{{end}}
+                    </div>
+                    <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                </div>
+                {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
+                {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                {{if .Highlights}}
+                <ul class="highlights">
+                    {{range .Highlights}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                {{end}}
+            </div>
+            {{end}}
+            {{end}}
+
+            {{if .Education}}
+            <div class="section-title">教育背景</div>
+            {{range .Education}}
+            <div class="education-item">
+                <div class="edu-header">
+                    <span class="school">{{.School}}</span>
+                    <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                </div>
+                <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
+                {{if .Highlights}}
+                <ul class="highlights">
+                    {{range .Highlights}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                {{end}}
+            </div>
+            {{end}}
+            {{end}}
+
+            {{if .Projects}}
+            <div class="section-title">项目经历</div>
+            {{range .Projects}}
+            <div class="experience-item">
+                <div class="exp-header">
+                    <span class="company">{{.Name}}</span>
+                    {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
+                </div>
+                {{if .Role}}<div class="exp-role">{{.Role}}</div>{{end}}
+                {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                {{if .Highlights}}
+                <ul class="highlights">
+                    {{range .Highlights}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                {{end}}
+            </div>
+            {{end}}
+            {{end}}
+
+            {{if .Awards}}
+            <div class="section-title">奖项荣誉</div>
+            {{range .Awards}}
+            <div class="award-item">
+                <div class="award-header">
+                    <span class="award-title">{{.Title}}</span>
+                    <span class="date">{{.Date}}</span>
+                </div>
+                {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
+                {{if .Summary}}<div class="award-desc">{{.Summary}}</div>{{end}}
+            </div>
+            {{end}}
+            {{end}}
+
+            {{if .Custom}}
+            {{range .Custom}}
+            <div class="section-title">{{.Title}}</div>
+            {{range .Items}}
+            <div class="custom-item">
+                <h4>{{.Title}}</h4>
+                {{if .Subtitle}}<div class="custom-subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
+                {{if .Description}}<div class="exp-summary">{{nl2br .Description}}</div>{{end}}
+                {{if .Highlights}}
+                <ul class="highlights">
+                    {{range .Highlights}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                {{end}}
+            </div>
+            {{end}}
+            {{end}}
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>

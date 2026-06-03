@@ -8,9 +8,9 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="com.example.gosume"
-    Publisher="CN=My Company"
-    Version="0.1.0.0" 
+    Name="com.muyu.gosume"
+    Publisher="CN=Muyu"
+    Version="1.0.0"
     ProcessorArchitecture="x64" />
   
   <Properties>
@@ -29,10 +29,10 @@
   </Resources>
   
   <Applications>
-    <Application Id="com.example.gosume" Executable="gosume.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="com.muyu.gosume" Executable="gosume.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="My Product"
-        Description="A Gosume application"
+        DisplayName="Gosume"
+        Description="Lightweight resume maker app"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

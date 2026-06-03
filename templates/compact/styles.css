@@ -1,0 +1,307 @@
+/* Compact Efficient Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 9pt;
+    --line-height: 1.4;
+    --primary-color: #0F766E;
+    --heading-color: #115E59;
+    --text-color: #1F2937;
+    --muted-color: #6B7280;
+    --border-color: #CCFBF1;
+    --accent-bg: #F0FDFA;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 12mm 14mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header — Compact inline */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8pt;
+    padding-bottom: 6pt;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 8pt;
+}
+
+.header-left h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.job-title {
+    font-size: 9pt;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.years-exp {
+    font-size: 8pt;
+    color: var(--muted-color);
+}
+
+.header-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 12pt;
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    text-align: right;
+    max-width: 50%;
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 8pt;
+    font-size: 8pt;
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+/* Section titles */
+.section-title {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary-color);
+    padding: 2pt 6pt;
+    margin-bottom: 5pt;
+    letter-spacing: 0.5pt;
+    display: inline-block;
+}
+
+/* Experience */
+.experience-item {
+    margin-bottom: 7pt;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 9pt;
+    color: var(--heading-color);
+}
+
+.exp-header .title {
+    font-weight: 500;
+    color: var(--primary-color);
+    font-size: 8.5pt;
+}
+
+.exp-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.exp-location {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    margin-bottom: 1pt;
+}
+
+.exp-summary {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 2pt;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+    columns: 2;
+    column-gap: 16pt;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 8pt;
+    margin-bottom: 1pt;
+    font-size: 7.5pt;
+    line-height: 1.4;
+    break-inside: avoid;
+}
+
+.highlights li::before {
+    content: "›";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Two-column layout for Education + Skills */
+.two-col {
+    display: flex;
+    gap: 16pt;
+    margin-bottom: 6pt;
+}
+
+.col-left {
+    flex: 1;
+}
+
+.col-right {
+    flex: 1;
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 5pt;
+}
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+/* Skills */
+.skill-category {
+    margin-bottom: 4pt;
+    font-size: 8pt;
+}
+
+.skill-cat-name {
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.skill-tag {
+    display: inline;
+    margin-right: 6pt;
+    font-size: 8pt;
+    color: var(--text-color);
+}
+
+.skill-dot {
+    display: inline-block;
+    width: 5pt;
+    height: 5pt;
+    border-radius: 2pt;
+    background: #CCFBF1;
+    margin-left: 1pt;
+    vertical-align: middle;
+}
+
+.skill-dot.filled {
+    background: var(--primary-color);
+}
+
+/* Languages — Inline compact */
+.languages-line {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 6pt;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 12pt;
+}
+
+.lang-label {
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.languages-line .label {
+    font-weight: 600;
+}
+
+/* Awards — Tags */
+.awards-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt;
+    margin-bottom: 6pt;
+}
+
+.award-tag {
+    font-size: 7.5pt;
+    padding: 2pt 6pt;
+    background: var(--accent-bg);
+    border-radius: 2pt;
+    color: var(--text-color);
+}
+
+.award-date {
+    color: var(--muted-color);
+}
+
+/* Custom */
+.custom-item {
+    margin-bottom: 5pt;
+}
+
+.custom-item h4 {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.custom-subtitle {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+/* Print */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: 12mm 14mm;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}
