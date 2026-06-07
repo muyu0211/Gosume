@@ -1,6 +1,7 @@
 package store
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -107,38 +108,40 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 			return fmt.Errorf("marshal meta for %s: %w", tmplID, err)
 		}
 
-		var storedVersion string
+		contentHash := hashContent(htmlData, cssData, metaJSON)
+
+		var storedHash string
 		var isDeleted int
 		err = s.db.QueryRow(
 			`SELECT builtin_version, is_deleted FROM templates WHERE id=? AND is_builtin=1`,
 			tmplID,
-		).Scan(&storedVersion, &isDeleted)
+		).Scan(&storedHash, &isDeleted)
 
 		if err == sql.ErrNoRows {
 			now := time.Now().UTC().Format(time.RFC3339)
 			_, err = s.db.Exec(
 				`INSERT INTO templates (id, meta, html, css, is_builtin, builtin_version, created_at, updated_at)
 				 VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
-				tmplID, string(metaJSON), string(htmlData), string(cssData), meta.Version, now, now,
+				tmplID, string(metaJSON), string(htmlData), string(cssData), contentHash, now, now,
 			)
 			if err != nil {
 				log.Error("[template_store] insert builtin %s: %v", tmplID, err)
 			} else {
-				log.Info("[template_store] inserted builtin template: %s v%s", tmplID, meta.Version)
+				log.Info("[template_store] inserted builtin template: %s (hash: %s)", tmplID, contentHash[:8])
 			}
 		} else if err != nil {
 			log.Error("[template_store] query builtin %s: %v", tmplID, err)
-		} else if storedVersion != meta.Version || isDeleted == 1 {
+		} else if storedHash != contentHash || isDeleted == 1 {
 			now := time.Now().UTC().Format(time.RFC3339)
 			_, err = s.db.Exec(
 				`UPDATE templates SET meta=?, html=?, css=?, builtin_version=?, updated_at=?, is_deleted=0
 				 WHERE id=? AND is_builtin=1`,
-				string(metaJSON), string(htmlData), string(cssData), meta.Version, now, tmplID,
+				string(metaJSON), string(htmlData), string(cssData), contentHash, now, tmplID,
 			)
 			if err != nil {
 				log.Error("[template_store] update builtin %s: %v", tmplID, err)
 			} else {
-				log.Info("[template_store] updated builtin template: %s v%s", tmplID, meta.Version)
+				log.Info("[template_store] updated builtin template: %s (hash: %s)", tmplID, contentHash[:8])
 			}
 		}
 	}
@@ -456,4 +459,12 @@ func (s *TemplateStore) WatchDir(dir string) (chan struct{}, error) {
 
 	log.Info("[template_store] watching %s for template changes", dir)
 	return stop, nil
+}
+
+func hashContent(html, css, metaJSON []byte) string {
+	h := sha256.New()
+	h.Write(html)
+	h.Write(css)
+	h.Write(metaJSON)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
