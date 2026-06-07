@@ -60,6 +60,11 @@ func NewResumeStore(dataDir string) (*ResumeStore, error) {
 	return store, nil
 }
 
+// DB returns the underlying database connection for shared use by other stores.
+func (s *ResumeStore) DB() *sql.DB {
+	return s.db
+}
+
 // Close closes the database.
 func (s *ResumeStore) Close() error {
 	return s.db.Close()

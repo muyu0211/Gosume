@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"gosume/pkg/model"
+	"gosume/pkg/store"
 	"gosume/pkg/template"
 )
 
 // TemplateService manages template listing and operations.
 type TemplateService struct {
 	loader *template.Loader
+	store  *store.TemplateStore
 }
 
 // ServiceName returns the service name.
@@ -18,24 +20,26 @@ func (s *TemplateService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *TemplateService) Inject(loader *template.Loader) {
+func (s *TemplateService) Inject(loader *template.Loader, store *store.TemplateStore) {
 	s.loader = loader
+	s.store = store
 }
 
 // GetTemplateMeta is a trimmed version of template.Meta for the frontend.
 type GetTemplateMeta struct {
-	ID            string              `json:"id"`
-	Name          string              `json:"name"`
-	Version       string              `json:"version"`
-	Author        template.Author     `json:"author"`
-	Description   string              `json:"description"`
-	Category      string              `json:"category"`
-	Tags          []string            `json:"tags"`
-	TargetLanguage []string            `json:"target_language"`
-	PageCount     template.PageCount  `json:"page_count"`
-	PaperSize     string              `json:"paper_size"`
-	Colors        *template.TemplateColors `json:"colors,omitempty"`
-	Features      *template.TemplateFeatures `json:"features,omitempty"`
+	ID             string                     `json:"id"`
+	Name           string                     `json:"name"`
+	Version        string                     `json:"version"`
+	Author         template.Author            `json:"author"`
+	Description    string                     `json:"description"`
+	Category       string                     `json:"category"`
+	Tags           []string                   `json:"tags"`
+	TargetLanguage []string                   `json:"target_language"`
+	PageCount      template.PageCount         `json:"page_count"`
+	PaperSize      string                     `json:"paper_size"`
+	Colors         *template.TemplateColors   `json:"colors,omitempty"`
+	Features       *template.TemplateFeatures `json:"features,omitempty"`
+	IsBuiltin      bool                       `json:"is_builtin"`
 }
 
 // ListTemplates returns all available templates' metadata.
@@ -60,6 +64,7 @@ func (s *TemplateService) ListTemplates() ([]GetTemplateMeta, error) {
 			PaperSize:      t.Meta.PaperSize,
 			Colors:         t.Meta.Colors,
 			Features:       t.Meta.Features,
+			IsBuiltin:      t.IsBuiltin,
 		})
 	}
 	return metas, nil
@@ -84,6 +89,7 @@ func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 		PaperSize:      t.Meta.PaperSize,
 		Colors:         t.Meta.Colors,
 		Features:       t.Meta.Features,
+		IsBuiltin:      t.IsBuiltin,
 	}, nil
 }
 
@@ -115,4 +121,45 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 		}
 	}
 	return template.ValidateDataForTemplate(t, resume)
+}
+
+// CreateTemplate creates a new user template.
+func (s *TemplateService) CreateTemplate(meta template.Meta, html, css string) error {
+	if meta.ID == "" {
+		return fmt.Errorf("template ID is required")
+	}
+	return s.store.Create(meta, html, css)
+}
+
+// UpdateTemplate updates an existing user template.
+func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, html, css string) error {
+	return s.store.Update(id, meta, html, css)
+}
+
+// DeleteTemplate soft-deletes a user template.
+func (s *TemplateService) DeleteTemplate(id string) error {
+	return s.store.SoftDelete(id)
+}
+
+// CloneTemplate duplicates a template (built-in or user) as a new user template.
+func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
+	if newID == "" {
+		return fmt.Errorf("new template ID is required")
+	}
+
+	src, err := s.loader.LoadByID(sourceID)
+	if err != nil {
+		return err
+	}
+
+	meta := src.Meta
+	meta.ID = newID
+	meta.Version = "1.0.0"
+
+	// Check for ID conflict
+	if existing, _ := s.loader.LoadByID(newID); existing != nil {
+		return fmt.Errorf("template ID %s already exists", newID)
+	}
+
+	return s.store.Create(meta, src.HTML, src.CSS)
 }

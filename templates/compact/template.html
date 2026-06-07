@@ -15,17 +15,17 @@
                 {{if .Personal.YearsOfExp}}<span class="years-exp"> · {{.Personal.YearsOfExp}}年经验</span>{{end}}
             </div>
             <div class="header-right">
-                {{if .Personal.Email}}<span>{{.Personal.Email}}</span>{{end}}
-                {{if .Personal.Phone}}<span>{{.Personal.Phone}}</span>{{end}}
-                {{if .Personal.Location}}<span>{{.Personal.Location}}</span>{{end}}
-                {{if .Personal.GitHub}}<span>{{.Personal.GitHub}}</span>{{end}}
-                {{if .Personal.Website}}<span>{{.Personal.Website}}</span>{{end}}
+                {{if .Personal.Email}}<span>邮箱：{{.Personal.Email}}</span>{{end}}
+                {{if .Personal.Phone}}<span>手机：{{.Personal.Phone}}</span>{{end}}
+                {{if .Personal.Location}}<span>城市：{{.Personal.Location}}</span>{{end}}
+                {{if .Personal.GitHub}}<span>GitHub：{{.Personal.GitHub}}</span>{{end}}
+                {{if .Personal.Website}}<span>网站：{{.Personal.Website}}</span>{{end}}
             </div>
         </div>
 
         <!-- Summary -->
         {{if .Summary}}
-        <div class="summary">{{nl2br .Summary}}</div>
+        <div class="summary">个人总结：{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Work Experience -->

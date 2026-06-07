@@ -1,31 +1,31 @@
 package template
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-)
+// TemplateStore is the interface for template persistence, implemented by store.TemplateStore.
+type TemplateStore interface {
+	ListAll() ([]*Template, error)
+	GetByID(id string) (*Template, error)
+}
 
 // Meta is the template metadata from template.json.
 type Meta struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	NameEn          string            `json:"name_en"`
-	Version         string            `json:"version"`
-	Author          Author            `json:"author"`
-	Description     string            `json:"description"`
-	DescriptionEn   string            `json:"description_en"`
-	Category        string            `json:"category"`
-	Tags            []string          `json:"tags"`
-	TargetLanguage  []string          `json:"target_language"`
-	PageCount       PageCount         `json:"page_count"`
-	PaperSize       string            `json:"paper_size"`
-	Orientations    []string          `json:"orientations"`
-	Colors          *TemplateColors   `json:"colors,omitempty"`
-	Features        *TemplateFeatures `json:"features,omitempty"`
-	Sections        Sections          `json:"sections"`
-	DataSchema      *DataSchema       `json:"data_schema,omitempty"`
-	CSSVariables    map[string]string `json:"css_variables,omitempty"`
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	NameEn         string            `json:"name_en"`
+	Version        string            `json:"version"`
+	Author         Author            `json:"author"`
+	Description    string            `json:"description"`
+	DescriptionEn  string            `json:"description_en"`
+	Category       string            `json:"category"`
+	Tags           []string          `json:"tags"`
+	TargetLanguage []string          `json:"target_language"`
+	PageCount      PageCount         `json:"page_count"`
+	PaperSize      string            `json:"paper_size"`
+	Orientations   []string          `json:"orientations"`
+	Colors         *TemplateColors   `json:"colors,omitempty"`
+	Features       *TemplateFeatures `json:"features,omitempty"`
+	Sections       Sections          `json:"sections"`
+	DataSchema     *DataSchema       `json:"data_schema,omitempty"`
+	CSSVariables   map[string]string `json:"css_variables,omitempty"`
 }
 
 type Author struct {
@@ -89,116 +89,24 @@ type Template struct {
 	DOCXPath  string
 }
 
-// Loader loads templates from embedFS (builtin) and user directory.
+// Loader loads templates from a TemplateStore implementation.
 type Loader struct {
-	builtinFS  map[string]string // templateID -> dirPath (for builtin templates loaded from embed)
-	builtinDir string
-	userDir    string
-	templates  map[string]*Template
+	store TemplateStore
 }
 
-// NewLoader creates a template loader.
-func NewLoader(builtinDir, userDir string) *Loader {
-	return &Loader{
-		builtinDir: builtinDir,
-		userDir:    userDir,
-		templates:  make(map[string]*Template),
-	}
+// NewLoader creates a template loader backed by a TemplateStore.
+func NewLoader(store TemplateStore) *Loader {
+	return &Loader{store: store}
 }
 
-// SetUserDir updates the user templates directory and clears the template cache.
-func (l *Loader) SetUserDir(dir string) {
-	l.userDir = dir
-	l.templates = make(map[string]*Template)
-}
-
-// LoadAll loads all templates (builtin + user-installed).
+// LoadAll loads all templates (builtin + user-created).
 func (l *Loader) LoadAll() ([]*Template, error) {
-	var all []*Template
-
-	builtin, err := l.loadFromDir(l.builtinDir)
-	if err != nil {
-		return nil, err
-	}
-	for _, t := range builtin {
-		t.IsBuiltin = true
-		l.templates[t.Meta.ID] = t
-		all = append(all, t)
-	}
-
-	if l.userDir != "" {
-		userTemplates, err := l.loadFromDir(l.userDir)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-		for _, t := range userTemplates {
-			t.IsBuiltin = false
-			if _, exists := l.templates[t.Meta.ID]; !exists {
-				l.templates[t.Meta.ID] = t
-				all = append(all, t)
-			}
-		}
-	}
-
-	return all, nil
+	return l.store.ListAll()
 }
 
 // LoadByID loads a single template by its ID.
 func (l *Loader) LoadByID(id string) (*Template, error) {
-	if t, ok := l.templates[id]; ok {
-		return t, nil
-	}
-	_, _ = l.LoadAll()
-	if t, ok := l.templates[id]; ok {
-		return t, nil
-	}
-	return nil, &Error{Code: "TEMPLATE_NOT_FOUND", Message: "template not found: " + id}
-}
-
-func (l *Loader) loadFromDir(dir string) ([]*Template, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	var templates []*Template
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		tmplDir := filepath.Join(dir, entry.Name())
-
-		metaPath := filepath.Join(tmplDir, "template.json")
-		metaData, err := os.ReadFile(metaPath)
-		if err != nil {
-			continue // skip directories without template.json
-		}
-
-		var meta Meta
-		if err := json.Unmarshal(metaData, &meta); err != nil {
-			continue
-		}
-
-		t := &Template{
-			Meta:    meta,
-			DirPath: tmplDir,
-		}
-
-		if htmlData, err := os.ReadFile(filepath.Join(tmplDir, "template.html")); err == nil {
-			t.HTML = string(htmlData)
-		}
-		if cssData, err := os.ReadFile(filepath.Join(tmplDir, "styles.css")); err == nil {
-			t.CSS = string(cssData)
-		}
-
-		docxPath := filepath.Join(tmplDir, "template.docx")
-		if _, err := os.Stat(docxPath); err == nil {
-			t.DOCXPath = docxPath
-		}
-
-		templates = append(templates, t)
-	}
-	return templates, nil
+	return l.store.GetByID(id)
 }
 
 // Error is a template-related error.

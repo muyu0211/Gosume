@@ -1,0 +1,278 @@
+package app
+
+import (
+	"embed"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"gosume/pkg/config"
+	"gosume/pkg/export"
+	"gosume/pkg/log"
+	"gosume/pkg/model"
+	"gosume/pkg/render"
+	"gosume/pkg/service"
+	"gosume/pkg/store"
+	"gosume/pkg/template"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
+)
+
+// App holds all initialized components and manages the application lifecycle.
+type App struct {
+	wailsApp  *application.App
+	stopWatch chan struct{}
+}
+
+// New initializes all components and returns an App ready to run.
+func New(assets, builtinTemplates embed.FS) *App {
+	// Config
+	configMgr := initConfig()
+
+	// Logger
+	dataDir := configMgr.DataDir()
+	os.MkdirAll(filepath.Join(dataDir, "autosave"), 0755)
+	log.Init(dataDir, "ResumeCraft", log.INFO, true)
+	log.Info("[main] data dir: %s", dataDir)
+
+	// Data stores
+	resumeStore := initResumeStore(dataDir)
+	templateStore := initTemplateStore(resumeStore, builtinTemplates)
+	initLegacyMigration(templateStore, dataDir)
+
+	// Template loader
+	templateLoader := template.NewLoader(templateStore)
+	stopWatch := initDevWatcher(templateStore)
+
+	// Render & export
+	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader})
+	exportManager := initExportManager(htmlRenderer)
+
+	// Project store
+	projectStore := store.NewProjectStore(dataDir)
+
+	// Services
+	resumeSvc := &service.ResumeService{}
+	templateSvc := &service.TemplateService{}
+	exportSvc := &service.ExportService{}
+	fileSvc := &service.FileService{}
+	systemSvc := &service.SystemService{}
+
+	svcs := []application.Service{
+		application.NewService(resumeSvc),
+		application.NewService(templateSvc),
+		application.NewService(exportSvc),
+		application.NewService(fileSvc),
+		application.NewService(systemSvc),
+	}
+
+	// Wails app & window
+	wailsApp, win := createWailsApp(assets, svcs)
+
+	// Dependency injection
+	resumeSvc.Inject(resumeStore, htmlRenderer)
+	templateSvc.Inject(templateLoader, templateStore)
+	exportSvc.Inject(wailsApp, exportManager, resumeSvc)
+	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
+	systemSvc.Inject(wailsApp, configMgr, win)
+
+	// Events
+	registerEvents()
+
+	// Data directory change callback
+	configMgr.OnChange(func(oldDir, newDir string) {
+		log.Info("[main] data dir change: %s -> %s", oldDir, newDir)
+
+		log.Close()
+
+		if err := resumeStore.Reopen(newDir); err != nil {
+			log.Error("[main] failed to reopen resume store at %s: %v", newDir, err)
+			configMgr.SetDataDir(oldDir)
+			return
+		}
+
+		projectStore.SetDataDir(newDir)
+
+		if err := templateStore.Reopen(resumeStore.DB(), builtinTemplates); err != nil {
+			log.Error("[main] failed to reopen template store: %v", err)
+		}
+
+		log.Init(newDir, "ResumeCraft", log.INFO, true)
+
+		resumeSvc.Inject(resumeStore, htmlRenderer)
+		templateSvc.Inject(templateLoader, templateStore)
+		fileSvc.Inject(wailsApp, projectStore, resumeSvc)
+
+		wailsApp.Event.Emit("config:datadir-changed", newDir)
+
+		log.Info("[main] hot-reload complete, new data dir: %s", newDir)
+	})
+
+	return &App{wailsApp: wailsApp, stopWatch: stopWatch}
+}
+
+// Run starts the application event loop.
+func (a *App) Run() {
+	if a.stopWatch != nil {
+		defer close(a.stopWatch)
+	}
+	defer log.Close()
+	if err := a.wailsApp.Run(); err != nil {
+		log.Fatal("%v", err)
+	}
+}
+
+// --- init helpers ---
+
+func initConfig() *config.Manager {
+	configRoot := service.GetConfigRoot()
+	os.MkdirAll(configRoot, 0755)
+	configPath := filepath.Join(configRoot, "config.json")
+
+	configMgr, err := config.NewManager(configPath)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init config manager: %v", err))
+	}
+
+	// One-time migration: move old data from configRoot to configRoot/data/
+	defaultDataDir := configMgr.DefaultDir()
+	if _, err := os.Stat(filepath.Join(defaultDataDir, "gosume.db")); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(configRoot, "gosume.db")); err == nil {
+			fmt.Printf("[main] migrating data from %s to %s\n", configRoot, defaultDataDir)
+			os.MkdirAll(defaultDataDir, 0755)
+			for _, name := range []string{"gosume.db", "gosume.db-wal", "gosume.db-shm", "recent.json"} {
+				os.Rename(filepath.Join(configRoot, name), filepath.Join(defaultDataDir, name))
+			}
+			for _, sub := range []string{"autosave", "templates", "log"} {
+				os.Rename(filepath.Join(configRoot, sub), filepath.Join(defaultDataDir, sub))
+			}
+		}
+	}
+
+	return configMgr
+}
+
+func initResumeStore(dataDir string) *store.ResumeStore {
+	s, err := store.NewResumeStore(dataDir)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to open resume store: %v", err))
+	}
+	return s
+}
+
+func initTemplateStore(resumeStore *store.ResumeStore, builtinTemplates embed.FS) *store.TemplateStore {
+	s, err := store.NewTemplateStore(resumeStore.DB(), builtinTemplates)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init template store: %v", err))
+	}
+	return s
+}
+
+func initLegacyMigration(templateStore *store.TemplateStore, dataDir string) {
+	legacyDir := filepath.Join(dataDir, "templates")
+	if imported, _ := templateStore.ImportFromFilesystem(legacyDir); imported > 0 {
+		log.Info("[main] migrated %d user templates from %s", imported, legacyDir)
+		os.Rename(legacyDir, legacyDir+"_migrated_backup")
+	}
+}
+
+func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
+	if _, err := os.Stat("./templates"); err == nil {
+		stopWatch, err := templateStore.WatchDir("./templates")
+		if err != nil {
+			log.Warn("[main] failed to start template watcher: %v", err)
+			return nil
+		}
+		return stopWatch
+	}
+	return nil
+}
+
+func initExportManager(htmlRenderer *render.HTMLRenderer) *export.ExportManager {
+	adapter := &htmlExportAdapter{renderer: htmlRenderer}
+	return export.NewExportManager(
+		export.NewPDFExporter(adapter),
+		export.NewDOCXExporter(adapter),
+		export.NewPNGExporter(adapter),
+		adapter,
+	)
+}
+
+func createWailsApp(assets embed.FS, services []application.Service) (*application.App, *application.WebviewWindow) {
+	app := application.New(application.Options{
+		Name:        "Gosume",
+		Description: "桌面级简历制作工具",
+		Services:    services,
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
+		},
+	})
+
+	win := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:      "main",
+		Title:     "Gosume",
+		Width:     1280,
+		Height:    800,
+		MinWidth:  960,
+		MinHeight: 600,
+		URL:       "/",
+		Frameless: true,
+	})
+
+	return app, win
+}
+
+func registerEvents() {
+	application.RegisterEvent[int]("export:progress")
+	application.RegisterEvent[string]("export:completed")
+	application.RegisterEvent[string]("file:opened")
+	application.RegisterEvent[string]("file:saved")
+	application.RegisterEvent[string]("config:datadir-changed")
+}
+
+// --- adapters ---
+
+type templateAdapter struct {
+	loader *template.Loader
+}
+
+func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
+	t, err := a.loader.LoadByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &render.Template{
+		Meta:    render.TemplateMeta{ID: t.Meta.ID},
+		HTML:    t.HTML,
+		CSS:     t.CSS,
+		DirPath: t.DirPath,
+	}, nil
+}
+
+func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
+	templates, err := a.loader.LoadAll()
+	if err != nil {
+		return nil, err
+	}
+	var result []*render.Template
+	for _, t := range templates {
+		result = append(result, &render.Template{
+			Meta:    render.TemplateMeta{ID: t.Meta.ID},
+			HTML:    t.HTML,
+			CSS:     t.CSS,
+			DirPath: t.DirPath,
+		})
+	}
+	return result, nil
+}
+
+type htmlExportAdapter struct {
+	renderer *render.HTMLRenderer
+}
+
+func (a *htmlExportAdapter) Render(resume *model.Resume) (string, error) {
+	return a.renderer.Render(resume)
+}

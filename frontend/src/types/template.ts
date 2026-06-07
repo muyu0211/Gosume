@@ -30,4 +30,5 @@ export interface TemplateMeta {
     qr_code: boolean
     links_clickable: boolean
   }
+  is_builtin: boolean
 }

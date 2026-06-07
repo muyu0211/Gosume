@@ -65,6 +65,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#2563EB', secondary: '#1E40AF', text: '#1F2937', background: '#FFFFFF', accent: '#DBEAFE' },
     },
     {
@@ -78,6 +79,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#1F2937', secondary: '#374151', text: '#111827', background: '#FFFFFF', accent: '#F3F4F6' },
     },
     {
@@ -91,6 +93,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#334155', secondary: '#64748B', text: '#1E293B', background: '#FFFFFF', accent: '#F1F5F9' },
     },
     {
@@ -104,6 +107,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#6366F1', secondary: '#4F46E5', text: '#1E293B', background: '#FFFFFF', accent: '#EEF2FF' },
     },
     {
@@ -117,6 +121,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#1A2332', secondary: '#C8A45C', text: '#2D3748', background: '#FFFFFF', accent: '#F7F3EB' },
     },
     {
@@ -130,6 +135,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       target_language: ['zh-CN', 'en-US'],
       page_count: { min: 1, max: 2, default: 1 },
       paper_size: 'A4',
+      is_builtin: true,
       colors: { primary: '#0F766E', secondary: '#0D9488', text: '#1F2937', background: '#FFFFFF', accent: '#CCFBF1' },
     },
   ]
