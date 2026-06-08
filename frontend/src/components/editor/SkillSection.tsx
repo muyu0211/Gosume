@@ -87,7 +87,7 @@ export function SkillSection() {
                     {[1, 2, 3, 4, 5].map((lvl) => (
                       <button
                         key={lvl}
-                        onClick={() => updateSkill(gIdx, sIdx, skill.name, lvl)}
+                        onClick={() => updateSkill(gIdx, sIdx, skill.name, skill.level === lvl ? 0 : lvl)}
                         className={`w-4 h-4 rounded-sm border transition-colors ${
                           (skill.level || 0) >= lvl
                             ? 'bg-primary-500 border-primary-500'

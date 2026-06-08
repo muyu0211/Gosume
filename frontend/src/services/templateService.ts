@@ -235,7 +235,7 @@ const MODERN_TEMPLATE: TemplateSet = {
         <div class="skills-grid">
             {{range .Skills}}
             <div class="skill-category">
-                <h4>技能分类：{{.Category}}</h4>
+                <h4>{{.Category}}</h4>
                 {{range .Items}}
                 <div class="skill-item">
                     <span>{{.Name}}</span>
@@ -390,7 +390,7 @@ const CLASSIC_TEMPLATE: TemplateSet = {
         <div class="section-title">专业技能</div>
         {{range .Skills}}
         <div class="skill-category">
-            <h4>技能分类：{{.Category}}</h4>
+            <h4>{{.Category}}</h4>
             <div class="skill-list">
                 {{range .Items}}
                 <span class="skill-item">
