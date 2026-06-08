@@ -171,6 +171,20 @@ body {
     font-size: 9pt;
 }
 
+.skill-dot {
+    display: inline-block;
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    background: #D1D5DB;
+    margin: 0 0.5pt;
+    vertical-align: middle;
+}
+
+.skill-dot.filled {
+    background: var(--primary-color);
+}
+
 /* Education */
 .education-item {
     margin-bottom: 8pt;

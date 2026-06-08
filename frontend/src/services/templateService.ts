@@ -692,6 +692,8 @@ body {
 .skill-category .skill-list { display: flex; flex-wrap: wrap; gap: 3pt 16pt; font-size: 10pt; }
 .skill-item .skill-name { font-weight: 500; }
 .skill-item .skill-level { color: var(--muted-color); font-size: 9pt; }
+.skill-dot { display: inline-block; width: 6pt; height: 6pt; border-radius: 50%; background: #D1D5DB; margin: 0 0.5pt; vertical-align: middle; }
+.skill-dot.filled { background: var(--primary-color); }
 .education-item { margin-bottom: 8pt; }
 .edu-header { display: flex; justify-content: space-between; align-items: baseline; }
 .edu-header .school { font-weight: 700; font-size: 10.5pt; }
