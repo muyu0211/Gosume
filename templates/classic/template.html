@@ -41,12 +41,12 @@
         <div class="experience-item">
             <div class="exp-header">
                 <div>
-                    <span class="employer">公司：{{.Company}}</span>
+                    <span class="employer">{{.Company}}</span>
                     {{if .Title}}— <span class="role">职位：{{.Title}}</span>{{end}}
                 </div>
                 <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
             </div>
-            {{if .Location}}<div class="exp-location">地点：{{.Location}}</div>{{end}}
+            {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">概述：{{.Summary}}</div>{{end}}
             {{if .Highlights}}
             <ul class="highlights">

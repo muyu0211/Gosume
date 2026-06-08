@@ -130,7 +130,7 @@ export function ExperienceSection({ type, title }: Props) {
                       </div>
                       <div>
                         <label className="form-label">工作概述</label>
-                        <textarea className="form-textarea h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="一句话概述..." />
+                        <textarea className="form-textarea h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="工作经历概述..." />
                       </div>
                     </>
                   ) : (
