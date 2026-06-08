@@ -9,6 +9,7 @@ import { loadTemplateMetas, loadTemplateContent } from '../services/templateServ
 import { renderTemplate } from '../lib/template-engine'
 import { createSampleResume } from '../services/sampleData'
 import { callService } from '../services/backend'
+import { generateAllThumbnails } from '../services/thumbnailService'
 import type { TemplateMeta } from '../types/template'
 import type { ResumeListItem } from '../types/resume'
 
@@ -20,6 +21,7 @@ export function WelcomePage() {
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
   const setActiveTemplate = useTemplateStore((s) => s.setActiveTemplate)
+  const setThumbnails = useTemplateStore((s) => s.setThumbnails)
   const newResume = useResumeStore((s) => s.newResume)
   const loadResume = useResumeStore((s) => s.loadResume)
   const setResumeList = useResumeStore((s) => s.setResumeList)
@@ -48,6 +50,10 @@ export function WelcomePage() {
         }
       }
       setPreviewHtmls(previews)
+
+      // Generate thumbnails in background (uses cache after first run)
+      const ids = metas.map((m) => m.id)
+      generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
     } catch {
       // Fallback handled by loadTemplateMetas
     }

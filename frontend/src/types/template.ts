@@ -31,4 +31,5 @@ export interface TemplateMeta {
     links_clickable: boolean
   }
   is_builtin: boolean
+  thumbnail?: string
 }
