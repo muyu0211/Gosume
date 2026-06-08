@@ -65,6 +65,23 @@ body {
          focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
          transition-colors resize-none;
 }
+.form-textarea-resizable {
+  @apply w-full px-3 py-1.5 pr-7 text-sm border border-slate-200 rounded-md
+         focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
+         transition-colors;
+  resize: vertical;
+  min-height: 64px;
+}
+.form-textarea-resizable::-webkit-resizer {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 3px,
+    #cbd5e1 3px,
+    #cbd5e1 4px
+  );
+  border-radius: 0 0 6px 0;
+}
 .btn {
   @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium
          rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1;

@@ -94,11 +94,11 @@ export function ExperienceSection({ type, title }: Props) {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="form-label">公司名称 *</label>
-                          <input className="form-input" value={(item as Job).company || ''} onChange={(e) => updateItem(idx, { company: e.target.value } as Partial<Job>)} placeholder="字节跳动" />
+                          <input className="form-input" value={(item as Job).company || ''} onChange={(e) => updateItem(idx, { company: e.target.value } as Partial<Job>)} placeholder="字节跳动" maxLength={100} />
                         </div>
                         <div>
                           <label className="form-label">职位 *</label>
-                          <input className="form-input" value={(item as Job).title || ''} onChange={(e) => updateItem(idx, { title: e.target.value } as Partial<Job>)} placeholder="高级前端工程师" />
+                          <input className="form-input" value={(item as Job).title || ''} onChange={(e) => updateItem(idx, { title: e.target.value } as Partial<Job>)} placeholder="高级前端工程师" maxLength={100} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -126,11 +126,12 @@ export function ExperienceSection({ type, title }: Props) {
                       </label>
                       <div>
                         <label className="form-label">工作地点</label>
-                        <input className="form-input" value={(item as Job).location || ''} onChange={(e) => updateItem(idx, { location: e.target.value } as Partial<Job>)} placeholder="北京" />
+                        <input className="form-input" value={(item as Job).location || ''} onChange={(e) => updateItem(idx, { location: e.target.value } as Partial<Job>)} placeholder="北京" maxLength={100} />
                       </div>
                       <div>
                         <label className="form-label">工作概述</label>
-                        <textarea className="form-textarea h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="工作经历概述..." />
+                        <textarea className="form-textarea-resizable h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="工作经历概述..." maxLength={500} />
+                        <p className="text-[10px] text-slate-400 mt-0.5">{((item as Job).summary || '').length} / 500 字</p>
                       </div>
                     </>
                   ) : (
@@ -138,11 +139,11 @@ export function ExperienceSection({ type, title }: Props) {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="form-label">项目名称 *</label>
-                          <input className="form-input" value={(item as Project).name || ''} onChange={(e) => updateItem(idx, { name: e.target.value } as Partial<Project>)} placeholder="电商平台重构" />
+                          <input className="form-input" value={(item as Project).name || ''} onChange={(e) => updateItem(idx, { name: e.target.value } as Partial<Project>)} placeholder="电商平台重构" maxLength={100} />
                         </div>
                         <div>
                           <label className="form-label">担任角色</label>
-                          <input className="form-input" value={(item as Project).role || ''} onChange={(e) => updateItem(idx, { role: e.target.value } as Partial<Project>)} placeholder="前端负责人" />
+                          <input className="form-input" value={(item as Project).role || ''} onChange={(e) => updateItem(idx, { role: e.target.value } as Partial<Project>)} placeholder="前端负责人" maxLength={100} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -157,7 +158,8 @@ export function ExperienceSection({ type, title }: Props) {
                       </div>
                       <div>
                         <label className="form-label">项目简述</label>
-                        <textarea className="form-textarea h-16" value={(item as Project).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Project>)} placeholder="项目简要描述..." />
+                        <textarea className="form-textarea-resizable h-16" value={(item as Project).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Project>)} placeholder="项目简要描述..." maxLength={500} />
+                        <p className="text-[10px] text-slate-400 mt-0.5">{((item as Project).summary || '').length} / 500 字</p>
                       </div>
                     </>
                   )}
@@ -207,6 +209,7 @@ function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onCh
             value={h}
             onChange={(e) => updateHighlight(i, e.target.value)}
             placeholder={`亮点 ${i + 1}`}
+            maxLength={500}
           />
           <button onClick={() => removeHighlight(i)} className="p-1 text-slate-400 hover:text-red-500">
             <Trash2 className="w-3.5 h-3.5" />

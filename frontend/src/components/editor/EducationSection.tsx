@@ -71,21 +71,21 @@ export function EducationSection() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">学校 *</label>
-                      <input className="form-input" value={edu.school || ''} onChange={(e) => updateItem(idx, { school: e.target.value })} placeholder="清华大学" />
+                      <input className="form-input" value={edu.school || ''} onChange={(e) => updateItem(idx, { school: e.target.value })} placeholder="清华大学" maxLength={100} />
                     </div>
                     <div>
                       <label className="form-label">学位</label>
-                      <input className="form-input" value={edu.degree || ''} onChange={(e) => updateItem(idx, { degree: e.target.value })} placeholder="学士" />
+                      <input className="form-input" value={edu.degree || ''} onChange={(e) => updateItem(idx, { degree: e.target.value })} placeholder="学士" maxLength={50} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">专业 *</label>
-                      <input className="form-input" value={edu.major || ''} onChange={(e) => updateItem(idx, { major: e.target.value })} placeholder="计算机科学与技术" />
+                      <input className="form-input" value={edu.major || ''} onChange={(e) => updateItem(idx, { major: e.target.value })} placeholder="计算机科学与技术" maxLength={100} />
                     </div>
                     <div>
                       <label className="form-label">辅修</label>
-                      <input className="form-input" value={edu.minor || ''} onChange={(e) => updateItem(idx, { minor: e.target.value })} placeholder="辅修专业（可选）" />
+                      <input className="form-input" value={edu.minor || ''} onChange={(e) => updateItem(idx, { minor: e.target.value })} placeholder="辅修专业（可选）" maxLength={100} />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -99,7 +99,7 @@ export function EducationSection() {
                     </div>
                     <div>
                       <label className="form-label">GPA</label>
-                      <input className="form-input" value={edu.gpa || ''} onChange={(e) => updateItem(idx, { gpa: e.target.value })} placeholder="3.8/4.0" />
+                      <input className="form-input" value={edu.gpa || ''} onChange={(e) => updateItem(idx, { gpa: e.target.value })} placeholder="3.8/4.0" maxLength={20} />
                     </div>
                   </div>
                 </div>

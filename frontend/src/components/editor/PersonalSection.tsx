@@ -167,43 +167,43 @@ export function PersonalSection() {
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <label className="form-label">姓名 *</label>
-          <input className="form-input" value={p.full_name || ''} onChange={handleChange('full_name')} placeholder="张三" />
+          <input className="form-input" value={p.full_name || ''} onChange={handleChange('full_name')} placeholder="张三" maxLength={50} />
         </div>
         <div>
           <label className="form-label">英文名</label>
-          <input className="form-input" value={p.english_name || ''} onChange={handleChange('english_name')} placeholder="San Zhang" />
+          <input className="form-input" value={p.english_name || ''} onChange={handleChange('english_name')} placeholder="San Zhang" maxLength={100} />
         </div>
         <div>
           <label className="form-label">职位</label>
-          <input className="form-input" value={p.job_title || ''} onChange={handleChange('job_title')} placeholder="高级前端工程师" />
+          <input className="form-input" value={p.job_title || ''} onChange={handleChange('job_title')} placeholder="高级前端工程师" maxLength={100} />
         </div>
         <div>
           <label className="form-label">邮箱</label>
-          <input className="form-input" value={p.email || ''} onChange={handleChange('email')} type="email" placeholder="zhangsan@example.com" />
+          <input className="form-input" value={p.email || ''} onChange={handleChange('email')} type="email" placeholder="zhangsan@example.com" maxLength={100} />
         </div>
         <div>
           <label className="form-label">手机</label>
-          <input className="form-input" value={p.phone || ''} onChange={handleChange('phone')} placeholder="138-0000-0000" />
+          <input className="form-input" value={p.phone || ''} onChange={handleChange('phone')} placeholder="138-0000-0000" maxLength={30} />
         </div>
         <div>
           <label className="form-label">所在城市</label>
-          <input className="form-input" value={p.location || ''} onChange={handleChange('location')} placeholder="北京" />
+          <input className="form-input" value={p.location || ''} onChange={handleChange('location')} placeholder="北京" maxLength={100} />
         </div>
         <div>
           <label className="form-label">个人网站</label>
-          <input className="form-input" value={p.website || ''} onChange={handleChange('website')} placeholder="https://zhangsan.dev" />
+          <input className="form-input" value={p.website || ''} onChange={handleChange('website')} placeholder="https://zhangsan.dev" maxLength={200} />
         </div>
         <div>
           <label className="form-label">GitHub</label>
-          <input className="form-input" value={p.github || ''} onChange={handleChange('github')} placeholder="https://github.com/zhangsan" />
+          <input className="form-input" value={p.github || ''} onChange={handleChange('github')} placeholder="https://github.com/zhangsan" maxLength={200} />
         </div>
         <div>
           <label className="form-label">LinkedIn</label>
-          <input className="form-input" value={p.linkedin || ''} onChange={handleChange('linkedin')} placeholder="https://linkedin.com/in/zhangsan" />
+          <input className="form-input" value={p.linkedin || ''} onChange={handleChange('linkedin')} placeholder="https://linkedin.com/in/zhangsan" maxLength={200} />
         </div>
         <div>
           <label className="form-label">微信</label>
-          <input className="form-input" value={p.wechat || ''} onChange={handleChange('wechat')} placeholder="微信号" />
+          <input className="form-input" value={p.wechat || ''} onChange={handleChange('wechat')} placeholder="微信号" maxLength={50} />
         </div>
         <div className="col-span-2">
           <label className="form-label">工作年限</label>

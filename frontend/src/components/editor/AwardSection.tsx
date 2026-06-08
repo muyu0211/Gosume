@@ -70,11 +70,11 @@ export function AwardSection() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">奖项名称 *</label>
-                      <input className="form-input" value={award.title || ''} onChange={(e) => updateItem(idx, { title: e.target.value })} placeholder="如：年度技术创新奖" />
+                      <input className="form-input" value={award.title || ''} onChange={(e) => updateItem(idx, { title: e.target.value })} placeholder="如：年度技术创新奖" maxLength={200} />
                     </div>
                     <div>
                       <label className="form-label">颁发机构</label>
-                      <input className="form-input" value={award.issuer || ''} onChange={(e) => updateItem(idx, { issuer: e.target.value })} placeholder="如：字节跳动" />
+                      <input className="form-input" value={award.issuer || ''} onChange={(e) => updateItem(idx, { issuer: e.target.value })} placeholder="如：字节跳动" maxLength={200} />
                     </div>
                   </div>
                   <div>
@@ -83,7 +83,8 @@ export function AwardSection() {
                   </div>
                   <div>
                     <label className="form-label">说明</label>
-                    <textarea className="form-textarea" rows={2} value={award.summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value })} placeholder="简要描述获奖原因或背景" />
+                    <textarea className="form-textarea-resizable" rows={2} value={award.summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value })} placeholder="简要描述获奖原因或背景" maxLength={500} />
+                    <p className="text-[10px] text-slate-400 mt-0.5">{(award.summary || '').length} / 500 字</p>
                   </div>
                 </div>
               )}

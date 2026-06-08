@@ -68,6 +68,7 @@ export function SkillSection() {
                 value={group.category || ''}
                 onChange={(e) => updateGroup(gIdx, { category: e.target.value })}
                 placeholder="分类名，如：前端技术"
+                maxLength={50}
               />
               <button onClick={() => removeGroup(gIdx)} className="p-1.5 text-slate-400 hover:text-red-500">
                 <Trash2 className="w-4 h-4" />
@@ -82,6 +83,7 @@ export function SkillSection() {
                     value={skill.name || ''}
                     onChange={(e) => updateSkill(gIdx, sIdx, e.target.value, skill.level)}
                     placeholder="技能名，如：React"
+                    maxLength={50}
                   />
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((lvl) => (

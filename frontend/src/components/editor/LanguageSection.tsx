@@ -52,6 +52,7 @@ export function LanguageSection() {
                     value={lang.name || ''}
                     onChange={(e) => updateItem(idx, { name: e.target.value })}
                     placeholder="如：英语、日语"
+                    maxLength={50}
                   />
                 </div>
                 <div>
@@ -81,6 +82,7 @@ export function LanguageSection() {
                 value={lang.proficiency || ''}
                 onChange={(e) => updateItem(idx, { proficiency: e.target.value })}
                 placeholder="如：CET-6 580分、JLPT N1"
+                maxLength={200}
               />
             </div>
           </div>
