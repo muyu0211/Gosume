@@ -3,6 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pencil } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { TemplateSwitcher } from '../template/TemplateSwitcher'
 
 interface ToolbarProps {
   onSave: () => void
@@ -127,7 +128,9 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-1" />
+      <div className="flex items-center gap-1">
+        <TemplateSwitcher />
+      </div>
     </div>
   )
 }
