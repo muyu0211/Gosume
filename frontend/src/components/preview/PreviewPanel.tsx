@@ -21,27 +21,14 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   const padBottom = parseFloat(style.paddingBottom) || 0
   const padLeft = parseFloat(style.paddingLeft) || 0
 
-  // Constrain page to A4 height so overflow is properly detected.
-  // Template CSS uses min-height which allows the page to grow, masking overflow.
-  originalPage.style.height = '297mm'
-  originalPage.style.overflow = 'hidden'
-  void originalPage.offsetHeight
-
-  if (originalPage.scrollHeight <= originalPage.offsetHeight + 2) {
-    originalPage.style.height = ''
-    originalPage.style.overflow = ''
-    return 1
-  }
-
-  originalPage.style.height = ''
-  originalPage.style.overflow = ''
-
   const container = originalPage.querySelector('.resume-container') as HTMLElement | null
   if (!container) return 1
 
-  const sections = Array.from(container.children)
-  sections.forEach((s) => s.remove())
+  const sections = Array.from(container.children) as HTMLElement[]
+  if (sections.length === 0) return 1
 
+  // Set up body for paginated view before building pages,
+  // so that pages are in the DOM during overflow checks.
   body.className = ''
   body.style.background = '#e5e7eb'
   body.style.margin = '0'
@@ -49,8 +36,10 @@ function paginateContent(iframe: HTMLIFrameElement): number {
 
   const wrapper = doc.createElement('div')
   wrapper.className = 'resume-pages-wrapper'
+  body.replaceChildren(wrapper)
 
   let currentPage = makePage(doc, padTop, padRight, padBottom, padLeft)
+  wrapper.appendChild(currentPage)
   let currentContainer = currentPage.querySelector('.resume-container')!
   let count = 1
 
@@ -60,24 +49,20 @@ function paginateContent(iframe: HTMLIFrameElement): number {
     void currentPage.offsetHeight
 
     if (currentPage.scrollHeight > currentPage.offsetHeight + 2) {
+      // Remove the overflowing section from the current page
       currentContainer.removeChild(clone)
-      wrapper.appendChild(currentPage)
 
+      // Create a new page (already in DOM via wrapper.appendChild below)
       currentPage = makePage(doc, padTop, padRight, padBottom, padLeft)
+      wrapper.appendChild(currentPage)
       currentContainer = currentPage.querySelector('.resume-container')!
       currentContainer.appendChild(clone)
       count++
     }
   }
 
-  if (currentContainer.children.length > 0) {
-    wrapper.appendChild(currentPage)
-  }
-
-  // Replace body children with the paginated wrapper.
-  // Must NOT use replaceWith on body itself — that would detach body
-  // and cause scrollHeight to return 0, making the iframe invisible.
-  body.replaceChildren(wrapper)
+  // Force a layout pass so body.scrollHeight reflects the final paginated content
+  void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`
 
   return count
@@ -127,9 +112,6 @@ export function PreviewPanel() {
       wheelCleanupRef.current()
       wheelCleanupRef.current = null
     }
-
-    setPageCount(1)
-    setContainerHeight(A4_H)
 
     const doc = iframe.contentDocument
     if (!doc) return
