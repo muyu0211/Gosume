@@ -98,6 +98,7 @@ export function PreviewPanel() {
   const zoom = useEditorStore((s) => s.zoom)
   const setZoom = useEditorStore((s) => s.setZoom)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const wheelCleanupRef = useRef<(() => void) | null>(null)
   const [pageCount, setPageCount] = useState(1)
   const [containerHeight, setContainerHeight] = useState(A4_H)
@@ -133,8 +134,31 @@ export function PreviewPanel() {
         const onWheel = (e: WheelEvent) => {
           if (e.ctrlKey) {
             e.preventDefault()
+            const container = scrollRef.current
+            const oldZoom = useEditorStore.getState().zoom
             const delta = e.deltaY > 0 ? -0.05 : 0.05
-            setZoom(useEditorStore.getState().zoom + delta)
+            const newZoom = Math.max(0.5, Math.min(2.0, oldZoom + delta))
+            if (newZoom === oldZoom || !container) {
+              if (!container) setZoom(newZoom)
+              return
+            }
+
+            const rect = container.getBoundingClientRect()
+            const cx = e.clientX
+            const cy = e.clientY
+
+            // Content point in logical (1x) coordinates under the cursor
+            const logicalX = (container.scrollLeft + cx - rect.left) / oldZoom
+            const logicalY = (container.scrollTop + cy - rect.top) / oldZoom
+
+            setZoom(newZoom)
+
+            // After React commits the zoom change, adjust scroll to keep
+            // the same content point under the cursor
+            requestAnimationFrame(() => {
+              container.scrollLeft = logicalX * newZoom - (cx - rect.left)
+              container.scrollTop = logicalY * newZoom - (cy - rect.top)
+            })
           }
         }
         doc.addEventListener('wheel', onWheel, { passive: false })
@@ -181,7 +205,7 @@ export function PreviewPanel() {
   }
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden flex items-start justify-center py-6">
+    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden flex items-start justify-center py-6">
       <div
         style={{
           width: `${A4_W * effectiveScale}px`,
