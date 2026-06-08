@@ -146,6 +146,37 @@ body {
   animation: dialog-overlay-enter 0.2s ease-out both;
 }
 
+/* Dropdown animation */
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdown-enter {
+  animation: dropdown-enter 0.2s ease-out both;
+}
+
+@keyframes dropdown-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+}
+
+.animate-dropdown-exit {
+  animation: dropdown-exit 0.15s ease-in both;
+}
+
 /* Section switch animation */
 @keyframes section-enter {
   from {

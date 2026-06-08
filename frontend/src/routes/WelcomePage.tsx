@@ -138,7 +138,7 @@ export function WelcomePage() {
           </button>
           <button
             onClick={handleOpenFile}
-            className="btn-secondary text-sm"
+            className="btn-secondary btn-sm"
           >
             <FolderOpen className="w-4 h-4" />
             打开文件

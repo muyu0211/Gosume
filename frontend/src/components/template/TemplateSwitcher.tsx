@@ -21,17 +21,35 @@ export function TemplateSwitcher() {
   const updateField = useResumeStore((s) => s.updateField)
 
   const [open, setOpen] = useState(false)
+  const [visible, setVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const close = useCallback(() => {
+    setOpen(false)
+    // Delay removal until exit animation finishes
+    exitTimerRef.current = setTimeout(() => setVisible(false), 150)
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      setVisible(true)
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+    }
+    return () => {
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+    }
+  }, [open])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
+        close()
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [close])
 
   const setThumbnails = useTemplateStore((s) => s.setThumbnails)
 
@@ -53,13 +71,13 @@ export function TemplateSwitcher() {
   const handleSelect = useCallback((id: string) => {
     setActiveTemplate(id)
     updateField('meta.template_id', id)
-    setOpen(false)
-  }, [setActiveTemplate, updateField])
+    close()
+  }, [setActiveTemplate, updateField, close])
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => open ? close() : setOpen(true)}
         className="flex items-center gap-1.5 h-8 px-2 text-xs rounded-md hover:bg-slate-100 transition-colors text-slate-600"
       >
         <div
@@ -70,8 +88,8 @@ export function TemplateSwitcher() {
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border border-slate-200 shadow-lg z-50">
+      {visible && (
+        <div className={`absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border border-slate-200 shadow-lg z-50 ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit'}`}>
           <div className="px-3 py-1.5 text-[11px] text-slate-400 flex items-center gap-1.5 border-b border-slate-100">
             <Layout className="w-3 h-3" />
             切换模板风格
