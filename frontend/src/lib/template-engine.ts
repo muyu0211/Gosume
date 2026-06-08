@@ -15,6 +15,7 @@ export interface TemplateSet {
 export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
   const funcs: Record<string, TemplateFunc> = {
     dateRange: (start, end, isCurrent) => {
+      if (!start) return ''
       if (isCurrent === 'true' || !end) return start + ' - 至今'
       return start + ' - ' + end
     },

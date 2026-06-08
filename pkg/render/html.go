@@ -103,6 +103,9 @@ func (r *HTMLRenderer) RenderWithTemplate(resume *model.Resume, tmpl *Template) 
 // Custom template functions
 
 func dateRange(start, end string, isCurrent bool) string {
+	if start == "" {
+		return ""
+	}
 	if isCurrent || end == "" {
 		return start + " - 至今"
 	}

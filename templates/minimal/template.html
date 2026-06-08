@@ -40,7 +40,7 @@
                     <span class="company">{{.Company}}</span>
                     {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
@@ -62,7 +62,7 @@
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">{{.School}}</span>
-                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
             </div>
             <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
             {{if .Highlights}}

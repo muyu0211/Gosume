@@ -197,7 +197,7 @@ const MODERN_TEMPLATE: TemplateSet = {
                     <span class="company">公司：{{.Company}}</span>
                     {{if .Title}}<span class="title"> · 职位：{{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">地点：{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">概述：{{.Summary}}</div>{{end}}
@@ -217,7 +217,7 @@ const MODERN_TEMPLATE: TemplateSet = {
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">学校：{{.School}}</span>
-                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
             </div>
             <div class="edu-detail">学位：{{.Degree}} · 专业：{{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
             {{if .Highlights}}
@@ -353,7 +353,7 @@ const CLASSIC_TEMPLATE: TemplateSet = {
                     <span class="employer">公司：{{.Company}}</span>
                     {{if .Title}}— <span class="role">职位：{{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">地点：{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">概述：{{.Summary}}</div>{{end}}
@@ -373,7 +373,7 @@ const CLASSIC_TEMPLATE: TemplateSet = {
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">学校：{{.School}}</span>
-                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
             </div>
             <div class="edu-detail">学位：{{.Degree}} · 专业：{{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
             {{if .Highlights}}
@@ -752,7 +752,7 @@ const MINIMAL_TEMPLATE: TemplateSet = {
                     <span class="company">{{.Company}}</span>
                     {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
@@ -772,7 +772,7 @@ const MINIMAL_TEMPLATE: TemplateSet = {
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">{{.School}}</span>
-                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
             </div>
             <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
             {{if .Highlights}}
@@ -1022,7 +1022,7 @@ const CREATIVE_TEMPLATE: TemplateSet = {
                         <span class="company">{{.Company}}</span>
                         {{if .Title}}<span class="title">&nbsp;· {{.Title}}</span>{{end}}
                     </div>
-                    <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                    {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
                 </div>
                 {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
                 {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
@@ -1042,7 +1042,7 @@ const CREATIVE_TEMPLATE: TemplateSet = {
             <div class="education-item">
                 <div class="edu-header">
                     <span class="school">{{.School}}</span>
-                    <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                    {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
                 </div>
                 <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
                 {{if .Highlights}}
@@ -1251,7 +1251,7 @@ const EXECUTIVE_TEMPLATE: TemplateSet = {
                     <span class="company">{{.Company}}</span>
                     {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
@@ -1271,7 +1271,7 @@ const EXECUTIVE_TEMPLATE: TemplateSet = {
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">{{.School}}</span>
-                <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
             </div>
             <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · 辅修：{{.Minor}}{{end}}{{if .GPA}} · GPA：{{.GPA}}{{end}}</div>
             {{if .Highlights}}
@@ -1494,7 +1494,7 @@ const COMPACT_TEMPLATE: TemplateSet = {
                     <span class="company">{{.Company}}</span>
                     {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
                 </div>
-                <span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
             {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
@@ -1516,7 +1516,7 @@ const COMPACT_TEMPLATE: TemplateSet = {
                 <div class="education-item">
                     <div class="edu-header">
                         <span class="school">{{.School}}</span>
-                        <span class="date">{{.StartDate}} - {{.EndDate}}</span>
+                        {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
                     </div>
                     <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · {{.Minor}}{{end}}{{if .GPA}} · GPA:{{.GPA}}{{end}}</div>
                 </div>
