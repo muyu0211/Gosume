@@ -86,7 +86,6 @@ type Template struct {
 	DirPath   string
 	HTML      string
 	CSS       string
-	DOCXPath  string
 }
 
 // Loader loads templates from a TemplateStore implementation.

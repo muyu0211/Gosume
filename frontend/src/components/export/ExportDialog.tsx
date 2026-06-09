@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
-import { FileText, FileEdit, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
+import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 
 const formats = [
   { id: 'pdf' as const, label: 'PDF 文档', desc: '适合打印和投递，保留完整排版和超链接', icon: FileText },
-  { id: 'docx' as const, label: 'Word 文档', desc: '可编辑的 .docx 文件，便于他人修改', icon: FileEdit },
   { id: 'png' as const, label: 'PNG 图片', desc: '高清截图，用于在线预览和分享', icon: Image },
 ]
 
@@ -18,7 +17,7 @@ type Phase = 'entering' | 'open' | 'exiting'
 
 export function ExportDialog({ onClose }: Props) {
   const resume = useResumeStore((s) => s.resume)
-  const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'docx' | 'png'>('pdf')
+  const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'png'>('pdf')
   const [scale, setScale] = useState(1.5)
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -59,9 +58,6 @@ export function ExportDialog({ onClose }: Props) {
           break
         case 'png':
           filePath = await callService<string>('ExportService', 'ExportPNG', resumeJSON, scale)
-          break
-        case 'docx':
-          filePath = await callService<string>('ExportService', 'ExportDOCX', resumeJSON)
           break
       }
 

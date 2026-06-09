@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"os"
 
 	"gosume/pkg/export"
@@ -37,14 +36,6 @@ func (s *ExportService) ExportPDF(resumeJSON string, scale float64, pageRange st
 		Format:    export.FormatPDF,
 		Scale:     scale,
 		PageRange: pageRange,
-	})
-}
-
-// ExportDOCX exports the resume as a DOCX file.
-func (s *ExportService) ExportDOCX(resumeJSON string) (string, error) {
-	return s.doExport(resumeJSON, export.ExportOptions{
-		Format: export.FormatDOCX,
-		Scale:  1,
 	})
 }
 
@@ -105,8 +96,6 @@ func getFilterName(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:
 		return "PDF 文件 (*.pdf)"
-	case export.FormatDOCX:
-		return "Word 文档 (*.docx)"
 	case export.FormatPNG:
 		return "PNG 图片 (*.png)"
 	default:
@@ -118,8 +107,6 @@ func getFilterPattern(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:
 		return "*.pdf"
-	case export.FormatDOCX:
-		return "*.docx"
 	case export.FormatPNG:
 		return "*.png"
 	default:
@@ -131,8 +118,6 @@ func formatSuffix(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:
 		return "pdf"
-	case export.FormatDOCX:
-		return "docx"
 	case export.FormatPNG:
 		return "png"
 	default:

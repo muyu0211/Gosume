@@ -1,4 +1,4 @@
-export type ExportFormat = 'pdf' | 'docx' | 'png'
+export type ExportFormat = 'pdf' | 'png'
 
 export interface ExportOptions {
   format: ExportFormat
@@ -8,12 +8,10 @@ export interface ExportOptions {
 
 export const FORMAT_LABELS: Record<ExportFormat, string> = {
   pdf: 'PDF 文档',
-  docx: 'Word 文档',
   png: 'PNG 图片',
 }
 
 export const FORMAT_ICONS: Record<ExportFormat, string> = {
   pdf: 'FileText',
-  docx: 'FileEdit',
   png: 'Image',
 }

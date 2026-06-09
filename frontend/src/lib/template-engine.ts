@@ -339,7 +339,6 @@ function snakeToPascal(s: string): string {
     .replace(/\bQq\b/g, 'QQ')
     .replace(/\bGpa\b/g, 'GPA')
     .replace(/\bPdf\b/g, 'PDF')
-    .replace(/\bDocx\b/g, 'DOCX')
     .replace(/\bPng\b/g, 'PNG')
 }
 
