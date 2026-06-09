@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"os"
 
 	"gosume/pkg/export"
@@ -79,8 +80,14 @@ func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (
 			{DisplayName: getFilterName(opts.Format), Pattern: getFilterPattern(opts.Format)},
 		},
 	}).PromptForSingleSelection()
-	if err != nil || filePath == "" {
+	if err != nil {
+		if strings.Contains(err.Error(), "cancelled") || strings.Contains(err.Error(), "canceled") {
+			return "", nil
+		}
 		return "", err
+	}
+	if filePath == "" {
+		return "", nil
 	}
 
 	if err := os.WriteFile(filePath, data, 0644); err != nil {

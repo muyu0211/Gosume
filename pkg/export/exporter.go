@@ -17,17 +17,15 @@ const (
 
 // ExportOptions configures the export output.
 type ExportOptions struct {
-	Format   ExportFormat `json:"format"`
-	Scale    float64      `json:"scale"`
-	PageRange string      `json:"page_range"`
+	Format    ExportFormat `json:"format"`
+	Scale     float64      `json:"scale"`
+	PageRange string       `json:"page_range"`
 }
 
-// ExportManager coordinates exporting resumes to various formats.
-type ExportManager struct {
-	pdfExporter  *PDFExporter
-	docxExporter *DOCXExporter
-	pngExporter  *PNGExporter
-	htmlRenderer HTMLRenderer
+// Browser is the interface for headless Chromium rendering.
+type Browser interface {
+	RenderPDF(htmlContent string, scale float64, pageRange string) ([]byte, error)
+	RenderPNG(htmlContent string, scale float64) ([]byte, error)
 }
 
 // HTMLRenderer is the interface for the HTML renderer.
@@ -35,13 +33,21 @@ type HTMLRenderer interface {
 	Render(resume *model.Resume) (string, error)
 }
 
+// ExportManager coordinates exporting resumes to various formats.
+type ExportManager struct {
+	pdfExporter  *PDFExporter
+	docxExporter *DOCXExporter
+	pngExporter  *PNGExporter
+	browser      Browser
+}
+
 // NewExportManager creates a new export manager.
-func NewExportManager(pdf *PDFExporter, docx *DOCXExporter, png *PNGExporter, html HTMLRenderer) *ExportManager {
+func NewExportManager(browser Browser, html HTMLRenderer) *ExportManager {
 	return &ExportManager{
-		pdfExporter:  pdf,
-		docxExporter: docx,
-		pngExporter:  png,
-		htmlRenderer: html,
+		pdfExporter:  NewPDFExporter(html, browser),
+		docxExporter: NewDOCXExporter(html),
+		pngExporter:  NewPNGExporter(html, browser),
+		browser:      browser,
 	}
 }
 

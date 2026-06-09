@@ -189,13 +189,9 @@ func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
 }
 
 func initExportManager(htmlRenderer *render.HTMLRenderer) *export.ExportManager {
+	browser := export.NewBrowserManager()
 	adapter := &htmlExportAdapter{renderer: htmlRenderer}
-	return export.NewExportManager(
-		export.NewPDFExporter(adapter),
-		export.NewDOCXExporter(adapter),
-		export.NewPNGExporter(adapter),
-		adapter,
-	)
+	return export.NewExportManager(browser, adapter)
 }
 
 func createWailsApp(assets embed.FS, services []application.Service) (*application.App, *application.WebviewWindow) {

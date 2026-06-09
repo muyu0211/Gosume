@@ -135,8 +135,8 @@
         <div class="section-title">奖项荣誉</div>
         {{range .Awards}}
         <div class="custom-item">
-            <h4>奖项：{{.Title}}</h4>
-            <div class="subtitle">日期：{{.Date}}{{if .Issuer}} · 颁发机构：{{.Issuer}}{{end}}</div>
+            <h4>{{.Title}}</h4>
+            <div class="subtitle">日期：{{.Date}}{{if .Issuer}} · {{.Issuer}}{{end}}</div>
             {{if .Summary}}<div class="exp-summary">说明：{{.Summary}}</div>{{end}}
         </div>
         {{end}}

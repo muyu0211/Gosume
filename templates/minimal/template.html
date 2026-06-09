@@ -13,14 +13,14 @@
             {{if .Personal.EnglishName}}<div class="english-name">{{.Personal.EnglishName}}</div>{{end}}
             {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
             <div class="contact-line">
-                {{if .Personal.Email}}<span>{{.Personal.Email}}</span>{{end}}
-                {{if .Personal.Phone}}<span>{{.Personal.Phone}}</span>{{end}}
-                {{if .Personal.Location}}<span>{{.Personal.Location}}</span>{{end}}
+                {{if .Personal.Email}}<span>邮箱：{{.Personal.Email}}</span>{{end}}
+                {{if .Personal.Phone}}<span>手机：{{.Personal.Phone}}</span>{{end}}
+                {{if .Personal.Location}}<span>住址：{{.Personal.Location}}</span>{{end}}
             </div>
             <div class="contact-line secondary">
-                {{if .Personal.Website}}<span>{{.Personal.Website}}</span>{{end}}
-                {{if .Personal.GitHub}}<span>{{.Personal.GitHub}}</span>{{end}}
-                {{if .Personal.LinkedIn}}<span>{{.Personal.LinkedIn}}</span>{{end}}
+                {{if .Personal.Website}}<span>网站：{{.Personal.Website}}</span>{{end}}
+                {{if .Personal.GitHub}}<span>GitHub：{{.Personal.GitHub}}</span>{{end}}
+                {{if .Personal.LinkedIn}}<span>LinkedIn：{{.Personal.LinkedIn}}</span>{{end}}
                 {{if .Personal.Wechat}}<span>微信：{{.Personal.Wechat}}</span>{{end}}
             </div>
         </div>

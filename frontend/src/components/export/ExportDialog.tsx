@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, FileEdit, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
+import { callService } from '../../services/backend'
 
 interface Props {
   onClose: () => void
@@ -49,37 +50,35 @@ export function ExportDialog({ onClose }: Props) {
     setErrorMsg('')
 
     try {
+      const resumeJSON = JSON.stringify(resume)
+      let filePath: string | null = null
+
       switch (selectedFormat) {
-        case 'pdf': {
-          // Use browser native print-to-PDF for real PDF output.
-          // Generate fresh HTML from the template engine with current resume data.
-          const tmpl = await import('../../services/templateService').then((m) =>
-            m.loadTemplateContent(resume.meta.template_id || 'modern'),
-          )
-          const { renderTemplate } = await import('../../lib/template-engine')
-          const html = renderTemplate(tmpl, resume)
-          printPreview(html)
-          setStatus('done')
-          closingTimeout.current = setTimeout(() => handleClose(), 500)
-          return
-        }
-
-        case 'docx':
-          setErrorMsg('DOCX 导出功能将在后续版本中提供，请使用 PDF 格式导出')
-          setStatus('error')
-          return
-
+        case 'pdf':
+          filePath = await callService<string>('ExportService', 'ExportPDF', resumeJSON, 1.0, '')
+          break
         case 'png':
-          setErrorMsg('PNG 导出功能将在后续版本中提供，请使用 PDF 格式导出')
-          setStatus('error')
-          return
+          filePath = await callService<string>('ExportService', 'ExportPNG', resumeJSON, scale)
+          break
+        case 'docx':
+          filePath = await callService<string>('ExportService', 'ExportDOCX', resumeJSON)
+          break
       }
+
+      if (!filePath) {
+        // User cancelled the save dialog — just close silently.
+        handleClose()
+        return
+      }
+
+      setStatus('done')
+      closingTimeout.current = setTimeout(() => handleClose(), 800)
     } catch (err) {
       console.error('Export failed:', err)
       setErrorMsg(err instanceof Error ? err.message : '导出失败，请重试')
       setStatus('error')
     }
-  }, [resume, selectedFormat, handleClose])
+  }, [resume, selectedFormat, scale, handleClose])
 
   const isActive = phase === 'open' || phase === 'entering'
 
@@ -149,9 +148,9 @@ export function ExportDialog({ onClose }: Props) {
               <label className="text-sm font-medium text-slate-600 mb-2 block">清晰度</label>
               <div className="flex gap-2">
                 {[
-                  { value: 1, label: '1×' },
-                  { value: 1.5, label: '1.5×' },
-                  { value: 2, label: '2×' },
+                  { value: 1, label: '1x' },
+                  { value: 1.5, label: '1.5x' },
+                  { value: 2, label: '2x' },
                 ].map(({ value, label }) => (
                   <button
                     key={value}
@@ -166,14 +165,6 @@ export function ExportDialog({ onClose }: Props) {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {selectedFormat === 'docx' && (
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-              <p className="text-sm text-amber-700">
-                DOCX 导出功能开发中，请使用 PDF 格式导出。
-              </p>
             </div>
           )}
 
@@ -222,16 +213,4 @@ export function ExportDialog({ onClose }: Props) {
       </div>
     </div>
   )
-}
-
-function printPreview(html: string) {
-  const printWindow = window.open('', '_blank')
-  if (!printWindow) {
-    alert('请允许弹出窗口以打印简历')
-    return
-  }
-  printWindow.document.write(html)
-  printWindow.document.close()
-  printWindow.focus()
-  setTimeout(() => printWindow.print(), 300)
 }
