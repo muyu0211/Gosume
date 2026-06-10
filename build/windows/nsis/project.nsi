@@ -82,7 +82,24 @@ ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
-   StrCpy $INSTDIR "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
+
+   ; Try to detect existing installation directory from registry
+   SetRegView 64
+   ReadRegStr $0 HKLM "${UNINST_KEY}" "UninstallString"
+   ${If} $0 != ""
+       ; Remove surrounding quotes from "$INSTDIR\uninstall.exe"
+       StrCpy $1 $0 1 -1
+       ${If} $1 == '"'
+           StrCpy $0 $0 -1
+       ${EndIf}
+       StrCpy $1 $0 1
+       ${If} $1 == '"'
+           StrCpy $0 $0 "" 1
+       ${EndIf}
+       ${GetParent} "$0" $INSTDIR
+   ${Else}
+       StrCpy $INSTDIR "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
+   ${EndIf}
 FunctionEnd
 
 Section
@@ -94,10 +111,12 @@ Section
     
     !insertmacro wails.files
 
-    ; Create initial config.json for portable mode
+    ; Create initial config.json for portable mode (skip if already exists)
+    IfFileExists "$INSTDIR\config.json" skip_config
     FileOpen $0 "$INSTDIR\config.json" w
     FileWrite $0 "{}"
     FileClose $0
+    skip_config:
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
