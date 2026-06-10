@@ -22,7 +22,7 @@ export function AwardSection() {
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-primary-600" />
           <span className="form-section-title">奖项荣誉</span>
-          <span className="text-xs text-slate-400">({items.length})</span>
+          <span className="text-xs text-surface-400">({items.length})</span>
         </div>
         <button onClick={() => { addItem(); setExpanded({[items.length]: true}) }} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
@@ -38,35 +38,35 @@ export function AwardSection() {
             <div
               key={award.id}
               className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-slate-200'
+                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
               } ${draggedIdx === idx ? 'opacity-40' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
-              <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer" onClick={() => toggle(idx)}>
+              <div className="flex items-center gap-2 px-3 py-2 hover:bg-surface-50 cursor-pointer" onClick={() => toggle(idx)}>
                 <div
                   draggable
                   onDragStart={() => onDragStart(idx)}
                   onDragEnd={onDragEnd}
-                  className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-slate-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-slate-300'}`}
+                  className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <GripVertical className="w-3.5 h-3.5" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-slate-700 truncate">
+                  <span className="text-sm font-medium text-surface-700 truncate">
                     {award.title || '未命名奖项'}
                   </span>
-                  {award.date && <span className="text-xs text-slate-400 ml-2">{award.date}</span>}
+                  {award.date && <span className="text-xs text-surface-400 ml-2">{award.date}</span>}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); removeItem(idx) }} className="p-1 text-slate-400 hover:text-red-500">
+                <button onClick={(e) => { e.stopPropagation(); removeItem(idx) }} className="p-1 text-surface-400 hover:text-red-500">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-100 space-y-2.5">
+                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">奖项名称 *</label>
@@ -84,7 +84,7 @@ export function AwardSection() {
                   <div>
                     <label className="form-label">说明</label>
                     <textarea className="form-textarea-resizable" rows={2} value={award.summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value })} placeholder="简要描述获奖原因或背景" maxLength={500} />
-                    <p className="text-[10px] text-slate-400 mt-0.5">{(award.summary || '').length} / 500 字</p>
+                    <p className="text-[10px] text-surface-400 mt-0.5">{(award.summary || '').length} / 500 字</p>
                   </div>
                 </div>
               )}
@@ -93,7 +93,7 @@ export function AwardSection() {
         })}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-sm text-slate-400">
+          <div className="text-center py-6 text-sm text-surface-400">
             暂无内容，点击上方"添加"按钮开始
           </div>
         )}

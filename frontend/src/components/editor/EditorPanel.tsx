@@ -31,7 +31,7 @@ export function EditorPanel() {
       case 'custom':
         return (
           <div className="form-section">
-            <div className="text-center py-8 text-slate-400 text-sm">
+            <div className="text-center py-8 text-surface-400 text-sm">
               此模块将在后续版本中提供
             </div>
           </div>

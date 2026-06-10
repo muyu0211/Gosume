@@ -54,13 +54,13 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
   }, [commitName])
 
   return (
-    <div className="h-12 flex items-center gap-1 px-3 bg-white border-b border-slate-200 flex-shrink-0">
+    <div className="h-12 flex items-center gap-1 px-3 bg-white/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
       {/* Left */}
       <div className="flex items-center gap-1">
         <button onClick={() => { clearResume(); navigate('/') }} className="btn-ghost btn-sm" title="返回首页">
           <Home className="w-4 h-4" />
         </button>
-        <div className="w-px h-5 bg-slate-200 mx-1" />
+        <div className="w-px h-5 bg-surface-200 mx-1" />
 
         <button
           onClick={onSave}
@@ -96,13 +96,13 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
             onChange={(e) => setNameDraft(e.target.value)}
             onBlur={commitName}
             onKeyDown={handleNameKeyDown}
-            className="text-xs font-medium text-slate-700 bg-slate-100 border border-primary-300 rounded px-2 py-1 w-48 outline-none focus:border-primary-500"
+            className="text-xs font-medium text-surface-700 bg-surface-100 border border-primary-300 rounded px-2 py-1 w-48 outline-none focus:border-primary-500"
             placeholder="输入项目名称..."
           />
         ) : (
           <button
             onClick={startEditing}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors max-w-[200px] truncate"
+            className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors max-w-[200px] truncate"
             title="点击编辑项目名称"
           >
             <span className="truncate">{projectName || '未命名项目'}</span>
@@ -116,7 +116,7 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
         <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs" title="缩小">
           <ZoomOut className="w-3.5 h-3.5" />
         </button>
-        <span className="text-xs text-slate-500 min-w-[42px] text-center tabular-nums">
+        <span className="text-xs text-surface-500 min-w-[42px] text-center tabular-nums">
           {Math.round(zoom * 100)}%
         </span>
         <button onClick={() => setZoom(zoom + 0.1)} className="btn-ghost btn-xs" title="放大">

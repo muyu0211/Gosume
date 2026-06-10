@@ -100,16 +100,16 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
     <div
       ref={popoverRef}
       style={popoverStyle}
-      className="bg-white rounded-lg border border-slate-200 shadow-lg p-3"
+      className="bg-white rounded-lg border border-surface-200 shadow-lg p-3"
     >
       {/* Year navigation */}
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={prevYear} className="p-1 hover:bg-slate-100 rounded">
-          <ChevronLeft className="w-4 h-4 text-slate-500" />
+        <button type="button" onClick={prevYear} className="p-1 hover:bg-surface-100 rounded">
+          <ChevronLeft className="w-4 h-4 text-surface-500" />
         </button>
-        <span className="text-sm font-semibold text-slate-700">{viewYear}年</span>
-        <button type="button" onClick={nextYear} className="p-1 hover:bg-slate-100 rounded">
-          <ChevronRight className="w-4 h-4 text-slate-500" />
+        <span className="text-sm font-semibold text-surface-700">{viewYear}年</span>
+        <button type="button" onClick={nextYear} className="p-1 hover:bg-surface-100 rounded">
+          <ChevronRight className="w-4 h-4 text-surface-500" />
         </button>
       </div>
 
@@ -127,10 +127,10 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
               onClick={() => !disabled && selectMonth(month)}
               className={`py-1.5 text-xs rounded-md transition-colors ${
                 disabled
-                  ? 'text-slate-300 cursor-not-allowed'
+                  ? 'text-surface-300 cursor-not-allowed'
                   : isSelected
                     ? 'bg-primary-500 text-white font-semibold'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'text-surface-600 hover:bg-surface-100'
               }`}
             >
               {label}
@@ -140,13 +140,13 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 border-t border-slate-100 pt-2">
+      <div className="flex gap-2 border-t border-surface-100 pt-2">
         {showPresent && (
           <button
             type="button"
             onClick={selectPresent}
             className={`flex-1 py-1 text-xs rounded ${
-              value === '至今' ? 'bg-primary-500 text-white' : 'text-slate-500 hover:bg-slate-100'
+              value === '至今' ? 'bg-primary-500 text-white' : 'text-surface-500 hover:bg-surface-100'
             }`}
           >
             至今
@@ -155,7 +155,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
         <button
           type="button"
           onClick={clearDate}
-          className="flex-1 py-1 text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
+          className="flex-1 py-1 text-xs text-surface-400 hover:text-surface-600 hover:bg-surface-100 rounded"
         >
           清除
         </button>
@@ -172,7 +172,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
           if (value && /^\d{4}-\d{2}$/.test(value)) setViewYear(parseInt(value.slice(0, 4)))
           setOpen(!open)
         }}
-        className={`form-input flex items-center gap-2 text-left ${!value ? 'text-slate-400' : ''}`}
+        className={`form-input flex items-center gap-2 text-left ${!value ? 'text-surface-400' : ''}`}
       >
         <Calendar className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
         <span className="flex-1 truncate">{value === '至今' ? '至今' : value || placeholder}</span>

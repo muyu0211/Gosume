@@ -115,7 +115,7 @@ export function PersonalSection() {
       <div className="flex items-start gap-4 mb-4">
         <div
           className={`relative w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 transition-colors ${
-            isDragging ? 'border-primary-500 bg-primary-50' : 'border-slate-300 bg-slate-50'
+            isDragging ? 'border-primary-500 bg-primary-50' : 'border-surface-300 bg-surface-50'
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -135,7 +135,7 @@ export function PersonalSection() {
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-primary-500 transition-colors"
+              className="flex flex-col items-center gap-0.5 text-surface-400 hover:text-primary-500 transition-colors"
               title="上传照片"
             >
               <Camera className="w-5 h-5" />
@@ -144,8 +144,8 @@ export function PersonalSection() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-700">个人照片</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-sm font-medium text-surface-700">个人照片</p>
+          <p className="text-xs text-surface-400 mt-0.5">
             点击或拖拽上传证件照，支持 JPG/PNG 格式，最大 3MB
           </p>
           {photoError && (

@@ -157,11 +157,11 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-200 shrink-0">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-slate-800">全部简历</h2>
-            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+            <h2 className="text-lg font-semibold text-surface-800">全部简历</h2>
+            <span className="text-xs text-surface-400 bg-surface-100 px-2 py-0.5 rounded-full">
               {resumeList.length}
             </span>
           </div>
@@ -169,14 +169,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             {resumeList.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium text-surface-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
                 {allSelected ? '取消全选' : '全选'}
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -186,7 +186,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         {/* List */}
         <div className="flex-1 overflow-auto">
           {resumeList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
+            <div className="flex flex-col items-center justify-center h-full text-surface-400 gap-3">
               <Inbox className="w-12 h-12" />
               <p className="text-sm">暂无保存的简历</p>
               <p className="text-xs">创建新简历后将在此显示</p>
@@ -198,7 +198,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 return (
                   <div
                     key={item.id}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group cursor-pointer"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-50 transition-colors text-left group cursor-pointer"
                     onClick={() => onOpenResume(item.id)}
                   >
                     {/* Checkbox */}
@@ -207,7 +207,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                       className={`shrink-0 p-0.5 rounded transition-all duration-200 ${
                         isSelected
                           ? 'text-primary-600'
-                          : 'text-slate-300 opacity-0 group-hover:opacity-100'
+                          : 'text-surface-300 opacity-0 group-hover:opacity-100'
                       }`}
                       title={isSelected ? '取消选择' : '选择'}
                     >
@@ -222,12 +222,12 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                       <FileText className="w-4 h-4 text-primary-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">
+                      <p className="text-sm font-medium text-surface-700 truncate">
                         {item.name || '未命名简历'}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span className="text-xs text-slate-400">
+                        <Clock className="w-3 h-3 text-surface-400" />
+                        <span className="text-xs text-surface-400">
                           {new Date(item.updated_at).toLocaleString('zh-CN')}
                         </span>
                       </div>
@@ -235,12 +235,12 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                     {/* Single delete */}
                     <button
                       onClick={(e) => handleDeleteClick(e, item.id)}
-                      className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      className="p-1.5 text-surface-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
                       title="删除简历"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-500 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-surface-300 group-hover:text-primary-500 transition-colors" />
                   </div>
                 )
               })}
@@ -249,7 +249,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         </div>
 
         {/* Footer / Batch bar */}
-        <div className="shrink-0 border-t border-slate-200">
+        <div className="shrink-0 border-t border-surface-200">
           {/* Batch action bar — slides up when items are selected */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-out ${
@@ -280,7 +280,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
 
           {/* Regular footer */}
           <div className="px-5 py-3">
-            <p className="text-xs text-slate-400 text-center">
+            <p className="text-xs text-surface-400 text-center">
               共 {resumeList.length} 份简历
             </p>
           </div>
@@ -302,8 +302,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-slate-800">确认删除</h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <h3 className="text-base font-semibold text-surface-800">确认删除</h3>
+                <p className="text-sm text-surface-500 mt-1">
                   确定要删除「{targetItem?.name || '未命名简历'}」吗？此操作不可撤销。
                 </p>
               </div>
@@ -312,7 +312,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleCancelDelete}
                 disabled={!!deletingId}
-                className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
               >
                 取消
               </button>
@@ -350,8 +350,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-slate-800">批量删除确认</h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <h3 className="text-base font-semibold text-surface-800">批量删除确认</h3>
+                <p className="text-sm text-surface-500 mt-1">
                   确定要删除选中的 <span className="font-semibold text-red-600">{batchCount}</span> 份简历吗？此操作不可撤销。
                 </p>
               </div>
@@ -360,7 +360,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleCancelBatchDelete}
                 disabled={batchDeleting}
-                className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
               >
                 取消
               </button>

@@ -78,7 +78,7 @@ export function TemplateSwitcher() {
     <div ref={ref} className="relative">
       <button
         onClick={() => open ? close() : setOpen(true)}
-        className="flex items-center gap-1.5 h-8 px-2 text-xs rounded-md hover:bg-slate-100 transition-colors text-slate-600"
+        className="flex items-center gap-1.5 h-8 px-2 text-xs rounded-md hover:bg-surface-100 transition-colors text-surface-600"
       >
         <div
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -89,8 +89,8 @@ export function TemplateSwitcher() {
       </button>
 
       {visible && (
-        <div className={`absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border border-slate-200 shadow-lg z-50 ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit'}`}>
-          <div className="px-3 py-1.5 text-[11px] text-slate-400 flex items-center gap-1.5 border-b border-slate-100">
+        <div className={`absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit'}`}>
+          <div className="px-3 py-1.5 text-[11px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
             <Layout className="w-3 h-3" />
             切换模板风格
           </div>
@@ -104,11 +104,11 @@ export function TemplateSwitcher() {
                 key={tmpl.id}
                 onClick={() => handleSelect(tmpl.id)}
                 className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${
-                  isActive ? 'bg-primary-50' : 'hover:bg-slate-50'
+                  isActive ? 'bg-primary-50' : 'hover:bg-surface-50'
                 }`}
               >
                 {/* Thumbnail */}
-                <div className="w-[72px] h-[102px] rounded border flex-shrink-0 overflow-hidden bg-slate-100 flex items-center justify-center">
+                <div className="w-[72px] h-[102px] rounded border flex-shrink-0 overflow-hidden bg-surface-100 flex items-center justify-center">
                   {thumb ? (
                     <img src={thumb} alt={tmpl.name} className="w-full h-full object-cover" />
                   ) : (
@@ -126,12 +126,12 @@ export function TemplateSwitcher() {
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className={`text-xs font-medium truncate ${isActive ? 'text-primary-700' : 'text-slate-700'}`}>
+                    <span className={`text-xs font-medium truncate ${isActive ? 'text-primary-700' : 'text-surface-700'}`}>
                       {tmpl.name}
                     </span>
                     {isActive && <Check className="w-3 h-3 text-primary-500 flex-shrink-0" />}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] text-surface-400 mt-1 line-clamp-2 leading-relaxed">
                     {tmpl.description}
                   </p>
                 </div>

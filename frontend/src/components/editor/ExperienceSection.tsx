@@ -34,7 +34,7 @@ export function ExperienceSection({ type, title }: Props) {
             <FolderGit2 className="w-4 h-4 text-primary-600" />
           )}
           <span className="form-section-title">{title}</span>
-          <span className="text-xs text-slate-400">({items?.length || 0})</span>
+          <span className="text-xs text-surface-400">({items?.length || 0})</span>
         </div>
         <button onClick={() => { addItem(); setExpanded({[items?.length || 0]: true}) }} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
@@ -52,35 +52,35 @@ export function ExperienceSection({ type, title }: Props) {
             <div
               key={item.id}
               className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-slate-200'
+                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
               } ${draggedIdx === idx ? 'opacity-40' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
               {/* Collapsed header */}
               <div
-                className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 hover:bg-surface-50 cursor-pointer"
                 onClick={() => toggle(idx)}
               >
                 <div
                   draggable
                   onDragStart={() => onDragStart(idx)}
                   onDragEnd={onDragEnd}
-                  className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-slate-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-slate-300'}`}
+                  className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <GripVertical className="w-3.5 h-3.5" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-slate-700 truncate">
+                  <span className="text-sm font-medium text-surface-700 truncate">
                     {name || `未命名${type === 'jobs' ? '公司' : '项目'}`}
                   </span>
-                  {role && <span className="text-xs text-slate-400 ml-2">{role}</span>}
+                  {role && <span className="text-xs text-surface-400 ml-2">{role}</span>}
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeItem(idx) }}
-                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-1 text-surface-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -88,7 +88,7 @@ export function ExperienceSection({ type, title }: Props) {
 
               {/* Expanded form */}
               {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-100 space-y-2.5">
+                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   {type === 'jobs' ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
@@ -113,14 +113,14 @@ export function ExperienceSection({ type, title }: Props) {
                           </div>
                         ) : (
                           <div className="flex items-end pb-1">
-                            <label className="flex items-center gap-2 text-xs text-slate-500">
+                            <label className="flex items-center gap-2 text-xs text-surface-500">
                               <input type="checkbox" checked={(item as Job).is_current} onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Job).end_date } as Partial<Job>)} className="accent-primary-600" />
                               当前在职
                             </label>
                           </div>
                         )}
                       </div>
-                      <label className="flex items-center gap-2 text-xs text-slate-500">
+                      <label className="flex items-center gap-2 text-xs text-surface-500">
                         <input type="checkbox" checked={(item as Job).is_current || false} onChange={(e) => updateItem(idx, { is_current: e.target.checked } as Partial<Job>)} className="accent-primary-600" />
                         当前在职
                       </label>
@@ -131,7 +131,7 @@ export function ExperienceSection({ type, title }: Props) {
                       <div>
                         <label className="form-label">工作概述</label>
                         <textarea className="form-textarea-resizable h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="工作经历概述..." maxLength={500} />
-                        <p className="text-[10px] text-slate-400 mt-0.5">{((item as Job).summary || '').length} / 500 字</p>
+                        <p className="text-[10px] text-surface-400 mt-0.5">{((item as Job).summary || '').length} / 500 字</p>
                       </div>
                     </>
                   ) : (
@@ -159,7 +159,7 @@ export function ExperienceSection({ type, title }: Props) {
                       <div>
                         <label className="form-label">项目简述</label>
                         <textarea className="form-textarea-resizable h-16" value={(item as Project).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Project>)} placeholder="项目简要描述..." maxLength={500} />
-                        <p className="text-[10px] text-slate-400 mt-0.5">{((item as Project).summary || '').length} / 500 字</p>
+                        <p className="text-[10px] text-surface-400 mt-0.5">{((item as Project).summary || '').length} / 500 字</p>
                       </div>
                     </>
                   )}
@@ -179,7 +179,7 @@ export function ExperienceSection({ type, title }: Props) {
         })}
 
         {(!items || items.length === 0) && (
-          <div className="text-center py-6 text-sm text-slate-400">
+          <div className="text-center py-6 text-sm text-surface-400">
             暂无内容，点击上方"添加"按钮开始
           </div>
         )}
@@ -211,7 +211,7 @@ function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onCh
             placeholder={`亮点 ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-slate-400 hover:text-red-500">
+          <button onClick={() => removeHighlight(i)} className="p-1 text-surface-400 hover:text-red-500">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

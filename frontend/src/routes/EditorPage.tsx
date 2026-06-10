@@ -79,7 +79,7 @@ export function EditorPage() {
   }
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-slate-50">
+    <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Toolbar */}
       <Toolbar
         onSave={handleSave}
@@ -88,14 +88,14 @@ export function EditorPage() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative z-0">
         {/* Sidebar */}
         <Sidebar onExport={handleExport} />
 
         {/* Editor + Preview Split */}
         <div className="flex-1 flex overflow-hidden">
           {/* Editor Panel */}
-          <div style={{ width: `${splitRatio * 100}%` }} className="overflow-auto border-r border-slate-200">
+          <div style={{ width: `${splitRatio * 100}%` }} className="overflow-auto border-r border-surface-200">
             <div className="p-4">
               <EditorPanel />
             </div>
@@ -103,7 +103,7 @@ export function EditorPage() {
 
           {/* Resize handle */}
           <div
-            className="w-1 bg-slate-200 hover:bg-primary-400 cursor-col-resize transition-colors flex-shrink-0"
+            className="w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors flex-shrink-0"
             onMouseDown={(e) => {
               const startX = e.clientX
               const startRatio = splitRatio
@@ -122,7 +122,7 @@ export function EditorPage() {
           />
 
           {/* Preview Panel */}
-          <div style={{ width: `${(1 - splitRatio) * 100}%` }} className="overflow-auto bg-slate-200">
+          <div style={{ width: `${(1 - splitRatio) * 100}%` }} className="overflow-auto bg-surface-200">
             <PreviewPanel />
           </div>
         </div>
@@ -141,67 +141,67 @@ export function EditorPage() {
 
 function EditorSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-slate-50">
+    <div className="h-full flex flex-col bg-surface-50">
       {/* Toolbar skeleton */}
-      <div className="h-12 flex items-center gap-2 px-3 bg-white border-b border-slate-200 flex-shrink-0">
-        <div className="w-8 h-8 rounded bg-slate-200 animate-pulse" />
-        <div className="w-px h-5 bg-slate-200" />
-        <div className="w-20 h-8 rounded bg-slate-200 animate-pulse" />
-        <div className="w-16 h-8 rounded bg-slate-200 animate-pulse" />
+      <div className="h-12 flex items-center gap-2 px-3 bg-white/80 border-b border-surface-100 flex-shrink-0">
+        <div className="w-8 h-8 rounded-md bg-surface-200 animate-shimmer" />
+        <div className="w-px h-5 bg-surface-200" />
+        <div className="w-20 h-8 rounded-md bg-surface-200 animate-shimmer" />
+        <div className="w-16 h-8 rounded-md bg-surface-200 animate-shimmer" />
       </div>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar skeleton */}
-        <div className="w-[50px] flex-shrink-0 bg-white border-r border-slate-200 flex flex-col items-center gap-3 py-4">
+        <div className="w-[50px] flex-shrink-0 bg-surface-100 border-r border-surface-200 flex flex-col items-center gap-3 py-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="w-8 h-8 rounded-lg bg-slate-200 animate-pulse" />
+            <div key={i} className="w-8 h-8 rounded-xl bg-surface-200 animate-shimmer" />
           ))}
         </div>
 
         {/* Editor panel skeleton */}
-        <div className="flex-1 overflow-auto border-r border-slate-200">
+        <div className="flex-1 overflow-auto border-r border-surface-200">
           <div className="p-5 space-y-5">
             {/* Section header */}
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-4 h-4 rounded bg-slate-200 animate-pulse" />
-              <div className="w-16 h-4 rounded bg-slate-200 animate-pulse" />
+              <div className="w-4 h-4 rounded bg-surface-200 animate-shimmer" />
+              <div className="w-16 h-4 rounded bg-surface-200 animate-shimmer" />
             </div>
             {/* Avatar + form fields */}
             <div className="flex gap-4 mb-4">
-              <div className="w-20 h-20 rounded-full bg-slate-200 animate-pulse flex-shrink-0" />
+              <div className="w-20 h-20 rounded-full bg-surface-200 animate-shimmer flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="w-24 h-3 rounded bg-slate-200 animate-pulse" />
-                <div className="w-40 h-3 rounded bg-slate-200 animate-pulse" />
+                <div className="w-24 h-3 rounded bg-surface-200 animate-shimmer" />
+                <div className="w-40 h-3 rounded bg-surface-200 animate-shimmer" />
               </div>
             </div>
             {/* Form field placeholders */}
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="space-y-1.5">
-                  <div className="w-12 h-3 rounded bg-slate-200 animate-pulse" />
-                  <div className="w-full h-9 rounded bg-slate-200 animate-pulse" />
+                  <div className="w-12 h-3 rounded bg-surface-200 animate-shimmer" />
+                  <div className="w-full h-9 rounded bg-surface-200 animate-shimmer" />
                 </div>
               ))}
             </div>
             {/* Another section */}
             <div className="space-y-3 pt-3">
-              <div className="w-12 h-3 rounded bg-slate-200 animate-pulse" />
+              <div className="w-12 h-3 rounded bg-surface-200 animate-shimmer" />
               {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="w-full h-24 rounded bg-slate-200 animate-pulse" />
+                <div key={i} className="w-full h-24 rounded bg-surface-200 animate-shimmer" />
               ))}
             </div>
           </div>
         </div>
 
         {/* Preview skeleton */}
-        <div className="flex-1 flex items-start justify-center py-8 bg-slate-200">
-          <div className="bg-white rounded shadow-lg flex flex-col items-center justify-center gap-4" style={{ width: 210 * 3.78, height: 297 * 3.78 * 0.7 }}>
-            <FileText className="w-12 h-12 text-slate-300" />
-            <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex-1 flex items-start justify-center py-8 bg-surface-200">
+          <div className="bg-white rounded-xl shadow-sm flex flex-col items-center justify-center gap-4" style={{ width: 210 * 3.78, height: 297 * 3.78 * 0.7 }}>
+            <FileText className="w-12 h-12 text-surface-300" />
+            <div className="flex items-center gap-2 text-surface-400">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">正在加载简历...</span>
             </div>
-            <div className="w-48 h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="w-48 h-2 rounded-full bg-surface-100 overflow-hidden">
               <div className="h-full bg-primary-400 rounded-full animate-loading-bar" style={{ width: '60%' }} />
             </div>
           </div>
@@ -209,11 +209,11 @@ function EditorSkeleton() {
       </div>
 
       {/* Status bar skeleton */}
-      <div className="h-7 flex items-center gap-3 px-3 bg-slate-800 flex-shrink-0">
-        <div className="w-2 h-2 rounded-full bg-slate-600" />
-        <div className="w-12 h-3 rounded bg-slate-600 animate-pulse" />
-        <div className="w-px h-3 bg-slate-600" />
-        <div className="w-16 h-3 rounded bg-slate-600 animate-pulse" />
+      <div className="h-7 flex items-center gap-3 px-3 bg-surface-100 border-t border-surface-200 flex-shrink-0">
+        <div className="w-2 h-2 rounded-full bg-surface-300" />
+        <div className="w-12 h-3 rounded bg-surface-200 animate-shimmer" />
+        <div className="w-px h-3 bg-surface-300" />
+        <div className="w-16 h-3 rounded bg-surface-200 animate-shimmer" />
       </div>
     </div>
   )

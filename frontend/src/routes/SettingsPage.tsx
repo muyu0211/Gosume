@@ -71,9 +71,9 @@ export function SettingsPage() {
   }
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-slate-50">
+    <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
-      <header className="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200">
+      <header className="flex items-center gap-3 px-6 py-4 bg-white border-b border-surface-100">
         <button
           onClick={() => navigate(-1)}
           className="btn-ghost btn-sm"
@@ -81,8 +81,8 @@ export function SettingsPage() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <Settings className="w-5 h-5 text-slate-500" />
-        <h1 className="text-lg font-semibold text-slate-800">设置</h1>
+        <Settings className="w-5 h-5 text-surface-500" />
+        <h1 className="text-lg font-semibold text-surface-800">设置</h1>
       </header>
 
       {/* Settings Content */}
@@ -91,12 +91,12 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-slate-400" />
+              <Globe className="w-4 h-4 text-surface-400" />
               <span className="form-section-title">语言</span>
             </div>
           </div>
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+            <label className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50">
               <input
                 type="radio"
                 name="language"
@@ -106,11 +106,11 @@ export function SettingsPage() {
                 className="accent-primary-600"
               />
               <div>
-                <p className="text-sm font-medium text-slate-700">简体中文</p>
-                <p className="text-xs text-slate-400">使用中文界面</p>
+                <p className="text-sm font-medium text-surface-700">简体中文</p>
+                <p className="text-xs text-surface-400">使用中文界面</p>
               </div>
             </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+            <label className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50">
               <input
                 type="radio"
                 name="language"
@@ -120,8 +120,8 @@ export function SettingsPage() {
                 className="accent-primary-600"
               />
               <div>
-                <p className="text-sm font-medium text-slate-700">English</p>
-                <p className="text-xs text-slate-400">Use English interface</p>
+                <p className="text-sm font-medium text-surface-700">English</p>
+                <p className="text-xs text-surface-400">Use English interface</p>
               </div>
             </label>
           </div>
@@ -131,14 +131,14 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-slate-400" />
+              <HardDrive className="w-4 h-4 text-surface-400" />
               <span className="form-section-title">自动保存</span>
             </div>
           </div>
-          <label className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+          <label className="flex items-center justify-between p-3 rounded-lg border border-surface-200">
             <div>
-              <p className="text-sm font-medium text-slate-700">启用自动保存</p>
-              <p className="text-xs text-slate-400">每30秒自动保存当前项目</p>
+              <p className="text-sm font-medium text-surface-700">启用自动保存</p>
+              <p className="text-xs text-surface-400">每30秒自动保存当前项目</p>
             </div>
             <input
               type="checkbox"
@@ -153,14 +153,14 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <FolderOpen className="w-4 h-4 text-slate-400" />
+              <FolderOpen className="w-4 h-4 text-surface-400" />
               <span className="form-section-title">数据目录</span>
             </div>
           </div>
-          <div className="p-3 rounded-lg border border-slate-200 space-y-3">
+          <div className="p-3 rounded-lg border border-surface-200 space-y-3">
             <div>
-              <p className="text-xs text-slate-400 mb-1">当前数据存储位置</p>
-              <p className="text-sm text-slate-700 font-mono break-all">{dataDir || '加载中...'}</p>
+              <p className="text-xs text-surface-400 mb-1">当前数据存储位置</p>
+              <p className="text-sm text-surface-700 font-mono break-all">{dataDir || '加载中...'}</p>
             </div>
             <button
               onClick={handleChangeDataDir}
@@ -190,14 +190,14 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-slate-400" />
+              <Info className="w-4 h-4 text-surface-400" />
               <span className="form-section-title">关于</span>
             </div>
           </div>
-          <div className="p-3 text-sm text-slate-600 space-y-1">
+          <div className="p-3 text-sm text-surface-600 space-y-1">
             <p><span className="font-medium">Gosume</span> v1.0.0</p>
-            <p className="text-xs text-slate-400">桌面级简历制作工具</p>
-            <p className="text-xs text-slate-400 mt-2">基于 Wails v3构建</p>
+            <p className="text-xs text-surface-400">桌面级简历制作工具</p>
+            <p className="text-xs text-surface-400 mt-2">基于 Wails v3构建</p>
           </div>
         </section>
       </div>

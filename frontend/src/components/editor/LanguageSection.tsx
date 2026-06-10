@@ -17,7 +17,7 @@ export function LanguageSection() {
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-primary-600" />
           <span className="form-section-title">语言能力</span>
-          <span className="text-xs text-slate-400">({items.length})</span>
+          <span className="text-xs text-surface-400">({items.length})</span>
         </div>
         <button onClick={addItem} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
@@ -30,7 +30,7 @@ export function LanguageSection() {
           <div
             key={lang.id}
             className={`border rounded-lg p-3 transition-colors ${
-              overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-slate-200'
+              overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
             } ${draggedIdx === idx ? 'opacity-40' : ''}`}
             onDragOver={(e) => onDragOver(e, idx)}
             onDrop={() => onDrop(idx)}
@@ -40,7 +40,7 @@ export function LanguageSection() {
                 draggable
                 onDragStart={() => onDragStart(idx)}
                 onDragEnd={onDragEnd}
-                className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-slate-200 transition-colors flex-shrink-0 self-start mt-5 ${draggedIdx === idx ? 'text-primary-500' : 'text-slate-300'}`}
+                className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-surface-200 transition-colors flex-shrink-0 self-start mt-5 ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
               >
                 <GripVertical className="w-3.5 h-3.5" />
               </div>
@@ -71,7 +71,7 @@ export function LanguageSection() {
                   </select>
                 </div>
               </div>
-              <button onClick={() => removeItem(idx)} className="p-1.5 text-slate-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
+              <button onClick={() => removeItem(idx)} className="p-1.5 text-surface-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -89,7 +89,7 @@ export function LanguageSection() {
         ))}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-sm text-slate-400">
+          <div className="text-center py-6 text-sm text-surface-400">
             暂无内容，点击上方"添加"按钮开始
           </div>
         )}

@@ -22,7 +22,7 @@ export function SummarySection() {
           placeholder="简要描述你的职业背景、核心能力和求职目标..."
           maxLength={1000}
         />
-        <p className="text-[10px] text-slate-400 mt-1">{(resume?.summary || '').length} / 1000 字</p>
+        <p className="text-[10px] text-surface-400 mt-1">{(resume?.summary || '').length} / 1000 字</p>
       </div>
     </div>
   )

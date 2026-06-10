@@ -109,16 +109,16 @@ export function WelcomePage() {
   }
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center">
+      <header className="flex items-center justify-between px-8 py-6">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Gosume</h1>
-            <p className="text-xs text-slate-400">桌面级简历制作工具</p>
+            <h1 className="text-xl font-bold text-surface-800 tracking-tight">Gosume</h1>
+            <p className="text-xs text-surface-400 mt-0.5">桌面级简历制作工具</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -149,11 +149,14 @@ export function WelcomePage() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto px-8 pb-8">
         {/* Template Selection */}
-        <section className="mb-10">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-            选择模板开始创建
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-5">
+            <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
+              选择模板开始创建
+            </h2>
+            <div className="flex-1 h-px bg-surface-200" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {templates.map((tmpl) => (
               <TemplateCard
                 key={tmpl.id}
@@ -168,24 +171,29 @@ export function WelcomePage() {
         {/* Recent Files */}
         {recentFiles.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-              最近打开
-            </h2>
-            <div className="space-y-2 max-w-lg">
+            <div className="flex items-center gap-2 mb-5">
+              <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
+                最近打开
+              </h2>
+              <div className="flex-1 h-px bg-surface-200" />
+            </div>
+            <div className="space-y-1.5 max-w-lg">
               {recentFiles.slice(0, 3).map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-200 hover:border-primary-300 cursor-pointer transition-colors"
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-white border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
                   onClick={() => handleOpenRecent(file.id)}
                 >
-                  <Clock className="w-4 h-4 text-slate-400" />
+                  <div className="w-9 h-9 rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
+                    <Clock className="w-4 h-4 text-surface-400 group-hover:text-primary-500 transition-colors" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm font-medium text-surface-700 truncate">{file.name}</p>
+                    <p className="text-xs text-surface-400 mt-0.5">
                       {new Date(file.updated_at).toLocaleString('zh-CN')}
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300" />
+                  <ArrowRight className="w-4 h-4 text-surface-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all" />
                 </div>
               ))}
             </div>
@@ -194,8 +202,8 @@ export function WelcomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="px-8 py-3 border-t border-slate-200 text-center">
-        <p className="text-xs text-slate-400">
+      <footer className="px-8 py-4 border-t border-surface-100 text-center">
+        <p className="text-xs text-surface-400">
           Gosume v0.1 — 专注于内容，让简历排版变得简单
         </p>
       </footer>
@@ -232,10 +240,10 @@ function TemplateCard({ template, previewHtml, onSelect }: { template: TemplateM
   return (
     <div
       onClick={onSelect}
-      className="group cursor-pointer rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-lg hover:border-primary-300 transition-all"
+      className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5"
     >
       {/* Preview area */}
-      <div ref={containerRef} className="aspect-[210/297] relative overflow-hidden bg-white">
+      <div ref={containerRef} className="aspect-[210/297] relative overflow-hidden bg-surface-100">
         {previewHtml ? (
           <iframe
             srcDoc={previewHtml}
@@ -249,18 +257,18 @@ function TemplateCard({ template, previewHtml, onSelect }: { template: TemplateM
             title={template.name}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
-            <div className="animate-pulse w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-400" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-surface-200 border-t-surface-400 animate-spin" />
           </div>
         )}
       </div>
       {/* Meta info */}
-      <div className="p-3 border-t border-slate-100">
-        <h3 className="text-sm font-semibold text-slate-800">{template.name}</h3>
-        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{template.description}</p>
-        <div className="flex gap-1.5 mt-2">
+      <div className="p-3.5 border-t border-surface-100">
+        <h3 className="text-sm font-semibold text-surface-800">{template.name}</h3>
+        <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
+        <div className="flex gap-1.5 mt-2.5">
           {template.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-500">
+            <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-surface-100 text-surface-500 font-medium">
               {tag}
             </span>
           ))}

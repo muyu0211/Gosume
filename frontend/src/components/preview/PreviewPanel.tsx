@@ -195,8 +195,8 @@ export function PreviewPanel() {
   if (!previewHtml) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center text-slate-400">
-          <div className="w-16 h-20 mx-auto mb-3 rounded border-2 border-slate-300 bg-white" />
+        <div className="text-center text-surface-400">
+          <div className="w-16 h-20 mx-auto mb-3 rounded border-2 border-surface-300 bg-white" />
           <p className="text-sm">简历预览将在此显示</p>
           <p className="text-xs mt-1">请在左侧填写信息</p>
         </div>
@@ -226,7 +226,7 @@ export function PreviewPanel() {
             title="简历预览"
             sandbox="allow-same-origin"
           />
-          <div className="text-center py-1.5 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+          <div className="text-center py-1.5 text-xs text-surface-400 bg-surface-50 border-t border-surface-100">
             共 {pageCount} 页 · A4 · {Math.round(effectiveScale * 100)}%
           </div>
         </div>

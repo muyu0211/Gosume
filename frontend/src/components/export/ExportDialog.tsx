@@ -81,44 +81,46 @@ export function ExportDialog({ onClose }: Props) {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
-        isActive ? 'bg-black/30 backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
+        isActive ? 'bg-black/25 backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
       }`}
       onClick={handleClose}
     >
       <div
         onTransitionEnd={handleTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-xl shadow-2xl w-[480px] max-h-[90vh] overflow-auto transition-all duration-200 ${
+        className={`bg-white rounded-2xl shadow-xl w-[480px] max-h-[90vh] overflow-auto transition-all duration-200 ${
           phase === 'entering'
-            ? 'opacity-0 scale-95 translate-y-1'
+            ? 'opacity-0 scale-96 translate-y-2'
             : phase === 'open'
             ? 'opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-95 translate-y-1'
+            : 'opacity-0 scale-96 translate-y-2'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <Download className="w-5 h-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-slate-800">导出简历</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
+              <Download className="w-5 h-5 text-primary-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-surface-800">导出简历</h2>
           </div>
-          <button onClick={handleClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+          <button onClick={handleClose} className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4">
+        <div className="p-6 space-y-5">
           <div>
-            <label className="text-sm font-medium text-slate-600 mb-2 block">选择格式</label>
+            <label className="text-sm font-medium text-surface-600 mb-3 block">选择格式</label>
             <div className="space-y-2">
               {formats.map(({ id, label, desc, icon: Icon }) => (
                 <label
                   key={id}
-                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`flex items-start gap-3.5 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
                     selectedFormat === id
-                      ? 'border-primary-500 bg-primary-50/50'
-                      : 'border-slate-200 hover:border-slate-300'
+                      ? 'border-primary-400 bg-primary-50/40'
+                      : 'border-surface-200 hover:border-surface-300'
                   }`}
                 >
                   <input
@@ -129,10 +131,10 @@ export function ExportDialog({ onClose }: Props) {
                     onChange={() => { setSelectedFormat(id); setStatus('idle'); setErrorMsg('') }}
                     className="mt-0.5 accent-primary-600"
                   />
-                  <Icon className={`w-5 h-5 mt-0.5 ${selectedFormat === id ? 'text-primary-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-5 h-5 mt-0.5 ${selectedFormat === id ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div>
-                    <p className="text-sm font-medium text-slate-700">{label}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+                    <p className="text-sm font-medium text-surface-700">{label}</p>
+                    <p className="text-xs text-surface-400 mt-0.5">{desc}</p>
                   </div>
                 </label>
               ))}
@@ -141,7 +143,7 @@ export function ExportDialog({ onClose }: Props) {
 
           {selectedFormat === 'png' && (
             <div>
-              <label className="text-sm font-medium text-slate-600 mb-2 block">清晰度</label>
+              <label className="text-sm font-medium text-surface-600 mb-3 block">清晰度</label>
               <div className="flex gap-2">
                 {[
                   { value: 1, label: '1x' },
@@ -151,10 +153,10 @@ export function ExportDialog({ onClose }: Props) {
                   <button
                     key={value}
                     onClick={() => setScale(value)}
-                    className={`px-4 py-2 text-sm rounded-lg border-2 transition-all ${
+                    className={`px-4 py-2 text-sm rounded-lg border-2 transition-all duration-150 ${
                       scale === value
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        ? 'border-primary-400 bg-primary-50 text-primary-700 font-medium'
+                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
                     }`}
                   >
                     {label}
@@ -165,21 +167,21 @@ export function ExportDialog({ onClose }: Props) {
           )}
 
           {status === 'exporting' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
               <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
               <span className="text-sm text-blue-700">正在导出 {selectedFormat.toUpperCase()}...</span>
             </div>
           )}
 
           {status === 'done' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
-              <Check className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-700">导出完成！</span>
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span className="text-sm text-emerald-700">导出完成！</span>
             </div>
           )}
 
           {status === 'error' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 border border-red-100">
               <AlertCircle className="w-4 h-4 text-red-500" />
               <span className="text-sm text-red-700">{errorMsg}</span>
             </div>
@@ -187,7 +189,7 @@ export function ExportDialog({ onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-200">
+        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-surface-100">
           <button onClick={handleClose} className="btn-secondary" disabled={status === 'exporting'}>
             取消
           </button>

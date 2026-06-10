@@ -36,7 +36,7 @@ export function SkillSection() {
         <div className="flex items-center gap-2">
           <Code className="w-4 h-4 text-primary-600" />
           <span className="form-section-title">技能</span>
-          <span className="text-xs text-slate-400">({items.length} 组)</span>
+          <span className="text-xs text-surface-400">({items.length} 组)</span>
         </div>
         <button onClick={addGroup} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
@@ -49,7 +49,7 @@ export function SkillSection() {
           <div
             key={group.id}
             className={`border rounded-lg p-3 transition-colors ${
-              overIdx === gIdx && draggedIdx !== gIdx ? 'border-primary-400 bg-primary-50/50' : 'border-slate-200'
+              overIdx === gIdx && draggedIdx !== gIdx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
             } ${draggedIdx === gIdx ? 'opacity-40' : ''}`}
             onDragOver={(e) => onDragOver(e, gIdx)}
             onDrop={() => onDrop(gIdx)}
@@ -59,7 +59,7 @@ export function SkillSection() {
                 draggable
                 onDragStart={() => onDragStart(gIdx)}
                 onDragEnd={onDragEnd}
-                className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-slate-200 transition-colors ${draggedIdx === gIdx ? 'text-primary-500' : 'text-slate-300'}`}
+                className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === gIdx ? 'text-primary-500' : 'text-surface-300'}`}
               >
                 <GripVertical className="w-3.5 h-3.5" />
               </div>
@@ -70,7 +70,7 @@ export function SkillSection() {
                 placeholder="分类名，如：前端技术"
                 maxLength={50}
               />
-              <button onClick={() => removeGroup(gIdx)} className="p-1.5 text-slate-400 hover:text-red-500">
+              <button onClick={() => removeGroup(gIdx)} className="p-1.5 text-surface-400 hover:text-red-500">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -93,13 +93,13 @@ export function SkillSection() {
                         className={`w-4 h-4 rounded-sm border transition-colors ${
                           (skill.level || 0) >= lvl
                             ? 'bg-primary-500 border-primary-500'
-                            : 'bg-slate-100 border-slate-200 hover:border-primary-300'
+                            : 'bg-surface-100 border-surface-200 hover:border-primary-300'
                         }`}
                         title={`${lvl}/5`}
                       />
                     ))}
                   </div>
-                  <button onClick={() => removeSkill(gIdx, sIdx)} className="p-1 text-slate-400 hover:text-red-500">
+                  <button onClick={() => removeSkill(gIdx, sIdx)} className="p-1 text-surface-400 hover:text-red-500">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -113,7 +113,7 @@ export function SkillSection() {
         ))}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-sm text-slate-400">
+          <div className="text-center py-6 text-sm text-surface-400">
             暂无内容，点击上方"添加分组"按钮开始
           </div>
         )}
