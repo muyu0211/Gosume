@@ -30,6 +30,12 @@ Unicode true
 ####
 ## !define REQUEST_EXECUTION_LEVEL "admin"            # Default "admin"  see also https://nsis.sourceforge.io/Docs/Chapter4.html
 ####
+## Override default values before including wails_tools.nsh
+####
+!define INFO_PRODUCTNAME "Gosume"
+!define INFO_COMPANYNAME "muyu"
+
+####
 ## Include the wails tools
 ####
 !include "wails_tools.nsh"
