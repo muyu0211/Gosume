@@ -46,7 +46,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-title">语言能力</div>
                 {{range .Languages}}
-                <div class="sidebar-lang"><span>{{.Name}}</span><span>{{.Level}}</span></div>
+                <div class="sidebar-lang"><span>{{.Name}}</span><span>{{.Level}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span></div>
                 {{end}}
             </div>
             {{end}}

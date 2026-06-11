@@ -91,7 +91,7 @@
         <div class="languages-line">
             <span class="lang-label">语言能力：</span>
             {{range .Languages}}
-            <span><span class="label">{{.Name}}</span> {{.Level}}</span>
+            <span><span class="label">{{.Name}}</span>{{if .Level}} · 熟练程度: {{.Level}}{{end}}{{if .Proficiency}} · 补充说明: {{.Proficiency}}{{end}}</span>
             {{end}}
         </div>
         {{end}}
