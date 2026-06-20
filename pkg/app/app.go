@@ -71,7 +71,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 	// Dependency injection
 	resumeSvc.Inject(resumeStore, htmlRenderer)
-	templateSvc.Inject(templateLoader, templateStore)
+	templateSvc.Inject(wailsApp, templateLoader, templateStore)
 	exportSvc.Inject(wailsApp, exportManager, resumeSvc)
 	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 	systemSvc.Inject(wailsApp, configMgr, win)
@@ -100,7 +100,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		log.Init(newDir, "ResumeCraft", log.INFO, true)
 
 		resumeSvc.Inject(resumeStore, htmlRenderer)
-		templateSvc.Inject(templateLoader, templateStore)
+		templateSvc.Inject(wailsApp, templateLoader, templateStore)
 		fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 
 		wailsApp.Event.Emit("config:datadir-changed", newDir)

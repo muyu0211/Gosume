@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"gosume/pkg/export"
 	"gosume/pkg/model"
@@ -51,14 +50,14 @@ func (s *ExportService) ExportPNG(resumeJSON string, scale float64) (string, err
 func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (string, error) {
 	var resume model.Resume
 	if err := json.Unmarshal([]byte(resumeJSON), &resume); err != nil {
-		return "", fmt.Errorf("parse resume: %w", err)
+		return "", UserWrap(err, "解析简历数据失败")
 	}
 
 	s.wailsApp.Event.Emit("export:progress", 10)
 
 	data, err := s.exportManager.Export(&resume, opts)
 	if err != nil {
-		return "", fmt.Errorf("export: %w", err)
+		return "", UserWrap(err, "导出失败")
 	}
 
 	s.wailsApp.Event.Emit("export:progress", 70)
@@ -73,17 +72,17 @@ func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (
 		},
 	}).PromptForSingleSelection()
 	if err != nil {
-		if strings.Contains(err.Error(), "cancelled") || strings.Contains(err.Error(), "canceled") {
+		if IsCancel(err) {
 			return "", nil
 		}
-		return "", err
+		return "", UserWrap(err, "打开保存对话框失败")
 	}
 	if filePath == "" {
 		return "", nil
 	}
 
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return "", fmt.Errorf("write file: %w", err)
+		return "", UserWrap(err, "写入文件失败")
 	}
 
 	resume.Meta.ExportCount++

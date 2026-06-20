@@ -2,16 +2,20 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"gosume/pkg/model"
 	"gosume/pkg/store"
 	"gosume/pkg/template"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // TemplateService manages template listing and operations.
 type TemplateService struct {
-	loader *template.Loader
-	store  *store.TemplateStore
+	wailsApp *application.App
+	loader   *template.Loader
+	store    *store.TemplateStore
 }
 
 // ServiceName returns the service name.
@@ -20,7 +24,8 @@ func (s *TemplateService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *TemplateService) Inject(loader *template.Loader, store *store.TemplateStore) {
+func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *store.TemplateStore) {
+	s.wailsApp = app
 	s.loader = loader
 	s.store = store
 }
@@ -46,26 +51,12 @@ type GetTemplateMeta struct {
 func (s *TemplateService) ListTemplates() ([]GetTemplateMeta, error) {
 	templates, err := s.loader.LoadAll()
 	if err != nil {
-		return nil, err
+		return nil, UserWrap(err, "加载模板列表失败")
 	}
 
 	var metas []GetTemplateMeta
 	for _, t := range templates {
-		metas = append(metas, GetTemplateMeta{
-			ID:             t.Meta.ID,
-			Name:           t.Meta.Name,
-			Version:        t.Meta.Version,
-			Author:         t.Meta.Author,
-			Description:    t.Meta.Description,
-			Category:       t.Meta.Category,
-			Tags:           t.Meta.Tags,
-			TargetLanguage: t.Meta.TargetLanguage,
-			PageCount:      t.Meta.PageCount,
-			PaperSize:      t.Meta.PaperSize,
-			Colors:         t.Meta.Colors,
-			Features:       t.Meta.Features,
-			IsBuiltin:      t.IsBuiltin,
-		})
+		metas = append(metas, toGetTemplateMeta(t))
 	}
 	return metas, nil
 }
@@ -76,21 +67,8 @@ func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &GetTemplateMeta{
-		ID:             t.Meta.ID,
-		Name:           t.Meta.Name,
-		Version:        t.Meta.Version,
-		Author:         t.Meta.Author,
-		Description:    t.Meta.Description,
-		Category:       t.Meta.Category,
-		Tags:           t.Meta.Tags,
-		TargetLanguage: t.Meta.TargetLanguage,
-		PageCount:      t.Meta.PageCount,
-		PaperSize:      t.Meta.PaperSize,
-		Colors:         t.Meta.Colors,
-		Features:       t.Meta.Features,
-		IsBuiltin:      t.IsBuiltin,
-	}, nil
+	meta := toGetTemplateMeta(t)
+	return &meta, nil
 }
 
 // TemplateContent is the HTML+CSS content for a template.
@@ -111,6 +89,71 @@ func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error
 	}, nil
 }
 
+// ImportTemplateResult is returned after a user template package is installed.
+type ImportTemplateResult struct {
+	ID      string          `json:"id"`
+	Name    string          `json:"name"`
+	Version string          `json:"version"`
+	Meta    GetTemplateMeta `json:"meta"`
+}
+
+// ImportTemplatePackage opens a native file dialog and imports a local template package.
+func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error) {
+	if s.wailsApp == nil {
+		return nil, UserMsg("应用未初始化")
+	}
+
+	filePath, err := s.wailsApp.Dialog.OpenFile().
+		SetTitle("导入模板包").
+		AddFilter("Gosume 模板包 (*.gosume-template)", "*.gosume-template").
+		AddFilter("ZIP 文件 (*.zip)", "*.zip").
+		AddFilter("所有文件 (*.*)", "*.*").
+		CanChooseFiles(true).
+		PromptForSingleSelection()
+	if err != nil {
+		if IsCancel(err) {
+			return nil, nil
+		}
+		return nil, UserWrap(err, "打开文件对话框失败")
+	}
+	if filePath == "" {
+		return nil, nil
+	}
+	return s.importTemplatePackageFromPath(filePath)
+}
+
+func (s *TemplateService) importTemplatePackageFromPath(filePath string) (*ImportTemplateResult, error) {
+	if strings.TrimSpace(filePath) == "" {
+		return nil, UserMsg("模板包路径不能为空")
+	}
+
+	pkg, err := template.LoadPackageFromZip(filePath)
+	if err != nil {
+		return nil, UserWrap(err, "无法解析模板包，请检查文件格式")
+	}
+
+	if existing, _ := s.loader.LoadByID(pkg.Meta.ID); existing != nil {
+		return nil, UserMsg("模板已存在")
+	}
+
+	if err := s.store.Create(pkg.Meta, pkg.HTML, pkg.CSS); err != nil {
+		return nil, UserWrap(err, "保存模板失败")
+	}
+
+	meta := toGetTemplateMeta(&template.Template{
+		Meta:      pkg.Meta,
+		HTML:      pkg.HTML,
+		CSS:       pkg.CSS,
+		IsBuiltin: false,
+	})
+	return &ImportTemplateResult{
+		ID:      pkg.Meta.ID,
+		Name:    pkg.Meta.Name,
+		Version: pkg.Meta.Version,
+		Meta:    meta,
+	}, nil
+}
+
 // ValidateForTemplate checks if the current resume data satisfies template requirements.
 func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.Resume) *template.ValidationResult {
 	t, err := s.loader.LoadByID(templateID)
@@ -126,30 +169,30 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 // CreateTemplate creates a new user template.
 func (s *TemplateService) CreateTemplate(meta template.Meta, html, css string) error {
 	if meta.ID == "" {
-		return fmt.Errorf("template ID is required")
+		return UserMsg("模板 ID 不能为空")
 	}
-	return s.store.Create(meta, html, css)
+	return UserWrap(s.store.Create(meta, html, css), "创建模板失败")
 }
 
 // UpdateTemplate updates an existing user template.
 func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, html, css string) error {
-	return s.store.Update(id, meta, html, css)
+	return UserWrap(s.store.Update(id, meta, html, css), "更新模板失败")
 }
 
 // DeleteTemplate soft-deletes a user template.
 func (s *TemplateService) DeleteTemplate(id string) error {
-	return s.store.SoftDelete(id)
+	return UserWrap(s.store.SoftDelete(id), "删除模板失败")
 }
 
 // CloneTemplate duplicates a template (built-in or user) as a new user template.
 func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 	if newID == "" {
-		return fmt.Errorf("new template ID is required")
+		return UserMsg("新模板 ID 不能为空")
 	}
 
 	src, err := s.loader.LoadByID(sourceID)
 	if err != nil {
-		return err
+		return UserWrap(err, "源模板不存在")
 	}
 
 	meta := src.Meta
@@ -158,8 +201,26 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 
 	// Check for ID conflict
 	if existing, _ := s.loader.LoadByID(newID); existing != nil {
-		return fmt.Errorf("template ID %s already exists", newID)
+		return UserMsg("模板 ID 已被占用")
 	}
 
-	return s.store.Create(meta, src.HTML, src.CSS)
+	return UserWrap(s.store.Create(meta, src.HTML, src.CSS), "克隆模板失败")
+}
+
+func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
+	return GetTemplateMeta{
+		ID:             t.Meta.ID,
+		Name:           t.Meta.Name,
+		Version:        t.Meta.Version,
+		Author:         t.Meta.Author,
+		Description:    t.Meta.Description,
+		Category:       t.Meta.Category,
+		Tags:           t.Meta.Tags,
+		TargetLanguage: t.Meta.TargetLanguage,
+		PageCount:      t.Meta.PageCount,
+		PaperSize:      t.Meta.PaperSize,
+		Colors:         t.Meta.Colors,
+		Features:       t.Meta.Features,
+		IsBuiltin:      t.IsBuiltin,
+	}
 }

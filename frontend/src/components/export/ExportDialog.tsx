@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
+import { extractErrorMessage } from '../../lib/error-utils'
 
 interface Props {
   onClose: () => void
@@ -71,7 +72,7 @@ export function ExportDialog({ onClose }: Props) {
       closingTimeout.current = setTimeout(() => handleClose(), 800)
     } catch (err) {
       console.error('Export failed:', err)
-      setErrorMsg(err instanceof Error ? err.message : '导出失败，请重试')
+      setErrorMsg(extractErrorMessage(err, '导出失败，请重试'))
       setStatus('error')
     }
   }, [resume, selectedFormat, scale, handleClose])

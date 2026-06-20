@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useResumeStore } from '../../stores/resumeStore'
-import { getCachedThumbnails } from '../../services/thumbnailService'
-import { Check, ChevronDown, Layout } from 'lucide-react'
+import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumbnailService'
+import { importTemplatePackage, loadTemplateMetas } from '../../services/templateService'
+import { extractErrorMessage } from '../../lib/error-utils'
+import { Check, ChevronDown, Layout, Loader2, Upload } from 'lucide-react'
 
 const FALLBACK_COLORS: Record<string, string> = {
   modern: '#2563EB',
@@ -19,9 +21,12 @@ export function TemplateSwitcher() {
   const thumbnails = useTemplateStore((s) => s.thumbnails)
   const setActiveTemplate = useTemplateStore((s) => s.setActiveTemplate)
   const updateField = useResumeStore((s) => s.updateField)
+  const setTemplates = useTemplateStore((s) => s.setTemplates)
 
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const exitTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
@@ -73,6 +78,28 @@ export function TemplateSwitcher() {
     updateField('meta.template_id', id)
     close()
   }, [setActiveTemplate, updateField, close])
+
+  const handleImport = useCallback(async () => {
+    setImporting(true)
+    setImportError('')
+    try {
+      const result = await importTemplatePackage()
+      if (!result) return
+
+      const metas = await loadTemplateMetas()
+      setTemplates(metas)
+      setActiveTemplate(result.id)
+      updateField('meta.template_id', result.id)
+
+      const ids = metas.map((m) => m.id)
+      generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
+    } catch (err) {
+      console.error('Import template failed:', err)
+      setImportError(extractErrorMessage(err, '模板导入失败'))
+    } finally {
+      setImporting(false)
+    }
+  }, [setActiveTemplate, setTemplates, setThumbnails, updateField])
 
   return (
     <div ref={ref} className="relative">
@@ -138,6 +165,21 @@ export function TemplateSwitcher() {
               </button>
             )
           })}
+          </div>
+          <div className="border-t border-surface-100 p-2">
+            {importError && (
+              <div className="mb-2 px-2 py-1.5 rounded-md bg-red-50 text-[11px] text-red-600 leading-relaxed">
+                {importError}
+              </div>
+            )}
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-60"
+            >
+              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              导入模板包
+            </button>
           </div>
         </div>
       )}

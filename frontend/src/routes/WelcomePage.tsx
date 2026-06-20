@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List } from 'lucide-react'
+import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2 } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
-import { loadTemplateMetas, loadTemplateContent } from '../services/templateService'
+import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
 import { renderTemplate } from '../lib/template-engine'
+import { extractErrorMessage } from '../lib/error-utils'
 import { createSampleResume } from '../services/sampleData'
 import { callService } from '../services/backend'
 import { generateAllThumbnails } from '../services/thumbnailService'
@@ -18,6 +19,8 @@ export function WelcomePage() {
   const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
   const [showDrawer, setShowDrawer] = useState(false)
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
+  const [importingTemplate, setImportingTemplate] = useState(false)
+  const [importError, setImportError] = useState('')
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
   const setActiveTemplate = useTemplateStore((s) => s.setActiveTemplate)
@@ -108,6 +111,23 @@ export function WelcomePage() {
     navigate('/editor')
   }
 
+  const handleImportTemplate = async () => {
+    setImportingTemplate(true)
+    setImportError('')
+    try {
+      const result = await importTemplatePackage()
+      if (result) {
+        setActiveTemplate(result.id)
+        await loadData()
+      }
+    } catch (err) {
+      console.error('Import template failed:', err)
+      setImportError(extractErrorMessage(err, '模板导入失败，请检查模板包格式'))
+    } finally {
+      setImportingTemplate(false)
+    }
+  }
+
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
@@ -122,6 +142,15 @@ export function WelcomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleImportTemplate}
+            disabled={importingTemplate}
+            className="btn-secondary btn-sm"
+            title="导入 .gosume-template 模板包"
+          >
+            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            导入模板
+          </button>
           <button
             onClick={() => navigate('/settings')}
             className="btn-ghost btn-sm"
@@ -145,6 +174,15 @@ export function WelcomePage() {
           </button>
         </div>
       </header>
+
+      {importError && (
+        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>{importError}</span>
+          <button onClick={() => setImportError('')} className="text-red-500 hover:text-red-700 text-xs font-medium">
+            关闭
+          </button>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto px-8 pb-8">

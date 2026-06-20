@@ -116,28 +116,28 @@ func (s *SystemService) SetDataDir(newDir string) error {
 	// Validate the new directory exists and is a directory.
 	info, err := os.Stat(newDir)
 	if err != nil {
-		return fmt.Errorf("访问目录失败: %w", err)
+		return UserWrap(err, "访问目录失败")
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("所选路径不是目录")
+		return UserMsg("所选路径不是目录")
 	}
 
 	// Create subdirectories at the new location.
 	for _, sub := range []string{"autosave", "templates", "log"} {
 		if err := os.MkdirAll(filepath.Join(newDir, sub), 0755); err != nil {
-			return fmt.Errorf("创建子目录 %s 失败: %w", sub, err)
+			return UserWrap(err, "创建子目录失败")
 		}
 	}
 
 	// Migrate existing data from old to new directory, tracking what was moved.
 	migrated, err := migrateDataDir(oldDir, newDir)
 	if err != nil {
-		return fmt.Errorf("迁移数据失败: %w", err)
+		return UserWrap(err, "迁移数据失败")
 	}
 
 	// Persist config and fire OnChange callbacks (stores switch to newDir).
 	if err := s.configMgr.SetDataDir(newDir); err != nil {
-		return fmt.Errorf("保存配置失败: %w", err)
+		return UserWrap(err, "保存配置失败")
 	}
 
 	// Clean up old data directory — only remove items that were successfully migrated.

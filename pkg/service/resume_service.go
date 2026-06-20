@@ -89,12 +89,12 @@ func (s *ResumeService) UpdateField(path string, value json.RawMessage) error {
 
 	if s.current == nil {
 		log.Error("[resume_service] no resume loaded")
-		return fmt.Errorf("no resume loaded")
+		return UserMsg("未加载简历")
 	}
 
 	if err := model.SetFieldByPath(s.current, path, value); err != nil {
 		log.Error("[resume_service] update field %s: %v", path, err)
-		return fmt.Errorf("update field %s: %w", path, err)
+		return UserWrap(err, "更新字段失败")
 	}
 
 	s.current.Meta.UpdatedAt = time.Now()
@@ -125,7 +125,7 @@ func (s *ResumeService) AutoSave() error {
 
 	if err := s.store.Update(s.currentID, s.current); err != nil {
 		log.Error("[resume_service] auto save resume: %v", err)
-		return fmt.Errorf("auto save resume: %w", err)
+		return UserWrap(err, "自动保存失败")
 	}
 	log.Info("[resume_service] AutoSave: updated id=%s", s.currentID)
 	return nil
@@ -138,7 +138,7 @@ func (s *ResumeService) UpdateResumeMeta(templateID string) error {
 
 	if s.current == nil {
 		log.Error("[resume_service] no resume loaded")
-		return fmt.Errorf("no resume loaded")
+		return UserMsg("未加载简历")
 	}
 
 	s.current.Meta.TemplateID = templateID
@@ -155,7 +155,7 @@ func (s *ResumeService) ListResumes() ([]store.ResumeListItem, error) {
 func (s *ResumeService) LoadResume(id string) (*model.Resume, error) {
 	resume, err := s.store.GetByID(id)
 	if err != nil {
-		return nil, fmt.Errorf("load resume: %w", err)
+		return nil, UserWrap(err, "加载简历失败")
 	}
 
 	s.mu.Lock()
@@ -183,7 +183,7 @@ func (s *ResumeService) saveResume() error {
 	defer s.mu.Unlock()
 
 	if s.current == nil {
-		return fmt.Errorf("no resume loaded")
+		return UserMsg("未加载简历")
 	}
 
 	s.current.Meta.UpdatedAt = time.Now()
@@ -192,7 +192,7 @@ func (s *ResumeService) saveResume() error {
 		log.Info("[resume_service] saveResume: CREATING new resume (first persist)")
 		id, err := s.store.Create(s.current)
 		if err != nil {
-			return fmt.Errorf("create resume: %w", err)
+			return UserWrap(err, "创建简历失败")
 		}
 		s.currentID = id
 		s.persisted = true

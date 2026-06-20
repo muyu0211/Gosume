@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"gosume/pkg/model"
 	"gosume/pkg/store"
 
@@ -42,7 +40,7 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 
 	resume, err := s.store.Load(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("open project: %w", err)
+		return nil, UserWrap(err, "打开项目失败")
 	}
 
 	s.resumeService.SetResume(resume)
@@ -55,7 +53,7 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 func (s *FileService) SaveProject(filePath string) (string, error) {
 	resume := s.resumeService.GetResume()
 	if resume == nil {
-		return "", fmt.Errorf("no resume to save")
+		return "", UserMsg("未加载简历，无法保存")
 	}
 
 	if filePath == "" {
@@ -68,12 +66,15 @@ func (s *FileService) SaveProject(filePath string) (string, error) {
 			},
 		}).PromptForSingleSelection()
 		if err != nil || filePath == "" {
-			return "", err
+			if IsCancel(err) {
+				return "", nil
+			}
+			return "", UserWrap(err, "打开保存对话框失败")
 		}
 	}
 
 	if err := s.store.Save(filePath, resume); err != nil {
-		return "", fmt.Errorf("save project: %w", err)
+		return "", UserWrap(err, "保存项目失败")
 	}
 
 	s.wailsApp.Event.Emit("file:saved", filePath)

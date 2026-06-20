@@ -26,7 +26,10 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
       }
       return html
     },
+    i18n: (lang, zhKey, enKey) => lang === 'zh-CN' ? zhKey : enKey,
     nl2br: (s) => escapeHtml(s).replace(/\n/g, '<br>'),
+    safeHTML: (s) => s,
+    defaultVal: (defaultVal, val) => val || defaultVal,
   }
 
   // Merge CSS as a named sub-template

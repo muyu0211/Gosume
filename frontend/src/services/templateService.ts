@@ -5,6 +5,13 @@ import type { TemplateSet } from '../lib/template-engine'
 const TEMPLATES_KEY = 'resume-craft-templates'
 const TEMPLATES_VERSION = 2
 
+export interface ImportTemplateResult {
+  id: string
+  name: string
+  version: string
+  meta: TemplateMeta
+}
+
 /**
  * Loads template metadata and content. In Wails mode, calls Go TemplateService.
  * In dev mode, loads built-in templates from the bundled definitions.
@@ -46,6 +53,13 @@ export async function loadTemplateContent(templateId: string): Promise<TemplateS
     } catch { /* fallback to built-in */ }
   }
   return getBuiltinTemplateContent(templateId)
+}
+
+export async function importTemplatePackage(): Promise<ImportTemplateResult | null> {
+  if (!isWails()) {
+    throw new Error('模板导入需要在 Gosume 桌面应用中使用')
+  }
+  return callService<ImportTemplateResult>('TemplateService', 'ImportTemplatePackage')
 }
 
 export async function saveTemplateMetas(templates: TemplateMeta[]): Promise<void> {
