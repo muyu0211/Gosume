@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
@@ -86,6 +86,14 @@ export function WelcomePage() {
     clearResume()
     setActiveTemplate(templateId)
     await newResume(templateId)
+    navigate('/editor')
+  }
+
+  const handlePreviewWithSample = (templateId: string) => {
+    clearResume()
+    setActiveTemplate(templateId)
+    const sampleResume = createSampleResume(templateId)
+    setResume(sampleResume)
     navigate('/editor')
   }
 
@@ -213,6 +221,7 @@ export function WelcomePage() {
                 template={tmpl}
                 previewHtml={previewHtmls[tmpl.id]}
                 onSelect={() => handleNewResume(tmpl.id)}
+                onPreview={() => handlePreviewWithSample(tmpl.id)}
                 index={i}
               />
             ))}
@@ -315,12 +324,13 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
   )
 }
 
-function TemplateCard({ template, previewHtml, onSelect, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; index?: number }) {
+function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; onPreview: () => void; index?: number }) {
   const IFRAME_W = 800
   const IFRAME_H = IFRAME_W * (297 / 210)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
+  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -338,6 +348,8 @@ function TemplateCard({ template, previewHtml, onSelect, index = 0 }: { template
   return (
     <div
       onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
       style={{ animationDelay: `${index * 60}ms` }}
     >
@@ -360,6 +372,34 @@ function TemplateCard({ template, previewHtml, onSelect, index = 0 }: { template
             <div className="w-8 h-8 rounded-full border-2 border-surface-200 border-t-surface-400 animate-spin" />
           </div>
         )}
+
+        {/* Hover blur overlay + preview button — slides in from right */}
+        <div
+          className="absolute inset-y-0 right-0 flex items-center justify-center transition-transform duration-300 ease-out"
+          style={{
+            width: '33.333%',
+            transform: isHovered ? 'translateX(0)' : 'translateX(100%)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Gaussian blur backdrop */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backdropFilter: 'blur(12px) saturate(1.2)',
+              WebkitBackdropFilter: 'blur(12px) saturate(1.2)',
+              background: 'rgba(255,255,255,0.25)',
+            }}
+          />
+          {/* Preview button on top of blur */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreview() }}
+            className="relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium shadow-lg hover:bg-primary-700 active:scale-95 transition-all duration-150"
+          >
+            <Eye className="w-4 h-4" />
+            预览
+          </button>
+        </div>
       </div>
       {/* Meta info */}
       <div className="p-3.5 border-t border-surface-100">

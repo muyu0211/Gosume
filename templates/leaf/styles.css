@@ -98,16 +98,6 @@ body {
     text-align: center;
 }
 
-/* Main Grid */
-.main-grid {
-    display: flex;
-    gap: 16pt;
-}
-
-.col-main { flex: 1.6; }
-
-.col-side { flex: 1; }
-
 /* Section Titles */
 .section-title {
     font-size: 10pt;

@@ -26,112 +26,106 @@
         <div class="card summary">{{nl2br .Summary}}</div>
         {{end}}
 
-        <div class="main-grid">
-            <div class="col-main">
-                <!-- Work Experience -->
-                {{if .Jobs}}
-                <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
-                {{range .Jobs}}
-                <div class="card experience-item">
-                    <div class="exp-header">
-                        <div>
-                            <span class="company">{{.Company}}</span>
-                        </div>
-                        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
-                    </div>
-                    {{if .Title}}<div class="title">{{.Title}}</div>{{end}}
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-                    {{if .Highlights}}
-                    <ul class="highlights">
-                        {{range .Highlights}}
-                        <li>{{.}}</li>
-                        {{end}}
-                    </ul>
-                    {{end}}
+        <!-- Work Experience -->
+        {{if .Jobs}}
+        <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
+        {{range .Jobs}}
+        <div class="card experience-item">
+            <div class="exp-header">
+                <div>
+                    <span class="company">{{.Company}}</span>
                 </div>
-                {{end}}
-                {{end}}
-
-                <!-- Projects -->
-                {{if .Projects}}
-                <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
-                {{range .Projects}}
-                <div class="card experience-item">
-                    <div class="exp-header">
-                        <span class="company">{{.Name}}</span>
-                        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
-                    </div>
-                    {{if .Role}}<div class="title">{{.Role}}</div>{{end}}
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-                    {{if .Highlights}}
-                    <ul class="highlights">
-                        {{range .Highlights}}
-                        <li>{{.}}</li>
-                        {{end}}
-                    </ul>
-                    {{end}}
-                </div>
-                {{end}}
-                {{end}}
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
-
-            <div class="col-side">
-                <!-- Education -->
-                {{if .Education}}
-                <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-                {{range .Education}}
-                <div class="card education-item">
-                    <div class="edu-school">{{.School}}</div>
-                    <div class="edu-detail">{{.Degree}}{{if .Major}} · {{.Major}}{{end}}</div>
-                    {{if .StartDate}}<div class="edu-date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</div>{{end}}
-                    {{if .GPA}}<div class="edu-gpa">GPA: {{.GPA}}</div>{{end}}
-                </div>
+            {{if .Title}}<div class="title">{{.Title}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
                 {{end}}
-                {{end}}
-
-                <!-- Skills -->
-                {{if .Skills}}
-                <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
-                <div class="card skill-card">
-                    {{range .Skills}}
-                    <div class="skill-category">
-                        <h4>{{.Category}}</h4>
-                        {{range .Items}}
-                        <div class="skill-item">
-                            <span>{{.Name}}</span>
-                            {{if .Level}}<div class="skill-dots">{{skillLevel .Level}}</div>{{end}}
-                        </div>
-                        {{end}}
-                    </div>
-                    {{end}}
-                </div>
-                {{end}}
-
-                <!-- Languages -->
-                {{if .Languages}}
-                <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
-                <div class="card">
-                    {{range .Languages}}
-                    <div class="lang-item"><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}</div>
-                    {{end}}
-                </div>
-                {{end}}
-
-                <!-- Awards -->
-                {{if .Awards}}
-                <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
-                <div class="card">
-                    {{range .Awards}}
-                    <div class="award-item">
-                        <div class="award-title">{{.Title}}</div>
-                        {{if .Date}}<div class="award-date">{{.Date}}</div>{{end}}
-                        {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
-                    </div>
-                    {{end}}
-                </div>
-                {{end}}
-            </div>
+            </ul>
+            {{end}}
         </div>
+        {{end}}
+        {{end}}
+
+        <!-- Projects -->
+        {{if .Projects}}
+        <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
+        {{range .Projects}}
+        <div class="card experience-item">
+            <div class="exp-header">
+                <span class="company">{{.Name}}</span>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
+            </div>
+            {{if .Role}}<div class="title">{{.Role}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Education -->
+        {{if .Education}}
+        <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
+        {{range .Education}}
+        <div class="card education-item">
+            <div class="edu-school">{{.School}}</div>
+            <div class="edu-detail">{{.Degree}}{{if .Major}} · {{.Major}}{{end}}</div>
+            {{if .StartDate}}<div class="edu-date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</div>{{end}}
+            {{if .GPA}}<div class="edu-gpa">GPA: {{.GPA}}</div>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
+        <div class="card skill-card">
+            {{range .Skills}}
+            <div class="skill-category">
+                <h4>{{.Category}}</h4>
+                {{range .Items}}
+                <div class="skill-item">
+                    <span>{{.Name}}</span>
+                    {{if .Level}}<div class="skill-dots">{{skillLevel .Level}}</div>{{end}}
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
+        <div class="card">
+            {{range .Languages}}
+            <div class="lang-item"><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}</div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Awards -->
+        {{if .Awards}}
+        <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
+        <div class="card">
+            {{range .Awards}}
+            <div class="award-item">
+                <div class="award-title">{{.Title}}</div>
+                {{if .Date}}<div class="award-date">{{.Date}}</div>{{end}}
+                {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
+            </div>
+            {{end}}
+        </div>
+        {{end}}
 
         <!-- Custom -->
         {{if .Custom}}

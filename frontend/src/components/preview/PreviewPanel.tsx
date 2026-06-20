@@ -25,11 +25,16 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   const container = originalPage.querySelector('.resume-container') as HTMLElement | null
   if (!container) return 1
 
+  // Detect if the container uses a horizontal flex layout.
+  // Children in such layouts sit side-by-side and must stay together
+  // — splitting them across pages produces a broken appearance.
+  const containerStyle = doc.defaultView!.getComputedStyle(container)
+  const isRowLayout =
+    containerStyle.display === 'flex' && containerStyle.flexDirection === 'row'
+
   const sections = Array.from(container.children) as HTMLElement[]
   if (sections.length === 0) return 1
 
-  // Set up body for paginated view before building pages,
-  // so that pages are in the DOM during overflow checks.
   body.className = ''
   body.style.background = '#e5e7eb'
   body.style.margin = '0'
@@ -39,6 +44,64 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   wrapper.className = 'resume-pages-wrapper'
   body.replaceChildren(wrapper)
 
+  // Row layouts: first child is typically a fixed sidebar, second contains
+  // flowing content. Repeat the sidebar on each page while splitting the
+  // flowing content's children across pages.
+  if (isRowLayout) {
+    const sidebar = sections[0]
+    const flowing = sections.length >= 2 ? sections[1] : null
+    const extra = sections.slice(2)
+
+    // Build the list of items to flow across pages:
+    // everything inside the flowing container, plus any extra top-level sections
+    const flowItems: HTMLElement[] = []
+    if (flowing) {
+      flowItems.push(...(Array.from(flowing.children) as HTMLElement[]))
+    }
+    for (const sec of extra) {
+      flowItems.push(sec)
+    }
+
+    let currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
+    wrapper.appendChild(currentPage)
+    let currentContainer = currentPage.querySelector('.resume-container')!
+    currentContainer.appendChild(sidebar.cloneNode(true))
+    const flowingShell = flowing
+      ? (flowing.cloneNode(false) as HTMLElement)
+      : null
+    if (flowingShell) currentContainer.appendChild(flowingShell)
+    let target = flowingShell || currentContainer
+
+    let count = 1
+
+    for (const item of flowItems) {
+      const clone = item.cloneNode(true) as HTMLElement
+      target.appendChild(clone)
+      void currentPage.offsetHeight
+
+      if (currentPage.scrollHeight > currentPage.offsetHeight + 2) {
+        target.removeChild(clone)
+
+        currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
+        wrapper.appendChild(currentPage)
+        currentContainer = currentPage.querySelector('.resume-container')!
+        currentContainer.appendChild(sidebar.cloneNode(true))
+        const newShell = flowing
+          ? (flowing.cloneNode(false) as HTMLElement)
+          : null
+        if (newShell) currentContainer.appendChild(newShell)
+        target = newShell || currentContainer
+        target.appendChild(clone)
+        count++
+      }
+    }
+
+    void body.offsetHeight
+    iframe.style.height = `${body.scrollHeight}px`
+    return count
+  }
+
+  // Vertical-flow pagination
   let currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
   wrapper.appendChild(currentPage)
   let currentContainer = currentPage.querySelector('.resume-container')!
@@ -50,10 +113,8 @@ function paginateContent(iframe: HTMLIFrameElement): number {
     void currentPage.offsetHeight
 
     if (currentPage.scrollHeight > currentPage.offsetHeight + 2) {
-      // Remove the overflowing section from the current page
       currentContainer.removeChild(clone)
 
-      // Create a new page (already in DOM via wrapper.appendChild below)
       currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
       wrapper.appendChild(currentPage)
       currentContainer = currentPage.querySelector('.resume-container')!
@@ -62,7 +123,6 @@ function paginateContent(iframe: HTMLIFrameElement): number {
     }
   }
 
-  // Force a layout pass so body.scrollHeight reflects the final paginated content
   void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`
 
@@ -207,11 +267,11 @@ export function PreviewPanel() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden flex items-start justify-center py-6">
+    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden">
       <div
         style={{
           width: `${A4_W * effectiveScale}px`,
-          height: `${containerHeight * effectiveScale}px`,
+          margin: '24px auto',
         }}
       >
         <div
@@ -219,6 +279,7 @@ export function PreviewPanel() {
             transform: `scale(${effectiveScale})`,
             transformOrigin: 'top left',
             width: `${A4_W}px`,
+            marginBottom: '8px',
           }}
         >
           <iframe
@@ -228,9 +289,9 @@ export function PreviewPanel() {
             title="简历预览"
             sandbox="allow-same-origin"
           />
-          <div className="text-center py-1.5 text-xs text-surface-400 bg-surface-50 border-t border-surface-100">
-            共 {pageCount} 页 · A4 · {Math.round(effectiveScale * 100)}%
-          </div>
+        </div>
+        <div className="text-center py-1.5 text-xs text-surface-400 bg-surface-50 border-t border-surface-100">
+          共 {pageCount} 页 · A4 · {Math.round(effectiveScale * 100)}%
         </div>
       </div>
     </div>
