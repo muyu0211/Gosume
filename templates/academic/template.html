@@ -20,11 +20,6 @@
             </div>
         </div>
 
-        <!-- Summary -->
-        {{if .Summary}}
-        <div class="summary">{{nl2br .Summary}}</div>
-        {{end}}
-
         <!-- Education — emphasized for academic -->
         {{if .Education}}
         <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
@@ -125,6 +120,12 @@
             <span><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>
             {{end}}
         </div>
+        {{end}}
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="section-title">个人总结</div>
+        <div class="summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom -->

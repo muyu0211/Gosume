@@ -54,11 +54,6 @@
 
         <!-- Main Content -->
         <div class="resume-main">
-            {{if .Summary}}
-            <div class="section-title">个人总结</div>
-            <div class="summary">{{nl2br .Summary}}</div>
-            {{end}}
-
             {{if .Jobs}}
             <div class="section-title">工作经历</div>
             {{range .Jobs}}
@@ -136,6 +131,11 @@
                 {{if .Summary}}<div class="award-desc">{{.Summary}}</div>{{end}}
             </div>
             {{end}}
+            {{end}}
+
+            {{if .Summary}}
+            <div class="section-title">个人总结</div>
+            <div class="summary">{{nl2br .Summary}}</div>
             {{end}}
 
             {{if .Custom}}

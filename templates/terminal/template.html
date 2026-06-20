@@ -30,13 +30,6 @@
             </div><!-- .header-row -->
         </div><!-- .header -->
 
-        {{if .Summary}}
-        <div class="summary-box">
-            <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
-            <div class="summary">{{nl2br .Summary}}</div>
-        </div>
-        {{end}}
-
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-title">
@@ -168,6 +161,14 @@
         </div>
         {{end}}
         {{end}}
+        {{end}}
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="summary-box">
+            <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
+            <div class="summary">{{nl2br .Summary}}</div>
+        </div>
         {{end}}
 
         <!-- Footer -->

@@ -19,11 +19,6 @@
             </div>
         </div>
 
-        <!-- Summary -->
-        {{if .Summary}}
-        <div class="summary">{{nl2br .Summary}}</div>
-        {{end}}
-
         <!-- Work Experience — Timeline Style -->
         {{if .Jobs}}
         <div class="section-title">{{i18n .Meta.Language "职业轨迹" "Career Timeline"}}</div>
@@ -137,6 +132,12 @@
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
         </div>
         {{end}}
+        {{end}}
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="section-title">个人总结</div>
+        <div class="summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom -->

@@ -25,10 +25,6 @@
             </div>
         </div>
 
-        {{if .Summary}}
-        <div class="summary">{{nl2br .Summary}}</div>
-        {{end}}
-
         <!-- Work Experience — with red accent bars -->
         {{if .Jobs}}
         <div class="section-header">
@@ -152,6 +148,15 @@
             </div>
             {{end}}
         </div>
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="section-header">
+            <div class="section-accent"></div>
+            <div class="section-title">个人总结</div>
+        </div>
+        <div class="summary">{{nl2br .Summary}}</div>
+        {{end}}
 
         <!-- Custom -->
         {{if .Custom}}

@@ -55,11 +55,6 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Personal Summary -->
-            {{if .Summary}}
-            <div class="summary">{{nl2br .Summary}}</div>
-            {{end}}
-
             <!-- Work Experience -->
             {{if .Jobs}}
             <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
@@ -141,6 +136,12 @@
                 {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
             </div>
             {{end}}
+            {{end}}
+
+            <!-- Summary -->
+            {{if .Summary}}
+            <div class="section-title">个人总结</div>
+            <div class="summary">{{nl2br .Summary}}</div>
             {{end}}
 
             <!-- Custom Sections -->

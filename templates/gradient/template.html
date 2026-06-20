@@ -27,11 +27,6 @@
             {{if .Personal.Website}}<span class="contact-item">{{.Personal.Website}}</span>{{end}}
         </div>
 
-        <!-- Summary -->
-        {{if .Summary}}
-        <div class="summary">{{nl2br .Summary}}</div>
-        {{end}}
-
         <!-- Two Column Layout -->
         <div class="main-grid">
             <div class="col-main">
@@ -132,6 +127,14 @@
                 {{end}}
             </div>
         </div>
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="summary">
+            <div class="section-title">个人总结</div>
+            {{nl2br .Summary}}
+        </div>
+        {{end}}
 
         <!-- Custom -->
         {{if .Custom}}
