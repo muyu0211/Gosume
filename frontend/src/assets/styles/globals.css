@@ -11,7 +11,7 @@
   --toolbar-height: 48px;
   --statusbar-height: 28px;
   --titlebar-height: 32px;
-  --titlebar-bg: #1C1917;
+  --titlebar-bg: #FAFAF9;
 }
 
 html, body, #root {
@@ -232,6 +232,7 @@ body {
   align-items: center;
   justify-content: space-between;
   background: var(--titlebar-bg);
+  border-bottom: 1px solid #E7E5E4;
   flex-shrink: 0;
   user-select: none;
 }
@@ -273,12 +274,13 @@ body {
 }
 
 .titlebar-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #D6D3D1;
+  background: #E7E5E4;
+  color: #44403C;
 }
 
 .titlebar-btn:active {
-  background: rgba(255, 255, 255, 0.03);
+  background: #D6D3D1;
+  color: #292524;
 }
 
 .titlebar-btn-close:hover {

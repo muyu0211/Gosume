@@ -36,8 +36,8 @@ export function TitleBar() {
           title="最小化"
           aria-label="最小化"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <rect x="0" y="4" width="10" height="1" fill="currentColor" />
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 6h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
         </button>
 
@@ -48,13 +48,13 @@ export function TitleBar() {
           aria-label={isMaximised ? '还原' : '最大化'}
         >
           {isMaximised ? (
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <rect x="3" y="1" width="6" height="6" stroke="currentColor" strokeWidth="1" fill="none" />
-              <rect x="1" y="3" width="6" height="6" stroke="currentColor" strokeWidth="1" fill="#0F172A" />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="3.5" y="2" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="1.5" y="4" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" style={{ fill: 'var(--titlebar-bg)' }} />
             </svg>
           ) : (
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <rect x="1" y="1" width="8" height="8" stroke="currentColor" strokeWidth="1" fill="none" />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="2.5" y="2.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
             </svg>
           )}
         </button>
@@ -65,9 +65,8 @@ export function TitleBar() {
           title="关闭"
           aria-label="关闭"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
-            <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1.2" />
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
