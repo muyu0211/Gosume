@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2 } from 'lucide-react'
+import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
@@ -21,6 +21,8 @@ export function WelcomePage() {
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [importingTemplate, setImportingTemplate] = useState(false)
   const [importError, setImportError] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
   const setActiveTemplate = useTemplateStore((s) => s.setActiveTemplate)
@@ -30,6 +32,16 @@ export function WelcomePage() {
   const setResumeList = useResumeStore((s) => s.setResumeList)
   const setResume = useResumeStore((s) => s.setResume)
   const clearResume = useResumeStore((s) => s.clearResume)
+
+  const totalPages = Math.max(1, Math.ceil(templates.length / PAGE_SIZE))
+  const paginatedTemplates = templates.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  )
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [templates.length])
 
   useEffect(() => {
     loadData()
@@ -194,16 +206,24 @@ export function WelcomePage() {
             </h2>
             <div className="flex-1 h-px bg-surface-200" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {templates.map((tmpl) => (
+          <div className="grid grid-cols-4 gap-5" key={currentPage}>
+            {paginatedTemplates.map((tmpl, i) => (
               <TemplateCard
                 key={tmpl.id}
                 template={tmpl}
                 previewHtml={previewHtmls[tmpl.id]}
                 onSelect={() => handleNewResume(tmpl.id)}
+                index={i}
               />
             ))}
           </div>
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </section>
 
         {/* Recent Files */}
@@ -255,7 +275,47 @@ export function WelcomePage() {
   )
 }
 
-function TemplateCard({ template, previewHtml, onSelect }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void }) {
+function Pagination({ currentPage, totalPages, onPageChange }: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) {
+  return (
+    <div className="flex items-center justify-center gap-1 mt-6">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        aria-label="上一页"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+            page === currentPage
+              ? 'bg-primary-600 text-white shadow-sm'
+              : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        aria-label="下一页"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+function TemplateCard({ template, previewHtml, onSelect, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; index?: number }) {
   const IFRAME_W = 800
   const IFRAME_H = IFRAME_W * (297 / 210)
 
@@ -278,7 +338,8 @@ function TemplateCard({ template, previewHtml, onSelect }: { template: TemplateM
   return (
     <div
       onClick={onSelect}
-      className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5"
+      className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
+      style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Preview area */}
       <div ref={containerRef} className="aspect-[210/297] relative overflow-hidden bg-surface-100">

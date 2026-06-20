@@ -225,6 +225,22 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
+/* Card stagger animation for pagination */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  animation: card-enter 0.25s ease-out both;
+}
+
 /* Title Bar */
 .titlebar {
   height: var(--titlebar-height);
