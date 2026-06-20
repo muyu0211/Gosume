@@ -14,18 +14,20 @@ import (
 )
 
 // BrowserManager manages a shared headless Chromium instance for PDF and PNG rendering.
+// The browser is launched lazily on first use and reused across exports.
 type BrowserManager struct {
 	mu      sync.Mutex
 	browser *rod.Browser
 }
 
 // NewBrowserManager creates a new browser manager. The browser is not launched
-// until the first export call.
+// until the first Acquire() call.
 func NewBrowserManager() *BrowserManager {
 	return &BrowserManager{}
 }
 
 // Acquire returns a connected rod.Browser, launching one if necessary.
+// The browser is shared across all exports in a session.
 func (m *BrowserManager) Acquire() (*rod.Browser, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -67,6 +69,7 @@ func (m *BrowserManager) Close() {
 }
 
 // findBrowser locates a Chromium-based browser on the system.
+// Checks GOSUME_CHROMIUM_PATH env var first, then PATH, then well-known install locations.
 func findBrowser() string {
 	if p := os.Getenv("GOSUME_CHROMIUM_PATH"); p != "" {
 		if _, err := os.Stat(p); err == nil {
@@ -115,7 +118,10 @@ func findBrowser() string {
 
 func floatPtr(v float64) *float64 { return &v }
 
-// RenderPDF renders HTML content to PDF bytes using headless Chromium.
+// RenderPDF renders pre-paginated HTML to PDF bytes.
+// The HTML should contain A4-sized .resume-page divs with page-break-after rules.
+// scale must be 1.0 for correct pagination — larger values cause each page div
+// to overflow A4, producing blank pages after each content page.
 func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange string) ([]byte, error) {
 	browser, err := m.Acquire()
 	if err != nil {
@@ -163,7 +169,8 @@ func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange 
 	return pdf, nil
 }
 
-// RenderPNG renders HTML content to PNG screenshot bytes using headless Chromium.
+// RenderPNG captures pre-paginated HTML as a high-resolution PNG screenshot.
+// scale controls output resolution (1.0 = 794×1123, 2.0 = 1588×2246).
 func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, error) {
 	browser, err := m.Acquire()
 	if err != nil {
@@ -198,7 +205,10 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 	return screenshot, nil
 }
 
-// wrapStandaloneHTML produces a complete HTML document for headless Chromium rendering.
+// wrapStandaloneHTML ensures the HTML is a complete document with @page and body
+// print rules for headless Chromium. If the input is already a full HTML document
+// (has <!DOCTYPE), it injects the CSS into the existing <head>; otherwise it
+// wraps the content in a minimal document.
 func wrapStandaloneHTML(bodyHTML string) string {
 	css := `@page { size: A4; margin: 0; }
 body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }`

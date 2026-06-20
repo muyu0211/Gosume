@@ -4,31 +4,22 @@ import (
 	"fmt"
 
 	"gosume/pkg/log"
-	"gosume/pkg/model"
 )
 
-// PDFExporter exports resumes to PDF format using headless Chromium.
+// PDFExporter converts pre-paginated HTML to PDF via headless Chromium.
 type PDFExporter struct {
-	htmlRenderer HTMLRenderer
-	browser      Browser
+	browser Browser
 }
 
 // NewPDFExporter creates a new PDF exporter.
-func NewPDFExporter(htmlRenderer HTMLRenderer, browser Browser) *PDFExporter {
-	return &PDFExporter{htmlRenderer: htmlRenderer, browser: browser}
+func NewPDFExporter(browser Browser) *PDFExporter {
+	return &PDFExporter{browser: browser}
 }
 
-// Export renders the resume to HTML, then converts it to PDF via headless Chromium.
-func (e *PDFExporter) Export(resume *model.Resume, opts ExportOptions) ([]byte, error) {
-	log.Info("PDF导出: 开始渲染HTML")
-	html, err := e.htmlRenderer.Render(resume)
-	if err != nil {
-		log.Error("PDF导出: HTML渲染失败: %v", err)
-		return nil, fmt.Errorf("pdf export render: %w", err)
-	}
-	log.Info("PDF导出: HTML渲染完成, size=%d", len(html))
-
-	fullHTML := wrapStandaloneHTML(html)
+// ExportHTML wraps the HTML in a standalone document and renders it to PDF.
+// The HTML should already be paginated into .resume-page divs by the frontend.
+func (e *PDFExporter) ExportHTML(htmlContent string, opts ExportOptions) ([]byte, error) {
+	fullHTML := wrapStandaloneHTML(htmlContent)
 
 	scale := opts.Scale
 	if scale <= 0 {

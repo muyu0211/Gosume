@@ -9,7 +9,6 @@ import (
 	"gosume/pkg/config"
 	"gosume/pkg/export"
 	"gosume/pkg/log"
-	"gosume/pkg/model"
 	"gosume/pkg/render"
 	"gosume/pkg/service"
 	"gosume/pkg/store"
@@ -46,7 +45,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 	// Render & export
 	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader})
-	exportManager := initExportManager(htmlRenderer)
+	exportManager := initExportManager()
 
 	// Project store
 	projectStore := store.NewProjectStore(dataDir)
@@ -72,7 +71,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	// Dependency injection
 	resumeSvc.Inject(resumeStore, htmlRenderer)
 	templateSvc.Inject(wailsApp, templateLoader, templateStore)
-	exportSvc.Inject(wailsApp, exportManager, resumeSvc)
+	exportSvc.Inject(wailsApp, exportManager)
 	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 	systemSvc.Inject(wailsApp, configMgr, win)
 
@@ -188,10 +187,9 @@ func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
 	return nil
 }
 
-func initExportManager(htmlRenderer *render.HTMLRenderer) *export.ExportManager {
+func initExportManager() *export.ExportManager {
 	browser := export.NewBrowserManager()
-	adapter := &htmlExportAdapter{renderer: htmlRenderer}
-	return export.NewExportManager(browser, adapter)
+	return export.NewExportManager(browser)
 }
 
 func createWailsApp(assets embed.FS, services []application.Service) (*application.App, *application.WebviewWindow) {
@@ -265,10 +263,4 @@ func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
 	return result, nil
 }
 
-type htmlExportAdapter struct {
-	renderer *render.HTMLRenderer
-}
 
-func (a *htmlExportAdapter) Render(resume *model.Resume) (string, error) {
-	return a.renderer.Render(resume)
-}

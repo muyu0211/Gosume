@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"gosume/pkg/log"
-	"gosume/pkg/model"
 )
 
 // ExportFormat represents the output format.
@@ -28,46 +27,33 @@ type Browser interface {
 	RenderPNG(htmlContent string, scale float64) ([]byte, error)
 }
 
-// HTMLRenderer is the interface for the HTML renderer.
-type HTMLRenderer interface {
-	Render(resume *model.Resume) (string, error)
-}
-
-// ExportManager coordinates exporting resumes to various formats.
+// ExportManager converts pre-paginated HTML to PDF or PNG via headless Chromium.
+// Template rendering and pagination happen on the frontend — the backend only
+// handles the final format conversion.
 type ExportManager struct {
 	pdfExporter *PDFExporter
 	pngExporter *PNGExporter
-	browser     Browser
 }
 
 // NewExportManager creates a new export manager.
-func NewExportManager(browser Browser, html HTMLRenderer) *ExportManager {
+func NewExportManager(browser Browser) *ExportManager {
 	return &ExportManager{
-		pdfExporter: NewPDFExporter(html, browser),
-		pngExporter: NewPNGExporter(html, browser),
-		browser:     browser,
+		pdfExporter: NewPDFExporter(browser),
+		pngExporter: NewPNGExporter(browser),
 	}
 }
 
-// Export renders and exports the resume to the specified format.
-func (m *ExportManager) Export(resume *model.Resume, opts ExportOptions) ([]byte, error) {
-	var result []byte
-	var err error
-
+// ExportHTML converts pre-rendered, pre-paginated HTML to the target format.
+// The frontend is responsible for template rendering and splitting content into
+// A4-sized .resume-page divs before calling this method.
+func (m *ExportManager) ExportHTML(htmlContent string, opts ExportOptions) ([]byte, error) {
 	switch opts.Format {
 	case FormatPDF:
-		result, err = m.pdfExporter.Export(resume, opts)
+		return m.pdfExporter.ExportHTML(htmlContent, opts)
 	case FormatPNG:
-		result, err = m.pngExporter.Export(resume, opts)
+		return m.pngExporter.ExportHTML(htmlContent, opts)
 	default:
 		log.Error("不支持的导出格式: %s", opts.Format)
 		return nil, fmt.Errorf("unsupported format: %s", opts.Format)
 	}
-
-	if err != nil {
-		log.Error("导出失败: format=%s err=%v", opts.Format, err)
-		return nil, err
-	}
-
-	return result, nil
 }

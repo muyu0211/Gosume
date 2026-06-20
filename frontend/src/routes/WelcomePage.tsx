@@ -89,10 +89,11 @@ export function WelcomePage() {
     navigate('/editor')
   }
 
-  const handlePreviewWithSample = (templateId: string) => {
+  const handlePreviewWithSample = async (templateId: string) => {
     clearResume()
     setActiveTemplate(templateId)
     const sampleResume = createSampleResume(templateId)
+    await callService('ResumeService', 'InitResume', sampleResume)
     setResume(sampleResume)
     navigate('/editor')
   }

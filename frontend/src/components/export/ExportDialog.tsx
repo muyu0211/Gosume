@@ -3,6 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/error-utils'
+import { generateExportHTML } from '../../lib/export-html'
 
 interface Props {
   onClose: () => void
@@ -18,6 +19,7 @@ type Phase = 'entering' | 'open' | 'exiting'
 
 export function ExportDialog({ onClose }: Props) {
   const resume = useResumeStore((s) => s.resume)
+  const previewHtml = useResumeStore((s) => s.previewHtml)
   const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'png'>('pdf')
   const [scale, setScale] = useState(1.5)
   const [status, setStatus] = useState<ExportStatus>('idle')
@@ -49,16 +51,22 @@ export function ExportDialog({ onClose }: Props) {
     setStatus('exporting')
     setErrorMsg('')
 
+    if (!previewHtml) {
+      setErrorMsg('预览尚未就绪，请稍候再试')
+      setStatus('error')
+      return
+    }
+
     try {
-      const resumeJSON = JSON.stringify(resume)
+      const paginatedHtml = await generateExportHTML(previewHtml)
       let filePath: string | null = null
 
       switch (selectedFormat) {
         case 'pdf':
-          filePath = await callService<string>('ExportService', 'ExportPDF', resumeJSON, 1.0, '')
+          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'pdf', 1.0)
           break
         case 'png':
-          filePath = await callService<string>('ExportService', 'ExportPNG', resumeJSON, scale)
+          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'png', scale)
           break
       }
 
@@ -75,7 +83,7 @@ export function ExportDialog({ onClose }: Props) {
       setErrorMsg(extractErrorMessage(err, '导出失败，请重试'))
       setStatus('error')
     }
-  }, [resume, selectedFormat, scale, handleClose])
+  }, [resume, previewHtml, selectedFormat, scale, handleClose])
 
   const isActive = phase === 'open' || phase === 'entering'
 

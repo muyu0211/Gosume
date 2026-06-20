@@ -75,11 +75,26 @@ func (s *ResumeService) GetCurrentID() string {
 }
 
 // SetResume replaces the current resume in memory without persisting.
+// It preserves currentID — use InitResume for new/separate resumes that need a fresh identity.
 func (s *ResumeService) SetResume(resume *model.Resume) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	resume.Meta.UpdatedAt = time.Now()
 	s.current = resume
+}
+
+// InitResume sets the current resume and resets identity so the next ExplicitSave
+// creates a new DB row instead of overwriting an existing one.
+// Use this when loading a resume from an external source (file, sample data, etc.)
+// that should be treated as a brand-new resume in the database.
+func (s *ResumeService) InitResume(resume *model.Resume) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	resume.Meta.UpdatedAt = time.Now()
+	s.current = resume
+	s.currentID = ""
+	s.persisted = false
+	log.Info("[resume_service] InitResume: identity reset (will create new row on save)")
 }
 
 // UpdateField updates a field in the current resume by path.
@@ -203,6 +218,30 @@ func (s *ResumeService) saveResume() error {
 	log.Info("[resume_service] saveResume: UPDATING existing id=%s", s.currentID)
 	s.persisted = true
 	return s.store.Update(s.currentID, s.current)
+}
+
+// RenderByID loads a resume by ID and renders it to HTML without affecting
+// the current resume state. Returns the rendered HTML and the resume name.
+func (s *ResumeService) RenderByID(id string) (string, string, error) {
+	resume, err := s.store.GetByID(id)
+	if err != nil {
+		return "", "", err
+	}
+
+	htmlStr, err := s.renderer.Render(resume)
+	if err != nil {
+		return "", "", err
+	}
+
+	name := resume.Personal.FullName
+	if name == "" {
+		name = resume.Meta.Name
+	}
+	if name == "" {
+		name = "未命名简历"
+	}
+
+	return htmlStr, name, nil
 }
 
 // DeleteResume soft-deletes a resume by ID.

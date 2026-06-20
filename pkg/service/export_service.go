@@ -4,18 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gosume/pkg/export"
-	"gosume/pkg/model"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// ExportService handles exporting resumes to various formats.
+// ExportService handles exporting resumes to PDF and PNG formats.
+//
+// Architecture: the frontend handles template rendering and pagination
+// (splitting content into A4 .resume-page divs). The backend only converts
+// the pre-paginated HTML to the target format via headless Chromium.
 type ExportService struct {
 	wailsApp      *application.App
 	exportManager *export.ExportManager
-	resumeService *ResumeService
 }
 
 // ServiceName returns the service name.
@@ -24,48 +28,88 @@ func (s *ExportService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *ExportService) Inject(app *application.App, manager *export.ExportManager, resumeSvc *ResumeService) {
+func (s *ExportService) Inject(app *application.App, manager *export.ExportManager) {
 	s.wailsApp = app
 	s.exportManager = manager
-	s.resumeService = resumeSvc
 }
 
-// ExportPDF exports the resume as a PDF file.
-func (s *ExportService) ExportPDF(resumeJSON string, scale float64, pageRange string) (string, error) {
-	return s.doExport(resumeJSON, export.ExportOptions{
-		Format:    export.FormatPDF,
-		Scale:     scale,
-		PageRange: pageRange,
-	})
-}
+// ── Public API ────────────────────────────────────────────────────────────────
 
-// ExportPNG exports the resume as a PNG file.
-func (s *ExportService) ExportPNG(resumeJSON string, scale float64) (string, error) {
-	return s.doExport(resumeJSON, export.ExportOptions{
-		Format: export.FormatPNG,
-		Scale:  scale,
-	})
-}
-
-func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (string, error) {
-	var resume model.Resume
-	if err := json.Unmarshal([]byte(resumeJSON), &resume); err != nil {
-		return "", UserWrap(err, "解析简历数据失败")
+// ExportHTML exports pre-paginated HTML to the target format.
+// The frontend calls this for individual resume export.
+// format must be "pdf" or "png". For PDF, scale should be 1.0 to avoid
+// content overflow that produces blank pages.
+func (s *ExportService) ExportHTML(htmlContent string, format string, scale float64) (string, error) {
+	opts, err := parseFormat(format, scale)
+	if err != nil {
+		return "", err
 	}
 
 	s.wailsApp.Event.Emit("export:progress", 10)
-
-	data, err := s.exportManager.Export(&resume, opts)
+	data, err := s.renderOne(htmlContent, opts)
 	if err != nil {
-		return "", UserWrap(err, "导出失败")
+		return "", err
 	}
-
 	s.wailsApp.Event.Emit("export:progress", 70)
 
-	defaultName := fmt.Sprintf("%s_简历.%s", resume.Personal.FullName, formatSuffix(opts.Format))
+	defaultName := fmt.Sprintf("简历.%s", formatSuffix(opts.Format))
+	filePath, err := s.showSaveDialog(defaultName, opts, "导出简历")
+	if err != nil || filePath == "" {
+		return filePath, err
+	}
 
+	if err := s.writeFile(filePath, data); err != nil {
+		return "", err
+	}
+
+	s.wailsApp.Event.Emit("export:progress", 100)
+	s.wailsApp.Event.Emit("export:completed", filePath)
+	return filePath, nil
+}
+
+// exportItem is a single pre-paginated HTML item for batch export.
+type exportItem struct {
+	Name string `json:"name"`
+	HTML string `json:"html"`
+}
+
+// ExportBatchHTML exports multiple pre-paginated HTML documents.
+// The first file prompts a save dialog; all subsequent files are saved to the
+// same directory automatically.
+func (s *ExportService) ExportBatchHTML(itemsJSON string, format string, scale float64) ([]string, error) {
+	var items []exportItem
+	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
+		return nil, UserMsg("解析导出数据失败")
+	}
+	return s.exportBatch(items, format, scale)
+}
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+func parseFormat(format string, scale float64) (export.ExportOptions, error) {
+	switch format {
+	case "pdf":
+		return export.ExportOptions{Format: export.FormatPDF, Scale: scale}, nil
+	case "png":
+		return export.ExportOptions{Format: export.FormatPNG, Scale: scale}, nil
+	default:
+		return export.ExportOptions{}, UserMsg("不支持的导出格式: " + format)
+	}
+}
+
+// renderOne converts pre-paginated HTML to the target format bytes.
+func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byte, error) {
+	data, err := s.exportManager.ExportHTML(html, opts)
+	if err != nil {
+		return nil, UserWrap(err, "导出失败")
+	}
+	return data, nil
+}
+
+// showSaveDialog prompts the user for a save location.
+func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOptions, title string) (string, error) {
 	filePath, err := s.wailsApp.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
-		Title:    "导出简历",
+		Title:    title,
 		Filename: defaultName,
 		Filters: []application.FileFilter{
 			{DisplayName: getFilterName(opts.Format), Pattern: getFilterPattern(opts.Format)},
@@ -77,19 +121,83 @@ func (s *ExportService) doExport(resumeJSON string, opts export.ExportOptions) (
 		}
 		return "", UserWrap(err, "打开保存对话框失败")
 	}
-	if filePath == "" {
-		return "", nil
-	}
-
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return "", UserWrap(err, "写入文件失败")
-	}
-
-	resume.Meta.ExportCount++
-	s.wailsApp.Event.Emit("export:progress", 100)
-	s.wailsApp.Event.Emit("export:completed", filePath)
-
 	return filePath, nil
+}
+
+func (s *ExportService) writeFile(path string, data []byte) error {
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return UserWrap(err, "写入文件失败")
+	}
+	return nil
+}
+
+// exportBatch runs the shared batch export loop.
+// The first item triggers a save dialog to pick the output directory;
+// subsequent items are saved to the same directory automatically.
+func (s *ExportService) exportBatch(items []exportItem, format string, scale float64) ([]string, error) {
+	opts, err := parseFormat(format, scale)
+	if err != nil {
+		return nil, err
+	}
+
+	var saved []string
+	var exportDir string
+	usedNames := make(map[string]int)
+	total := len(items)
+
+	for i, item := range items {
+		data, err := s.renderOne(item.HTML, opts)
+		if err != nil {
+			continue
+		}
+
+		s.wailsApp.Event.Emit("export:progress", int(float64(i+1)/float64(total)*100))
+
+		safeName := dedupName(sanitizeFilename(item.Name), usedNames)
+		defaultName := fmt.Sprintf("%s.%s", safeName, formatSuffix(opts.Format))
+
+		if exportDir == "" {
+			filePath, err := s.showSaveDialog(defaultName, opts, "批量导出 — 选择保存位置")
+			if err != nil {
+				return saved, nil
+			}
+			if filePath == "" {
+				return saved, nil
+			}
+			exportDir = filepath.Dir(filePath)
+			if err := s.writeFile(filePath, data); err != nil {
+				continue
+			}
+			saved = append(saved, filePath)
+		} else {
+			filePath := filepath.Join(exportDir, defaultName)
+			if err := s.writeFile(filePath, data); err != nil {
+				continue
+			}
+			saved = append(saved, filePath)
+		}
+	}
+
+	return saved, nil
+}
+
+// ── Filename helpers ──────────────────────────────────────────────────────────
+
+func sanitizeFilename(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "_", "\\", "_", ":", "_", "*", "_",
+		"?", "_", "\"", "_", "<", "_", ">", "_", "|", "_",
+	)
+	return replacer.Replace(name)
+}
+
+func dedupName(name string, used map[string]int) string {
+	if cnt, exists := used[name]; exists {
+		used[name] = cnt + 1
+		return fmt.Sprintf("%s_%d", name, cnt+1)
+	}
+	used[name] = 0
+	return name
 }
 
 func getFilterName(f export.ExportFormat) string {

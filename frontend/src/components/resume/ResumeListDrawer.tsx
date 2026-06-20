@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { X, FileText, Clock, ChevronRight, Inbox, Trash2, AlertTriangle, CheckSquare, Square } from 'lucide-react'
+import { X, FileText, Clock, ChevronRight, Inbox, Trash2, AlertTriangle, CheckSquare, Square, Download, Loader2, Image } from 'lucide-react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { callService } from '../../services/backend'
+import { paginateHTMLString } from '../../lib/export-html'
 import type { ResumeListItem } from '../../types/resume'
 
 interface Props {
@@ -25,6 +26,13 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [batchDeleting, setBatchDeleting] = useState(false)
   const [showBatchConfirm, setShowBatchConfirm] = useState(false)
+
+  // Batch export
+  const [showBatchExport, setShowBatchExport] = useState(false)
+  const [batchExportFormat, setBatchExportFormat] = useState<'pdf' | 'png'>('pdf')
+  const [batchExportScale, setBatchExportScale] = useState(1.5)
+  const [batchExporting, setBatchExporting] = useState(false)
+  const [batchExportDone, setBatchExportDone] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -123,6 +131,50 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   const handleCancelBatchDelete = useCallback(() => {
     setShowBatchConfirm(false)
   }, [])
+
+  // --- Batch export ---
+  const handleBatchExportClick = useCallback(() => {
+    setBatchExportDone(false)
+    setShowBatchExport(true)
+  }, [])
+
+  const handleBatchExport = useCallback(async () => {
+    if (batchExportDone) {
+      setShowBatchExport(false)
+      setSelectedIds(new Set())
+      return
+    }
+    setBatchExporting(true)
+    try {
+      const ids = Array.from(selectedIds)
+      const items: { name: string; html: string }[] = []
+
+      for (const id of ids) {
+        const result = await callService<[string, string]>('ResumeService', 'RenderByID', id)
+        if (!result) continue
+        const [rawHtml, name] = result
+        const paginatedHtml = await paginateHTMLString(rawHtml)
+        items.push({ name, html: paginatedHtml })
+      }
+
+      if (items.length === 0) {
+        setBatchExporting(false)
+        return
+      }
+
+      // PDF must use scale=1.0 — larger scales make each .resume-page overflow A4, producing blank pages after every content page.
+      const exportScale = batchExportFormat === 'pdf' ? 1.0 : batchExportScale
+      await callService<string[]>('ExportService', 'ExportBatchHTML', JSON.stringify(items), batchExportFormat, exportScale)
+    } catch { /* user cancelled or error */ }
+    setBatchExporting(false)
+    setBatchExportDone(true)
+  }, [selectedIds, batchExportFormat, batchExportScale, batchExportDone])
+
+  const handleCancelBatchExport = useCallback(() => {
+    if (!batchExporting) {
+      setShowBatchExport(false)
+    }
+  }, [batchExporting])
 
   // --- Derived ---
   const targetItem = confirmDeleteId
@@ -268,13 +320,22 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                   已选 <span className="font-semibold">{batchCount}</span> 份
                 </span>
               </div>
-              <button
-                onClick={handleBatchDeleteClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                批量删除
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBatchExportClick}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  批量导出
+                </button>
+                <button
+                  onClick={handleBatchDeleteClick}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  批量删除
+                </button>
+              </div>
             </div>
           </div>
 
@@ -376,6 +437,111 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                   </>
                 ) : (
                   `删除 ${batchCount} 份`
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch-export dialog */}
+      {showBatchExport && (
+        <div
+          className="absolute inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter"
+          onClick={handleCancelBatchExport}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
+          >
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                <Download className="w-5 h-5 text-primary-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-surface-800">批量导出</h3>
+                <p className="text-sm text-surface-500 mt-1">
+                  将选中的 <span className="font-semibold text-primary-600">{batchCount}</span> 份简历导出，
+                  首次选择保存位置后，其余将自动保存至同一目录。
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Format selection */}
+              <div>
+                <label className="text-sm font-medium text-surface-600 mb-2 block">选择格式</label>
+                <div className="flex gap-2">
+                  {[
+                    { id: 'pdf' as const, label: 'PDF', icon: FileText },
+                    { id: 'png' as const, label: 'PNG', icon: Image },
+                  ].map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => setBatchExportFormat(id)}
+                      disabled={batchExporting}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm rounded-lg border-2 transition-all duration-150 disabled:opacity-50 ${
+                        batchExportFormat === id
+                          ? 'border-primary-400 bg-primary-50 text-primary-700 font-medium'
+                          : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {batchExportFormat === 'png' && (
+                <div>
+                  <label className="text-sm font-medium text-surface-600 mb-2 block">清晰度</label>
+                  <div className="flex gap-2">
+                    {[
+                      { value: 1, label: '1x' },
+                      { value: 1.5, label: '1.5x' },
+                      { value: 2, label: '2x' },
+                    ].map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setBatchExportScale(value)}
+                        disabled={batchExporting}
+                        className={`px-4 py-2 text-sm rounded-lg border-2 transition-all duration-150 disabled:opacity-50 ${
+                          batchExportScale === value
+                            ? 'border-primary-400 bg-primary-50 text-primary-700 font-medium'
+                            : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2.5 mt-6">
+              <button
+                onClick={handleCancelBatchExport}
+                disabled={batchExporting}
+                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleBatchExport}
+                disabled={batchExporting}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {batchExporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    导出中...
+                  </>
+                ) : batchExportDone ? (
+                  '完成'
+                ) : (
+                  `导出 ${batchExportFormat.toUpperCase()}`
                 )}
               </button>
             </div>

@@ -43,7 +43,7 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 		return nil, UserWrap(err, "打开项目失败")
 	}
 
-	s.resumeService.SetResume(resume)
+	s.resumeService.InitResume(resume)
 	s.wailsApp.Event.Emit("file:opened", filePath)
 
 	return resume, nil

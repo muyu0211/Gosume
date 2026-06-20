@@ -4,31 +4,22 @@ import (
 	"fmt"
 
 	"gosume/pkg/log"
-	"gosume/pkg/model"
 )
 
-// PNGExporter exports resumes to PNG format using headless Chromium screenshot.
+// PNGExporter converts pre-paginated HTML to PNG via headless Chromium screenshot.
 type PNGExporter struct {
-	htmlRenderer HTMLRenderer
-	browser      Browser
+	browser Browser
 }
 
 // NewPNGExporter creates a new PNG exporter.
-func NewPNGExporter(htmlRenderer HTMLRenderer, browser Browser) *PNGExporter {
-	return &PNGExporter{htmlRenderer: htmlRenderer, browser: browser}
+func NewPNGExporter(browser Browser) *PNGExporter {
+	return &PNGExporter{browser: browser}
 }
 
-// Export renders the resume to HTML, then captures it as a PNG screenshot.
-func (e *PNGExporter) Export(resume *model.Resume, opts ExportOptions) ([]byte, error) {
-	log.Info("PNG导出: 开始渲染HTML")
-	html, err := e.htmlRenderer.Render(resume)
-	if err != nil {
-		log.Error("PNG导出: HTML渲染失败: %v", err)
-		return nil, fmt.Errorf("png export render: %w", err)
-	}
-	log.Info("PNG导出: HTML渲染完成, size=%d", len(html))
-
-	fullHTML := wrapStandaloneHTML(html)
+// ExportHTML wraps the HTML in a standalone document and captures it as a PNG.
+// The HTML should already be paginated into .resume-page divs by the frontend.
+func (e *PNGExporter) ExportHTML(htmlContent string, opts ExportOptions) ([]byte, error) {
+	fullHTML := wrapStandaloneHTML(htmlContent)
 
 	scale := opts.Scale
 	if scale <= 0 {
