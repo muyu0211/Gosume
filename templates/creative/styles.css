@@ -30,6 +30,7 @@ body {
 }
 
 /* Two-column layout */
+.resume-container,
 .resume-layout {
     display: flex;
     min-height: 297mm;

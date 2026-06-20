@@ -122,7 +122,7 @@ export function EditorPage() {
           />
 
           {/* Preview Panel */}
-          <div style={{ width: `${(1 - splitRatio) * 100}%` }} className="overflow-auto bg-surface-200">
+          <div style={{ width: `${(1 - splitRatio) * 100}%` }} className="overflow-hidden bg-surface-200">
             <PreviewPanel />
           </div>
         </div>

@@ -39,6 +39,7 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   body.style.background = '#e5e7eb'
   body.style.margin = '0'
   body.style.padding = `${PAGE_GAP}px 0`
+  body.style.overflowX = 'hidden'
 
   const wrapper = doc.createElement('div')
   wrapper.className = 'resume-pages-wrapper'
