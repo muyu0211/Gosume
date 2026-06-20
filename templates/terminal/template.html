@@ -11,6 +11,8 @@
         <!-- Terminal Header -->
         <div class="header">
             <div class="prompt-line"><span class="prompt">$</span> cat ~/resume.json <span class="cursor">|</span> jq .personal</div>
+            <div class="header-row">
+                <div class="header-info">
             <h1><span class="bracket">{</span> {{.Personal.FullName}} <span class="bracket">}</span></h1>
             {{if .Personal.JobTitle}}<div class="job-title">└─ title: "{{.Personal.JobTitle}}"</div>{{end}}
             {{if .Personal.YearsOfExp}}<div class="years">└─ experience: {{.Personal.YearsOfExp}} years</div>{{end}}
@@ -23,7 +25,10 @@
                 {{if .Personal.Location}}<span>[{{.Personal.Location}}]</span>{{end}}
                 {{if .Personal.GitHub}}<span>[{{.Personal.GitHub}}]</span>{{end}}
             </div>
-        </div>
+                </div><!-- .header-info -->
+                {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar}}" alt="avatar" /></div>{{end}}
+            </div><!-- .header-row -->
+        </div><!-- .header -->
 
         {{if .Summary}}
         <div class="summary-box">

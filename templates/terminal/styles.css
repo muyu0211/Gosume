@@ -51,6 +51,29 @@ body {
     border-bottom: 1pt dashed var(--border-color);
 }
 
+.header-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14pt;
+}
+
+.header-info {
+    flex: 1;
+}
+
+.header-avatar {
+    flex-shrink: 0;
+}
+
+.header-avatar img {
+    width: 57pt;
+    height: 76pt;
+    object-fit: cover;
+    border: 1.5pt solid var(--primary-color);
+    border-radius: 2pt;
+    filter: brightness(0.9);
+}
+
 .prompt-line {
     font-size: 7.5pt;
     color: var(--muted-color);

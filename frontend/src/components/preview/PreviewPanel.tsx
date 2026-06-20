@@ -20,6 +20,7 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   const padRight = parseFloat(style.paddingRight) || 0
   const padBottom = parseFloat(style.paddingBottom) || 0
   const padLeft = parseFloat(style.paddingLeft) || 0
+  const pageBg = style.backgroundColor || '#ffffff'
 
   const container = originalPage.querySelector('.resume-container') as HTMLElement | null
   if (!container) return 1
@@ -38,7 +39,7 @@ function paginateContent(iframe: HTMLIFrameElement): number {
   wrapper.className = 'resume-pages-wrapper'
   body.replaceChildren(wrapper)
 
-  let currentPage = makePage(doc, padTop, padRight, padBottom, padLeft)
+  let currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
   wrapper.appendChild(currentPage)
   let currentContainer = currentPage.querySelector('.resume-container')!
   let count = 1
@@ -53,7 +54,7 @@ function paginateContent(iframe: HTMLIFrameElement): number {
       currentContainer.removeChild(clone)
 
       // Create a new page (already in DOM via wrapper.appendChild below)
-      currentPage = makePage(doc, padTop, padRight, padBottom, padLeft)
+      currentPage = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
       wrapper.appendChild(currentPage)
       currentContainer = currentPage.querySelector('.resume-container')!
       currentContainer.appendChild(clone)
@@ -74,6 +75,7 @@ function makePage(
   padRight: number,
   padBottom: number,
   padLeft: number,
+  backgroundColor: string,
 ): HTMLElement {
   const page = doc.createElement('div')
   page.className = 'resume-page'
@@ -82,7 +84,7 @@ function makePage(
     height: 297mm;
     padding: ${padTop}px ${padRight}px ${padBottom}px ${padLeft}px;
     overflow: hidden;
-    background: #fff;
+    background: ${backgroundColor};
     margin: 0 auto ${PAGE_GAP}px;
     box-sizing: border-box;
   `

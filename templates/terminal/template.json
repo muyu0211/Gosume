@@ -27,7 +27,7 @@
         "accent": "#161B22"
     },
     "features": {
-        "avatar": false,
+        "avatar": true,
         "skill_bars": true,
         "qr_code": false,
         "links_clickable": true
