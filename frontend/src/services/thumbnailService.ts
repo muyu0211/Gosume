@@ -20,14 +20,14 @@ const SAMPLE_DATA: Resume = {
     name: '示例简历',
   },
   personal: {
-    full_name: '张明远',
-    email: 'zhangmingyuan@example.com',
+    full_name: '张三',
+    email: 'zhangsan@example.com',
     phone: '138-0000-1234',
     location: '北京市',
     job_title: '高级前端工程师',
     years_of_exp: 6,
   },
-  summary: '拥有6年前端开发经验，擅长React生态系统与TypeScript，主导过多个大型中后台项目的架构设计与落地。注重代码质量与团队协作，持续关注前端工程化与性能优化。',
+  summary: '拥有6年前端开发经验===========================，擅长React生态系统与TypeScript，主导过多个大型中后台项目的架构设计与落地。注重代码质量与团队协作，持续关注前端工程化与性能优化。',
   jobs: [
     {
       id: 'sample-job-1',

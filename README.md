@@ -8,256 +8,146 @@
 
 ---
 
+## 中文
 
-***Gosume*** 是一款桌面端简历制作工具，无需打开 Word 或排版软件，即可快速制作专业、美观的简历。
-
-基于 **Go + Wails v3** 与 **React + TypeScript** 构建，提供实时预览、多套模板、一键导出 PDF / DOCX(暂未支持) / PNG(暂未支持)。
+**Gosume** 是一款简洁、专业的桌面端简历制作工具。无需排版知识，无需打开 Word——选择模板、填写内容、一键导出，三步搞定一份高质量简历。
 
 ![Gosume 截图](screenshots/editor.png)
 
-### 功能特性
+### 为什么选择 Gosume
 
-- **实时预览** — 编辑内容即时渲染，所见即所得，无需手动刷新。
-- **多模板支持** — 内置经典正式风、现代专业风两套模板，支持用户自行添加自定义模板。
-- **丰富的数据模型** — 涵盖个人信息、工作经历、项目经历、教育背景、技能、语言、奖项、自定义模块。
-- **多格式导出** — 支持导出为 PDF、DOCX、PNG，可调节缩放比例和页码范围。
-- **自动保存** — 编辑内容自动持久化到本地 SQLite 数据库，告别数据丢失。
-- **项目文件** — 支持保存和打开 `.resume.json` 文件，便于归档和版本管理。
-- **键盘快捷键** — 完整的键盘操作支持（Ctrl+S 保存等），提升编辑效率。
-- **拖拽排序** — 拖拽即可调整模块和条目的顺序。
-- **示例数据** — 一键填充示例数据，快速体验模板效果。
-- **数据目录可配置** — 自由选择数据存储位置，切换后热重载。
-- **跨平台** — 支持 Windows、macOS、Linux 桌面端，以及 iOS / Android 移动端。
+- **所见即所得** — 编辑内容即时渲染为最终效果，告别反复调整格式的痛苦。
+- **16 套精选模板** — 从经典正式风到极客终端风，覆盖互联网、金融、设计、学术等各类求职场景，每套模板都经过精心调校。
+- **一键导出** — 支持 PDF、DOCX、PNG 三种格式，可根据需要调节纸张大小、缩放比例和页码范围。
+- **自动保存，永不丢失** — 所有内容自动持久化到本地数据库，即使意外关闭也能完整恢复。
+- **跨平台使用** — 支持 Windows、macOS、Linux 桌面端，以及 iOS / Android 移动端，随时随地编辑简历。
 
-### 截图展示
+### 模板一览
 
-<!-- TODO: 请替换为实际截图 -->
+| 模板 | 风格 | 适用场景 |
+|------|------|----------|
+| 经典正式风 | 单栏、沉稳大气 | 传统行业、国企、正式场合 |
+| 现代专业风 | 双栏、简洁科技 | 互联网、科技行业 |
+| 创意设计风 | 侧边栏、色彩鲜明 | 设计、创意、市场类岗位 |
+| 极简清新风 | 留白多、干净利落 | 外企、追求简洁风格 |
+| 紧凑高效风 | 信息密度高、一页容纳 | 经验丰富、内容较多 |
+| 高管精英风 | 权威感、稳重 | 管理岗位、资深人士 |
+| 学术简历风 | 严谨规范 | 高校、科研机构 |
+| 渐变现代风 | 渐变色、年轻活力 | 新兴行业、创业公司 |
+| 黑金锋范风 | 高对比、霸气 | 高端职位、彰显个性 |
+| 水墨丹青风 | 中式美学 | 文化创意、教育行业 |
+| 青叶自然风 | 清新自然色调 | 环保、教育、NGO |
+| 瑞士国际风 | 网格系统、排版考究 | 国际化企业、追求设计感 |
+| 左右分栏风 | 双栏分明 | 内容模块清晰分类 |
+| 时间线叙事风 | 时间轴布局 | 强调成长轨迹的岗位 |
+| 日式禅意风 | 极简留白 | 日企、偏爱侘寂美学 |
+| 终端极客风 | 命令行风格 | 开发者、技术极客 |
 
-| 编辑器 | 模板选择 |
-|--------|----------|
-| ![编辑器](screenshots/editor.png) | ![模板选择](screenshots/templates.png) |
+### 功能亮点
 
-| 导出对话框 | 实时预览 |
-|------------|----------|
-| ![导出](screenshots/export.png) | ![预览](screenshots/preview.png) |
+- **拖拽排序** — 拖拽即可调整模块和条目的展示顺序。
+- **键盘快捷键** — 完整键盘操作支持，提升编辑效率。
+- **示例数据** — 一键填充示例，快速体验模板效果，满意后再填入真实信息。
+- **项目文件** — 支持保存和打开 `.resume.json` 文件，便于归档和多版本管理。
+- **自定义模板** — 有设计能力？可将自定义模板放入模板目录即可使用。
+- **本地优先** — 所有数据存储于本地，无需网络连接，隐私安全。
 
-### 技术栈
+### 下载安装
 
-| 层级 | 技术 |
+请前往 [Releases](https://github.com/muyu0211/Gosume/releases) 页面下载对应平台的安装包。
+
+| 平台 | 格式 |
 |------|------|
-| 桌面框架 | [Wails v3](https://wails.io) |
-| 后端 | Go 1.25 |
-| 前端 | React 18 + TypeScript |
-| 样式 | Tailwind CSS |
-| 状态管理 | Zustand |
-| 表单校验 | React Hook Form + Zod |
-| 数据库 | SQLite (modernc.org/sqlite) |
-| 图标 | Lucide React |
-| 日志 | Uber Zap |
+| Windows | `.exe` / `.msi` |
+| macOS | `.dmg` |
+| Linux | `.AppImage` / `.deb` |
 
-### 快速开始
+### 开发相关
 
-#### 环境要求
-
-- Go 1.25+
-- Node.js 18+
-- [Task](https://taskfile.dev)（可选，用于构建脚本）
-
-#### 开发调试
+**环境要求：** Go 1.25+、Node.js 18+
 
 ```bash
 # 安装前端依赖
 cd frontend && npm install && cd ..
 
-# 启动开发模式（Go + 前端热重载）
+# 启动开发模式
 task dev
+
+# 构建打包
+task build && task package
 ```
 
-#### 构建打包
-
-```bash
-# 为当前平台构建
-task build
-
-# 打包为可分发的安装包
-task package
-```
-
-#### Docker（服务端模式）
-
-```bash
-# 构建 Docker 镜像
-task build:docker
-
-# 运行容器
-task run:docker
-```
-
-### 项目结构
-
-```
-├── main.go              # 应用入口
-├── pkg/
-│   ├── config/          # 配置管理
-│   ├── export/          # PDF、DOCX、PNG 导出
-│   ├── log/             # 结构化日志（Zap）
-│   ├── model/           # 简历数据模型
-│   ├── render/          # HTML 模板渲染
-│   ├── service/         # Wails 服务层（API）
-│   ├── store/           # SQLite 持久化与项目文件
-│   └── template/        # 模板加载与校验
-├── templates/           # 内置简历模板
-│   ├── classic/         # 经典正式风（单栏）
-│   └── modern/          # 现代专业风（双栏）
-├── frontend/            # React + TypeScript 前端
-│   └── src/
-│       ├── components/  # UI 组件（编辑器、预览、布局）
-│       ├── stores/      # Zustand 状态管理
-│       ├── services/    # 后端 API 绑定
-│       └── routes/      # 页面级组件
-└── build/               # 各平台构建配置
-```
-
-### 模板系统
-
-Gosume 采用基于目录的模板系统，每个模板包含以下文件：
-
-- `template.json` — 模板元数据、配色、特性、模块布局
-- `template.html` — Go 模板，用于渲染简历
-- `styles.css` — 模板专属样式
-
-用户可将自定义模板放入模板数据目录即可使用。
-
-### 开源协议
-
-[MIT](LICENSE)
+项目基于 [Wails v3](https://wails.io) 构建，采用 MIT 协议开源。欢迎提交 Issue 和 PR。
 
 ---
 
 ## English
 
-Gosume is a desktop resume builder — create professional, polished resumes without touching a word processor.
-
-Built with **Go + Wails v3** and **React + TypeScript**, Gosume delivers live preview, multiple templates, and one-click export to PDF, DOCX, and PNG.
+**Gosume** is a clean, professional desktop resume builder. Pick a template, fill in your details, export — three steps to a polished resume, no design skills needed.
 
 ![Gosume Screenshot](screenshots/editor.png)
 
-### Features
+### Why Gosume
 
-- **Live Preview** — See every change rendered instantly as you type. No compile step, no refresh.
-- **Multiple Templates** — Built-in templates (Classic, Modern) with support for custom user-created templates.
-- **Rich Data Model** — Personal info, work experience, projects, education, skills, languages, awards, and custom sections.
-- **Export Anywhere** — PDF, DOCX, and PNG export with configurable scaling and page range.
-- **Auto-Save** — Your work is automatically persisted to a local SQLite database. Never lose progress.
-- **Project Files** — Save and open `.resume.json` files for portability and version control.
-- **Keyboard Shortcuts** — Full keyboard navigation for fast editing (Ctrl+S save, etc.).
-- **Drag & Drop** — Reorder sections and items by dragging.
-- **Sample Data** — One-click sample data to explore templates before filling in your own details.
-- **Configurable Data Directory** — Choose where your data lives; hot-reloads on change.
-- **Cross-Platform** — Windows, macOS, Linux desktop apps, plus mobile support (iOS/Android).
+- **WYSIWYG** — What you see is what you get. Every edit renders instantly as the final output.
+- **16 Handcrafted Templates** — From classic formal to terminal hacker style, covering tech, finance, design, academia, and more.
+- **One-Click Export** — Export to PDF, DOCX, or PNG with adjustable paper size, scale, and page range.
+- **Auto-Save** — All changes are persisted locally. Close the app anytime — your work is safe.
+- **Cross-Platform** — Available on Windows, macOS, Linux desktop, plus iOS / Android mobile.
 
-### Screenshots
+### Templates
 
-<!-- TODO: Replace with actual screenshots -->
+| Template | Style | Best For |
+|----------|-------|----------|
+| Classic Formal | Single-column, timeless | Traditional industries, conservative settings |
+| Modern Professional | Two-column, clean | Tech, startups |
+| Creative Designer | Sidebar, bold colors | Design, marketing, creative roles |
+| Minimal Clean | Ample whitespace | Corporate, modern workplaces |
+| Compact Efficient | High density, one-page | Senior professionals with rich experience |
+| Executive Elite | Authoritative, refined | Management, executive roles |
+| Academic Scholar | Structured, formal | Universities, research institutions |
+| Gradient Modern | Vibrant gradients | Emerging industries, startups |
+| Bold Authority | High contrast, striking | Senior roles, standout applications |
+| Ink Wash | Chinese ink-painting aesthetic | Cultural, creative, education sectors |
+| Natural Leaf | Fresh, earthy tones | Environmental, education, NGO |
+| Swiss International | Grid system, typography-focused | Global companies, design-conscious roles |
+| Split Panel | Distinct two-column layout | Clear content categorization |
+| Timeline Narrative | Timeline-based layout | Career progression focus |
+| Zen Minimalist | Minimalist wabi-sabi | Japanese companies, minimalist aesthetic |
+| Terminal Hacker | Command-line style | Developers, tech enthusiasts |
 
-| Editor | Templates |
-|--------|-----------|
-| ![Editor](screenshots/editor.png) | ![Template Picker](screenshots/templates.png) |
+### Highlights
 
-| Export Dialog | Preview |
-|---------------|---------|
-| ![Export](screenshots/export.png) | ![Preview](screenshots/preview.png) |
+- **Drag & Drop** — Reorder sections and items with a simple drag.
+- **Keyboard Shortcuts** — Full keyboard navigation for efficient editing.
+- **Sample Data** — Fill sample data in one click to preview templates before adding your own.
+- **Project Files** — Save and open `.resume.json` files for archiving and version control.
+- **Custom Templates** — Bring your own templates by placing them in the templates directory.
+- **Local-First** — All data stays on your device. No internet required, your privacy is protected.
 
-### Tech Stack
+### Download
 
-| Layer | Technology |
-|-------|------------|
-| Desktop Framework | [Wails v3](https://wails.io) |
-| Backend | Go 1.25 |
-| Frontend | React 18 + TypeScript |
-| Styling | Tailwind CSS |
-| State Management | Zustand |
-| Forms & Validation | React Hook Form + Zod |
-| Database | SQLite (modernc.org/sqlite) |
-| Icons | Lucide React |
-| Logging | Uber Zap |
+Visit the [Releases](https://github.com/muyu0211/Gosume/releases) page to download the installer for your platform.
 
-### Getting Started
+| Platform | Format |
+|----------|--------|
+| Windows | `.exe` / `.msi` |
+| macOS | `.dmg` |
+| Linux | `.AppImage` / `.deb` |
 
-#### Prerequisites
+### Development
 
-- Go 1.25+
-- Node.js 18+
-- [Task](https://taskfile.dev) (optional, for build scripts)
+To build from source:
 
-#### Development
+**Prerequisites:** Go 1.25+, Node.js 18+
 
 ```bash
-# Install frontend dependencies
 cd frontend && npm install && cd ..
-
-# Run in development mode (hot-reload for both Go and frontend)
-task dev
+task dev        # development mode
+task build && task package  # production build
 ```
 
-#### Build
-
-```bash
-# Build for current platform
-task build
-
-# Package for distribution
-task package
-```
-
-#### Docker (Server Mode)
-
-```bash
-# Build the Docker image
-task build:docker
-
-# Run the container
-task run:docker
-```
-
-### Project Structure
-
-```
-├── main.go              # Application entry point
-├── pkg/
-│   ├── config/          # Configuration management
-│   ├── export/          # PDF, DOCX, PNG exporters
-│   ├── log/             # Structured logging (Zap)
-│   ├── model/           # Resume data models
-│   ├── render/          # HTML template rendering
-│   ├── service/         # Wails-bound services (API layer)
-│   ├── store/           # SQLite persistence & project files
-│   └── template/        # Template loader & validation
-├── templates/           # Built-in resume templates
-│   ├── classic/         # Classic formal single-column
-│   └── modern/          # Modern two-column tech style
-├── frontend/            # React + TypeScript frontend
-│   └── src/
-│       ├── components/  # UI components (editor, preview, layout)
-│       ├── stores/      # Zustand state stores
-│       ├── services/    # Backend API bindings
-│       └── routes/      # Page-level components
-└── build/               # Platform-specific build configs
-```
-
-### Template System
-
-Gosume uses a directory-based template system. Each template contains:
-
-- `template.json` — Metadata, colors, features, section layout
-- `template.html` — Go template for rendering
-- `styles.css` — Scoped CSS for the template
-
-Users can add custom templates by placing them in the templates data directory.
-
-### License
-
-[MIT](LICENSE)
+Built with [Wails v3](https://wails.io). Licensed under [MIT](LICENSE). Issues and PRs welcome.
 
 ---
 
