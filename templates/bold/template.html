@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <html lang="{{.Meta.Language}}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Personal.FullName}} - 简历</title>
-    <style>{{template "styles.css" .}}</style>
+    <style>
+        {
+                {
+                template "styles.css" .
+            }
+        }
+    </style>
 </head>
+
 <body class="resume-page">
     <div class="resume-container">
         <!-- Bold Header -->
@@ -55,7 +63,8 @@
         <div class="education-item">
             <div class="edu-header">
                 <span class="school">{{.School}}</span>
-                {{if .StartDate}}<span class="date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{if
+                    .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
             </div>
             <div class="edu-detail">{{.Degree}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
         </div>
@@ -105,7 +114,8 @@
         <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
         <div class="languages-line">
             {{range .Languages}}
-            <span class="lang-item"><span class="lang-name">{{.Name}}</span> · {{if .Level}}{{.Level}}{{else}}-{{end}}</span>
+            <span class="lang-item"><span class="lang-name">{{.Name}}</span> · {{if
+                .Level}}{{.Level}}{{else}}-{{end}}</span>
             {{end}}
         </div>
         {{end}}
@@ -153,4 +163,5 @@
         {{end}}
     </div>
 </body>
+
 </html>

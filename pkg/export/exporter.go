@@ -3,6 +3,7 @@ package export
 import (
 	"fmt"
 
+	"gosume/pkg/log"
 	"gosume/pkg/model"
 )
 
@@ -50,12 +51,23 @@ func NewExportManager(browser Browser, html HTMLRenderer) *ExportManager {
 
 // Export renders and exports the resume to the specified format.
 func (m *ExportManager) Export(resume *model.Resume, opts ExportOptions) ([]byte, error) {
+	var result []byte
+	var err error
+
 	switch opts.Format {
 	case FormatPDF:
-		return m.pdfExporter.Export(resume, opts)
+		result, err = m.pdfExporter.Export(resume, opts)
 	case FormatPNG:
-		return m.pngExporter.Export(resume, opts)
+		result, err = m.pngExporter.Export(resume, opts)
 	default:
+		log.Error("不支持的导出格式: %s", opts.Format)
 		return nil, fmt.Errorf("unsupported format: %s", opts.Format)
 	}
+
+	if err != nil {
+		log.Error("导出失败: format=%s err=%v", opts.Format, err)
+		return nil, err
+	}
+
+	return result, nil
 }
