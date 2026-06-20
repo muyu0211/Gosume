@@ -1,0 +1,40 @@
+{
+    "id": "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e",
+    "name": "水墨丹青风",
+    "name_en": "Ink Wash",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "东方水墨美学设计，疏朗留白与纤细线条，适合文化艺术、教育、设计类岗位",
+    "description_en": "East Asian ink-wash aesthetic with generous whitespace and delicate lines, ideal for arts, culture, and design professionals",
+    "category": "creative",
+    "tags": ["水墨", "东方", "文艺", "ink", "artistic", "留白"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#2D2D2D",
+        "secondary": "#787878",
+        "text": "#333333",
+        "background": "#FFFFFF",
+        "accent": "#F5F5F0"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "projects", "skills", "languages", "awards", "custom"]
+    }
+}

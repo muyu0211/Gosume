@@ -1,0 +1,40 @@
+{
+    "id": "c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f",
+    "name": "黑金锋范风",
+    "name_en": "Bold Authority",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "大胆醒目的黑色主调搭配金色点缀，超大标题与强对比度，适合高管和资深岗位",
+    "description_en": "Bold black-dominant design with gold accents and oversized typography, perfect for C-suite and senior leadership roles",
+    "category": "business",
+    "tags": ["黑金", "大胆", "高管", "bold", "gold", "executive"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#000000",
+        "secondary": "#B8960C",
+        "text": "#171717",
+        "background": "#FFFFFF",
+        "accent": "#FAF9F5"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

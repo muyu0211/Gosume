@@ -15,12 +15,12 @@
             {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
 
             <div class="sidebar-section">
-                <div class="sidebar-title">联系</div>
-                {{if .Personal.Email}}<div class="sidebar-item">{{.Personal.Email}}</div>{{end}}
-                {{if .Personal.Phone}}<div class="sidebar-item">{{.Personal.Phone}}</div>{{end}}
+                {{if .Personal}}<div class="sidebar-title">个人信息</div>{{end}}
+                {{if .Personal.Email}}<div class="sidebar-item">邮箱：{{.Personal.Email}}</div>{{end}}
+                {{if .Personal.Phone}}<div class="sidebar-item">手机：{{.Personal.Phone}}</div>{{end}}
                 {{if .Personal.Wechat}}<div class="sidebar-item">微信：{{.Personal.Wechat}}</div>{{end}}
                 {{if .Personal.QQ}}<div class="sidebar-item">QQ：{{.Personal.QQ}}</div>{{end}}
-                {{if .Personal.Location}}<div class="sidebar-item">{{.Personal.Location}}</div>{{end}}
+                {{if .Personal.Location}}<div class="sidebar-item">住址：{{.Personal.Location}}</div>{{end}}
                 {{if .Personal.GitHub}}<div class="sidebar-item">{{.Personal.GitHub}}</div>{{end}}
                 {{if .Personal.LinkedIn}}<div class="sidebar-item">{{.Personal.LinkedIn}}</div>{{end}}
                 {{if .Personal.Website}}<div class="sidebar-item">{{.Personal.Website}}</div>{{end}}
@@ -55,10 +55,12 @@
 
         <!-- Main Content -->
         <div class="main-content">
+            <!-- Personal Summary -->
             {{if .Summary}}
             <div class="summary">{{nl2br .Summary}}</div>
             {{end}}
 
+            <!-- Work Experience -->
             {{if .Jobs}}
             <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
             {{range .Jobs}}
@@ -83,6 +85,7 @@
             {{end}}
             {{end}}
 
+            <!-- Education -->
             {{if .Education}}
             <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
             {{range .Education}}
@@ -103,6 +106,7 @@
             {{end}}
             {{end}}
 
+            <!-- Projects -->
             {{if .Projects}}
             <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
             {{range .Projects}}
@@ -124,6 +128,7 @@
             {{end}}
             {{end}}
 
+            <!-- Awards -->
             {{if .Awards}}
             <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
             {{range .Awards}}
@@ -138,6 +143,7 @@
             {{end}}
             {{end}}
 
+            <!-- Custom Sections -->
             {{if .Custom}}
             {{range .Custom}}
             <div class="section-title">{{.Title}}</div>

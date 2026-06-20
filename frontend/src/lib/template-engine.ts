@@ -98,6 +98,13 @@ function evaluate(
             const scopedData = itemObj
               ? { ...data, ...itemObj, $: item }
               : { ...data, $: item }
+            // Prevent parent data from leaking into range scope when the item
+            // lacks a field that shares the same name as a parent-level field.
+            // The only such overlap in the Resume model is "Summary", which exists
+            // on Resume (personal summary), Job, Project, and Award.
+            if (!('Summary' in scopedData) || (itemObj && !('Summary' in itemObj))) {
+              scopedData.Summary = ''
+            }
             result += evaluate(blockContent, scopedData, funcs)
           }
         } else if (elseContent) {
