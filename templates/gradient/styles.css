@@ -1,0 +1,258 @@
+/* Gradient Modern Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 9.5pt;
+    --line-height: 1.5;
+    --primary-color: #7C3AED;
+    --secondary-color: #2563EB;
+    --text-color: #1F2937;
+    --heading-color: #1E1B4B;
+    --muted-color: #6B7280;
+    --border-color: #E5E7EB;
+    --accent-bg: #F5F3FF;
+    --gradient-start: #7C3AED;
+    --gradient-end: #2563EB;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Gradient Header */
+.header {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+    color: #fff;
+    padding: 20mm 18mm 16mm 18mm;
+    display: flex;
+    align-items: center;
+    gap: 16pt;
+}
+
+.header h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4pt;
+}
+
+.header .job-title {
+    font-size: 11pt;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4pt;
+}
+
+.header .years-exp {
+    font-size: 9pt;
+    color: rgba(255,255,255,0.7);
+}
+
+.header-avatar { flex-shrink: 0; }
+.header-avatar img {
+    width: 64pt;
+    height: 64pt;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2pt solid rgba(255,255,255,0.4);
+}
+
+/* Contact Bar */
+.contact-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3pt 14pt;
+    padding: 6pt 18mm;
+    background: var(--accent-bg);
+    border-bottom: 1pt solid var(--border-color);
+    font-size: 8pt;
+    color: var(--muted-color);
+}
+
+/* Summary */
+.summary {
+    padding: 10pt 18mm;
+    font-size: 9pt;
+    line-height: 1.6;
+    color: var(--text-color);
+    border-bottom: 1pt solid var(--border-color);
+}
+
+/* Main Grid */
+.main-grid {
+    display: flex;
+    padding: 12pt 18mm 14mm 18mm;
+    gap: 20pt;
+}
+
+.col-main { flex: 1.6; }
+
+.col-side {
+    flex: 1;
+    padding-left: 16pt;
+    border-left: 1pt solid var(--border-color);
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8pt;
+    padding-bottom: 3pt;
+    border-bottom: 1.5pt solid transparent;
+    border-image: linear-gradient(90deg, var(--gradient-start), var(--gradient-end)) 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+}
+
+/* Experience */
+.experience-item { margin-bottom: 10pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.exp-header .company { font-weight: 700; font-size: 10pt; }
+
+.exp-header .title {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.exp-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.exp-summary {
+    font-size: 8.5pt;
+    color: var(--text-color);
+    margin-bottom: 3pt;
+}
+
+.highlights { padding-left: 14pt; }
+
+.highlights li {
+    font-size: 8.5pt;
+    margin-bottom: 1.5pt;
+    line-height: 1.45;
+}
+
+/* Education */
+.education-item { margin-bottom: 8pt; }
+
+.edu-school {
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: var(--heading-color);
+}
+
+.edu-detail { font-size: 8.5pt; color: var(--muted-color); }
+
+.edu-date { font-size: 8pt; color: var(--muted-color); }
+
+/* Skills — Pill Tags */
+.skill-category { margin-bottom: 8pt; }
+
+.skill-category h4 {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 4pt;
+}
+
+.skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt;
+}
+
+.skill-pill {
+    font-size: 7.5pt;
+    padding: 2pt 8pt;
+    background: var(--accent-bg);
+    border: 1pt solid var(--border-color);
+    border-radius: 12pt;
+    color: var(--text-color);
+}
+
+.pill-level {
+    color: var(--primary-color);
+    margin-left: 3pt;
+    font-weight: 600;
+}
+
+/* Languages */
+.lang-item { font-size: 8.5pt; margin-bottom: 2pt; }
+
+.lang-name { font-weight: 600; }
+
+/* Awards */
+.award-item { margin-bottom: 5pt; }
+
+.award-title {
+    font-size: 8.5pt;
+    font-weight: 600;
+}
+
+.award-date {
+    font-size: 8pt;
+    color: var(--muted-color);
+}
+
+/* Custom */
+.custom-item { margin-bottom: 8pt; }
+
+.custom-item h4 {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.subtitle { font-size: 8.5pt; color: var(--muted-color); }
+
+/* Skill Dots */
+.skill-dots { display: inline-flex; gap: 2pt; margin-left: 6pt; }
+
+.skill-dot {
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
+.skill-dot.filled { background: var(--primary-color); }
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 8.5pt;
+    margin-bottom: 2pt;
+}
+
+/* Print */
+@media print {
+    .resume-page { width: 100%; margin: 0; }
+    @page { size: A4; margin: 0; }
+    .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+.page-break { page-break-after: always; break-after: page; }

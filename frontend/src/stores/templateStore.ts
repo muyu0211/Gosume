@@ -13,7 +13,7 @@ interface TemplateState {
 
 export const useTemplateStore = create<TemplateState>((set) => ({
   templates: [],
-  activeTemplateId: 'modern',
+  activeTemplateId: 'a406004d-d3b8-4900-969f-8094f8e85cf0',
   thumbnails: {},
 
   setTemplates: (templates) => set({ templates }),

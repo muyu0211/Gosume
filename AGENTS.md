@@ -10,7 +10,7 @@
 main.go              # 入口：嵌入 frontend/dist + templates，创建 app.App
 pkg/                 # Go 后端（详见 @pkg/AGENTS.md）
 frontend/            # React 前端（详见 @frontend/AGENTS.md）
-templates/           # 内置简历模板（HTML+CSS），编译时嵌入
+templates/           # 内置简历模板（HTML+CSS），编译时嵌入（详见 @templates/AGENTS.md）
 build/               # Wails 构建配置及分平台 Taskfile
 Taskfile.yml         # 任务运行器入口（dev、build、package、docker 等）
 ```

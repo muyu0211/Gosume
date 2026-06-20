@@ -1,0 +1,246 @@
+/* Academic Scholar Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Serif SC', 'SimSun', serif;
+    --font-size-base: 10.5pt;
+    --line-height: 1.65;
+    --primary-color: #1E3A5F;
+    --heading-color: #1E3A5F;
+    --text-color: #1A202C;
+    --muted-color: #4A5568;
+    --border-color: #CBD5E0;
+    --accent-bg: #EBF0F5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 22mm 20mm 20mm 20mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 18pt;
+    padding-bottom: 14pt;
+    border-bottom: 1.5pt solid var(--primary-color);
+}
+
+.header h1 {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    letter-spacing: 2pt;
+    margin-bottom: 6pt;
+}
+
+.header .job-title {
+    font-size: 11pt;
+    color: var(--muted-color);
+    margin-bottom: 8pt;
+}
+
+.contact-line {
+    font-size: 9pt;
+    color: var(--muted-color);
+    letter-spacing: 0.5pt;
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 16pt;
+    font-size: 9.5pt;
+    line-height: 1.7;
+    text-align: justify;
+    padding: 0 4pt;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 9pt;
+    padding-bottom: 3pt;
+    border-bottom: 0.75pt solid var(--border-color);
+    font-variant: small-caps;
+    letter-spacing: 1.5pt;
+}
+
+/* Education */
+.education-item { margin-bottom: 10pt; }
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 9.5pt;
+    color: var(--muted-color);
+    margin-top: 1pt;
+}
+
+/* Experience */
+.experience-item { margin-bottom: 10pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.exp-title {
+    font-size: 9.5pt;
+    color: var(--primary-color);
+    font-style: italic;
+    margin-bottom: 2pt;
+}
+
+.exp-location {
+    font-size: 9pt;
+    color: var(--muted-color);
+    margin-bottom: 2pt;
+}
+
+.exp-summary {
+    font-size: 9.5pt;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 3pt;
+}
+
+.highlights {
+    padding-left: 16pt;
+}
+
+.highlights li {
+    font-size: 9.5pt;
+    margin-bottom: 2pt;
+    line-height: 1.5;
+}
+
+/* Awards */
+.award-item { margin-bottom: 7pt; }
+
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.award-title {
+    font-weight: 600;
+    font-size: 10pt;
+}
+
+.award-issuer {
+    font-size: 9pt;
+    color: var(--muted-color);
+    font-style: italic;
+}
+
+/* Skills */
+.skill-category {
+    margin-bottom: 4pt;
+    font-size: 9.5pt;
+}
+
+.skill-cat-name {
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.skill-tag {
+    margin-right: 4pt;
+    color: var(--text-color);
+}
+
+.skill-tag::after {
+    content: " · ";
+    color: var(--border-color);
+}
+
+.skill-tag:last-child::after { content: ""; }
+
+/* Languages */
+.languages-line {
+    font-size: 9.5pt;
+    color: var(--text-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 14pt;
+}
+
+.lang-name { font-weight: 600; }
+
+/* Custom */
+.custom-item { margin-bottom: 8pt; }
+
+.custom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.custom-title { font-weight: 600; font-size: 10pt; }
+
+.custom-subtitle {
+    font-size: 9pt;
+    color: var(--muted-color);
+    font-style: italic;
+}
+
+/* Print */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: 22mm 20mm 20mm 20mm;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}

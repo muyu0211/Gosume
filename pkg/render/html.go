@@ -59,7 +59,7 @@ func NewHTMLRenderer(loader TemplateLoader) *HTMLRenderer {
 func (r *HTMLRenderer) Render(resume *model.Resume) (string, error) {
 	tmplID := resume.Meta.TemplateID
 	if tmplID == "" {
-		tmplID = "modern"
+		tmplID = "a406004d-d3b8-4900-969f-8094f8e85cf0"
 	}
 
 	tmpl, err := r.templateLoader.LoadByID(tmplID)

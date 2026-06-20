@@ -1,16 +1,16 @@
 {
-    "id": "550e2b7e-9a88-4869-9928-ea4e78c2ef4f",
-    "name": "高管精英风",
-    "name_en": "Executive Elite",
+    "id": "4d7e1f3a-6b9c-4e2d-a8f5-2c0b7d9e3a1f",
+    "name": "左右分栏风",
+    "name_en": "Split Panel",
     "version": "1.0.0",
     "author": {
         "name": "Gosume",
         "email": "team@resume-craft.app"
     },
-    "description": "沉稳大气的深蓝金色搭配，衬线标题字体，适合管理、金融、咨询等高端岗位",
-    "description_en": "Elegant navy and gold palette with serif headings, perfect for management, finance, and consulting roles",
-    "category": "business",
-    "tags": ["高端", "商务", "管理", "executive", "navy", "elegant"],
+    "description": "深色侧边栏+白色主内容区的分栏布局，信息层级分明，适合科技和商务岗位",
+    "description_en": "Dark sidebar with white main content area for clear information hierarchy, suits tech and business roles",
+    "category": "tech",
+    "tags": ["分栏", "侧边栏", "深色", "split", "sidebar", "dark"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
@@ -20,16 +20,16 @@
     "paper_size": "A4",
     "orientations": ["portrait"],
     "colors": {
-        "primary": "#1A2332",
-        "secondary": "#C8A45C",
-        "text": "#2D3748",
+        "primary": "#0F172A",
+        "secondary": "#334155",
+        "text": "#1E293B",
         "background": "#FFFFFF",
-        "accent": "#F7F3EB"
+        "accent": "#F1F5F9"
     },
     "features": {
-        "avatar": false,
-        "skill_bars": false,
-        "qr_code": false,
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": true,
         "links_clickable": true
     },
     "sections": {

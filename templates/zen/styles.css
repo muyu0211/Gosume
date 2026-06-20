@@ -1,0 +1,244 @@
+/* Zen Minimalist Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10pt;
+    --line-height: 1.7;
+    --primary-color: #78716C;
+    --heading-color: #44403C;
+    --text-color: #44403C;
+    --muted-color: #A8A29E;
+    --border-color: #E7E5E4;
+    --accent-bg: #FAFAF9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 22mm 22mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 28pt;
+}
+
+.header h1 {
+    font-size: 18pt;
+    font-weight: 300;
+    color: var(--heading-color);
+    letter-spacing: 4pt;
+    margin-bottom: 8pt;
+}
+
+.header .job-title {
+    font-size: 10pt;
+    color: var(--muted-color);
+    font-weight: 300;
+    letter-spacing: 2pt;
+    margin-bottom: 12pt;
+}
+
+.divider {
+    width: 24pt;
+    height: 0.75pt;
+    background: var(--primary-color);
+    margin: 0 auto 10pt auto;
+}
+
+.contact-line {
+    font-size: 8pt;
+    color: var(--muted-color);
+    letter-spacing: 1pt;
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 24pt;
+    font-size: 9.5pt;
+    line-height: 1.8;
+    color: var(--text-color);
+    text-align: center;
+    padding: 0 20pt;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 9pt;
+    font-weight: 400;
+    color: var(--primary-color);
+    margin-bottom: 12pt;
+    letter-spacing: 3pt;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Experience */
+.experience-item { margin-bottom: 14pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4pt;
+}
+
+.exp-header .company {
+    font-weight: 500;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .title {
+    font-weight: 300;
+    color: var(--muted-color);
+}
+
+.exp-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+    font-weight: 300;
+}
+
+.exp-summary {
+    font-size: 9pt;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 4pt;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 10pt;
+    font-size: 9pt;
+    margin-bottom: 3pt;
+    line-height: 1.55;
+}
+
+.highlights li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--muted-color);
+}
+
+/* Education */
+.education-item { margin-bottom: 12pt; }
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
+    font-weight: 500;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+    font-weight: 300;
+}
+
+.edu-detail {
+    font-size: 9pt;
+    color: var(--muted-color);
+    margin-top: 2pt;
+}
+
+/* Skills — Inline Flow */
+.skills-line {
+    font-size: 9pt;
+    color: var(--text-color);
+    line-height: 1.8;
+    text-align: center;
+}
+
+.skill-category-label {
+    font-weight: 500;
+    color: var(--heading-color);
+    margin-right: 4pt;
+}
+
+.skill-category-label::before {
+    content: "";
+    display: block;
+    margin-top: 6pt;
+}
+
+.skill-name {
+    margin-right: 5pt;
+    color: var(--text-color);
+}
+
+.skill-name::after {
+    content: " ·";
+    color: var(--muted-color);
+}
+
+.skill-name:last-child::after { content: ""; }
+
+/* Languages */
+.languages-line {
+    font-size: 9.5pt;
+    color: var(--text-color);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4pt 16pt;
+}
+
+.lang-name { font-weight: 500; }
+
+/* Awards */
+.award-item {
+    font-size: 9.5pt;
+    color: var(--text-color);
+    margin-bottom: 4pt;
+    text-align: center;
+}
+
+.award-title { font-weight: 500; }
+
+.issuer { color: var(--muted-color); }
+
+/* Custom */
+.custom-item { margin-bottom: 10pt; }
+
+.custom-item h4 {
+    font-size: 10pt;
+    font-weight: 500;
+    color: var(--heading-color);
+}
+
+.subtitle { font-size: 9pt; color: var(--muted-color); }
+
+/* Print */
+@media print {
+    .resume-page { width: 100%; margin: 0; padding: 22mm 22mm; }
+    @page { size: A4; margin: 0; }
+}
+
+.page-break { page-break-after: always; break-after: page; }

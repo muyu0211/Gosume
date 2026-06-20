@@ -44,6 +44,7 @@ src/
 │   └── usePreview.ts         # 预览 HTML 生成（带防抖）
 ├── lib/
 │   ├── template-engine.ts    # 客户端模板渲染（html2canvas）
+│   ├── error-utils.ts        # 统一错误消息提取（兼容 Go 错误、JSON 错误、字符串）
 │   └── wails-runtime.ts      # Wails 运行时辅助函数
 ├── routes/
 │   ├── WelcomePage.tsx       # 首页 / 简历列表
@@ -100,6 +101,38 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 在纯 Vite 开发模式下（无 Wails 运行时），`callService` 返回 `null`，各 store 有本地 fallback 逻辑。
 
+### 错误处理
+
+所有 Go 服务方法返回的错误统一使用中文用户友好消息（`UserError`）。前端通过 `lib/error-utils.ts` 中的 `extractErrorMessage` 统一提取：
+
+```ts
+import { extractErrorMessage } from '../lib/error-utils'
+
+try {
+  await callService('ExportService', 'ExportPDF', ...)
+} catch (err) {
+  setErrorMsg(extractErrorMessage(err, '导出失败，请重试'))
+}
+```
+
+`extractErrorMessage` 按优先级处理：Error.message → Wails JSON 序列化错误中的 `message` 字段 → 对象的 `message` 属性 → fallback 字符串。
+
+### 模板导入
+
+用户在欢迎页或编辑器模板切换器中可导入 `.gosume-template` 模板包（ZIP 格式）。前端通过 `services/templateService.ts` 的 `importTemplatePackage()` 调用后端：
+
+```ts
+import { importTemplatePackage, loadTemplateMetas } from '../services/templateService'
+
+const result = await importTemplatePackage()  // 弹出原生文件选择对话框
+if (result) {
+  setTemplates(await loadTemplateMetas())      // 刷新模板列表
+  setActiveTemplate(result.id)                  // 切换到新模板
+}
+```
+
+导入成功后需刷新模板列表并重新生成缩略图。仅在 Wails 桌面环境下可用，纯浏览器模式下抛出错误。
+
 ### 状态管理
 
 三个 zustand store：
@@ -126,6 +159,16 @@ updateField('jobs[0].company', '某公司')
 ### 预览
 
 `usePreview` hook 通过调用 `ResumeService.RenderPreview`（服务端渲染）生成预览 HTML，带防抖处理。PreviewPanel 通过 iframe 渲染 HTML。
+
+模板引擎（`lib/template-engine.ts`）提供以下模板辅助函数：
+
+| 辅助函数 | 用途 |
+|----------|------|
+| `escapeHtml` | HTML 转义，防 XSS |
+| `nl2br` | 换行符转 `<br>` |
+| `i18n(lang, zhKey, enKey)` | 根据简历语言字段切换中英文显示 |
+| `safeHTML(s)` | 输出原始 HTML（用于模板中已转义的内容） |
+| `defaultVal(fallback, val)` | 值为空时返回默认值 |
 
 ## 开发规范
 

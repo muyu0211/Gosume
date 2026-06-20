@@ -7,12 +7,12 @@ import { extractErrorMessage } from '../../lib/error-utils'
 import { Check, ChevronDown, Layout, Loader2, Upload } from 'lucide-react'
 
 const FALLBACK_COLORS: Record<string, string> = {
-  modern: '#2563EB',
-  classic: '#1F2937',
-  minimal: '#334155',
-  creative: '#6366F1',
-  executive: '#C8A45C',
-  compact: '#0F766E',
+  'a406004d-d3b8-4900-969f-8094f8e85cf0': '#2563EB',
+  '134eaf4d-6788-4cd3-82a5-36029e0301d1': '#1F2937',
+  'ee56f81c-4564-47f7-bcbe-fdb1cbeeac9b': '#334155',
+  '5783a016-1d38-4723-afa5-babb4a5c1bdd': '#6366F1',
+  '550e2b7e-9a88-4869-9928-ea4e78c2ef4f': '#C8A45C',
+  '8a4a05cb-78fe-42e5-ac2d-deec81418660': '#0F766E',
 }
 
 export function TemplateSwitcher() {

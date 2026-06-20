@@ -1,0 +1,322 @@
+/* Timeline Narrative Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10pt;
+    --line-height: 1.55;
+    --primary-color: #C2410C;
+    --secondary-color: #EA580C;
+    --text-color: #292524;
+    --heading-color: #431407;
+    --muted-color: #78716C;
+    --border-color: #E7E5E4;
+    --accent-bg: #FFF7ED;
+    --timeline-color: #FDBA74;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 18mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 16pt;
+}
+
+.header h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 4pt;
+}
+
+.header .job-title {
+    font-size: 11pt;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 6pt;
+}
+
+.contact-line {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 16pt;
+    padding: 10pt 14pt;
+    background: var(--accent-bg);
+    border-left: 3pt solid var(--primary-color);
+    font-size: 9.5pt;
+    line-height: 1.65;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 12pt;
+    text-align: center;
+    letter-spacing: 2pt;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 28pt;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 9pt;
+    top: 0;
+    bottom: 0;
+    width: 2pt;
+    background: var(--timeline-color);
+    border-radius: 1pt;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 16pt;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -28pt;
+    top: 4pt;
+    width: 20pt;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.timeline-dot {
+    width: 12pt;
+    height: 12pt;
+    border-radius: 50%;
+    background: var(--primary-color);
+    border: 2pt solid #fff;
+    box-shadow: 0 0 0 2pt var(--primary-color);
+    flex-shrink: 0;
+}
+
+.timeline-line {
+    width: 2pt;
+    flex: 1;
+    min-height: 20pt;
+    background: var(--timeline-color);
+    margin-top: 4pt;
+}
+
+.timeline-item:last-child .timeline-line { display: none; }
+
+.timeline-content {
+    background: var(--accent-bg);
+    padding: 8pt 12pt;
+    border-radius: 4pt;
+    border: 1pt solid var(--border-color);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.timeline-header .company {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.timeline-header .date {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+}
+
+.timeline-content .title {
+    font-size: 9.5pt;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 2pt;
+}
+
+.timeline-content .location {
+    font-size: 8.5pt;
+    color: var(--muted-color);
+    margin-bottom: 4pt;
+}
+
+.exp-summary {
+    font-size: 9pt;
+    color: var(--text-color);
+    margin-bottom: 4pt;
+    line-height: 1.5;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 12pt;
+    font-size: 9pt;
+    margin-bottom: 2pt;
+    line-height: 1.45;
+}
+
+.highlights li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-size: 8pt;
+}
+
+/* Education */
+.education-item { margin-bottom: 10pt; }
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 9.5pt;
+    color: var(--muted-color);
+}
+
+/* Experience (non-timeline) */
+.experience-item { margin-bottom: 10pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+.exp-header .title {
+    font-size: 9.5pt;
+    color: var(--primary-color);
+}
+
+/* Skills */
+.skills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14pt;
+}
+
+.skill-category { flex: 1; min-width: 120pt; }
+
+.skill-category h4 {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 4pt;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9pt;
+    margin-bottom: 2pt;
+}
+
+.skill-dots { display: flex; gap: 2pt; }
+
+.skill-dot {
+    width: 7pt;
+    height: 7pt;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
+.skill-dot.filled { background: var(--primary-color); }
+
+/* Languages */
+.languages-line {
+    font-size: 9.5pt;
+    color: var(--text-color);
+}
+
+.lang-item { margin-right: 14pt; }
+
+.lang-name { font-weight: 600; }
+
+/* Awards */
+.award-item { margin-bottom: 5pt; font-size: 9.5pt; }
+
+.award-title { font-weight: 600; }
+
+.issuer { color: var(--muted-color); }
+
+/* Custom */
+.custom-item { margin-bottom: 8pt; }
+
+.custom-item h4 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.subtitle {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
+/* Print */
+@media print {
+    .resume-page { width: 100%; margin: 0; padding: 18mm 18mm; }
+    @page { size: A4; margin: 0; }
+}
+
+.page-break { page-break-after: always; break-after: page; }

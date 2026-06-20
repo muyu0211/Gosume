@@ -1,16 +1,16 @@
 {
-    "id": "550e2b7e-9a88-4869-9928-ea4e78c2ef4f",
-    "name": "高管精英风",
-    "name_en": "Executive Elite",
+    "id": "3c8f5a1b-7d2e-4f9a-b6c0-8e1d4f7a3b9c",
+    "name": "渐变现代风",
+    "name_en": "Gradient Modern",
     "version": "1.0.0",
     "author": {
         "name": "Gosume",
         "email": "team@resume-craft.app"
     },
-    "description": "沉稳大气的深蓝金色搭配，衬线标题字体，适合管理、金融、咨询等高端岗位",
-    "description_en": "Elegant navy and gold palette with serif headings, perfect for management, finance, and consulting roles",
-    "category": "business",
-    "tags": ["高端", "商务", "管理", "executive", "navy", "elegant"],
+    "description": "渐变顶栏设计，双栏布局，技能标签胶囊样式，适合互联网和科技行业求职者",
+    "description_en": "Gradient header bar with two-column layout and pill-shaped skill tags, ideal for tech and internet industry professionals",
+    "category": "tech",
+    "tags": ["渐变", "双栏", "科技", "gradient", "modern", "胶囊标签"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
@@ -20,15 +20,15 @@
     "paper_size": "A4",
     "orientations": ["portrait"],
     "colors": {
-        "primary": "#1A2332",
-        "secondary": "#C8A45C",
-        "text": "#2D3748",
+        "primary": "#7C3AED",
+        "secondary": "#2563EB",
+        "text": "#1F2937",
         "background": "#FFFFFF",
-        "accent": "#F7F3EB"
+        "accent": "#F5F3FF"
     },
     "features": {
-        "avatar": false,
-        "skill_bars": false,
+        "avatar": true,
+        "skill_bars": true,
         "qr_code": false,
         "links_clickable": true
     },

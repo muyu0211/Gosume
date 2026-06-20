@@ -1,0 +1,40 @@
+{
+    "id": "7b1d4e2a-9c3f-4a8b-b5d6-1e7f8a9b0c2d",
+    "name": "学术简历风",
+    "name_en": "Academic Scholar",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "适合高校教职、科研岗位和研究生申请，严谨庄重的单栏布局，强调教育背景和发表成果",
+    "description_en": "Traditional academic CV layout for faculty, research, and graduate school applications, emphasizes education and publications",
+    "category": "academic",
+    "tags": ["学术", "正式", "单栏", "academic", "formal", "研究"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 5,
+        "default": 2
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#1E3A5F",
+        "secondary": "#2C5282",
+        "text": "#1A202C",
+        "background": "#FFFFFF",
+        "accent": "#EBF0F5"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "education", "jobs"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "education", "jobs", "projects", "awards", "skills", "languages", "custom"]
+    }
+}

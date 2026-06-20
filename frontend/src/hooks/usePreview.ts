@@ -19,7 +19,7 @@ export function usePreview() {
       // Always use client-side rendering for live preview so it reflects
       // the current Zustand state immediately (Go backend memory is only
       // synced on explicit save, not on every keystroke).
-      const tmpl = await loadTemplateContent(activeTemplateId || 'modern')
+      const tmpl = await loadTemplateContent(activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0')
       const rendered = renderTemplate(tmpl, resume)
       setPreviewHtml(rendered)
     } catch (err) {

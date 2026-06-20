@@ -27,6 +27,7 @@ pkg/
 ├── render/           # HTML 渲染
 │   └── html.go       #   HTMLRenderer：模板 + 数据 → HTML 输出
 ├── service/          # Wails 服务层（对前端暴露的 API）
+│   ├── errors.go             #   统一用户友好错误：UserError、UserMsg、UserWrap、IsCancel
 │   ├── resume_service.go    #   ResumeService：简历 CRUD、预览、保存
 │   ├── template_service.go  #   TemplateService：模板列表、内容、导入、CRUD
 │   ├── export_service.go    #   ExportService：PDF/PNG 导出
@@ -37,9 +38,10 @@ pkg/
 │   ├── template_store.go    #   TemplateStore：templates 表 + 文件导入
 │   └── project.go           #   ProjectStore：最近打开文件列表
 └── template/         # 模板系统
-    ├── loader.go     #   Loader：通过 TemplateStore 接口加载模板
-    ├── validator.go  #   根据模板 schema 校验简历数据
-    └── package_importer.go  #   .gosume-template 模板包的导入与导出
+    ├── loader.go               #   Loader：通过 TemplateStore 接口加载模板
+    ├── validator.go            #   根据模板 schema 校验简历数据
+    ├── package_importer.go     #   .gosume-template 模板包的 ZIP 解析与导入
+    └── package_importer_test.go #   模板包导入单元测试
 ```
 
 ## 技术栈
@@ -70,6 +72,26 @@ Go:   ResumeService.NewResume(templateID string, language string)
 ```
 
 只有服务结构体上的**导出方法（大写开头）**才能被前端调用。未导出方法（如 `saveResume`）仅限内部使用。
+
+### 错误处理
+
+所有服务方法使用 `service/errors.go` 中的统一错误类型，向前端返回中文用户友好消息：
+
+```go
+// 创建用户友好的错误
+return UserMsg("未加载简历")
+
+// 包装底层错误，附加用户友好消息
+return UserWrap(err, "保存项目失败")
+```
+
+| 函数 | 用途 |
+|------|------|
+| `UserMsg(msg)` | 从字符串创建 `UserError` |
+| `UserWrap(err, msg)` | 包装底层错误，返回时显示 `msg`（err 为 nil 或已是 UserError 时直通） |
+| `IsCancel(err)` | 检测是否为用户取消对话框操作（匹配 "cancelled" / "canceled"），取消时不显示错误 |
+
+`UserError` 实现 `error` 接口，其 `Error()` 输出直接成为前端 JS `Error.message`。前端通过 `extractErrorMessage()` 统一提取（见 `frontend/AGENTS.md`）。用户取消操作（如关闭对话框）应返回 `nil`，避免前端弹错误提示。
 
 ### 依赖注入
 
@@ -123,9 +145,14 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 使用 zap 结构化日志。日志文件写入 `{dataDir}/log/` 目录。日志级别通过 `log.INFO`、`log.DEBUG` 等设置。辅助函数：`log.Info`、`log.Error`、`log.Warn`、`log.Debug`、`log.Fatal`。
 
-### 错误处理
+### 模板导入
 
-- 服务方法返回 `(result, error)`——Wails 将两者序列化传给前端
-- 存储层错误通过 `fmt.Errorf("上下文: %w", err)` 包装
-- 初始化阶段的致命错误调用 `panic`（由 Wails 捕获处理）
-- 用户操作取消（如关闭对话框）返回 `nil` 错误，避免前端显示错误提示
+`TemplateService.ImportTemplatePackage()` 支持从本地文件导入 `.gosume-template` 模板包：
+
+1. 前端调用 → Go 弹出原生文件选择对话框（filter: `*.gosume-template`, `*.zip`）
+2. `template.LoadPackageFromZip()` 解析 ZIP：提取 `manifest.json`（元数据）、`template.html`、`template.css`
+3. 检查模板 ID 是否已存在，存在则返回错误
+4. 通过 `TemplateStore.Create()` 将模板存入 SQLite
+5. 返回 `ImportTemplateResult{ID, Name, Version, Meta}` 给前端
+
+`TemplateService` 新增 `wailsApp` 依赖（用于弹出文件对话框），`Inject()` 签名相应更新。内部辅助函数 `toGetTemplateMeta()` 消除模板元数据转换的重复代码。

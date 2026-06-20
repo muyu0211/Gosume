@@ -69,7 +69,7 @@ export async function saveTemplateMetas(templates: TemplateMeta[]): Promise<void
 function getDefaultTemplates(): TemplateMeta[] {
   return [
     {
-      id: 'modern',
+      id: 'a406004d-d3b8-4900-969f-8094f8e85cf0',
       name: '现代专业风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -83,7 +83,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       colors: { primary: '#2563EB', secondary: '#1E40AF', text: '#1F2937', background: '#FFFFFF', accent: '#DBEAFE' },
     },
     {
-      id: 'classic',
+      id: '134eaf4d-6788-4cd3-82a5-36029e0301d1',
       name: '经典正式风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -97,7 +97,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       colors: { primary: '#1F2937', secondary: '#374151', text: '#111827', background: '#FFFFFF', accent: '#F3F4F6' },
     },
     {
-      id: 'minimal',
+      id: 'ee56f81c-4564-47f7-bcbe-fdb1cbeeac9b',
       name: '极简清新风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -111,7 +111,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       colors: { primary: '#334155', secondary: '#64748B', text: '#1E293B', background: '#FFFFFF', accent: '#F1F5F9' },
     },
     {
-      id: 'creative',
+      id: '5783a016-1d38-4723-afa5-babb4a5c1bdd',
       name: '创意设计风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -125,7 +125,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       colors: { primary: '#6366F1', secondary: '#4F46E5', text: '#1E293B', background: '#FFFFFF', accent: '#EEF2FF' },
     },
     {
-      id: 'executive',
+      id: '550e2b7e-9a88-4869-9928-ea4e78c2ef4f',
       name: '高管精英风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -139,7 +139,7 @@ function getDefaultTemplates(): TemplateMeta[] {
       colors: { primary: '#1A2332', secondary: '#C8A45C', text: '#2D3748', background: '#FFFFFF', accent: '#F7F3EB' },
     },
     {
-      id: 'compact',
+      id: '8a4a05cb-78fe-42e5-ac2d-deec81418660',
       name: '紧凑高效风',
       version: '1.0.0',
       author: { name: 'Gosume' },
@@ -157,12 +157,12 @@ function getDefaultTemplates(): TemplateMeta[] {
 
 function getBuiltinTemplateContent(templateId: string): TemplateSet {
   switch (templateId) {
-    case 'modern': return MODERN_TEMPLATE
-    case 'classic': return CLASSIC_TEMPLATE
-    case 'minimal': return MINIMAL_TEMPLATE
-    case 'creative': return CREATIVE_TEMPLATE
-    case 'executive': return EXECUTIVE_TEMPLATE
-    case 'compact': return COMPACT_TEMPLATE
+    case 'a406004d-d3b8-4900-969f-8094f8e85cf0': return MODERN_TEMPLATE
+    case '134eaf4d-6788-4cd3-82a5-36029e0301d1': return CLASSIC_TEMPLATE
+    case 'ee56f81c-4564-47f7-bcbe-fdb1cbeeac9b': return MINIMAL_TEMPLATE
+    case '5783a016-1d38-4723-afa5-babb4a5c1bdd': return CREATIVE_TEMPLATE
+    case '550e2b7e-9a88-4869-9928-ea4e78c2ef4f': return EXECUTIVE_TEMPLATE
+    case '8a4a05cb-78fe-42e5-ac2d-deec81418660': return COMPACT_TEMPLATE
     default: return MODERN_TEMPLATE
   }
 }

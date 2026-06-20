@@ -1,0 +1,40 @@
+{
+    "id": "9a2b6c4d-1e8f-4d3a-b7c2-5f0e9a8d1b7c",
+    "name": "时间线叙事风",
+    "name_en": "Timeline Narrative",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "时间线布局呈现职业成长轨迹，温暖配色，适合注重职业故事和成长路径的求职者",
+    "description_en": "Timeline layout showcasing career progression with warm tones, perfect for professionals who want to highlight their growth story",
+    "category": "creative",
+    "tags": ["时间线", "叙事", "温暖", "timeline", "story", "创意"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#C2410C",
+        "secondary": "#EA580C",
+        "text": "#292524",
+        "background": "#FFFFFF",
+        "accent": "#FFF7ED"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "projects", "skills", "languages", "awards", "custom"]
+    }
+}

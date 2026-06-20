@@ -85,18 +85,24 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 			continue
 		}
 
-		tmplID := entry.Name()
-		prefix := path.Join("templates", tmplID)
+		dirName := entry.Name()
+		prefix := path.Join("templates", dirName)
 
 		metaData, err := fs.ReadFile(builtinFS, path.Join(prefix, "template.json"))
 		if err != nil {
-			log.Warn("[template_store] skip %s: read template.json: %v", tmplID, err)
+			log.Warn("[template_store] skip %s: read template.json: %v", dirName, err)
 			continue
 		}
 
 		var meta template.Meta
 		if err := json.Unmarshal(metaData, &meta); err != nil {
-			log.Warn("[template_store] skip %s: parse template.json: %v", tmplID, err)
+			log.Warn("[template_store] skip %s: parse template.json: %v", dirName, err)
+			continue
+		}
+
+		tmplID := meta.ID
+		if tmplID == "" {
+			log.Warn("[template_store] skip %s: empty id in template.json", dirName)
 			continue
 		}
 
