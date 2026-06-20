@@ -1,0 +1,40 @@
+{
+    "id": "f5a6b7c8-d9e0-4f1a-2b3c-4d5e6f7a8b9c",
+    "name": "瑞士国际风",
+    "name_en": "Swiss International",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "瑞士国际主义排版风格，严格网格系统与非对称布局，红黑白经典配色，适合设计和建筑类岗位",
+    "description_en": "Swiss International Typographic Style with strict grid system and asymmetric layout in classic red-black-white palette, ideal for design and architecture roles",
+    "category": "creative",
+    "tags": ["瑞士", "网格", "排版", "swiss", "typography", "几何"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#E63946",
+        "secondary": "#1D1D1D",
+        "text": "#1A1A1A",
+        "background": "#FFFFFF",
+        "accent": "#F5F5F5"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

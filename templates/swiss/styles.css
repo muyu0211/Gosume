@@ -1,0 +1,275 @@
+/* Swiss International Template Styles */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 9pt;
+    --line-height: 1.5;
+    --primary-color: #E63946;
+    --dark-color: #1D1D1D;
+    --text-color: #1A1A1A;
+    --heading-color: #1A1A1A;
+    --muted-color: #525252;
+    --border-color: #D4D4D4;
+    --accent-bg: #F5F5F5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 12mm 16mm;
+    background: #fff;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Header — Asymmetric with red accent */
+.header {
+    display: flex;
+    margin-bottom: 14pt;
+}
+
+.header-accent {
+    width: 4pt;
+    background: var(--primary-color);
+    margin-right: 12pt;
+    flex-shrink: 0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex: 1;
+    padding: 6pt 0;
+}
+
+.header-name h1 {
+    font-size: 22pt;
+    font-weight: 900;
+    color: var(--heading-color);
+    letter-spacing: -0.5pt;
+    line-height: 1.1;
+    margin-bottom: 2pt;
+}
+
+.header-name .job-title {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 2pt;
+}
+
+.header-contact {
+    text-align: right;
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    line-height: 1.6;
+}
+
+/* Summary */
+.summary {
+    margin-bottom: 14pt;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    padding-left: 16pt;
+    border-left: 2pt solid var(--accent-bg);
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8pt;
+    gap: 8pt;
+}
+
+.section-accent {
+    width: 24pt;
+    height: 3pt;
+    background: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-size: 9pt;
+    font-weight: 900;
+    color: var(--heading-color);
+    text-transform: uppercase;
+    letter-spacing: 1.5pt;
+}
+
+/* Experience — with mini accent bar */
+.experience-item {
+    display: flex;
+    margin-bottom: 9pt;
+    gap: 10pt;
+}
+
+.exp-accent {
+    width: 2pt;
+    background: var(--border-color);
+    flex-shrink: 0;
+    margin-top: 3pt;
+    align-self: stretch;
+    min-height: 100%;
+}
+
+.exp-content { flex: 1; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.exp-header .company {
+    font-weight: 900;
+    font-size: 9.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    font-weight: 400;
+}
+
+.title {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 2pt;
+}
+
+.exp-summary {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 3pt;
+}
+
+.highlights {
+    padding-left: 12pt;
+    list-style: none;
+}
+
+.highlights li {
+    position: relative;
+    padding-left: 8pt;
+    font-size: 8pt;
+    margin-bottom: 1.5pt;
+    line-height: 1.4;
+}
+
+.highlights li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-size: 7pt;
+    font-weight: 700;
+}
+
+/* Two-Column Grid */
+.grid-2col {
+    display: flex;
+    gap: 20pt;
+}
+
+.grid-col { flex: 1; }
+
+/* Education */
+.education-item { margin-bottom: 7pt; }
+
+.edu-school {
+    font-weight: 700;
+    font-size: 9pt;
+    color: var(--heading-color);
+}
+
+.edu-detail {
+    font-size: 8pt;
+    color: var(--text-color);
+}
+
+.edu-date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+.edu-gpa {
+    font-size: 7.5pt;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Skills */
+.skill-category { margin-bottom: 6pt; }
+
+.skill-category h4 {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 2pt;
+    text-transform: uppercase;
+}
+
+.skill-tags { display: flex; flex-wrap: wrap; gap: 3pt; }
+
+.skill-tag {
+    font-size: 7.5pt;
+    padding: 1pt 6pt;
+    background: var(--accent-bg);
+    border-radius: 2pt;
+    color: var(--text-color);
+}
+
+/* Languages */
+.lang-item {
+    font-size: 8.5pt;
+    margin-bottom: 2pt;
+}
+
+.lang-name { font-weight: 700; }
+
+/* Awards */
+.award-item { margin-bottom: 4pt; }
+
+.award-title {
+    font-size: 8.5pt;
+    font-weight: 600;
+}
+
+.award-date, .award-issuer {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+/* Custom */
+.custom-item { margin-bottom: 6pt; }
+
+.custom-item h4 {
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.subtitle { font-size: 8pt; color: var(--muted-color); }
+
+/* Print */
+@media print {
+    .resume-page { width: 100%; margin: 0; padding: 12mm 16mm; }
+    @page { size: A4; margin: 0; }
+}
+
+.page-break { page-break-after: always; break-after: page; }

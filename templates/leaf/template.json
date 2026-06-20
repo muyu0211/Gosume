@@ -1,0 +1,40 @@
+{
+    "id": "e4f5a6b7-c8d9-4e0f-1a2b-3c4d5e6f7a8b",
+    "name": "青叶自然风",
+    "name_en": "Natural Leaf",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "自然清新的绿色系设计，卡片式圆角区块搭配柔和阴影，适合教育、公益、健康类岗位",
+    "description_en": "Fresh nature-inspired green design with rounded card sections and soft shadows, ideal for education, non-profit, and healthcare roles",
+    "category": "general",
+    "tags": ["自然", "清新", "卡片", "nature", "fresh", "绿色"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 5,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#4A7C59",
+        "secondary": "#7CB342",
+        "text": "#2E3B2D",
+        "background": "#FFFFFF",
+        "accent": "#F0F7F2"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

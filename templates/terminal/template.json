@@ -1,0 +1,40 @@
+{
+    "id": "d3e4f5a6-b7c8-4d9e-0f1a-2b3c4d5e6f7a",
+    "name": "终端极客风",
+    "name_en": "Terminal Hacker",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
+    },
+    "description": "终端命令行风格设计，等宽字体与绿色代码美学，适合开发者、安全工程师和极客岗位",
+    "description_en": "Terminal-inspired design with monospace fonts and green code aesthetics, perfect for developers, security engineers, and tech geeks",
+    "category": "tech",
+    "tags": ["终端", "极客", "代码", "terminal", "geek", "monospace"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#00FF41",
+        "secondary": "#008F11",
+        "text": "#E0E0E0",
+        "background": "#0D1117",
+        "accent": "#161B22"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
+    }
+}

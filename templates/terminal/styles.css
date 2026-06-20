@@ -1,0 +1,336 @@
+/* Terminal Hacker Template Styles */
+:root {
+    --font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Source Code Pro', 'Courier New', monospace;
+    --font-size-base: 9pt;
+    --line-height: 1.55;
+    --primary-color: #00FF41;
+    --secondary-color: #008F11;
+    --text-color: #E0E0E0;
+    --heading-color: #FFFFFF;
+    --muted-color: #8B949E;
+    --border-color: #30363D;
+    --accent-bg: #161B22;
+    --bg-color: #0D1117;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: var(--bg-color);
+}
+
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--bg-color);
+    padding: 14mm 16mm;
+}
+
+.resume-container { max-width: 100%; }
+
+/* Prompt Style */
+.prompt { color: var(--primary-color); font-weight: 700; }
+
+.cursor {
+    color: var(--primary-color);
+    animation: none;
+}
+
+.pipe { color: var(--muted-color); }
+
+.bracket { color: var(--muted-color); }
+
+/* Header */
+.header {
+    margin-bottom: 14pt;
+    padding-bottom: 10pt;
+    border-bottom: 1pt dashed var(--border-color);
+}
+
+.header-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14pt;
+}
+
+.header-info {
+    flex: 1;
+}
+
+.header-avatar {
+    flex-shrink: 0;
+}
+
+.header-avatar img {
+    width: 57pt;
+    height: 76pt;
+    object-fit: cover;
+    border: 1.5pt solid var(--primary-color);
+    border-radius: 2pt;
+    filter: brightness(0.9);
+}
+
+.prompt-line {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    margin-bottom: 6pt;
+}
+
+.header h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 4pt;
+}
+
+.header .job-title {
+    font-size: 9pt;
+    color: var(--text-color);
+    margin-bottom: 2pt;
+}
+
+.header .years {
+    font-size: 8pt;
+    color: var(--muted-color);
+    margin-bottom: 6pt;
+}
+
+.contact-prompt {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    margin-bottom: 3pt;
+}
+
+.contact-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3pt 10pt;
+    font-size: 8pt;
+    color: var(--text-color);
+}
+
+/* Summary */
+.summary-box {
+    margin-bottom: 14pt;
+}
+
+.summary {
+    font-size: 8.5pt;
+    color: var(--text-color);
+    line-height: 1.6;
+    padding: 6pt 8pt;
+    background: var(--accent-bg);
+    border: 1pt solid var(--border-color);
+    border-radius: 3pt;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 8.5pt;
+    color: var(--primary-color);
+    margin-bottom: 8pt;
+    padding-bottom: 4pt;
+    border-bottom: 1pt dotted var(--border-color);
+}
+
+/* Experience */
+.experience-item {
+    margin-bottom: 10pt;
+    padding: 6pt 8pt;
+    background: var(--accent-bg);
+    border: 1pt solid var(--border-color);
+    border-radius: 3pt;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.exp-header .company {
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: var(--heading-color);
+}
+
+.exp-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+.title {
+    font-size: 8.5pt;
+    color: var(--primary-color);
+    margin-bottom: 2pt;
+}
+
+.location {
+    font-size: 8pt;
+    color: var(--muted-color);
+    margin-bottom: 3pt;
+}
+
+.exp-summary {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 3pt;
+}
+
+.highlights-label {
+    font-size: 8pt;
+    color: var(--muted-color);
+    margin-bottom: 2pt;
+}
+
+.highlights {
+    list-style: none;
+    padding-left: 0;
+}
+
+.highlights li {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 1.5pt;
+    line-height: 1.45;
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 8pt;
+    padding: 6pt 8pt;
+    background: var(--accent-bg);
+    border: 1pt solid var(--border-color);
+    border-radius: 3pt;
+}
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.edu-header .school {
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+}
+
+.edu-detail {
+    font-size: 8pt;
+    color: var(--text-color);
+}
+
+/* Skills */
+.skill-block {
+    margin-bottom: 6pt;
+}
+
+.skill-cat {
+    font-size: 8pt;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 4pt;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    font-size: 8pt;
+    margin-bottom: 2pt;
+    gap: 8pt;
+}
+
+.skill-name {
+    min-width: 100pt;
+    color: var(--text-color);
+}
+
+.skill-dots {
+    display: flex;
+    gap: 2pt;
+}
+
+.skill-dot {
+    width: 5pt;
+    height: 5pt;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
+.skill-dot.filled { background: var(--primary-color); }
+
+.skill-pct {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    margin-left: 4pt;
+}
+
+/* Languages */
+.languages-line {
+    font-size: 8pt;
+    color: var(--text-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3pt 10pt;
+}
+
+/* Awards */
+.award-item {
+    font-size: 8pt;
+    color: var(--text-color);
+    margin-bottom: 3pt;
+}
+
+.award-star { color: var(--primary-color); }
+
+.date, .issuer { color: var(--muted-color); }
+
+/* Custom */
+.custom-item {
+    margin-bottom: 8pt;
+    padding: 6pt 8pt;
+    background: var(--accent-bg);
+    border: 1pt solid var(--border-color);
+    border-radius: 3pt;
+}
+
+.custom-item h4 {
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.subtitle { font-size: 8pt; color: var(--muted-color); }
+
+/* Footer */
+.footer {
+    margin-top: 14pt;
+    font-size: 9pt;
+    color: var(--primary-color);
+}
+
+/* Print */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: 14mm 16mm;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    @page { size: A4; margin: 0; }
+}
+
+.page-break { page-break-after: always; break-after: page; }

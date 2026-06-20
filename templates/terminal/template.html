@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="{{.Meta.Language}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Personal.FullName}} - 简历</title>
+    <style>{{template "styles.css" .}}</style>
+</head>
+<body class="resume-page">
+    <div class="resume-container">
+        <!-- Terminal Header -->
+        <div class="header">
+            <div class="prompt-line"><span class="prompt">$</span> cat ~/resume.json <span class="cursor">|</span> jq .personal</div>
+            <div class="header-row">
+                <div class="header-info">
+            <h1><span class="bracket">{</span> {{.Personal.FullName}} <span class="bracket">}</span></h1>
+            {{if .Personal.JobTitle}}<div class="job-title">└─ title: "{{.Personal.JobTitle}}"</div>{{end}}
+            {{if .Personal.YearsOfExp}}<div class="years">└─ experience: {{.Personal.YearsOfExp}} years</div>{{end}}
+            <div class="contact-prompt">
+                <span class="prompt">$</span> echo $CONTACT
+            </div>
+            <div class="contact-line">
+                {{if .Personal.Email}}<span>[{{.Personal.Email}}]</span>{{end}}
+                {{if .Personal.Phone}}<span>[{{.Personal.Phone}}]</span>{{end}}
+                {{if .Personal.Location}}<span>[{{.Personal.Location}}]</span>{{end}}
+                {{if .Personal.GitHub}}<span>[{{.Personal.GitHub}}]</span>{{end}}
+            </div>
+                </div><!-- .header-info -->
+                {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar}}" alt="avatar" /></div>{{end}}
+            </div><!-- .header-row -->
+        </div><!-- .header -->
+
+        {{if .Summary}}
+        <div class="summary-box">
+            <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
+            <div class="summary">{{nl2br .Summary}}</div>
+        </div>
+        {{end}}
+
+        <!-- Work Experience -->
+        {{if .Jobs}}
+        <div class="section-title">
+            <span class="prompt">$</span> grep "experience" ~/resume.json <span class="pipe">|</span> jq .jobs[]
+        </div>
+        {{range .Jobs}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <span class="company">▸ {{.Company}}</span>
+                {{if .StartDate}}<span class="date">// {{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
+            </div>
+            {{if .Title}}<div class="title">  role: {{.Title}}</div>{{end}}
+            {{if .Location}}<div class="location">  location: {{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">  summary: {{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <div class="highlights-label">  achievements:</div>
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>  - {{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Education -->
+        {{if .Education}}
+        <div class="section-title">
+            <span class="prompt">$</span> cat /etc/education.conf
+        </div>
+        {{range .Education}}
+        <div class="education-item">
+            <div class="edu-header">
+                <span class="school">▸ {{.School}}</span>
+                {{if .StartDate}}<span class="date">// {{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}present{{end}}</span>{{end}}
+            </div>
+            <div class="edu-detail">  degree: {{.Degree}}{{if .Major}} | major: {{.Major}}{{end}}{{if .GPA}} | gpa: {{.GPA}}{{end}}</div>
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-title">
+            <span class="prompt">$</span> ls -la /usr/local/skills/
+        </div>
+        {{range .Skills}}
+        <div class="skill-block">
+            <div class="skill-cat">drwxr-xr-x  {{.Category}}/</div>
+            {{range .Items}}
+            <div class="skill-item">
+                <span class="skill-name">  {{.Name}}</span>
+                {{if .Level}}<span class="skill-dots">{{skillLevel .Level}}</span><span class="skill-pct">{{.Level}}/5</span>{{end}}
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Projects -->
+        {{if .Projects}}
+        <div class="section-title">
+            <span class="prompt">$</span> ls ~/projects/
+        </div>
+        {{range .Projects}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <span class="company">▸ {{.Name}}</span>
+                {{if .StartDate}}<span class="date">// {{dateRange .StartDate .EndDate false}}</span>{{end}}
+            </div>
+            {{if .Role}}<div class="title">  role: {{.Role}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">  summary: {{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>  - {{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-title">
+            <span class="prompt">$</span> locale -a
+        </div>
+        <div class="languages-line">
+            {{range .Languages}}
+            <span class="lang-item">[{{.Name}}{{if .Level}}::{{.Level}}{{end}}]</span>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Awards -->
+        {{if .Awards}}
+        <div class="section-title">
+            <span class="prompt">$</span> cat /var/log/achievements.log
+        </div>
+        {{range .Awards}}
+        <div class="award-item">
+            <span class="award-star">★</span> <span class="award-title">{{.Title}}</span>
+            {{if .Date}}<span class="date">// {{.Date}}</span>{{end}}
+            {{if .Issuer}}<span class="issuer">// {{.Issuer}}</span>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Custom -->
+        {{if .Custom}}
+        {{range .Custom}}
+        <div class="section-title">
+            <span class="prompt">$</span> cat ~/{{.Title}}/
+        </div>
+        {{range .Items}}
+        <div class="custom-item">
+            <h4>▸ {{.Title}}</h4>
+            {{if .Subtitle}}<div class="subtitle">  {{.Subtitle}}{{if .Date}} // {{.Date}}{{end}}</div>{{end}}
+            {{if .Description}}<div class="exp-summary">  {{nl2br .Description}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>  - {{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+        {{end}}
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="prompt">$</span> <span class="cursor">_</span>
+        </div>
+    </div>
+</body>
+</html>
