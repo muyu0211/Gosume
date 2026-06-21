@@ -23,13 +23,12 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const minYear = minValue && /^\d{4}-\d{2}$/.test(minValue) ? parseInt(minValue.slice(0, 4)) : 0
-  const minMonth = minValue && /^\d{4}-\d{2}$/.test(minValue) ? parseInt(minValue.slice(5, 7)) : 0
-
-  const isMonthDisabled = useCallback((month: number, year: number) => {
+  const isMonthDisabled = (month: number, year: number) => {
     if (!minValue) return false
+    const minYear = parseInt(minValue.slice(0, 4))
+    const minMonth = parseInt(minValue.slice(5, 7))
     return year < minYear || (year === minYear && month < minMonth)
-  }, [minValue, minYear, minMonth])
+  }
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current || !popoverRef.current) return
