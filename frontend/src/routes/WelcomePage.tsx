@@ -177,13 +177,6 @@ export function WelcomePage() {
             导入模板
           </button>
           <button
-            onClick={() => navigate('/settings')}
-            className="btn-ghost btn-sm"
-            title="设置"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <button
             onClick={() => setShowDrawer(true)}
             className="btn-secondary btn-sm"
           >
@@ -196,6 +189,13 @@ export function WelcomePage() {
           >
             <FolderOpen className="w-4 h-4" />
             打开文件
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="btn-ghost btn-sm"
+            title="设置"
+          >
+            <Settings className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -210,7 +210,7 @@ export function WelcomePage() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto px-8 pb-8">
+      <main className="flex-1 overflow-auto px-8 pb-8 mr-1">
         {/* Template Selection */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-5">

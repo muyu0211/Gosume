@@ -115,7 +115,7 @@ export function PreviewPanel() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden">
+    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden mr-1">
       <div
         style={{
           width: `${A4_W * effectiveScale}px`,
