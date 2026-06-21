@@ -8,11 +8,12 @@ interface Props {
   placeholder?: string
   showPresent?: boolean
   minValue?: string
+  disabled?: boolean
 }
 
 const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
-export function MonthPicker({ value, onChange, placeholder = '选择日期', showPresent = false, minValue }: Props) {
+export function MonthPicker({ value, onChange, placeholder = '选择日期', showPresent = false, minValue, disabled = false }: Props) {
   const [open, setOpen] = useState(false)
   const [viewYear, setViewYear] = useState(() => {
     if (value && /^\d{4}-\d{2}$/.test(value)) return parseInt(value.slice(0, 4))
@@ -168,11 +169,13 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
       <button
         ref={triggerRef}
         type="button"
+        disabled={disabled}
         onClick={() => {
+          if (disabled) return
           if (value && /^\d{4}-\d{2}$/.test(value)) setViewYear(parseInt(value.slice(0, 4)))
           setOpen(!open)
         }}
-        className={`form-input flex items-center gap-2 text-left ${!value ? 'text-surface-400' : ''}`}
+        className={`form-input flex items-center gap-2 text-left ${!value ? 'text-surface-400' : ''} ${disabled ? 'opacity-50 cursor-not-allowed bg-surface-100' : ''}`}
       >
         <Calendar className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
         <span className="flex-1 truncate">{value === '至今' ? '至今' : value || placeholder}</span>

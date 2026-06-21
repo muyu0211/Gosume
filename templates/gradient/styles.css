@@ -36,7 +36,7 @@ body {
 .header {
     background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
     color: #fff;
-    padding: 20mm 18mm 16mm 18mm;
+    padding: 12mm 10mm 10mm 14mm;
     display: flex;
     align-items: center;
     gap: 16pt;

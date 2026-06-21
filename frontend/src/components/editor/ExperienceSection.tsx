@@ -106,22 +106,25 @@ export function ExperienceSection({ type, title }: Props) {
                           <label className="form-label">开始日期</label>
                           <MonthPicker value={(item as Job).start_date || ''} onChange={(v) => updateItem(idx, { start_date: v } as Partial<Job>)} placeholder="选择开始日期" />
                         </div>
-                        {!(item as Job).is_current ? (
-                          <div>
-                            <label className="form-label">结束日期</label>
-                            <MonthPicker value={(item as Job).end_date || ''} onChange={(v) => updateItem(idx, { end_date: v } as Partial<Job>)} placeholder="选择结束日期" showPresent minValue={(item as Job).start_date || undefined} />
-                          </div>
-                        ) : (
-                          <div className="flex items-end pb-1">
-                            <label className="flex items-center gap-2 text-xs text-surface-500">
-                              <input type="checkbox" checked={(item as Job).is_current} onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Job).end_date } as Partial<Job>)} className="accent-primary-600" />
-                              当前在职
-                            </label>
-                          </div>
-                        )}
+                        <div>
+                          <label className="form-label">结束日期</label>
+                          <MonthPicker
+                            value={(item as Job).end_date || ''}
+                            onChange={(v) => updateItem(idx, { end_date: v } as Partial<Job>)}
+                            placeholder="选择结束日期"
+                            showPresent
+                            minValue={(item as Job).start_date || undefined}
+                            disabled={(item as Job).is_current}
+                          />
+                        </div>
                       </div>
                       <label className="flex items-center gap-2 text-xs text-surface-500">
-                        <input type="checkbox" checked={(item as Job).is_current || false} onChange={(e) => updateItem(idx, { is_current: e.target.checked } as Partial<Job>)} className="accent-primary-600" />
+                        <input
+                          type="checkbox"
+                          checked={(item as Job).is_current || false}
+                          onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Job).end_date } as Partial<Job>)}
+                          className="accent-primary-600"
+                        />
                         当前在职
                       </label>
                       <div>
@@ -153,9 +156,25 @@ export function ExperienceSection({ type, title }: Props) {
                         </div>
                         <div>
                           <label className="form-label">结束日期</label>
-                          <MonthPicker value={(item as Project).end_date || ''} onChange={(v) => updateItem(idx, { end_date: v } as Partial<Project>)} placeholder="选择结束日期" showPresent minValue={(item as Project).start_date || undefined} />
+                          <MonthPicker
+                            value={(item as Project).end_date || ''}
+                            onChange={(v) => updateItem(idx, { end_date: v } as Partial<Project>)}
+                            placeholder="选择结束日期"
+                            showPresent
+                            minValue={(item as Project).start_date || undefined}
+                            disabled={(item as Project).is_current || false}
+                          />
                         </div>
                       </div>
+                      <label className="flex items-center gap-2 text-xs text-surface-500">
+                        <input
+                          type="checkbox"
+                          checked={(item as Project).is_current || false}
+                          onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Project).end_date } as Partial<Project>)}
+                          className="accent-primary-600"
+                        />
+                        当前项目未结束
+                      </label>
                       <div>
                         <label className="form-label">项目简述</label>
                         <textarea className="form-textarea-resizable h-16" value={(item as Project).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Project>)} placeholder="项目简要描述..." maxLength={500} />

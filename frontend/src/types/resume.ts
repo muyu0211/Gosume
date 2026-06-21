@@ -69,6 +69,7 @@ export interface Project {
   role?: string
   start_date?: string
   end_date?: string
+  is_current?: boolean
   summary?: string
   highlights?: string[]
   keywords?: string[]
