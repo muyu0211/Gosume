@@ -153,9 +153,9 @@ function consumeBlock(
         if (depth === 0) { i = end + 2; break }
       } else if (expr === 'else') {
         if (depth === 1) { inElse = true }
-      } else if (expr.startsWith('if ')) {
+      } else if (/^if\s/.test(expr)) {
         depth++
-      } else if (expr.startsWith('range ')) {
+      } else if (/^range\s/.test(expr)) {
         depth++
       }
 
@@ -207,7 +207,7 @@ function consumeRangeBlock(
         if (depth === 0) { i = end + 2; break }
       } else if (expr === 'else') {
         if (depth === 1) { inElse = true; elseContent = '' }
-      } else if (expr.startsWith('if ') || expr.startsWith('range ')) {
+      } else if (/^if\s/.test(expr) || /^range\s/.test(expr)) {
         depth++
       }
 
