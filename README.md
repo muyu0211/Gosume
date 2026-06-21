@@ -12,7 +12,7 @@
 
 **Gosume** 是一款简洁、专业的桌面端简历制作工具。无需排版知识，无需打开 Word——选择模板、填写内容、一键导出，三步搞定一份高质量简历。
 
-![Gosume 截图](screenshots/editor.png)
+![Gosume 主界面](images/1.png)
 
 ### 为什么选择 Gosume
 
@@ -42,6 +42,22 @@
 | 时间线叙事风 | 时间轴布局 | 强调成长轨迹的岗位 |
 | 日式禅意风 | 极简留白 | 日企、偏爱侘寂美学 |
 | 终端极客风 | 命令行风格 | 开发者、技术极客 |
+
+![模板预览 - 经典正式风](images/2.png)
+
+![模板预览 - 现代专业风](images/3.png)
+
+### 编辑体验
+
+![编辑区域](images/4.png)
+
+![编辑区域](images/5.png)
+
+![编辑区域](images/6.png)
+
+![编辑区域](images/7.png)
+
+![编辑区域](images/8.png)
 
 ### 功能亮点
 
@@ -85,7 +101,7 @@ task build && task package
 
 **Gosume** is a clean, professional desktop resume builder. Pick a template, fill in your details, export — three steps to a polished resume, no design skills needed.
 
-![Gosume Screenshot](screenshots/editor.png)
+![Gosume Main Screen](images/1.png)
 
 ### Why Gosume
 
@@ -115,6 +131,22 @@ task build && task package
 | Timeline Narrative | Timeline-based layout | Career progression focus |
 | Zen Minimalist | Minimalist wabi-sabi | Japanese companies, minimalist aesthetic |
 | Terminal Hacker | Command-line style | Developers, tech enthusiasts |
+
+![Template Preview - Classic Formal](images/2.png)
+
+![Template Preview - Modern Professional](images/3.png)
+
+### Editing Experience
+
+![Editing Area](images/4.png)
+
+![Editing Area](images/5.png)
+
+![Editing Area](images/6.png)
+
+![Editing Area](images/7.png)
+
+![Editing Area](images/8.png)
 
 ### Highlights
 
