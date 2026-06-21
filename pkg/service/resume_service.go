@@ -244,6 +244,12 @@ func (s *ResumeService) RenderByID(id string) (string, string, error) {
 	return htmlStr, name, nil
 }
 
+// GetResumeByID loads a resume by ID without affecting the current resume state.
+// Returns the raw resume data for frontend rendering.
+func (s *ResumeService) GetResumeByID(id string) (*model.Resume, error) {
+	return s.store.GetByID(id)
+}
+
 // DeleteResume soft-deletes a resume by ID.
 func (s *ResumeService) DeleteResume(id string) error {
 	s.mu.Lock()

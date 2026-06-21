@@ -10,7 +10,7 @@
     <div class="resume-container">
         <!-- Dark Sidebar -->
         <div class="sidebar">
-            {{if .Personal.Avatar}}<div class="avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="头像" /></div>{{end}}
             <h1>{{.Personal.FullName}}</h1>
             {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
 

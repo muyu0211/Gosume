@@ -9,7 +9,7 @@
     <div class="resume-container resume-layout">
         <!-- Left Sidebar -->
         <div class="resume-sidebar">
-            {{if .Personal.Avatar}}<div class="sidebar-avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="sidebar-avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="头像" /></div>{{end}}
             <h1>{{.Personal.FullName}}</h1>
             {{if .Personal.EnglishName}}<div class="sidebar-eng-name">{{.Personal.EnglishName}}</div>{{end}}
             {{if .Personal.JobTitle}}<div class="sidebar-job">{{.Personal.JobTitle}}</div>{{end}}

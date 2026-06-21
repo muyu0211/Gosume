@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FileText, FolderOpen, Plus, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
+import { FolderOpen, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
 import { renderTemplate } from '../lib/template-engine'
+import { A4_W, A4_H } from '../lib/paginate'
 import { extractErrorMessage } from '../lib/error-utils'
 import { createSampleResume } from '../services/sampleData'
 import { callService } from '../services/backend'
@@ -57,8 +58,11 @@ export function WelcomePage() {
         try {
           const tmpl = await loadTemplateContent(meta.id)
           const sampleResume = createSampleResume(meta.id)
-          let html = renderTemplate(tmpl, sampleResume)
-          html = html.replace('<head>', '<head><style>html,body{overflow:hidden;margin:0;}</style>')
+          // Prevent scrollbars in the fixed-size iframe without affecting the
+          // template's CSS layout. The container's aspect-[210/297] + overflow-hidden
+          // naturally clips to the first page, matching the EditorPage rendering.
+          const html = renderTemplate(tmpl, sampleResume)
+            .replace('<head>', '<head><style>html{overflow:hidden}</style>')
           previews[meta.id] = html
         } catch {
           previews[meta.id] = ''
@@ -326,9 +330,6 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
 }
 
 function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; onPreview: () => void; index?: number }) {
-  const IFRAME_W = 800
-  const IFRAME_H = IFRAME_W * (297 / 210)
-
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
   const [isHovered, setIsHovered] = useState(false)
@@ -338,7 +339,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
     if (!el) return
     const update = () => {
       const w = el.clientWidth
-      if (w > 0) setScale(w / IFRAME_W)
+      if (w > 0) setScale(w / A4_W)
     }
     update()
     const observer = new ResizeObserver(update)
@@ -361,8 +362,8 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
             srcDoc={previewHtml}
             className="absolute border-0 pointer-events-none"
             style={{
-              width: IFRAME_W,
-              height: IFRAME_H,
+              width: A4_W,
+              height: A4_H,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}

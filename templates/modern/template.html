@@ -28,7 +28,7 @@
                     {{if .Personal.LinkedIn}}<span class="contact-item"><span class="contact-label">LinkedIn：</span>{{.Personal.LinkedIn}}</span>{{end}}
                 </div>
             </div>
-            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="头像" /></div>{{end}}
         </div>
 
         <!-- Work Experience -->

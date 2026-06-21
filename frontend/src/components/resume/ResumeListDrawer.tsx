@@ -3,7 +3,9 @@ import { X, FileText, Clock, ChevronRight, Inbox, Trash2, AlertTriangle, CheckSq
 import { useResumeStore } from '../../stores/resumeStore'
 import { callService } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/export-html'
-import type { ResumeListItem } from '../../types/resume'
+import { renderTemplate } from '../../lib/template-engine'
+import { loadTemplateContent } from '../../services/templateService'
+import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
   open: boolean
@@ -150,10 +152,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       const items: { name: string; html: string }[] = []
 
       for (const id of ids) {
-        const result = await callService<[string, string]>('ResumeService', 'RenderByID', id)
-        if (!result) continue
-        const [rawHtml, name] = result
-        const paginatedHtml = await paginateHTMLString(rawHtml)
+        const resume = await callService<Resume>('ResumeService', 'GetResumeByID', id)
+        if (!resume) continue
+
+        const name = resume.personal.full_name || resume.meta.name || '未命名简历'
+        const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
+        const tmpl = await loadTemplateContent(templateId)
+        const rendered = renderTemplate(tmpl, resume)
+        const paginatedHtml = await paginateHTMLString(rendered)
         items.push({ name, html: paginatedHtml })
       }
 

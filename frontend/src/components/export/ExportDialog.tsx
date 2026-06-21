@@ -3,7 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/error-utils'
-import { generateExportHTML } from '../../lib/export-html'
+import { paginateHTMLString } from '../../lib/export-html'
 
 interface Props {
   onClose: () => void
@@ -58,7 +58,7 @@ export function ExportDialog({ onClose }: Props) {
     }
 
     try {
-      const paginatedHtml = await generateExportHTML(previewHtml)
+      const paginatedHtml = await paginateHTMLString(previewHtml)
       let filePath: string | null = null
 
       switch (selectedFormat) {

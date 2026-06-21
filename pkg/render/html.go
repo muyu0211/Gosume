@@ -50,6 +50,7 @@ func NewHTMLRenderer(loader TemplateLoader) *HTMLRenderer {
 		"i18n":       i18n,
 		"nl2br":      nl2br,
 		"safeHTML":   safeHTML,
+		"safeURL":    safeURL,
 		"defaultVal": defaultVal,
 	}
 	return r
@@ -138,6 +139,10 @@ func nl2br(s string) template.HTML {
 
 func safeHTML(s string) template.HTML {
 	return template.HTML(s)
+}
+
+func safeURL(s string) template.URL {
+	return template.URL(s)
 }
 
 func defaultVal(defaultVal, val string) string {

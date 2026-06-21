@@ -29,6 +29,7 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
     i18n: (lang, zhKey, enKey) => lang === 'zh-CN' ? zhKey : enKey,
     nl2br: (s) => escapeHtml(s).replace(/\n/g, '<br>'),
     safeHTML: (s) => s,
+    safeURL: (s) => s,
     defaultVal: (defaultVal, val) => val || defaultVal,
   }
 
