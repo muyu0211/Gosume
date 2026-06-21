@@ -1,20 +1,18 @@
 /**
  * Export HTML pipeline — produces paginated, print-ready HTML for PDF/PNG export.
  *
- * Architecture (two paths, identical output):
+ * Single-path architecture:
+ *   paginateHTMLString() → paginateInIframe() → cleanAndSerialize()
  *
- *   Path A — extract from the visible preview iframe (fast, no re-render):
- *     generateExportHTML() → extractPreviewHTML() → cleanAndSerialize()
- *     Used by individual export when the preview is already in the DOM.
+ * Rendered HTML is loaded into a hidden iframe, split into A4 .resume-page divs
+ * (210mm × 297mm), and serialized for the backend export service.
  *
- *   Path B — paginate raw HTML in a hidden iframe (off-screen):
- *     paginateHTMLString() → paginateInIframe() → cleanAndSerialize()
- *     Used by batch export (each resume is rendered on demand) and as a
- *     fallback when the preview iframe isn't available.
+ * Both individual export (ExportDialog) and batch export (ResumeListDrawer) use
+ * the same frontend template engine (renderTemplate) followed by this pipeline.
  *
- * Both paths produce a complete HTML document with:
+ * Output:
  *   - Original <head> styles preserved (template CSS, fonts)
- *   - Content split into A4 .resume-page divs (210mm × 297mm)
+ *   - Content split into A4 .resume-page divs
  *   - page-break-after: always between pages (except last)
  *   - Clean body styling (no scroll/padding from the preview chrome)
  */
@@ -44,31 +42,7 @@ function cleanAndSerialize(doc: Document): string {
   return '<!DOCTYPE html>\n' + tmp.documentElement.outerHTML
 }
 
-// ── Path A: extract from visible preview ────────────────────────────────────
-
-function extractPreviewHTML(): string | null {
-  const iframe = document.querySelector('iframe[title="简历预览"]') as HTMLIFrameElement | null
-  if (!iframe?.contentDocument) return null
-
-  const doc = iframe.contentDocument
-  const wrapper = doc.querySelector('.resume-pages-wrapper')
-  if (!wrapper || wrapper.querySelectorAll('.resume-page').length === 0) return null
-
-  return cleanAndSerialize(doc)
-}
-
-/**
- * Primary entry point for individual export.
- * Tries to extract already-paginated HTML from the visible preview iframe;
- * falls back to off-screen pagination if the preview is unavailable.
- */
-export function generateExportHTML(previewHtml: string): Promise<string> {
-  const extracted = extractPreviewHTML()
-  if (extracted) return Promise.resolve(extracted)
-  return paginateHTMLString(previewHtml)
-}
-
-// ── Path B: off-screen pagination ───────────────────────────────────────────
+// ── Off-screen pagination ───────────────────────────────────────────────────
 
 /**
  * Loads raw template-rendered HTML into a hidden iframe, paginates it, and

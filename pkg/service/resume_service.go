@@ -220,30 +220,6 @@ func (s *ResumeService) saveResume() error {
 	return s.store.Update(s.currentID, s.current)
 }
 
-// RenderByID loads a resume by ID and renders it to HTML without affecting
-// the current resume state. Returns the rendered HTML and the resume name.
-func (s *ResumeService) RenderByID(id string) (string, string, error) {
-	resume, err := s.store.GetByID(id)
-	if err != nil {
-		return "", "", err
-	}
-
-	htmlStr, err := s.renderer.Render(resume)
-	if err != nil {
-		return "", "", err
-	}
-
-	name := resume.Personal.FullName
-	if name == "" {
-		name = resume.Meta.Name
-	}
-	if name == "" {
-		name = "未命名简历"
-	}
-
-	return htmlStr, name, nil
-}
-
 // GetResumeByID loads a resume by ID without affecting the current resume state.
 // Returns the raw resume data for frontend rendering.
 func (s *ResumeService) GetResumeByID(id string) (*model.Resume, error) {

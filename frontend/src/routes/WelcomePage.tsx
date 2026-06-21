@@ -396,7 +396,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
           {/* Preview button on top of blur */}
           <button
             onClick={(e) => { e.stopPropagation(); onPreview() }}
-            className="relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium shadow-lg hover:bg-primary-700 active:scale-95 transition-all duration-150"
+            className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50/95 text-surface-800 text-sm font-medium border border-white shadow-md hover:bg-amber-50 hover:border-surface-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm"
           >
             <Eye className="w-4 h-4" />
             预览
