@@ -10,7 +10,7 @@
     <div class="resume-container">
         <!-- Gradient Header -->
         <div class="header">
-            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
             <div class="header-text">
                 <h1>{{.Personal.FullName}}</h1>
                 {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}

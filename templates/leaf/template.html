@@ -10,7 +10,7 @@
     <div class="resume-container">
         <!-- Leaf Header Card -->
         <div class="header-card">
-            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
             <h1>{{.Personal.FullName}}</h1>
             {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
             <div class="leaf-divider"></div>

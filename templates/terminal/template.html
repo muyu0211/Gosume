@@ -26,7 +26,7 @@
                 {{if .Personal.GitHub}}<span>[{{.Personal.GitHub}}]</span>{{end}}
             </div>
                 </div><!-- .header-info -->
-                {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar | safeURL}}" alt="avatar" /></div>{{end}}
+                {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="avatar" /></div>{{end}}
             </div><!-- .header-row -->
         </div><!-- .header -->
 
