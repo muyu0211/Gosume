@@ -15,7 +15,7 @@
     "page_count": {
         "min": 1,
         "max": 5,
-        "default": 2
+        "default": 1
     },
     "paper_size": "A4",
     "orientations": ["portrait"],

@@ -35,9 +35,9 @@ templates/
     "tags":            ["标签数组，中英文均可，用于前端筛选和搜索"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
-        "min":         1,
-        "max":         5,
-        "default":     1
+        "min":         1,   // default 1
+        "max":         5,  // default 5
+        "default":     1   // default 1
     },
     "paper_size":      "纸张尺寸：A4 / Letter",
     "orientations":    ["portrait"],
