@@ -29,10 +29,37 @@
                 <div class="edu-main">
                     <span class="school">{{.School}}</span>
                     {{if .Degree}}<span class="edu-detail-inline">{{.Degree}}{{if .Major}} · {{.Major}}{{end}}</span>{{else if .Major}}<span class="edu-detail-inline">{{.Major}}</span>{{end}}
+                    {{if .GPA}}<span class="edu-detail-inline"> · GPA {{.GPA}}</span>{{end}}
                 </div>
                 {{if .StartDate}}<span class="date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
             </div>
-            {{if or .Minor .GPA}}<div class="edu-detail">{{if .Minor}}辅修 {{.Minor}}{{end}}{{if .GPA}}{{if .Minor}} · {{end}}GPA {{.GPA}}{{end}}</div>{{end}}
+            {{if .Minor}}<div class="edu-detail">辅修 {{.Minor}}</div>{{end}}
+            {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Internship Experience -->
+        {{if .Internships}}
+        <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
+        {{range .Internships}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <div class="exp-main">
+                    <span class="company">{{.Company}}</span>
+                    {{if .Title}}<span class="exp-title-inline">{{.Title}}</span>{{end}}
+                </div>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
+            </div>
+            {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
             {{if .Highlights}}
             <ul class="highlights">
                 {{range .Highlights}}
@@ -108,6 +135,16 @@
         {{end}}
         {{end}}
 
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
+        <div class="languages-line">
+            {{range .Languages}}
+            <span><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>
+            {{end}}
+        </div>
+        {{end}}
+
         <!-- Skills -->
         {{if .Skills}}
         <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
@@ -117,16 +154,6 @@
             {{range .Items}}<span class="skill-tag">{{.Name}}</span>{{end}}
         </div>
         {{end}}
-        {{end}}
-
-        <!-- Languages -->
-        {{if .Languages}}
-        <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
-        <div class="languages-line">
-            {{range .Languages}}
-            <span><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>
-            {{end}}
-        </div>
         {{end}}
 
         <!-- Summary -->

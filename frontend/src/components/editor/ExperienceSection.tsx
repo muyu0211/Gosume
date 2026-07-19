@@ -1,23 +1,43 @@
 import { useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
-import type { Job, Project } from '../../types/resume'
-import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, GripVertical } from 'lucide-react'
+import type { Job, Project, Internship } from '../../types/resume'
+import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
 import { useDragReorder } from '../../hooks/useDragReorder'
 
 interface Props {
-  type: 'jobs' | 'projects'
+  type: 'jobs' | 'projects' | 'internships'
   title: string
 }
 
-type Entry = Job | Project
+type Entry = Job | Project | Internship
 
 export function ExperienceSection({ type, title }: Props) {
-  const items = useResumeStore((s) => (type === 'jobs' ? s.resume?.jobs : s.resume?.projects)) as Entry[]
-  const addItem = useResumeStore((s) => (type === 'jobs' ? s.addJob : s.addProject))
-  const updateItem = useResumeStore((s) => (type === 'jobs' ? s.updateJob : s.updateProject))
-  const removeItem = useResumeStore((s) => (type === 'jobs' ? s.removeJob : s.removeProject))
-  const moveItem = useResumeStore((s) => (type === 'jobs' ? s.moveJob : s.moveProject))
+  const items = useResumeStore((s) => {
+    if (type === 'jobs') return s.resume?.jobs
+    if (type === 'internships') return s.resume?.internships
+    return s.resume?.projects
+  }) as Entry[]
+  const addItem = useResumeStore((s) => {
+    if (type === 'jobs') return s.addJob
+    if (type === 'internships') return s.addInternship
+    return s.addProject
+  })
+  const updateItem = useResumeStore((s) => {
+    if (type === 'jobs') return s.updateJob
+    if (type === 'internships') return s.updateInternship
+    return s.updateProject
+  })
+  const removeItem = useResumeStore((s) => {
+    if (type === 'jobs') return s.removeJob
+    if (type === 'internships') return s.removeInternship
+    return s.removeProject
+  })
+  const moveItem = useResumeStore((s) => {
+    if (type === 'jobs') return s.moveJob
+    if (type === 'internships') return s.moveInternship
+    return s.moveProject
+  })
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
@@ -30,6 +50,8 @@ export function ExperienceSection({ type, title }: Props) {
         <div className="flex items-center gap-2">
           {type === 'jobs' ? (
             <Briefcase className="w-4 h-4 text-primary-600" />
+          ) : type === 'internships' ? (
+            <Building className="w-4 h-4 text-primary-600" />
           ) : (
             <FolderGit2 className="w-4 h-4 text-primary-600" />
           )}
@@ -45,8 +67,8 @@ export function ExperienceSection({ type, title }: Props) {
       <div className="space-y-2">
         {items?.map((item, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
-          const name = type === 'jobs' ? (item as Job).company : (item as Project).name
-          const role = type === 'jobs' ? (item as Job).title : (item as Project).role
+          const name = type === 'jobs' || type === 'internships' ? (item as Job).company : (item as Project).name
+          const role = type === 'jobs' || type === 'internships' ? (item as Job).title : (item as Project).role
 
           return (
             <div
@@ -89,7 +111,7 @@ export function ExperienceSection({ type, title }: Props) {
               {/* Expanded form */}
               {isExpanded && (
                 <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
-                  {type === 'jobs' ? (
+                  {type === 'jobs' || type === 'internships' ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         <div>

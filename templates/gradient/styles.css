@@ -36,7 +36,7 @@ body {
 .header {
     background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
     color: #fff;
-    padding: 12mm 10mm 10mm 14mm;
+    padding: 10mm 10mm 8mm 14mm;
     display: flex;
     align-items: center;
     gap: 16pt;
@@ -74,7 +74,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 3pt 14pt;
-    padding: 6pt 18mm;
+    padding: 6pt 14mm;
     background: var(--accent-bg);
     border-bottom: 1pt solid var(--border-color);
     font-size: 8pt;
@@ -83,7 +83,7 @@ body {
 
 /* Summary */
 .summary {
-    padding: 10pt 18mm;
+    padding: 10pt 14mm;
     font-size: 9pt;
     line-height: 1.6;
     color: var(--text-color);
@@ -93,7 +93,7 @@ body {
 /* Main Grid */
 .main-grid {
     display: flex;
-    padding: 12pt 18mm 14mm 18mm;
+    padding: 10pt 14mm 12mm 14mm;
     gap: 20pt;
 }
 
@@ -158,15 +158,28 @@ body {
 /* Education */
 .education-item { margin-bottom: 8pt; }
 
-.edu-school {
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
     font-weight: 700;
     font-size: 9.5pt;
     color: var(--heading-color);
 }
 
+.edu-header .date {
+    font-size: 8pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .edu-detail { font-size: 8.5pt; color: var(--muted-color); }
 
-.edu-date { font-size: 8pt; color: var(--muted-color); }
+.edu-courses { font-size: 8pt; color: var(--muted-color); margin-top: 2pt; }
 
 /* Skills — Pill Tags */
 .skill-category { margin-bottom: 8pt; }

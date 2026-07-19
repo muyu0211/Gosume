@@ -24,7 +24,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 18mm 15mm;
+    padding: 12mm 14mm;
     background: #fff;
 }
 
@@ -37,8 +37,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16pt;
-    padding-bottom: 12pt;
+    margin-bottom: 4pt;
+    padding-bottom: 4pt;
     border-bottom: 2px solid var(--primary-color);
 }
 
@@ -167,9 +167,9 @@ body {
 }
 
 .skill-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6pt;
     margin-bottom: 2pt;
     font-size: 9pt;
 }
@@ -209,6 +209,8 @@ body {
 .edu-header .date {
     font-size: 9pt;
     color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
@@ -243,12 +245,23 @@ body {
     color: var(--muted-color);
 }
 
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.award-header .date {
+    font-size: 9pt;
+    color: var(--muted-color);
+}
+
 /* Print styles */
 @media print {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 18mm 15mm;
+        padding: 12mm 14mm;
     }
     @page {
         size: A4;

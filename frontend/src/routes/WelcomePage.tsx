@@ -276,7 +276,7 @@ export function WelcomePage() {
       {/* Footer */}
       <footer className="px-8 py-4 border-t border-surface-100 text-center">
         <p className="text-xs text-surface-400">
-          Gosume v0.1 — 专注于内容，让简历排版变得简单
+          Gosume v1.0.0 — 专注于内容，让简历排版变得简单
         </p>
       </footer>
 

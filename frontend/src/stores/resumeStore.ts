@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Resume, Personal, Job, Education, SkillGroup, Project, Language, Award, ResumeListItem } from '../types/resume'
+import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem } from '../types/resume'
 import { createEmptyResume, generateId } from '../types/resume'
 import { callService } from '../services/backend'
 
@@ -25,6 +25,9 @@ interface ResumeState {
   deleteResume: (id: string) => Promise<void>
 
   // Array operations
+  addInternship: () => void
+  updateInternship: (index: number, internship: Partial<Internship>) => void
+  removeInternship: (index: number) => void
   addJob: () => void
   updateJob: (index: number, job: Partial<Job>) => void
   removeJob: (index: number) => void
@@ -38,6 +41,7 @@ interface ResumeState {
   updateProject: (index: number, proj: Partial<Project>) => void
   removeProject: (index: number) => void
 
+  moveInternship: (from: number, to: number) => void
   moveJob: (from: number, to: number) => void
   moveEducation: (from: number, to: number) => void
   moveSkillGroup: (from: number, to: number) => void
@@ -132,6 +136,34 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     } catch (err) {
       console.error('DeleteResume failed:', err)
     }
+  },
+
+  addInternship: () => {
+    const resume = get().resume
+    if (!resume) return
+    const internship: Internship = {
+      id: generateId(),
+      company: '',
+      title: '',
+      start_date: '',
+      is_current: false,
+      highlights: [],
+    }
+    set({ resume: { ...resume, internships: [...(resume.internships || []), internship] }, isDirty: true })
+  },
+
+  updateInternship: (index, internship) => {
+    const resume = get().resume
+    if (!resume?.internships) return
+    const internships = [...resume.internships]
+    internships[index] = { ...internships[index], ...internship }
+    set({ resume: { ...resume, internships }, isDirty: true })
+  },
+
+  removeInternship: (index) => {
+    const resume = get().resume
+    if (!resume?.internships) return
+    set({ resume: { ...resume, internships: resume.internships.filter((_, i) => i !== index) }, isDirty: true })
   },
 
   addJob: () => {
@@ -230,6 +262,15 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     const resume = get().resume
     if (!resume?.projects) return
     set({ resume: { ...resume, projects: resume.projects.filter((_, i) => i !== index) }, isDirty: true })
+  },
+
+  moveInternship: (from, to) => {
+    const resume = get().resume
+    if (!resume?.internships) return
+    const internships = [...resume.internships]
+    const [item] = internships.splice(from, 1)
+    internships.splice(to, 0, item)
+    set({ resume: { ...resume, internships }, isDirty: true })
   },
 
   moveJob: (from, to) => {

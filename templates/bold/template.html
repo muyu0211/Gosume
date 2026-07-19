@@ -21,6 +21,49 @@
             </div>
         </div>
 
+        <!-- Education -->
+        {{if .Education}}
+        <div class="section-bar"></div>
+        <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
+        {{range .Education}}
+        <div class="education-item">
+            <div class="edu-header">
+                <div>
+                    <span class="school">{{.School}}</span>{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}
+                </div>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
+            </div>
+            {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Internship Experience -->
+        {{if .Internships}}
+        <div class="section-bar"></div>
+        <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
+        {{range .Internships}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <div>
+                    <span class="company">{{.Company}}</span>
+                </div>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
+            </div>
+            {{if .Title}}<div class="title">{{.Title}}</div>{{end}}
+            {{if .Location}}<div class="location">{{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-bar"></div>
@@ -47,35 +90,6 @@
         {{end}}
         {{end}}
 
-        <!-- Education -->
-        {{if .Education}}
-        <div class="section-bar"></div>
-        <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-        {{range .Education}}
-        <div class="education-item">
-            <div class="edu-header">
-                <span class="school">{{.School}}</span>
-                {{if .StartDate}}<span class="date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
-            </div>
-            <div class="edu-detail">{{.Degree}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
-        </div>
-        {{end}}
-        {{end}}
-
-        <!-- Skills -->
-        {{if .Skills}}
-        <div class="section-bar"></div>
-        <div class="section-title">{{i18n .Meta.Language "核心能力" "Core Competencies"}}</div>
-        <div class="skills-grid">
-            {{range .Skills}}
-            <div class="skill-category">
-                <span class="skill-cat-label">{{.Category}}：</span>
-                {{range .Items}}<span class="skill-tag">{{.Name}}</span>{{end}}
-            </div>
-            {{end}}
-        </div>
-        {{end}}
-
         <!-- Projects -->
         {{if .Projects}}
         <div class="section-bar"></div>
@@ -99,17 +113,6 @@
         {{end}}
         {{end}}
 
-        <!-- Languages -->
-        {{if .Languages}}
-        <div class="section-bar"></div>
-        <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
-        <div class="languages-line">
-            {{range .Languages}}
-            <span class="lang-item"><span class="lang-name">{{.Name}}</span> · {{if .Level}}{{.Level}}{{else}}-{{end}}</span>
-            {{end}}
-        </div>
-        {{end}}
-
         <!-- Awards -->
         {{if .Awards}}
         <div class="section-bar"></div>
@@ -121,6 +124,31 @@
             {{if .Issuer}}<span class="issuer"> · {{.Issuer}}</span>{{end}}
         </div>
         {{end}}
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-bar"></div>
+        <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
+        <div class="languages-line">
+            {{range .Languages}}
+            <span class="lang-item"><span class="lang-name">{{.Name}}</span> · {{if .Level}}{{.Level}}{{else}}-{{end}}</span>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-bar"></div>
+        <div class="section-title">{{i18n .Meta.Language "核心能力" "Core Competencies"}}</div>
+        <div class="skills-grid">
+            {{range .Skills}}
+            <div class="skill-category">
+                <span class="skill-cat-label">{{.Category}}：</span>
+                {{range .Items}}<span class="skill-tag">{{.Name}}</span>{{end}}
+            </div>
+            {{end}}
+        </div>
         {{end}}
 
         <!-- Summary -->

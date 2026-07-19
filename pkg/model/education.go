@@ -10,5 +10,6 @@ type Education struct {
 	StartDate  string   `json:"start_date"`
 	EndDate    string   `json:"end_date"`
 	GPA        string   `json:"gpa,omitempty"`
+	Courses    string   `json:"courses,omitempty"`
 	Highlights []string `json:"highlights,omitempty"`
 }

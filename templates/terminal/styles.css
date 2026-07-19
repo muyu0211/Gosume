@@ -27,7 +27,7 @@ body {
     width: 210mm;
     min-height: 297mm;
     background: var(--bg-color);
-    padding: 14mm 16mm;
+    padding: 10mm 14mm;
 }
 
 .resume-container { max-width: 100%; }
@@ -225,6 +225,8 @@ body {
 .edu-header .date {
     font-size: 7.5pt;
     color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
@@ -245,10 +247,11 @@ body {
 }
 
 .skill-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     font-size: 8pt;
     margin-bottom: 2pt;
+    margin-right: 12pt;
     gap: 8pt;
 }
 
@@ -326,7 +329,7 @@ body {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 14mm 16mm;
+        padding: 10mm 14mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

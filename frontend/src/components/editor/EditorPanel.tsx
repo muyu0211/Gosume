@@ -16,6 +16,8 @@ export function EditorPanel() {
         return <PersonalSection />
       case 'summary':
         return <SummarySection />
+      case 'internships':
+        return <ExperienceSection type="internships" title="实习经历" />
       case 'jobs':
         return <ExperienceSection type="jobs" title="工作经历" />
       case 'education':

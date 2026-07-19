@@ -1,15 +1,16 @@
 import { useEditorStore } from '../../stores/editorStore'
-import { User, Briefcase, GraduationCap, Code, FolderGit2, Languages, Award, Plus, FileOutput } from 'lucide-react'
+import { User, Briefcase, GraduationCap, Code, FolderGit2, Languages, Award, Plus, FileOutput, Building } from 'lucide-react'
 
 const sections = [
   { id: 'personal', label: '个人信息', icon: User },
-  { id: 'summary', label: '个人总结', icon: FileOutput },
-  { id: 'jobs', label: '工作经历', icon: Briefcase },
   { id: 'education', label: '教育背景', icon: GraduationCap },
-  { id: 'skills', label: '技能', icon: Code },
+  { id: 'internships', label: '实习经历', icon: Building },
+  { id: 'jobs', label: '工作经历', icon: Briefcase },
   { id: 'projects', label: '项目经历', icon: FolderGit2 },
+  { id: 'awards', label: '荣誉奖项', icon: Award },
   { id: 'languages', label: '语言能力', icon: Languages },
-  { id: 'awards', label: '奖项荣誉', icon: Award },
+  { id: 'skills', label: '技能', icon: Code },
+  { id: 'summary', label: '个人总结', icon: FileOutput },
   { id: 'custom', label: '自定义', icon: Plus },
 ]
 

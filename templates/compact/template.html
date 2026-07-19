@@ -24,6 +24,48 @@
             </div>
         </div>
 
+        <!-- Education -->
+        {{if .Education}}
+        <div class="section-title">教育背景</div>
+        {{range .Education}}
+        <div class="education-item">
+            <div class="edu-header">
+                <div>
+                    <span class="school">{{.School}}</span>{{if .Degree}} · {{.Degree}}{{end}} · {{.Major}}{{if .GPA}} · GPA {{.GPA}}{{end}}
+                </div>
+                {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
+            </div>
+            {{if .Minor}}<div class="edu-detail">辅修：{{.Minor}}</div>{{end}}
+            {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Internship Experience -->
+        {{if .Internships}}
+        <div class="section-title">实习经历</div>
+        {{range .Internships}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <div>
+                    <span class="company">{{.Company}}</span>
+                    {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
+                </div>
+                {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
+            </div>
+            {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-title">工作经历</div>
@@ -47,48 +89,6 @@
             {{end}}
         </div>
         {{end}}
-        {{end}}
-
-        <!-- Education + Skills side by side -->
-        <div class="two-col">
-            {{if .Education}}
-            <div class="col-left">
-                <div class="section-title">教育背景</div>
-                {{range .Education}}
-                <div class="education-item">
-                    <div class="edu-header">
-                        <span class="school">{{.School}}</span>
-                        {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
-                    </div>
-                    <div class="edu-detail">{{.Degree}} · {{.Major}}{{if .Minor}} · {{.Minor}}{{end}}{{if .GPA}} · GPA:{{.GPA}}{{end}}</div>
-                </div>
-                {{end}}
-            </div>
-            {{end}}
-
-            {{if .Skills}}
-            <div class="col-right">
-                <div class="section-title">专业技能</div>
-                {{range .Skills}}
-                <div class="skill-category">
-                    <span class="skill-cat-name">{{.Category}}：</span>
-                    {{range .Items}}
-                    <span class="skill-tag">{{.Name}}{{if .Level}} {{skillLevel .Level}}{{end}}</span>
-                    {{end}}
-                </div>
-                {{end}}
-            </div>
-            {{end}}
-        </div>
-
-        <!-- Languages -->
-        {{if .Languages}}
-        <div class="languages-line">
-            <span class="lang-label">语言能力：</span>
-            {{range .Languages}}
-            <span><span class="label">{{.Name}}</span>{{if .Level}} · 熟练程度: {{.Level}}{{end}}{{if .Proficiency}} · 补充说明: {{.Proficiency}}{{end}}</span>
-            {{end}}
-        </div>
         {{end}}
 
         <!-- Projects -->
@@ -123,6 +123,29 @@
             <span class="award-tag">{{.Title}} <span class="award-date">{{.Date}}</span></span>
             {{end}}
         </div>
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="languages-line">
+            <span class="lang-label">语言能力：</span>
+            {{range .Languages}}
+            <span><span class="label">{{.Name}}</span>{{if .Level}} · 熟练程度: {{.Level}}{{end}}{{if .Proficiency}} · 补充说明: {{.Proficiency}}{{end}}</span>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-title">专业技能</div>
+        {{range .Skills}}
+        <div class="skill-category">
+            <span class="skill-cat-name">{{.Category}}：</span>
+            {{range .Items}}
+            <span class="skill-tag">{{.Name}}{{if .Level}} {{skillLevel .Level}}{{end}}</span>
+            {{end}}
+        </div>
+        {{end}}
         {{end}}
 
         <!-- Summary -->

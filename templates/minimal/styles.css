@@ -24,7 +24,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 20mm 22mm;
+    padding: 14mm 18mm;
     background: #fff;
 }
 
@@ -177,6 +177,8 @@ body {
 .edu-header .date {
     font-size: 8.5pt;
     color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
@@ -271,7 +273,7 @@ body {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 20mm 22mm;
+        padding: 14mm 18mm;
     }
     @page {
         size: A4;

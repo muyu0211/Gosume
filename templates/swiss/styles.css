@@ -25,7 +25,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 12mm 16mm;
+    padding: 10mm 14mm;
     background: #fff;
 }
 
@@ -191,10 +191,23 @@ body {
 /* Education */
 .education-item { margin-bottom: 7pt; }
 
-.edu-school {
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
     font-weight: 700;
     font-size: 9pt;
     color: var(--heading-color);
+}
+
+.edu-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
@@ -202,16 +215,7 @@ body {
     color: var(--text-color);
 }
 
-.edu-date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-}
-
-.edu-gpa {
-    font-size: 7.5pt;
-    color: var(--primary-color);
-    font-weight: 600;
-}
+.edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-top: 2pt; }
 
 /* Skills */
 .skill-category { margin-bottom: 6pt; }
@@ -244,6 +248,12 @@ body {
 
 /* Awards */
 .award-item { margin-bottom: 4pt; }
+
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
 
 .award-title {
     font-size: 8.5pt;

@@ -29,6 +29,23 @@ export function createSampleResume(templateId: string): Resume {
     },
     summary:
       '拥有6年前端开发经验，精通React、Vue等主流框架，具备良好的工程化思维和团队协作能力。主导过多个大型中后台管理系统的架构设计与性能优化，关注代码质量、用户体验与技术演进。善于跨团队沟通，能够推动复杂项目从0到1落地。',
+    internships: [
+      {
+        id: generateId(),
+        company: '腾讯',
+        title: '前端开发实习生',
+        location: '深圳',
+        start_date: '2018.01',
+        end_date: '2018.05',
+        is_current: false,
+        summary: '参与腾讯云控制台前端开发，负责部分页面组件开发与单元测试编写。',
+        highlights: [
+          '独立完成3个后台管理页面的前端开发，按时交付并通过Code Review',
+          '编写20+单元测试用例，覆盖率达85%',
+          '参与前端技术分享会，主讲ES6新特性在实际项目中的应用',
+        ],
+      },
+    ],
     jobs: [
       {
         id: generateId(),
@@ -71,6 +88,7 @@ export function createSampleResume(templateId: string): Resume {
         start_date: '2016.09',
         end_date: '2018.06',
         gpa: '3.8/4.0',
+        courses: '高级算法、分布式系统、机器学习、自然语言处理',
         highlights: ['获国家奖学金', '发表CCF-A类论文1篇'],
       },
       {
@@ -81,6 +99,7 @@ export function createSampleResume(templateId: string): Resume {
         start_date: '2012.09',
         end_date: '2016.06',
         gpa: '3.6/4.0',
+        courses: '数据结构、操作系统、计算机网络、编译原理、数据库系统',
         highlights: ['校级优秀毕业生', 'ACM-ICPC亚洲区域赛银奖'],
       },
     ],

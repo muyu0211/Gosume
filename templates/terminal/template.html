@@ -30,12 +30,31 @@
             </div><!-- .header-row -->
         </div><!-- .header -->
 
-        <!-- Work Experience -->
-        {{if .Jobs}}
+        <!-- Education -->
+        {{if .Education}}
         <div class="section-title">
-            <span class="prompt">$</span> grep "experience" ~/resume.json <span class="pipe">|</span> jq .jobs[]
+            <span class="prompt">$</span> cat /etc/education.conf
         </div>
-        {{range .Jobs}}
+        {{range .Education}}
+        <div class="education-item">
+            <div class="edu-header">
+                <div>
+                    <span class="school">▸ {{.School}}</span>{{if .Degree}} | degree: {{.Degree}}{{end}}{{if .Major}} | major: {{.Major}}{{end}}{{if .GPA}} | gpa: {{.GPA}}{{end}}
+                </div>
+                {{if .StartDate}}<span class="date">// {{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}present{{end}}</span>{{end}}
+            </div>
+            {{if .Courses}}<div class="edu-detail">  courses: {{.Courses}}</div>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Work Experience -->
+        <!-- Internship Experience -->
+        {{if .Internships}}
+        <div class="section-title">
+            <span class="prompt">$</span> grep "internship" ~/resume.json <span class="pipe">|</span> jq .internships[]
+        </div>
+        {{range .Internships}}
         <div class="experience-item">
             <div class="exp-header">
                 <span class="company">▸ {{.Company}}</span>
@@ -56,35 +75,26 @@
         {{end}}
         {{end}}
 
-        <!-- Education -->
-        {{if .Education}}
+        {{if .Jobs}}
         <div class="section-title">
-            <span class="prompt">$</span> cat /etc/education.conf
+            <span class="prompt">$</span> grep "experience" ~/resume.json <span class="pipe">|</span> jq .jobs[]
         </div>
-        {{range .Education}}
-        <div class="education-item">
-            <div class="edu-header">
-                <span class="school">▸ {{.School}}</span>
-                {{if .StartDate}}<span class="date">// {{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}present{{end}}</span>{{end}}
+        {{range .Jobs}}
+        <div class="experience-item">
+            <div class="exp-header">
+                <span class="company">▸ {{.Company}}</span>
+                {{if .StartDate}}<span class="date">// {{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
             </div>
-            <div class="edu-detail">  degree: {{.Degree}}{{if .Major}} | major: {{.Major}}{{end}}{{if .GPA}} | gpa: {{.GPA}}{{end}}</div>
-        </div>
-        {{end}}
-        {{end}}
-
-        <!-- Skills -->
-        {{if .Skills}}
-        <div class="section-title">
-            <span class="prompt">$</span> ls -la /usr/local/skills/
-        </div>
-        {{range .Skills}}
-        <div class="skill-block">
-            <div class="skill-cat">drwxr-xr-x  {{.Category}}/</div>
-            {{range .Items}}
-            <div class="skill-item">
-                <span class="skill-name">  {{.Name}}</span>
-                {{if .Level}}<span class="skill-dots">{{skillLevel .Level}}</span><span class="skill-pct">{{.Level}}/5</span>{{end}}
-            </div>
+            {{if .Title}}<div class="title">  role: {{.Title}}</div>{{end}}
+            {{if .Location}}<div class="location">  location: {{.Location}}</div>{{end}}
+            {{if .Summary}}<div class="exp-summary">  summary: {{.Summary}}</div>{{end}}
+            {{if .Highlights}}
+            <div class="highlights-label">  achievements:</div>
+            <ul class="highlights">
+                {{range .Highlights}}
+                <li>  - {{.}}</li>
+                {{end}}
+            </ul>
             {{end}}
         </div>
         {{end}}
@@ -114,18 +124,6 @@
         {{end}}
         {{end}}
 
-        <!-- Languages -->
-        {{if .Languages}}
-        <div class="section-title">
-            <span class="prompt">$</span> locale -a
-        </div>
-        <div class="languages-line">
-            {{range .Languages}}
-            <span class="lang-item">[{{.Name}}{{if .Level}}::{{.Level}}{{end}}]</span>
-            {{end}}
-        </div>
-        {{end}}
-
         <!-- Awards -->
         {{if .Awards}}
         <div class="section-title">
@@ -138,6 +136,44 @@
             {{if .Issuer}}<span class="issuer">// {{.Issuer}}</span>{{end}}
         </div>
         {{end}}
+        {{end}}
+
+        <!-- Languages -->
+        {{if .Languages}}
+        <div class="section-title">
+            <span class="prompt">$</span> locale -a
+        </div>
+        <div class="languages-line">
+            {{range .Languages}}
+            <span class="lang-item">[{{.Name}}{{if .Level}}::{{.Level}}{{end}}]</span>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Skills -->
+        {{if .Skills}}
+        <div class="section-title">
+            <span class="prompt">$</span> ls -la /usr/local/skills/
+        </div>
+        {{range .Skills}}
+        <div class="skill-block">
+            <div class="skill-cat">drwxr-xr-x  {{.Category}}/</div>
+            {{range .Items}}
+            <div class="skill-item">
+                <span class="skill-name">  {{.Name}}</span>
+                {{if .Level}}<span class="skill-dots">{{skillLevel .Level}}</span><span class="skill-pct">{{.Level}}/5</span>{{end}}
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+        {{end}}
+
+        <!-- Summary -->
+        {{if .Summary}}
+        <div class="summary-box">
+            <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
+            <div class="summary">{{nl2br .Summary}}</div>
+        </div>
         {{end}}
 
         <!-- Custom -->
@@ -161,14 +197,6 @@
         </div>
         {{end}}
         {{end}}
-        {{end}}
-
-        <!-- Summary -->
-        {{if .Summary}}
-        <div class="summary-box">
-            <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
-            <div class="summary">{{nl2br .Summary}}</div>
-        </div>
         {{end}}
 
         <!-- Footer -->

@@ -10,17 +10,18 @@ import (
 
 // Resume is the root structure for a resume.
 type Resume struct {
-	Version   string          `json:"version"`
-	Meta      ResumeMeta      `json:"meta"`
-	Personal  Personal        `json:"personal"`
-	Summary   string          `json:"summary,omitempty"`
-	Jobs      []Job           `json:"jobs,omitempty"`
-	Projects  []Project       `json:"projects,omitempty"`
-	Education []Education     `json:"education,omitempty"`
-	Skills    []SkillGroup    `json:"skills,omitempty"`
-	Languages []Language      `json:"languages,omitempty"`
-	Awards    []Award         `json:"awards,omitempty"`
-	Custom    []CustomSection `json:"custom,omitempty"`
+	Version     string          `json:"version"`
+	Meta        ResumeMeta      `json:"meta"`
+	Personal    Personal        `json:"personal"`
+	Summary     string          `json:"summary,omitempty"`
+	Internships []Internship    `json:"internships,omitempty"`
+	Jobs        []Job           `json:"jobs,omitempty"`
+	Projects    []Project       `json:"projects,omitempty"`
+	Education   []Education     `json:"education,omitempty"`
+	Skills      []SkillGroup    `json:"skills,omitempty"`
+	Languages   []Language      `json:"languages,omitempty"`
+	Awards      []Award         `json:"awards,omitempty"`
+	Custom      []CustomSection `json:"custom,omitempty"`
 }
 
 // ResumeMeta holds metadata about the resume document.

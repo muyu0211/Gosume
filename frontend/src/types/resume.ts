@@ -10,6 +10,7 @@ export interface Resume {
   meta: ResumeMeta
   personal: Personal
   summary?: string
+  internships?: Internship[]
   jobs?: Job[]
   projects?: Project[]
   education?: Education[]
@@ -48,6 +49,20 @@ export interface Personal {
   years_of_exp?: number
 }
 
+export interface Internship {
+  id: string
+  company: string
+  company_url?: string
+  title: string
+  location?: string
+  start_date: string
+  end_date?: string
+  is_current: boolean
+  summary?: string
+  highlights?: string[]
+  keywords?: string[]
+}
+
 export interface Job {
   id: string
   company: string
@@ -84,6 +99,7 @@ export interface Education {
   start_date: string
   end_date: string
   gpa?: string
+  courses?: string
   highlights?: string[]
 }
 
@@ -146,6 +162,7 @@ export function createEmptyResume(templateId: string): Resume {
       full_name: '',
     },
     summary: '',
+    internships: [],
     jobs: [],
     projects: [],
     education: [],

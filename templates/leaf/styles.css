@@ -27,7 +27,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 14mm 16mm;
+    padding: 10mm 14mm;
     background: #fff;
 }
 
@@ -153,24 +153,31 @@ body {
 /* Education */
 .education-item { margin-bottom: 6pt; }
 
-.edu-school {
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.edu-header .school {
     font-weight: 700;
     font-size: 9.5pt;
     color: var(--heading-color);
 }
 
-.edu-detail { font-size: 8.5pt; color: var(--muted-color); }
-
-.edu-date { font-size: 7.5pt; color: var(--muted-color); }
-
-.edu-gpa {
-    font-size: 8pt;
-    color: var(--primary-color);
-    font-weight: 500;
+.edu-header .date {
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
+.edu-detail { font-size: 8.5pt; color: var(--muted-color); }
+
+.edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-top: 2pt; }
+
 /* Skills */
-.skill-card { padding: 10pt 12pt; }
+.skill-card { padding: 10pt 12pt; display: flex; flex-wrap: wrap; gap: 4pt 16pt; }
 
 .skill-category { margin-bottom: 6pt; }
 
@@ -182,9 +189,9 @@ body {
 }
 
 .skill-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6pt;
     font-size: 8.5pt;
     margin-bottom: 2pt;
 }
@@ -210,6 +217,12 @@ body {
 
 /* Awards */
 .award-item { margin-bottom: 4pt; }
+
+.award-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
 
 .award-title {
     font-size: 8.5pt;

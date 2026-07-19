@@ -88,7 +88,7 @@ export function EducationSection() {
                       <input className="form-input" value={edu.minor || ''} onChange={(e) => updateItem(idx, { minor: e.target.value })} placeholder="辅修专业（可选）" maxLength={100} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">开始日期</label>
                       <MonthPicker value={edu.start_date || ''} onChange={(v) => updateItem(idx, { start_date: v })} placeholder="选择开始日期" />
@@ -97,10 +97,24 @@ export function EducationSection() {
                       <label className="form-label">结束日期</label>
                       <MonthPicker value={edu.end_date || ''} onChange={(v) => updateItem(idx, { end_date: v })} placeholder="选择结束日期" showPresent minValue={edu.start_date || undefined} />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">GPA</label>
                       <input className="form-input" value={edu.gpa || ''} onChange={(e) => updateItem(idx, { gpa: e.target.value })} placeholder="3.8/4.0" maxLength={20} />
                     </div>
+                    <div>
+                      <label className="form-label">主修课程</label>
+                      <input className="form-input" value={edu.courses || ''} onChange={(e) => updateItem(idx, { courses: e.target.value })} placeholder="如：数据结构、操作系统、计算机网络" maxLength={500} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="form-label">在校亮点</label>
+                    <HighlightsEditor
+                      highlights={edu.highlights || []}
+                      onChange={(highlights) => updateItem(idx, { highlights })}
+                    />
                   </div>
                 </div>
               )}
@@ -114,6 +128,42 @@ export function EducationSection() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onChange: (h: string[]) => void }) {
+  const addHighlight = () => onChange([...highlights, ''])
+  const updateHighlight = (idx: number, value: string) => {
+    const updated = [...highlights]
+    updated[idx] = value
+    onChange(updated)
+  }
+  const removeHighlight = (idx: number) => onChange(highlights.filter((_, i) => i !== idx))
+
+  return (
+    <div className="space-y-1.5">
+      {highlights.map((h, i) => (
+        <div key={i} className="flex gap-1">
+          <div className="flex items-center px-1 pt-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+          </div>
+          <input
+            className="form-input flex-1 text-sm"
+            value={h}
+            onChange={(e) => updateHighlight(i, e.target.value)}
+            placeholder={`亮点 ${i + 1}`}
+            maxLength={500}
+          />
+          <button onClick={() => removeHighlight(i)} className="p-1 text-surface-400 hover:text-red-500">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+      <button onClick={addHighlight} className="btn-ghost btn-xs text-primary-600">
+        <Plus className="w-3 h-3" />
+        添加亮点
+      </button>
     </div>
   )
 }

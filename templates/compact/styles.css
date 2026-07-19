@@ -1,8 +1,8 @@
 /* Compact Efficient Template Styles */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-    --font-size-base: 9pt;
-    --line-height: 1.4;
+    --font-size-base: 10.5pt;
+    --line-height: 1.45;
     --primary-color: #0F766E;
     --heading-color: #115E59;
     --text-color: #1F2937;
@@ -24,7 +24,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 12mm 14mm;
+    padding: 10mm 14mm;
     background: #fff;
 }
 
@@ -47,19 +47,19 @@ body {
 }
 
 .header-left h1 {
-    font-size: 16pt;
+    font-size: 18pt;
     font-weight: 700;
     color: var(--heading-color);
 }
 
 .job-title {
-    font-size: 9pt;
+    font-size: 10.5pt;
     color: var(--primary-color);
     font-weight: 500;
 }
 
 .years-exp {
-    font-size: 8pt;
+    font-size: 9.5pt;
     color: var(--muted-color);
 }
 
@@ -67,7 +67,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 2pt 12pt;
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
     text-align: right;
     max-width: 50%;
@@ -76,14 +76,14 @@ body {
 /* Summary */
 .summary {
     margin-bottom: 8pt;
-    font-size: 8pt;
+    font-size: 9.5pt;
     line-height: 1.5;
     color: var(--text-color);
 }
 
 /* Section titles */
 .section-title {
-    font-size: 9pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: #fff;
     background: var(--primary-color);
@@ -107,30 +107,30 @@ body {
 
 .exp-header .company {
     font-weight: 700;
-    font-size: 9pt;
+    font-size: 10.5pt;
     color: var(--heading-color);
 }
 
 .exp-header .title {
     font-weight: 500;
     color: var(--primary-color);
-    font-size: 8.5pt;
+    font-size: 9.5pt;
 }
 
 .exp-header .date {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
     white-space: nowrap;
 }
 
 .exp-location {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
     margin-bottom: 1pt;
 }
 
 .exp-summary {
-    font-size: 8pt;
+    font-size: 9.5pt;
     color: var(--text-color);
     margin-bottom: 2pt;
 }
@@ -146,7 +146,7 @@ body {
     position: relative;
     padding-left: 8pt;
     margin-bottom: 1pt;
-    font-size: 7.5pt;
+    font-size: 9pt;
     line-height: 1.4;
     break-inside: avoid;
 }
@@ -187,24 +187,26 @@ body {
 
 .edu-header .school {
     font-weight: 700;
-    font-size: 8.5pt;
+    font-size: 10pt;
     color: var(--heading-color);
 }
 
 .edu-header .date {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
 }
 
 /* Skills */
 .skill-category {
     margin-bottom: 4pt;
-    font-size: 8pt;
+    font-size: 9.5pt;
 }
 
 .skill-cat-name {
@@ -215,7 +217,7 @@ body {
 .skill-tag {
     display: inline;
     margin-right: 6pt;
-    font-size: 8pt;
+    font-size: 9.5pt;
     color: var(--text-color);
 }
 
@@ -235,7 +237,7 @@ body {
 
 /* Languages — Inline compact */
 .languages-line {
-    font-size: 8pt;
+    font-size: 9.5pt;
     color: var(--text-color);
     margin-bottom: 6pt;
     display: flex;
@@ -261,7 +263,7 @@ body {
 }
 
 .award-tag {
-    font-size: 7.5pt;
+    font-size: 9pt;
     padding: 2pt 6pt;
     background: var(--accent-bg);
     border-radius: 2pt;
@@ -278,13 +280,13 @@ body {
 }
 
 .custom-item h4 {
-    font-size: 8.5pt;
+    font-size: 10pt;
     font-weight: 600;
     color: var(--heading-color);
 }
 
 .custom-subtitle {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: var(--muted-color);
 }
 
@@ -293,7 +295,7 @@ body {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 12mm 14mm;
+        padding: 10mm 14mm;
     }
     @page {
         size: A4;

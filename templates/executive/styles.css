@@ -26,7 +26,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: 18mm 18mm;
+    padding: 12mm 16mm;
     background: #fff;
 }
 
@@ -198,6 +198,8 @@ body {
     font-size: 9pt;
     color: var(--gold-color);
     font-family: var(--font-family-heading);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edu-detail {
@@ -225,9 +227,9 @@ body {
 }
 
 .skill-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6pt;
     font-size: 9pt;
     margin-bottom: 2pt;
 }
@@ -303,7 +305,7 @@ body {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 18mm 18mm;
+        padding: 12mm 16mm;
     }
     @page {
         size: A4;
