@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem } from '../types/resume'
+import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField } from '../types/resume'
 import { createEmptyResume, generateId } from '../types/resume'
 import { callService } from '../services/backend'
 
@@ -40,6 +40,8 @@ interface ResumeState {
   addProject: () => void
   updateProject: (index: number, proj: Partial<Project>) => void
   removeProject: (index: number) => void
+  updateProjectExtras: (index: number, extras: ExtraField[]) => void
+  moveProjectExtra: (projectIndex: number, from: number, to: number) => void
 
   moveInternship: (from: number, to: number) => void
   moveJob: (from: number, to: number) => void
@@ -246,7 +248,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   addProject: () => {
     const resume = get().resume
     if (!resume) return
-    const proj: Project = { id: generateId(), name: '', highlights: [] }
+    const proj: Project = { id: generateId(), name: '', highlights: [], extras: [] }
     set({ resume: { ...resume, projects: [...(resume.projects || []), proj] }, isDirty: true })
   },
 
@@ -262,6 +264,27 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     const resume = get().resume
     if (!resume?.projects) return
     set({ resume: { ...resume, projects: resume.projects.filter((_, i) => i !== index) }, isDirty: true })
+  },
+
+  updateProjectExtras: (index, extras) => {
+    const resume = get().resume
+    if (!resume?.projects) return
+    const projects = [...resume.projects]
+    projects[index] = { ...projects[index], extras }
+    set({ resume: { ...resume, projects }, isDirty: true })
+  },
+
+  moveProjectExtra: (projectIndex, from, to) => {
+    const resume = get().resume
+    if (!resume?.projects) return
+    const project = resume.projects[projectIndex]
+    if (!project?.extras) return
+    const extras = [...project.extras]
+    const [item] = extras.splice(from, 1)
+    extras.splice(to, 0, item)
+    const projects = [...resume.projects]
+    projects[projectIndex] = { ...project, extras }
+    set({ resume: { ...resume, projects }, isDirty: true })
   },
 
   moveInternship: (from, to) => {

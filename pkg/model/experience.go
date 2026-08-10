@@ -32,13 +32,23 @@ type Internship struct {
 
 // Project represents a project experience entry.
 type Project struct {
-	ID         string   `json:"id"`
-	Name       string   `json:"name"`
-	URL        string   `json:"url,omitempty"`
-	Role       string   `json:"role,omitempty"`
-	StartDate  string   `json:"start_date,omitempty"`
-	EndDate    string   `json:"end_date,omitempty"`
-	Summary    string   `json:"summary,omitempty"`
-	Highlights []string `json:"highlights,omitempty"`
-	Keywords   []string `json:"keywords,omitempty"`
+	ID         string       `json:"id"`
+	Name       string       `json:"name"`
+	URL        string       `json:"url,omitempty"`
+	Role       string       `json:"role,omitempty"`
+	StartDate  string       `json:"start_date,omitempty"`
+	EndDate    string       `json:"end_date,omitempty"`
+	Summary    string       `json:"summary,omitempty"`
+	Highlights []string     `json:"highlights,omitempty"`
+	Keywords   []string     `json:"keywords,omitempty"`
+	Extras     []ExtraField `json:"extras,omitempty"`
+}
+
+// ExtraField is a user-defined key/value pair attached to a Project.
+// Renders as a labeled line (Label: Value) in templates that opt in via
+// {{range .Extras}}. Value is plain text; newlines render as <br> via nl2br.
+type ExtraField struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+	Value string `json:"value"`
 }

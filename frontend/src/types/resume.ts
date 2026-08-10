@@ -77,6 +77,12 @@ export interface Job {
   keywords?: string[]
 }
 
+export interface ExtraField {
+  id: string
+  label: string
+  value: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -88,6 +94,7 @@ export interface Project {
   summary?: string
   highlights?: string[]
   keywords?: string[]
+  extras?: ExtraField[]
 }
 
 export interface Education {

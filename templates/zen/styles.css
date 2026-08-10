@@ -238,6 +238,19 @@ body {
 .subtitle { font-size: 9pt; color: var(--muted-color); }
 
 /* Print */
+/* Project extras (user-defined key/value) */
+.extra-row {
+    font-size: 9pt;
+    margin-top: 3pt;
+    line-height: 1.5;
+}
+.extra-label {
+    font-weight: 600;
+}
+.extra-value {
+    color: inherit;
+}
+
 @media print {
     .resume-page { width: 100%; margin: 0; padding: 14mm 18mm; }
     @page { size: A4; margin: 0; }

@@ -1,17 +1,27 @@
 <!DOCTYPE html>
 <html lang="{{.Meta.Language}}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Personal.FullName}} - 简历</title>
-    <meta name="gosume-pagination" content='{"mode":"row","container":".main-grid","sidebar":".col-side","flow":".col-main"}'>
-    <style>{{template "styles.css" .}}</style>
+    <meta name="gosume-pagination"
+        content='{"mode":"row","container":".main-grid","sidebar":".col-side","flow":".col-main"}'>
+    <style>
+        {
+                {
+                template "styles.css" .
+            }
+        }
+    </style>
 </head>
+
 <body class="resume-page">
     <div class="resume-container">
         <!-- Gradient Header -->
         <div class="header">
-            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
+            {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>
+            {{end}}
             <div class="header-text">
                 <h1>{{.Personal.FullName}}</h1>
                 {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
@@ -38,9 +48,11 @@
                 <div class="education-item">
                     <div class="edu-header">
                         <div>
-                            <span class="school">{{.School}}</span>{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}
+                            <span class="school">{{.School}}</span>{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} ·
+                            {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}
                         </div>
-                        {{if .StartDate}}<span class="date">{{.StartDate}} - {{if .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
+                        {{if .StartDate}}<span class="date">{{.StartDate}} - {{if
+                            .EndDate}}{{.EndDate}}{{else}}至今{{end}}</span>{{end}}
                     </div>
                     {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
                 </div>
@@ -115,6 +127,12 @@
                         {{end}}
                     </ul>
                     {{end}}
+                    {{if .Extras}}
+                    {{range .Extras}}
+                    <div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span
+                            class="extra-value">{{nl2br .Value}}</span></div>
+                    {{end}}
+                    {{end}}
                 </div>
                 {{end}}
                 {{end}}
@@ -148,7 +166,8 @@
                     <h4>{{.Category}}</h4>
                     <div class="skill-tags">
                         {{range .Items}}
-                        <span class="skill-pill">{{.Name}}{{if .Level}}<span class="pill-level">{{.Level}}/5</span>{{end}}</span>
+                        <span class="skill-pill">{{.Name}}{{if .Level}}<span
+                                class="pill-level">{{.Level}}/5</span>{{end}}</span>
                         {{end}}
                     </div>
                 </div>
@@ -187,4 +206,5 @@
         {{end}}
     </div>
 </body>
+
 </html>

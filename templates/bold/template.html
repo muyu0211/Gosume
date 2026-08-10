@@ -109,6 +109,11 @@
                 {{end}}
             </ul>
             {{end}}
+            {{if .Extras}}
+            {{range .Extras}}
+            <div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span class="extra-value">{{nl2br .Value}}</span></div>
+            {{end}}
+            {{end}}
         </div>
         {{end}}
         {{end}}

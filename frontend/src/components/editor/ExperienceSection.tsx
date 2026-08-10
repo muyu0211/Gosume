@@ -4,6 +4,7 @@ import type { Job, Project, Internship } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { ExtrasEditor } from './ExtrasEditor'
 
 interface Props {
   type: 'jobs' | 'projects' | 'internships'
@@ -38,6 +39,7 @@ export function ExperienceSection({ type, title }: Props) {
     if (type === 'internships') return s.moveInternship
     return s.moveProject
   })
+  const updateProjectExtras = useResumeStore((s) => s.updateProjectExtras)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
@@ -213,6 +215,18 @@ export function ExperienceSection({ type, title }: Props) {
                       onChange={(highlights) => updateItem(idx, { highlights } as Partial<Entry>)}
                     />
                   </div>
+
+                  {/* Extras (project only) */}
+                  {type === 'projects' && (
+                    <div>
+                      <label className="form-label">扩展信息</label>
+                      <p className="text-[10px] text-surface-400 mb-1">自定义字段，如「技术栈」「团队规模」「项目链接」等</p>
+                      <ExtrasEditor
+                        extras={(item as Project).extras || []}
+                        onChange={(extras) => updateProjectExtras(idx, extras)}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
