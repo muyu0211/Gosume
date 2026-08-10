@@ -41,7 +41,7 @@ body {
     width: 62mm;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
-    padding: 14mm 12pt 12mm 12pt;
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 12pt) var(--resume-padding-y, 12mm) var(--resume-padding-x, 12pt);
     display: flex;
     flex-direction: column;
     gap: 14pt;
@@ -166,7 +166,7 @@ body {
 /* Main Content */
 .main-content {
     flex: 1;
-    padding: 14mm 14mm 12mm 14mm;
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 14mm) var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm);
 }
 
 /* Section Titles */

@@ -27,7 +27,7 @@ body {
     width: 210mm;
     min-height: 297mm;
     background: var(--bg-color);
-    padding: 10mm 14mm;
+    padding: var(--resume-padding, 10mm 14mm);
 }
 
 .resume-container { max-width: 100%; }
@@ -343,7 +343,7 @@ body {
     .resume-page {
         width: 100%;
         margin: 0;
-        padding: 10mm 14mm;
+        padding: var(--resume-padding, 10mm 14mm);
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

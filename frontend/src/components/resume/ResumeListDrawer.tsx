@@ -5,6 +5,7 @@ import { callService } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/export-html'
 import { renderTemplate } from '../../lib/template-engine'
 import { loadTemplateContent } from '../../services/templateService'
+import { getMarginPreset, injectMarginCss } from '../../lib/marginPresets'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
@@ -159,7 +160,10 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
-        const paginatedHtml = await paginateHTMLString(rendered)
+        // Inject page margin override so batch export honors resume.meta.page_margin
+        const marginPreset = getMarginPreset(resume.meta?.page_margin)
+        const htmlWithMargin = injectMarginCss(rendered, marginPreset)
+        const paginatedHtml = await paginateHTMLString(htmlWithMargin)
         items.push({ name, html: paginatedHtml })
       }
 

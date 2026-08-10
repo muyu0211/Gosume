@@ -36,7 +36,7 @@ body {
 .header {
     background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
     color: #fff;
-    padding: 10mm 10mm 8mm 14mm;
+    padding: var(--resume-padding-y, 10mm) var(--resume-padding-x, 14mm) 8mm var(--resume-padding-x, 14mm);
     display: flex;
     align-items: center;
     gap: 16pt;
@@ -74,7 +74,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 3pt 14pt;
-    padding: 6pt 14mm;
+    padding: 6pt var(--resume-padding-x, 14mm);
     background: var(--accent-bg);
     border-bottom: 1pt solid var(--border-color);
     font-size: 8pt;
@@ -83,7 +83,7 @@ body {
 
 /* Summary */
 .summary {
-    padding: 10pt 14mm;
+    padding: 10pt var(--resume-padding-x, 14mm);
     font-size: 9pt;
     line-height: 1.6;
     color: var(--text-color);
@@ -93,7 +93,7 @@ body {
 /* Main Grid */
 .main-grid {
     display: flex;
-    padding: 10pt 14mm 12mm 14mm;
+    padding: 10pt var(--resume-padding-x, 14mm) var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm);
     gap: 20pt;
 }
 
