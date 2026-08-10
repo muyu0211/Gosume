@@ -2,10 +2,11 @@
  * Export HTML pipeline — produces paginated, print-ready HTML for PDF/PNG export.
  *
  * Single-path architecture:
- *   paginateHTMLString() → paginateInIframe() → cleanAndSerialize()
+ *   paginateHTMLString() → pagination-core (paginateResume) → cleanAndSerialize()
  *
  * Rendered HTML is loaded into a hidden iframe, split into A4 .resume-page divs
- * (210mm × 297mm), and serialized for the backend export service.
+ * (210mm × 297mm) by the shared pagination core, and serialized for the backend
+ * export service.
  *
  * Both individual export (ExportDialog) and batch export (ResumeListDrawer) use
  * the same frontend template engine (renderTemplate) followed by this pipeline.
@@ -16,6 +17,8 @@
  *   - page-break-after: always between pages (except last)
  *   - Clean body styling (no scroll/padding from the preview chrome)
  */
+
+import { paginateResume, readPageStyle, type PageStyle } from './pagination-core'
 
 // ── Serialization ────────────────────────────────────────────────────────────
 
@@ -83,130 +86,23 @@ export function paginateHTMLString(previewHtml: string): Promise<string> {
   })
 }
 
-// ── Pagination algorithm ────────────────────────────────────────────────────
-
-function makePage(
-  doc: Document,
-  padTop: number,
-  padRight: number,
-  padBottom: number,
-  padLeft: number,
-  backgroundColor: string,
-): HTMLElement {
-  const page = doc.createElement('div')
-  page.className = 'resume-page'
-  page.style.cssText = `width: 210mm;height: 297mm;padding: ${padTop}px ${padRight}px ${padBottom}px ${padLeft}px;overflow: hidden;background: ${backgroundColor};margin: 0 auto;box-sizing: border-box;`
-  const container = doc.createElement('div')
-  container.className = 'resume-container'
-  container.style.maxWidth = '100%'
-  page.appendChild(container)
-  return page
-}
+// ── Pagination entry for export ─────────────────────────────────────────────
 
 /**
- * Splits resume content into fixed-height A4 pages by cloning DOM nodes and
- * measuring overflow. Handles both layouts:
- *   - Stacked:  each top-level section is placed consecutively.
- *   - Row-based: sidebar is repeated on every page; main content flows across pages.
+ * Resets the iframe body to clean print defaults and delegates to the shared
+ * pagination core. Page-break rules are applied later by cleanAndSerialize.
  */
 function paginateInIframe(doc: Document): void {
+  // Snapshot padding + background before repainting body for the print chrome,
+  // so pages get the template's values (not the print repaint's).
+  const pageStyle = readPageStyle(doc)
+
   const body = doc.body
-  const originalPage = doc.querySelector('.resume-page') as HTMLElement | null
-  if (!originalPage) return
-
-  const style = doc.defaultView!.getComputedStyle(originalPage)
-  const padTop = parseFloat(style.paddingTop) || 0
-  const padRight = parseFloat(style.paddingRight) || 0
-  const padBottom = parseFloat(style.paddingBottom) || 0
-  const padLeft = parseFloat(style.paddingLeft) || 0
-  const pageBg = style.backgroundColor || '#ffffff'
-
-  const container = originalPage.querySelector('.resume-container') as HTMLElement | null
-  if (!container) return
-
-  const containerStyle = doc.defaultView!.getComputedStyle(container)
-  const isRowLayout =
-    containerStyle.display === 'flex' && containerStyle.flexDirection === 'row'
-
-  const sections = Array.from(container.children) as HTMLElement[]
-  if (sections.length === 0) return
-
-  // Reset body to clean slate for the paginated output.
   body.className = ''
   body.style.margin = '0'
   body.style.padding = '0'
   body.style.background = '#ffffff'
 
-  const wrapper = doc.createElement('div')
-  wrapper.className = 'resume-pages-wrapper'
-  body.replaceChildren(wrapper)
-
-  if (isRowLayout) {
-    // Row layout: sidebar (first child) is cloned onto every page.
-    // The second child is the main flow container; subsequent sections are
-    // appended to it. When a page overflows, a new page is created with a
-    // fresh sidebar clone and flow continues.
-    const sidebar = sections[0]
-    const flowing = sections.length >= 2 ? sections[1] : null
-    const extra = sections.slice(2)
-
-    const flowItems: HTMLElement[] = []
-    if (flowing) {
-      flowItems.push(...(Array.from(flowing.children) as HTMLElement[]))
-    }
-    for (const sec of extra) flowItems.push(sec)
-
-    let cur = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
-    wrapper.appendChild(cur)
-    let curContainer = cur.querySelector('.resume-container')!
-    curContainer.appendChild(sidebar.cloneNode(true))
-    const flowingShell = flowing ? (flowing.cloneNode(false) as HTMLElement) : null
-    if (flowingShell) curContainer.appendChild(flowingShell)
-    let target = flowingShell || curContainer
-
-    for (const item of flowItems) {
-      const clone = item.cloneNode(true) as HTMLElement
-      target.appendChild(clone)
-      void cur.offsetHeight // force reflow before measuring overflow
-
-      if (cur.scrollHeight > cur.offsetHeight + 2) {
-        target.removeChild(clone)
-
-        cur = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
-        wrapper.appendChild(cur)
-        curContainer = cur.querySelector('.resume-container')!
-        curContainer.appendChild(sidebar.cloneNode(true))
-        const newShell = flowing ? (flowing.cloneNode(false) as HTMLElement) : null
-        if (newShell) curContainer.appendChild(newShell)
-        target = newShell || curContainer
-        target.appendChild(clone)
-      }
-    }
-  } else {
-    // Stacked layout: place sections one by one. If a section causes overflow,
-    // start a new page for it.
-    let cur = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
-    wrapper.appendChild(cur)
-    let currentContainer = cur.querySelector('.resume-container')!
-
-    for (const section of sections) {
-      const clone = section.cloneNode(true) as HTMLElement
-      currentContainer.appendChild(clone)
-      void cur.offsetHeight
-
-      if (cur.scrollHeight > cur.offsetHeight + 2) {
-        currentContainer.removeChild(clone)
-
-        cur = makePage(doc, padTop, padRight, padBottom, padLeft, pageBg)
-        wrapper.appendChild(cur)
-        currentContainer = cur.querySelector('.resume-container')!
-        currentContainer.appendChild(clone)
-      }
-    }
-  }
-
-  const pages = wrapper.querySelectorAll('.resume-page')
-  if (pages.length > 0) {
-    ;(pages[pages.length - 1] as HTMLElement).style.pageBreakAfter = 'auto'
-  }
+  const fallback: PageStyle = { padTop: 0, padRight: 0, padBottom: 0, padLeft: 0, pageBg: '#ffffff' }
+  paginateResume(doc, body, { ...(pageStyle ?? fallback), pageMarginBottom: '0' })
 }
