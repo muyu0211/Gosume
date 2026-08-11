@@ -1,0 +1,40 @@
+{
+    "id": "starter-template",
+    "name": "起手模板",
+    "name_en": "Starter Template",
+    "version": "1.0.0",
+    "author": {
+        "name": "Your Name",
+        "email": "you@example.com"
+    },
+    "description": "一个干净的起手模板，单栏布局，适合作为自定义模板的起点",
+    "description_en": "A clean starter template with single-column layout, ideal as a base for custom templates",
+    "category": "general",
+    "tags": ["起手", "基础", "单栏", "starter", "clean"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#1F2937",
+        "secondary": "#374151",
+        "text": "#1F2937",
+        "background": "#FFFFFF",
+        "accent": "#F3F4F6"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

@@ -197,6 +197,7 @@ func validateTemplateExecution(pkg *Package) error {
 		"i18n":       previewI18n,
 		"nl2br":      previewNL2BR,
 		"safeHTML":   previewSafeHTML,
+		"safeURL":    previewSafeURL,
 		"defaultVal": previewDefaultVal,
 	})
 
@@ -262,7 +263,7 @@ func isSupportedFunctionCall(expr string) bool {
 		return false
 	}
 	switch fields[0] {
-	case "dateRange", "skillLevel", "i18n", "nl2br", "safeHTML", "defaultVal":
+	case "dateRange", "skillLevel", "i18n", "nl2br", "safeHTML", "safeURL", "defaultVal":
 		return true
 	default:
 		return false
@@ -393,6 +394,10 @@ func previewNL2BR(s string) htmltemplate.HTML {
 
 func previewSafeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
+}
+
+func previewSafeURL(s string) htmltemplate.URL {
+	return htmltemplate.URL(s)
 }
 
 func previewDefaultVal(defaultVal, val string) string {

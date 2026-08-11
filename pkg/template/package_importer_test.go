@@ -50,8 +50,7 @@ func TestLoadPackageFromZipRejectsUnsupportedPreviewSyntax(t *testing.T) {
 			"author": {"name": "Gosume"},
 			"paper_size": "A4"
 		}`,
-		"template.html": `{{if eq .Meta.Language "zh-CN"}}中文{{end}}`,
-		"styles.css":    `body { color: #111; }`,
+		"template.html": `{{if eq .Meta.Language "zh-CN"}}中文{{end}}`,		"styles.css":    `body { color: #111; }`,
 	})
 
 	_, err := LoadPackageFromZip(path)
@@ -60,6 +59,39 @@ func TestLoadPackageFromZipRejectsUnsupportedPreviewSyntax(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unsupported template control expression") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestLoadPackageFromZipAcceptsSafeURL 验证 safeURL 函数能通过导入校验，
+// 与渲染器（pkg/render/html.go）注册的函数表保持一致。
+// 修复前：isSupportedFunctionCall 白名单漏了 safeURL，导致用户自制模板
+// 使用 {{safeURL .Personal.Avatar}}（与内置模板相同的写法）会被导入拒绝。
+func TestLoadPackageFromZipAcceptsSafeURL(t *testing.T) {
+	path := writeTemplatePackage(t, map[string]string{
+		"template.json": `{
+			"id": "local_safeurl_template",
+			"name": "Local SafeURL",
+			"version": "1.0.0",
+			"author": {"name": "Gosume"},
+			"paper_size": "A4"
+		}`,
+		"template.html": `<!DOCTYPE html>
+<html>
+<head><style>{{template "styles.css" .}}</style></head>
+<body>
+	{{if .Personal.Avatar}}<img src="{{safeURL .Personal.Avatar}}" alt="avatar" />{{end}}
+	<h1>{{.Personal.FullName}}</h1>
+</body>
+</html>`,
+		"styles.css": `body { font-family: sans-serif; }`,
+	})
+
+	pkg, err := LoadPackageFromZip(path)
+	if err != nil {
+		t.Fatalf("LoadPackageFromZip() with safeURL error = %v", err)
+	}
+	if pkg.Meta.ID != "local_safeurl_template" {
+		t.Fatalf("Meta.ID = %q", pkg.Meta.ID)
 	}
 }
 
