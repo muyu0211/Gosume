@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"gosume/pkg/appconfig"
 	"gosume/pkg/log"
 	"io"
 	"os"
@@ -18,6 +19,7 @@ import (
 type SystemService struct {
 	wailsApp  *application.App
 	configMgr *config.Manager
+	appCfg    *appconfig.AppConfig
 	win       *application.WebviewWindow
 }
 
@@ -27,10 +29,13 @@ func (s *SystemService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, win *application.WebviewWindow) {
+//
+// appCfg 为应用级编译期配置，提供版本号、应用名等框架级参数。
+func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, win *application.WebviewWindow, appCfg *appconfig.AppConfig) {
 	s.wailsApp = app
 	s.configMgr = configMgr
 	s.win = win
+	s.appCfg = appCfg
 }
 
 // MinimizeWindow minimizes the application window.
@@ -57,9 +62,9 @@ func (s *SystemService) CloseWindow() {
 	s.win.Close()
 }
 
-// GetAppVersion returns the application version.
+// GetAppVersion returns the application version from the embedded app.yaml.
 func (s *SystemService) GetAppVersion() string {
-	return "1.0.0"
+	return s.appCfg.App.Version
 }
 
 // GetDataDir returns the application data directory.

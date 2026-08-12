@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"gosume/pkg/appconfig"
 	"gosume/pkg/config"
 	"gosume/pkg/export"
 	"gosume/pkg/log"
@@ -24,15 +25,19 @@ type App struct {
 }
 
 // New initializes all components and returns an App ready to run.
-func New(assets, builtinTemplates embed.FS) *App {
+//
+// appCfg 为应用级编译期配置（来自 app.yaml），用于驱动窗口尺寸、版本号等
+// 框架级参数；与 pkg/config 用户运行时配置 config.json 区分。
+func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 	// Config
 	configMgr := initConfig()
 
 	// Logger
 	dataDir := configMgr.DataDir()
 	os.MkdirAll(filepath.Join(dataDir, "autosave"), 0755)
-	log.Init(dataDir, "Gosume", log.INFO, true)
+	log.Init(dataDir, appCfg.App.Name, log.INFO, true)
 	log.Info("[main] data dir: %s", dataDir)
+	log.Info("[main] app version: %s", appCfg.App.Version)
 
 	// Data stores
 	resumeStore := initResumeStore(dataDir)
@@ -66,14 +71,14 @@ func New(assets, builtinTemplates embed.FS) *App {
 	}
 
 	// Wails app & window
-	wailsApp, win := createWailsApp(assets, svcs)
+	wailsApp, win := createWailsApp(assets, svcs, appCfg)
 
 	// Dependency injection
 	resumeSvc.Inject(resumeStore, htmlRenderer)
 	templateSvc.Inject(wailsApp, templateLoader, templateStore)
 	exportSvc.Inject(wailsApp, exportManager)
 	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
-	systemSvc.Inject(wailsApp, configMgr, win)
+	systemSvc.Inject(wailsApp, configMgr, win, appCfg)
 
 	// Events
 	registerEvents()
@@ -192,10 +197,10 @@ func initExportManager() *export.ExportManager {
 	return export.NewExportManager(browser)
 }
 
-func createWailsApp(assets embed.FS, services []application.Service) (*application.App, *application.WebviewWindow) {
+func createWailsApp(assets embed.FS, services []application.Service, appCfg *appconfig.AppConfig) (*application.App, *application.WebviewWindow) {
 	app := application.New(application.Options{
-		Name:        "Gosume",
-		Description: "桌面级简历制作工具",
+		Name:        appCfg.App.Name,
+		Description: appCfg.App.Description,
 		Services:    services,
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -205,16 +210,17 @@ func createWailsApp(assets embed.FS, services []application.Service) (*applicati
 		},
 	})
 
-	win := app.Window.NewWithOptions(application.WebviewWindowOptions{
+	winOpts := application.WebviewWindowOptions{
 		Name:      "main",
-		Title:     "Gosume",
-		Width:     1280,
-		Height:    800,
-		MinWidth:  960,
-		MinHeight: 600,
+		Title:     appCfg.Window.Title,
+		Width:     appCfg.Window.Width,
+		Height:    appCfg.Window.Height,
+		MinWidth:  appCfg.Window.MinWidth,
+		MinHeight: appCfg.Window.MinHeight,
 		URL:       "/",
-		Frameless: true,
-	})
+		Frameless: appCfg.Window.Frameless,
+	}
+	win := app.Window.NewWithOptions(winOpts)
 
 	return app, win
 }

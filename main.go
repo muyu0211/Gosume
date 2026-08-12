@@ -4,6 +4,7 @@ import (
 	"embed"
 
 	"gosume/pkg/app"
+	"gosume/pkg/appconfig"
 )
 
 //go:embed all:frontend/dist
@@ -13,5 +14,6 @@ var assets embed.FS
 var builtinTemplates embed.FS
 
 func main() {
-	app.New(assets, builtinTemplates).Run()
+	appCfg := appconfig.Load()
+	app.New(assets, builtinTemplates, appCfg).Run()
 }
