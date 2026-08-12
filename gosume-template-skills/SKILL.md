@@ -1,21 +1,21 @@
 ---
 name: gosume-template-creator
-description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件）。Gosume 是基于 Wails v3 的桌面简历工具，模板由 template.json、template.html、styles.css 三文件组成，打包为 ZIP文件后导入应用。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 数据模型，生成风格一致的可导入模板。当用户提到"简历模板""gosume 模板""制作可导入的简历模板""照着这个简历做一个模板""参考这张图/PDF 生成模板""template.json/template.html/styles.css 三件套""gosume-template 包"或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
+description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件）。Gosume 是基于 Wails v3 的桌面简历工具，模板由 template.json、template.html、styles.css 三文件组成，打包为 ZIP文件后导入应用。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 数据模型，生成风格一致的可导入模板。当用户提到"简历模板"、"gosume 模板"、"制作可导入的简历模板"、"照着这个简历做一个模板"、"参考这张图/PDF 生成模板"，或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
 ---
 
 # Gosume 简历模板创建器
 
-本 skill 指导你为 Gosume 简历制作应用创建**可导入使用**的模板包。所有生成的模板都满足应用的导入校验规则（`pkg/template/package_importer.go`），打包为 `.zip` 文件后可通过应用的"导入模板"功能直接使用。
+本 skill 指导你为 Gosume 简历制作应用创建**可导入使用**的模板包。所有生成的模板都满足应用的导入校验规则，打包为 `.zip` 文件后可通过Gosume应用的"导入模板"功能直接使用。
 
 ## 关键约束（务必先读）
 
-以下约束来自应用源码的**实际校验逻辑**，与项目内 `templates/AGENTS.md` 文档存在若干差异。**以本 skill 为准**，因为导入时跑的是源码校验。
+以下约束来自应用源码的**实际校验逻辑**，请严格遵守。
 
 ### 1. 三文件结构与文件名
 
 模板包是 ZIP 文件，根目录下必须包含三个文件，文件名**精确**为：
 
-- `template.json`（元数据）— 注意：不是文档里说的 `manifest.json`，源码识别的是 `template.json`
+- `template.json`（元数据）
 - `template.html`（Go `html/template` 语法）
 - `styles.css`（打印 CSS）
 
@@ -62,7 +62,7 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 
 `validateMeta` 强制要求以下字段非空：
 
-- `id`（满足上述正则）
+- `id`（严格的64为UUID）
 - `name`（模板中文名）
 - `version`（如 `1.0.0`）
 - `author.name`（作者名）
@@ -113,7 +113,7 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 3. **布局结构**：单栏？双栏（侧边栏）？头部+主体？
 4. **目标人群**：技术人员？应届生？管理者？创意行业？
 5. **必备特性**：是否需要头像？技能进度点？双语支持？
-6. **id 与命名**：模板的中英文名、id（kebab-case）
+6. **模板命名**：模板的中英文名
 
 #### 两种情况共通的确认项
 
@@ -149,10 +149,10 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 
 参考 `assets/starter/template.json`。关键字段：
 
-- `id`：kebab-case，2-64 字符（字母数字下划线连字符）
+- `id`：UUID，64 字符（字母数字下划线连字符）
 - `name` / `name_en`：中英文名
 - `version`：`1.0.0`
-- `category`：枚举之一（用于进行分类查找）
+- `category`：枚举之一（用于进行分类查找，可以自由取值，但最好保持在一个中文词/英文单词内）
 - `colors`：5 个 HEX 颜色，与 CSS 变量保持一致
 - `features`：`avatar` / `skill_bars` / `qr_code` / `links_clickable` 四个布尔值
 - `sections.layout`：区块展示顺序数组，可选值 `personal` `jobs` `education` `internships` `projects` `skills` `languages` `awards` `custom` `summary`
@@ -240,7 +240,7 @@ Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "
 
 | 错误信息 | 原因 | 修复 |
 |----------|------|------|
-| `template id must be 2-64 characters...` | id 格式不对 | 改为 kebab-case，如 `my-template` |
+| `template id must be 64 characters...` | id 格式不对 | 改为 kebab-case，如 `my-template` |
 | `only A4 templates are currently supported` | paper_size 不是 A4 | 改为 `"A4"` |
 | `unsupported template expression for live preview: {{...}}` | 用了禁止的语法 | 见上面"语法限制"表 |
 | `unsupported template control expression` | if/range 后跟了非简单路径 | 简化为 `{{if .Field}}` 或 `{{range .Field}}` |
@@ -268,7 +268,7 @@ Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "
 若做双栏（如 creative 风格）：
 
 ```css
-.resume-container { display: flex; gap: 16pt; }
+.resume-container { display: flex; gap: 12pt; }
 .sidebar { width: 32%; }
 .main { flex: 1; }
 ```
