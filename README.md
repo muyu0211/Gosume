@@ -2,7 +2,24 @@
 
 <div align="center">
 
-[![中文](https://img.shields.io/badge/Lang-zh-red)](#中文) &nbsp;&nbsp; [![English](https://img.shields.io/badge/Lang-en-blue)](#english)
+[![Stars](https://img.shields.io/github/stars/muyu0211/Gosume?style=social)](https://github.com/muyu0211/Gosume)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Wails](https://img.shields.io/badge/Wails-v3-FF4081)](https://wails.io)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#下载安装)
+
+**⚡ 专业 · 简洁 · 高颜值 · 本地优先**
+
+一款为开发者和职场人打造的**桌面级简历制作神器**。
+无需排版知识，无需打开 Word — 选择模板 → 填写内容 → 一键导出，
+**三步搞定一份高质量简历。**
+
+[![中文](https://img.shields.io/badge/🌏-中文-red)](#中文) &nbsp;&nbsp; [![English](https://img.shields.io/badge/🌐-English-blue)](#english)
+
+---
+
+![Gosume 主界面](images/1.png)
 
 </div>
 
@@ -10,180 +27,335 @@
 
 ## 中文
 
-**Gosume** 是一款简洁、专业的桌面端简历制作工具。无需排版知识，无需打开 Word——选择模板、填写内容、一键导出，三步搞定一份高质量简历。
+### ✨ 为什么选择 Gosume
 
-![Gosume 主界面](images/1.png)
+| 🌟 核心优势 | 说明 |
+|-----------|------|
+| **🎯 所见即所得** | 编辑内容即时渲染为最终效果，告别反复调整格式的痛苦。输入什么，导出就是什么。 |
+| **🎨 16 套精选模板** | 从经典正式风到极客终端风，覆盖互联网、金融、设计、学术等 **10+ 求职场景**，每套模板都经过像素级调校。 |
+| **📤 高质量导出** | 基于无头浏览器 Chromium 渲染，支持 **PDF / PNG** 双格式。可调节纸张大小、缩放比例，批量导出一步到位。 |
+| **💾 永不丢失** | 两层保存机制：首次手动保存后，**自动持久化**到本地 SQLite 数据库（WAL 模式），即使意外关闭也能完整恢复。 |
+| **🔒 隐私至上** | **本地优先 (Local-First)** 架构，所有数据 100% 存储在你自己的电脑上，无需联网，无需注册账号，零隐私泄露风险。 |
+| **📱 全平台覆盖** | 支持 **Windows / macOS / Linux** 桌面端，以及 **iOS / Android** 移动端，随时随地编辑你的简历。 |
+| **🧩 模板可扩展** | 支持导入 `.gosume-template` 模板包，懂 HTML+CSS 就能自制模板，同时提供模板生成SKILL，通过SKILL让agent自动生成适合自己的简历模板。 |
+| **⚡ 原生性能** | 基于 **Wails v3** (Go + Webview2) 构建，单二进制分发，启动 < 1s，内存占用仅为 Electron 应用的 **1/5**。 |
 
-### 为什么选择 Gosume
+---
 
-- **所见即所得** — 编辑内容即时渲染为最终效果，告别反复调整格式的痛苦。
-- **16 套精选模板** — 从经典正式风到极客终端风，覆盖互联网、金融、设计、学术等各类求职场景，每套模板都经过精心调校。
-- **一键导出** — 支持 PDF、DOCX、PNG 三种格式，可根据需要调节纸张大小、缩放比例和页码范围。
-- **自动保存，永不丢失** — 所有内容自动持久化到本地数据库，即使意外关闭也能完整恢复。
-- **跨平台使用** — 支持 Windows、macOS、Linux 桌面端，以及 iOS / Android 移动端，随时随地编辑简历。
+### 🎨 内嵌 16 套模板 · 总有一款适合你
 
-### 模板一览
+<div align="center">
 
 | 模板 | 风格 | 适用场景 |
-|------|------|----------|
-| 经典正式风 | 单栏、沉稳大气 | 传统行业、国企、正式场合 |
-| 现代专业风 | 双栏、简洁科技 | 互联网、科技行业 |
-| 创意设计风 | 侧边栏、色彩鲜明 | 设计、创意、市场类岗位 |
-| 极简清新风 | 留白多、干净利落 | 外企、追求简洁风格 |
-| 紧凑高效风 | 信息密度高、一页容纳 | 经验丰富、内容较多 |
-| 高管精英风 | 权威感、稳重 | 管理岗位、资深人士 |
-| 学术简历风 | 严谨规范 | 高校、科研机构 |
-| 渐变现代风 | 渐变色、年轻活力 | 新兴行业、创业公司 |
-| 黑金锋范风 | 高对比、霸气 | 高端职位、彰显个性 |
-| 水墨丹青风 | 中式美学 | 文化创意、教育行业 |
-| 青叶自然风 | 清新自然色调 | 环保、教育、NGO |
-| 瑞士国际风 | 网格系统、排版考究 | 国际化企业、追求设计感 |
-| 左右分栏风 | 双栏分明 | 内容模块清晰分类 |
-| 时间线叙事风 | 时间轴布局 | 强调成长轨迹的岗位 |
-| 日式禅意风 | 极简留白 | 日企、偏爱侘寂美学 |
-| 终端极客风 | 命令行风格 | 开发者、技术极客 |
+|:----:|:----:|:--------:|
+| **Classic** 经典 | 单栏 · 沉稳大气 | 传统行业 · 国企 · 正式场合 |
+| **Modern** 现代 | 双栏 · 简洁科技 | 互联网 · 科技行业 |
+| **Creative** 创意 | 侧边栏 · 色彩鲜明 | 设计 · 创意 · 市场类 |
+| **Minimal** 极简 | 留白 · 干净利落 | 外企 · 追求简洁 |
+| **Compact** 紧凑 | 高密度 · 一页容纳 | 资深人士 · 内容较多 |
+| **Executive** 高管 | 权威感 · 稳重 | 管理岗位 · 高管职位 |
+| **Academic** 学术 | 严谨规范 | 高校 · 科研 · 读博申请 |
+| **Gradient** 渐变 | 渐变色 · 年轻活力 | 新兴行业 · 创业公司 |
+| **Bold** 黑金 | 高对比 · 霸气 | 高端职位 · 彰显个性 |
+| **Ink** 水墨 | 中式美学 | 文化创意 · 教育行业 |
+| **Leaf** 青叶 | 清新自然 | 环保 · 教育 · NGO |
+| **Swiss** 瑞士 | 网格系统 · 排版考究 | 国际化企业 · 设计感 |
+| **Split** 分栏 | 左右分明 | 内容模块清晰分类 |
+| **Timeline** 时间线 | 时间轴布局 | 强调成长轨迹 |
+| **Zen** 禅意 | 极简留白 | 日企 · 侘寂美学 |
+| **Terminal** 终端 | 命令行风格 | 开发者 · 技术极客 |
+
+</div>
 
 ![模板预览 - 经典正式风](images/2.png)
-
 ![模板预览 - 现代专业风](images/3.png)
 
-### 编辑体验
+---
+
+### 🖥️ 沉浸式编辑体验
+
+<div align="center">
+
+**左侧编辑 · 右侧实时预览 · 焦点不丢失**
+
+</div>
 
 ![编辑区域](images/4.png)
-
 ![编辑区域](images/5.png)
-
 ![编辑区域](images/6.png)
-
 ![编辑区域](images/7.png)
-
 ![编辑区域](images/8.png)
 
-### 功能亮点
+---
 
-- **拖拽排序** — 拖拽即可调整模块和条目的展示顺序。
-- **键盘快捷键** — 完整键盘操作支持，提升编辑效率。
-- **示例数据** — 一键填充示例，快速体验模板效果，满意后再填入真实信息。
-- **项目文件** — 支持保存和打开 `.resume.json` 文件，便于归档和多版本管理。
-- **自定义模板** — 有设计能力？可将自定义模板放入模板目录即可使用。
-- **本地优先** — 所有数据存储于本地，无需网络连接，隐私安全。
+### 🚀 功能亮点速览
 
-### 下载安装
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ✋ 拖拽排序        拖拽即可调整模块和条目的展示顺序           │
+│  ⌨️  键盘快捷键      完整键盘操作支持，Ctrl+S 保存、Ctrl+Z 撤销 │
+│  📋 示例数据        一键填充示例简历，快速预览模板效果          │
+│  📁 项目文件        保存 / 打开 .resume.json，多版本管理       │
+│  🧩 自定义模板      放入模板目录或导入 .gosume-template 包     │
+│  🔐 本地优先        数据全在本地，离线可用，隐私安全           │
+│  📦 批量导出        多份简历一次性导出，省时省力               │
+│  📏 边距预设        内置多种页边距方案，一键切换               │
+└─────────────────────────────────────────────────────────────┘
+```
 
-请前往 [Releases](https://github.com/muyu0211/Gosume/releases) 页面下载对应平台的安装包。
+---
 
-| 平台 | 格式 |
-|------|------|
-| Windows | `.exe` / `.msi` |
-| macOS | `.dmg` |
-| Linux | `.AppImage` / `.deb` |
+### 📥 下载安装
 
-### 开发相关
+前往 **[GitHub Releases](https://github.com/muyu0211/Gosume/releases)** 页面下载对应平台的安装包。
 
-**环境要求：** Go 1.25+、Node.js 18+
+| 平台 | 格式 | 说明 |
+|------|------|------|
+| 🪟 **Windows** | `.exe` / `.msi` / `.msix` | 支持 Win10 及以上 |
+| 🍎 **macOS** | `.dmg` | 支持 Intel & Apple Silicon |
+| 🐧 **Linux** | `.AppImage` / `.deb` | 主流发行版通用 |
+| 📱 **iOS** | TestFlight / IPA | 详见 Release 说明 |
+| 🤖 **Android** | `.apk` | 支持 Android 8.0+ |
+
+---
+
+### 🏗️ 技术架构
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        Gosume 架构                           │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────┐     Wails Service Bind             │
+│  │  Frontend (React 18) │◄──────────────────────────────────►│
+│  │  ├─ Zustand Store    │     callService("Svc", "Method")   │
+│  │  ├─ Tailwind CSS     │                                    │
+│  │  └─ Vite 5 (HMR)     │                                    │
+│  └──────────┬───────────┘                                    │
+│             │ runtime.Events()                               │
+│  ┌──────────▼───────────┐                                    │
+│  │   Backend (Go 1.25)  │                                    │
+│  │  ├─ Service Layer    │  Resume / Template / Export / File │
+│  │  ├─ Render (HTML)    │  Go html/template → 静态 HTML      │
+│  │  ├─ Export (Rod)     │  无头 Chromium → PDF / PNG         │
+│  │  ├─ Store (SQLite)   │  modernc.org/sqlite (纯 Go, 无CGO) │
+│  │  └─ Config (JSON)    │  支持热切换数据目录                 │
+│  └──────────────────────┘                                    │
+│                                                              │
+│  Build: 单二进制嵌入 frontend/dist + 16 套内置模板             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**技术栈一览：**
+
+| 层级 | 技术选择 |
+|------|---------|
+| 桌面框架 | Wails v3 (Go + Webview2) |
+| 后端语言 | Go 1.25 |
+| 前端框架 | React 18 + TypeScript strict |
+| 打包工具 | Vite 5 |
+| CSS 框架 | Tailwind CSS 3 |
+| 状态管理 | Zustand 5 |
+| 表单处理 | react-hook-form + zod 4 |
+| 图标库 | lucide-react |
+| 数据库 | SQLite (modernc.org/sqlite, WAL 模式) |
+| 日志 | zap (结构化日志 + 轮转) |
+| 导出引擎 | rod (无头 Chromium) |
+
+---
+
+### 🛠️ 开发指南
+
+**环境要求：** Go 1.25+ · Node.js 18+ · npm / pnpm
 
 ```bash
+# 克隆项目
+git clone https://github.com/muyu0211/Gosume.git && cd Gosume
+
 # 安装前端依赖
 cd frontend && npm install && cd ..
 
-# 启动开发模式
+# 启动开发模式（Wails Dev Server，前端热重载 + 后端热编译）
 task dev
 
-# 构建打包
-task build && task package
+# 生产构建
+task build
+
+# 打包分平台安装包
+task package
 ```
 
-项目基于 [Wails v3](https://wails.io) 构建，采用 MIT 协议开源。欢迎提交 Issue 和 PR。
+项目采用 **MIT 协议** 开源。欢迎提交 Issue、PR 和自制模板！ 🙌
 
 ---
 
 ## English
 
-**Gosume** is a clean, professional desktop resume builder. Pick a template, fill in your details, export — three steps to a polished resume, no design skills needed.
+### ✨ Why Gosume
 
-![Gosume Main Screen](images/1.png)
+| 🌟 Core Advantages | Description |
+|-------------------|-------------|
+| **🎯 WYSIWYG** | Every edit renders instantly as the final output. What you see is **exactly** what you export. |
+| **🎨 16 Handcrafted Templates** | From classic formal to terminal hacker style, covering **10+ industries** — tech, finance, design, academia, and more. Each template is pixel-perfect tuned. |
+| **📤 High-Quality Export** | Rendered via headless Chromium for perfect fidelity. Supports **PDF / PNG** with adjustable paper size, scale, and **batch export**. |
+| **💾 Never Lose Work** | Two-tier save system: auto-persist to local SQLite (WAL mode) after the first manual save. Survives unexpected crashes without data loss. |
+| **🔒 Privacy First** | **Local-First architecture**. All data stays **100% on your device**. No internet required, no account signup, zero privacy risk. |
+| **📱 Cross-Platform** | Available on **Windows / macOS / Linux** desktop, plus **iOS / Android** mobile — edit your resume anywhere. |
+| **🧩 Extensible Templates** | Import `.gosume-template` packages. Know HTML+CSS? Build your own template and share it. |
+| **⚡ Native Performance** | Built with **Wails v3** (Go + Webview2). Single-binary distribution, < 1s cold start, **5x lighter** memory footprint vs Electron apps. |
 
-### Why Gosume
+---
 
-- **WYSIWYG** — What you see is what you get. Every edit renders instantly as the final output.
-- **16 Handcrafted Templates** — From classic formal to terminal hacker style, covering tech, finance, design, academia, and more.
-- **One-Click Export** — Export to PDF, DOCX, or PNG with adjustable paper size, scale, and page range.
-- **Auto-Save** — All changes are persisted locally. Close the app anytime — your work is safe.
-- **Cross-Platform** — Available on Windows, macOS, Linux desktop, plus iOS / Android mobile.
+### 🎨 16 Templates · Find Your Style
 
-### Templates
+<div align="center">
 
 | Template | Style | Best For |
-|----------|-------|----------|
-| Classic Formal | Single-column, timeless | Traditional industries, conservative settings |
-| Modern Professional | Two-column, clean | Tech, startups |
-| Creative Designer | Sidebar, bold colors | Design, marketing, creative roles |
-| Minimal Clean | Ample whitespace | Corporate, modern workplaces |
-| Compact Efficient | High density, one-page | Senior professionals with rich experience |
-| Executive Elite | Authoritative, refined | Management, executive roles |
-| Academic Scholar | Structured, formal | Universities, research institutions |
-| Gradient Modern | Vibrant gradients | Emerging industries, startups |
-| Bold Authority | High contrast, striking | Senior roles, standout applications |
-| Ink Wash | Chinese ink-painting aesthetic | Cultural, creative, education sectors |
-| Natural Leaf | Fresh, earthy tones | Environmental, education, NGO |
-| Swiss International | Grid system, typography-focused | Global companies, design-conscious roles |
-| Split Panel | Distinct two-column layout | Clear content categorization |
-| Timeline Narrative | Timeline-based layout | Career progression focus |
-| Zen Minimalist | Minimalist wabi-sabi | Japanese companies, minimalist aesthetic |
-| Terminal Hacker | Command-line style | Developers, tech enthusiasts |
+|:--------:|:-----:|:--------:|
+| **Classic** | Single-column · Timeless | Traditional · Conservative |
+| **Modern** | Two-column · Clean | Tech · Startups |
+| **Creative** | Sidebar · Bold Colors | Design · Marketing · Creative |
+| **Minimal** | Whitespace · Elegant | Corporate · Modern Workplaces |
+| **Compact** | High-Density · One-Page | Senior Pros · Rich Experience |
+| **Executive** | Authoritative · Refined | Management · Executive Roles |
+| **Academic** | Structured · Formal | Universities · Research · PhD |
+| **Gradient** | Vibrant · Modern | Emerging Industries · Startups |
+| **Bold** | High-Contrast · Striking | Senior Roles · Stand-Out Apps |
+| **Ink** | Chinese Ink Aesthetic | Cultural · Creative · Education |
+| **Leaf** | Fresh · Earthy Tones | Environment · Education · NGO |
+| **Swiss** | Grid · Typography-Focused | Global Companies · Design |
+| **Split** | Two-Column Layout | Clear Content Categorization |
+| **Timeline** | Timeline-Based Layout | Career Progression Focus |
+| **Zen** | Minimalist · Wabi-Sabi | Japanese Cos · Minimalist |
+| **Terminal** | Command-Line Style | Developers · Tech Enthusiasts |
+
+</div>
 
 ![Template Preview - Classic Formal](images/2.png)
-
 ![Template Preview - Modern Professional](images/3.png)
 
-### Editing Experience
+---
+
+### 🖥️ Immersive Editing Experience
+
+<div align="center">
+
+**Edit on the left · Live preview on the right · Flow uninterrupted**
+
+</div>
 
 ![Editing Area](images/4.png)
-
 ![Editing Area](images/5.png)
-
 ![Editing Area](images/6.png)
-
 ![Editing Area](images/7.png)
-
 ![Editing Area](images/8.png)
 
-### Highlights
+---
 
-- **Drag & Drop** — Reorder sections and items with a simple drag.
-- **Keyboard Shortcuts** — Full keyboard navigation for efficient editing.
-- **Sample Data** — Fill sample data in one click to preview templates before adding your own.
-- **Project Files** — Save and open `.resume.json` files for archiving and version control.
-- **Custom Templates** — Bring your own templates by placing them in the templates directory.
-- **Local-First** — All data stays on your device. No internet required, your privacy is protected.
+### 🚀 Feature Highlights
 
-### Download
-
-Visit the [Releases](https://github.com/muyu0211/Gosume/releases) page to download the installer for your platform.
-
-| Platform | Format |
-|----------|--------|
-| Windows | `.exe` / `.msi` |
-| macOS | `.dmg` |
-| Linux | `.AppImage` / `.deb` |
-
-### Development
-
-To build from source:
-
-**Prerequisites:** Go 1.25+, Node.js 18+
-
-```bash
-cd frontend && npm install && cd ..
-task dev        # development mode
-task build && task package  # production build
+```
+┌──────────────────────────────────────────────────────────────┐
+│  ✋ Drag & Drop       Reorder sections and items by dragging   │
+│  ⌨️  Keyboard Shortcuts  Ctrl+S save, Ctrl+Z undo, and more   │
+│  📋 Sample Data       One-click fill to preview templates     │
+│  📁 Project Files     Save / Open .resume.json for versioning │
+│  🧩 Custom Templates  Drop in folder or import .gosume-pack   │
+│  🔐 Local-First       All data local, offline-ready, private  │
+│  📦 Batch Export      Export multiple resumes at once         │
+│  📏 Margin Presets    Switch page margins with one click      │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-Built with [Wails v3](https://wails.io). Licensed under [MIT](LICENSE). Issues and PRs welcome.
+---
+
+### 📥 Download
+
+Visit the **[GitHub Releases](https://github.com/muyu0211/Gosume/releases)** page to download the installer for your platform.
+
+| Platform | Format | Notes |
+|----------|--------|-------|
+| 🪟 **Windows** | `.exe` / `.msi` / `.msix` | Win10+ recommended |
+| 🍎 **macOS** | `.dmg` | Intel & Apple Silicon |
+| 🐧 **Linux** | `.AppImage` / `.deb` | Mainstream distros |
+| 📱 **iOS** | TestFlight / IPA | See Release notes |
+| 🤖 **Android** | `.apk` | Android 8.0+ |
+
+---
+
+### 🏗️ Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        Gosume Architecture                    │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────┐     Wails Service Bind             │
+│  │  Frontend (React 18) │◄──────────────────────────────────►│
+│  │  ├─ Zustand Store    │     callService("Svc", "Method")   │
+│  │  ├─ Tailwind CSS     │                                    │
+│  │  └─ Vite 5 (HMR)     │                                    │
+│  └──────────┬───────────┘                                    │
+│             │ runtime.Events()                               │
+│  ┌──────────▼───────────┐                                    │
+│  │   Backend (Go 1.25)  │                                    │
+│  │  ├─ Service Layer    │  Resume / Template / Export / File │
+│  │  ├─ Render (HTML)    │  Go html/template → Static HTML    │
+│  │  ├─ Export (Rod)     │  Headless Chromium → PDF / PNG     │
+│  │  ├─ Store (SQLite)   │  modernc.org/sqlite (pure Go)      │
+│  │  └─ Config (JSON)    │  Hot-swappable data directory      │
+│  └──────────────────────┘                                    │
+│                                                              │
+│  Build: Single binary embeds frontend/dist + 16 templates     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Tech Stack:**
+
+| Layer | Technology |
+|-------|-----------|
+| Desktop Framework | Wails v3 (Go + Webview2) |
+| Backend | Go 1.25 |
+| Frontend | React 18 + TypeScript strict |
+| Bundler | Vite 5 |
+| CSS | Tailwind CSS 3 |
+| State Management | Zustand 5 |
+| Forms | react-hook-form + zod 4 |
+| Icons | lucide-react |
+| Database | SQLite (modernc.org/sqlite, WAL mode) |
+| Logging | zap (structured + rotation) |
+| Export Engine | rod (Headless Chromium) |
+
+---
+
+### 🛠️ Development
+
+**Prerequisites:** Go 1.25+ · Node.js 18+ · npm / pnpm
+
+```bash
+# Clone
+git clone https://github.com/muyu0211/Gosume.git && cd Gosume
+
+# Install frontend deps
+cd frontend && npm install && cd ..
+
+# Dev mode (Wails Dev Server + HMR + Hot reload)
+task dev
+
+# Production build
+task build
+
+# Package installers for all platforms
+task package
+```
+
+Licensed under **MIT**. Issues, PRs and custom templates are welcome! 🙌
 
 ---
 
 <div align="center">
+
+**Made with 💜 by the Gosume Team**
 
 **Gosume** — 你的简历，你来做主 / Your resume, crafted.
 

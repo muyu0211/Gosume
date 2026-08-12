@@ -31,7 +31,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	// Logger
 	dataDir := configMgr.DataDir()
 	os.MkdirAll(filepath.Join(dataDir, "autosave"), 0755)
-	log.Init(dataDir, "ResumeCraft", log.INFO, true)
+	log.Init(dataDir, "Gosume", log.INFO, true)
 	log.Info("[main] data dir: %s", dataDir)
 
 	// Data stores
@@ -96,7 +96,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 			log.Error("[main] failed to reopen template store: %v", err)
 		}
 
-		log.Init(newDir, "ResumeCraft", log.INFO, true)
+		log.Init(newDir, "Gosume", log.INFO, true)
 
 		resumeSvc.Inject(resumeStore, htmlRenderer)
 		templateSvc.Inject(wailsApp, templateLoader, templateStore)
@@ -262,5 +262,3 @@ func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
 	}
 	return result, nil
 }
-
-
