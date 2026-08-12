@@ -22,14 +22,14 @@ const (
 
 var templateIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`)
 
-// Package is the validated content of a local .zip template package.
+// Package is the validated content of a local .zip package.
 type Package struct {
 	Meta Meta
 	HTML string
 	CSS  string
 }
 
-// LoadPackageFromZip reads and validates a .zip template package.
+// LoadPackageFromZip reads and validates a .zip package.
 func LoadPackageFromZip(filePath string) (*Package, error) {
 	reader, err := zip.OpenReader(filePath)
 	if err != nil {
