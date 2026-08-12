@@ -16,11 +16,14 @@
                     <h1>{{.Personal.FullName}}</h1>
                     {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
                 </div>
-                <div class="header-contact">
-                    {{if .Personal.Email}}<div class="contact-item">{{.Personal.Email}}</div>{{end}}
-                    {{if .Personal.Phone}}<div class="contact-item">{{.Personal.Phone}}</div>{{end}}
-                    {{if .Personal.Location}}<div class="contact-item">{{.Personal.Location}}</div>{{end}}
-                    {{if .Personal.Website}}<div class="contact-item">{{.Personal.Website}}</div>{{end}}
+                <div class="header-right">
+                    <div class="header-contact">
+                        {{if .Personal.Email}}<div class="contact-item">{{.Personal.Email}}</div>{{end}}
+                        {{if .Personal.Phone}}<div class="contact-item">{{.Personal.Phone}}</div>{{end}}
+                        {{if .Personal.Location}}<div class="contact-item">{{.Personal.Location}}</div>{{end}}
+                        {{if .Personal.Website}}<div class="contact-item">{{.Personal.Website}}</div>{{end}}
+                    </div>
+                    {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
                 </div>
             </div>
         </div>

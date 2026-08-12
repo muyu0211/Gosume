@@ -249,18 +249,19 @@ function placeSection(
   }
 }
 
-// ── Config-driven nested row (sidebar repeats on every page) ────────────────
+// ── Config-driven nested row (sidebar on first page, full-width continuation) ─
 
 /**
  * Handles a two-column container nested inside `.resume-container`
  * (e.g. gradient's `.main-grid`).
  *
- * The sidebar is cloned onto the current page (alongside any preceding
+ * The sidebar is cloned onto the FIRST row page only (alongside any preceding
  * sections already placed there). The main column's children then flow across
- * pages; each new page gets a fresh sidebar clone. If the very first flow item
- * doesn't fit alongside the preceding content + sidebar, the row scaffolding
- * is rolled back and restarted on a fresh page so no empty flow shell is left
- * behind on the partial page.
+ * pages; continuation pages use full-width flow content (no sidebar clone) so
+ * the short sidebar isn't duplicated and the continuation page stays compact.
+ * If the very first flow item doesn't fit alongside the preceding content +
+ * sidebar, the row scaffolding is rolled back and restarted on a fresh page so
+ * no empty flow shell is left behind on the partial page.
  */
 function placeRowContainer(
   ctx: PageCtx,
@@ -279,7 +280,7 @@ function placeRowContainer(
   const flowItems = Array.from(flow.children) as HTMLElement[]
   if (flowItems.length === 0) return
 
-  let target = beginRow(ctx, cursor, rowContainer, sidebar, flow)
+  let target = beginRow(ctx, cursor, rowContainer, sidebar, flow, true)
   let rowStarted = false
 
   for (const item of flowItems) {
@@ -300,7 +301,10 @@ function placeRowContainer(
       rollbackRow(cursor)
     }
     newPage(ctx, cursor)
-    target = beginRow(ctx, cursor, rowContainer, sidebar, flow)
+    // Include the sidebar only on the first row page (when rowStarted is
+    // still false).  Continuation pages get a full-width flow shell so the
+    // short sidebar isn't duplicated and the page stays compact.
+    target = beginRow(ctx, cursor, rowContainer, sidebar, flow, !rowStarted)
 
     // Guard: if the sidebar alone overflows the fresh page, the row strategy
     // is unworkable for this content — fall back to placing the whole block.
@@ -341,6 +345,11 @@ function isConfiguredRowContainer(ctx: PageCtx, section: HTMLElement): boolean {
  * container (empty, preserving its flex layout) holding a sidebar clone and an
  * empty flow shell. Returns the flow shell so callers can append flow items.
  *
+ * When `includeSidebar` is false (continuation pages), only the flow shell is
+ * created — the flow shell (e.g. `.col-main` with `flex: 1.6`) becomes
+ * full-width as the sole flex child, so page 2+ uses the entire content width
+ * without duplicating the short sidebar.
+ *
  * The row container clone is essential — `.resume-container` is usually a
  * block, so placing the sidebar and flow shell directly inside it would stack
  * them vertically. Cloning the original `.main-grid` (which is `display: flex`)
@@ -352,6 +361,7 @@ function beginRow(
   rowContainer: HTMLElement,
   sidebar: HTMLElement,
   flow: HTMLElement,
+  includeSidebar: boolean,
 ): HTMLElement {
   // Match the original row container's child order so flex `row` keeps the
   // same visual layout (e.g. gradient: .col-main first → main column on the
@@ -362,9 +372,11 @@ function beginRow(
   const shell = flow.cloneNode(false) as HTMLElement
   shell.setAttribute(ROW_PART_ATTR, 'flow')
   rowShell.appendChild(shell)
-  const sb = sidebar.cloneNode(true) as HTMLElement
-  sb.setAttribute(ROW_PART_ATTR, 'sidebar')
-  rowShell.appendChild(sb)
+  if (includeSidebar) {
+    const sb = sidebar.cloneNode(true) as HTMLElement
+    sb.setAttribute(ROW_PART_ATTR, 'sidebar')
+    rowShell.appendChild(sb)
+  }
   return shell
 }
 

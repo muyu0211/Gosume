@@ -27,7 +27,7 @@
         "accent": "#F5F5F5"
     },
     "features": {
-        "avatar": false,
+        "avatar": true,
         "skill_bars": false,
         "qr_code": false,
         "links_clickable": true
