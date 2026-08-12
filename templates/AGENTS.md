@@ -9,7 +9,7 @@
 ```
 templates/
 ├── <dir-name>/              # 人类可读的目录名（如 modern、classic），与 id 无关
-│   ├── template.json        # 模板元数据（manifest）
+│   ├── template.json        # 模板元数据
 │   ├── template.html        # Go html/template 语法编写的简历 HTML
 │   └── styles.css           # 打印 CSS 样式表
 ```
@@ -206,7 +206,7 @@ templates/
 
 ```
 <template-name>.zip
-├── manifest.json                 # 即 template.json 的内容
+├── template.json                 # 即 template.json 的内容
 ├── template.html
 └── styles.css
 ```
@@ -217,13 +217,13 @@ templates/
 - 压缩包总大小 ≤ 10MB
 - 单个文件 ≤ 2MB
 - 仅包含根目录下的三个文件，不含子目录
-- 文件名必须精确匹配 `manifest.json` / `template.html` / `styles.css`
-- `manifest.json` 中的 `id` 必须与已有模板不冲突
+- 文件名必须精确匹配 `template.json` / `template.html` / `styles.css`
+- `template.json` 中的 `id` 必须与已有模板不冲突
 
 ### 创建模板包
 
 ```bash
-# 将模板的三个文件打包为 zip 包
+# 将模板的三个文件打包为zip压缩包
 zip my-template.zip template.json template.html styles.css
 ```
 
@@ -237,7 +237,7 @@ zip my-template.zip template.json template.html styles.css
 4. 编写 `styles.css`：定义 A4 页面尺寸、CSS 变量、打印样式、技能点样式
 5. 验证：在应用中通过编辑器实时预览检查各区块显示效果
 6. 验证导出：导出 PDF 检查打印效果、分页、链接可点击性
-7. 打包分发（可选）：`zip <template-id>.zip template.json template.html styles.css`
+7. 打包分发（可选）：`zip <template-name>.zip template.json template.html styles.css`
 
 ## 禁止事项
 
