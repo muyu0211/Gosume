@@ -50,7 +50,7 @@ func TestLoadPackageFromZipRejectsUnsupportedPreviewSyntax(t *testing.T) {
 			"author": {"name": "Gosume"},
 			"paper_size": "A4"
 		}`,
-		"template.html": `{{if eq .Meta.Language "zh-CN"}}中文{{end}}`,		"styles.css":    `body { color: #111; }`,
+		"template.html": `{{if eq .Meta.Language "zh-CN"}}中文{{end}}`, "styles.css": `body { color: #111; }`,
 	})
 
 	_, err := LoadPackageFromZip(path)
@@ -98,7 +98,7 @@ func TestLoadPackageFromZipAcceptsSafeURL(t *testing.T) {
 func writeTemplatePackage(t *testing.T, files map[string]string) string {
 	t.Helper()
 
-	path := filepath.Join(t.TempDir(), "template.gosume-template")
+	path := filepath.Join(t.TempDir(), "template.zip")
 	f, err := os.Create(path)
 	if err != nil {
 		t.Fatalf("create package: %v", err)

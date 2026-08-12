@@ -105,7 +105,6 @@ func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error)
 
 	filePath, err := s.wailsApp.Dialog.OpenFile().
 		SetTitle("导入模板包").
-		AddFilter("Gosume 模板包 (*.gosume-template)", "*.gosume-template").
 		AddFilter("ZIP 文件 (*.zip)", "*.zip").
 		AddFilter("所有文件 (*.*)", "*.*").
 		CanChooseFiles(true).

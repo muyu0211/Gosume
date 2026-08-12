@@ -1,11 +1,11 @@
 ---
 name: gosume-template-creator
-description: 创建可导入 Gosume 简历制作应用的模板包（.gosume-template 文件）。Gosume 是基于 Wails v3 的桌面简历工具，模板由 template.json、template.html、styles.css 三文件组成，打包为 ZIP 后以 .gosume-template 后缀导入应用。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 数据模型，生成风格一致的可导入模板。当用户提到"简历模板""gosume 模板""制作可导入的简历模板""照着这个简历做一个模板""参考这张图/PDF 生成模板""template.json/template.html/styles.css 三件套""gosume-template 包"或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
+description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件）。Gosume 是基于 Wails v3 的桌面简历工具，模板由 template.json、template.html、styles.css 三文件组成，打包为 ZIP文件后导入应用。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 数据模型，生成风格一致的可导入模板。当用户提到"简历模板""gosume 模板""制作可导入的简历模板""照着这个简历做一个模板""参考这张图/PDF 生成模板""template.json/template.html/styles.css 三件套""gosume-template 包"或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
 ---
 
 # Gosume 简历模板创建器
 
-本 skill 指导你为 Gosume 简历制作应用创建**可导入使用**的模板包。所有生成的模板都满足应用的导入校验规则（`pkg/template/package_importer.go`），打包为 `.gosume-template` 文件后可通过应用的"导入模板"功能直接使用。
+本 skill 指导你为 Gosume 简历制作应用创建**可导入使用**的模板包。所有生成的模板都满足应用的导入校验规则（`pkg/template/package_importer.go`），打包为 `.zip` 文件后可通过应用的"导入模板"功能直接使用。
 
 ## 关键约束（务必先读）
 
@@ -193,12 +193,12 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.gosume-tem
 - [ ] 每个区块都有 `{{if .Section}}` 包裹
 - [ ] CSS 定义了 `.resume-page` 的 A4 尺寸、`@media print`、`.skill-dot`（若用技能点）
 
-### 步骤 5：打包为 .gosume-template
-
+### 步骤 5：打包为 .zip
 用 `assets/scripts/package-template.ps1`（Windows）或 `package-template.sh`（Unix）打包。脚本会：
 
 1. 进入模板目录
-2. 用 zip 压缩三个文件为 `<template-id>.gosume-template`
+2. 读取 `template.json` 的 `name` 字段作为输出文件名（方便用户识别，如 `渐变现代风.zip`）
+3. 用 zip 压缩三个文件为 `<name>.zip`（自动清理文件名非法字符）
 
 Windows PowerShell：
 ```powershell
@@ -212,15 +212,15 @@ bash <skill-dir>/assets/scripts/package-template.sh <模板目录> <输出目录
 
 如果用户机器上没有脚本运行环境，直接告诉用户在模板目录下执行：
 ```powershell
-Compress-Archive -Path template.json,template.html,styles.css -DestinationPath <id>.gosume-template -Force
+Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "<name>.zip" -Force
 ```
-（PowerShell 的 `Compress-Archive` 默认输出 zip，改后缀即可。注意：需确保三文件在 zip 根目录，不要带父目录层级。）
+（用 `template.json` 的 `name` 字段值作为文件名，如 `渐变现代风.zip`。注意：需确保三文件在 zip 根目录，不要带父目录层级。）
 
 ### 步骤 6：交付
 
 告诉用户：
 
-1. 生成的 `.gosume-template` 文件路径
+1. 生成的 `.zip` 文件路径
 2. 在 Gosume 应用中通过"导入模板"功能选择该文件
 3. 导入后可在模板列表中看到新模板，新建简历时选择它
 4. 建议在应用中实时预览各区块效果，并导出 PDF 验证打印效果

@@ -37,7 +37,7 @@
 | **💾 永不丢失** | 两层保存机制：首次手动保存后，**自动持久化**到本地 SQLite 数据库（WAL 模式），即使意外关闭也能完整恢复。 |
 | **🔒 隐私至上** | **本地优先 (Local-First)** 架构，所有数据 100% 存储在你自己的电脑上，无需联网，无需注册账号，零隐私泄露风险。 |
 | **📱 全平台覆盖** | 支持 **Windows / macOS / Linux** 桌面端，以及 **iOS / Android** 移动端，随时随地编辑你的简历。 |
-| **🧩 模板可扩展** | 支持导入 `.gosume-template` 模板包，懂 HTML+CSS 就能自制模板，同时提供模板生成SKILL，通过SKILL让agent自动生成适合自己的简历模板。 |
+| **🧩 模板可扩展** | 支持导入 `.zip` 模板包，懂 HTML+CSS 就能自制模板，同时提供模板生成SKILL，通过SKILL让agent自动生成适合自己的简历模板。 |
 | **⚡ 原生性能** | 基于 **Wails v3** (Go + Webview2) 构建，单二进制分发，启动 < 1s，内存占用仅为 Electron 应用的 **1/5**。 |
 
 ---
@@ -96,7 +96,7 @@
 │  ⌨️  键盘快捷键      完整键盘操作支持，Ctrl+S 保存、Ctrl+Z 撤销 │
 │  📋 示例数据        一键填充示例简历，快速预览模板效果          │
 │  📁 项目文件        保存 / 打开 .resume.json，多版本管理       │
-│  🧩 自定义模板      放入模板目录或导入 .gosume-template 包     │
+│  🧩 自定义模板      放入模板目录或导入 .zip 包     │
 │  🔐 本地优先        数据全在本地，离线可用，隐私安全           │
 │  📦 批量导出        多份简历一次性导出，省时省力               │
 │  📏 边距预设        内置多种页边距方案，一键切换               │
@@ -201,7 +201,7 @@ task package
 | **💾 Never Lose Work** | Two-tier save system: auto-persist to local SQLite (WAL mode) after the first manual save. Survives unexpected crashes without data loss. |
 | **🔒 Privacy First** | **Local-First architecture**. All data stays **100% on your device**. No internet required, no account signup, zero privacy risk. |
 | **📱 Cross-Platform** | Available on **Windows / macOS / Linux** desktop, plus **iOS / Android** mobile — edit your resume anywhere. |
-| **🧩 Extensible Templates** | Import `.gosume-template` packages. Know HTML+CSS? Build your own template and share it. |
+| **🧩 Extensible Templates** | Import `.zip` packages. Know HTML+CSS? Build your own template and share it. |
 | **⚡ Native Performance** | Built with **Wails v3** (Go + Webview2). Single-binary distribution, < 1s cold start, **5x lighter** memory footprint vs Electron apps. |
 
 ---

@@ -1,9 +1,9 @@
 # package-template.ps1
-# 将模板目录打包为 .gosume-template 文件（本质是 ZIP）
+# 将模板目录打包为 .zip 文件
 # 用法: .\package-template.ps1 -TemplateDir <模板目录> [-OutputDir <输出目录>]
 #
 # 模板目录必须包含: template.json, template.html, styles.css
-# 输出文件名取自 template.json 的 id 字段，后缀为 .gosume-template
+# 输出文件名取自 template.json 的 name 字段，后缀为 .zip
 
 param(
     [Parameter(Mandatory = $true)]
@@ -33,7 +33,7 @@ foreach ($file in $requiredFiles) {
     }
 }
 
-# 读取 template.json 获取 id
+# 读取 template.json 获取 name（用作输出文件名）
 $jsonPath = Join-Path $TemplateDir "template.json"
 try {
     $json = Get-Content $jsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -42,9 +42,16 @@ try {
     exit 1
 }
 
-$templateId = $json.id
-if (-not $templateId) {
-    Write-Error "template.json 中缺少 id 字段"
+$templateName = $json.name
+if (-not $templateName) {
+    Write-Error "template.json 中缺少 name 字段"
+    exit 1
+}
+
+# 清理 Windows 文件名非法字符，避免用户给的名字含特殊字符时脚本失败
+$templateName = ($templateName -replace '[\\/:\*\?"<>\|]', '_').Trim()
+if (-not $templateName) {
+    Write-Error "template.json 的 name 字段清理后为空"
     exit 1
 }
 
@@ -65,7 +72,7 @@ if (-not (Test-Path $OutputDir)) {
 $OutputDir = (Resolve-Path $OutputDir).Path
 
 # 输出文件路径
-$outputFile = Join-Path $OutputDir "$templateId.gosume-template"
+$outputFile = Join-Path $OutputDir "$templateName.zip"
 
 # 临时 zip 路径
 $tempZip = Join-Path $env:TEMP "gosume-template-$([guid]::NewGuid().ToString()).zip"
@@ -75,11 +82,11 @@ try {
     $filesToCompress = $requiredFiles | ForEach-Object { Join-Path $TemplateDir $_ }
     Compress-Archive -Path $filesToCompress -DestinationPath $tempZip -Force
 
-    # 复制为 .gosume-template
+    # 复制为 .zip
     Copy-Item -Path $tempZip -Destination $outputFile -Force
 
     Write-Host "打包成功: $outputFile" -ForegroundColor Green
-    Write-Host "模板 ID: $templateId"
+    Write-Host "模板名称: $templateName"
     Write-Host "在 Gosume 应用中通过 '导入模板' 功能选择此文件即可使用。"
 } finally {
     if (Test-Path $tempZip) {

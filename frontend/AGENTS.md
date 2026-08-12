@@ -119,7 +119,7 @@ try {
 
 ### 模板导入
 
-用户在欢迎页或编辑器模板切换器中可导入 `.gosume-template` 模板包（ZIP 格式）。前端通过 `services/templateService.ts` 的 `importTemplatePackage()` 调用后端：
+用户在欢迎页或编辑器模板切换器中可导入 `.zip` 模板包。前端通过 `services/templateService.ts` 的 `importTemplatePackage()` 调用后端：
 
 ```ts
 import { importTemplatePackage, loadTemplateMetas } from '../services/templateService'

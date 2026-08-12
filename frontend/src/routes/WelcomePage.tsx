@@ -171,7 +171,7 @@ export function WelcomePage() {
             onClick={handleImportTemplate}
             disabled={importingTemplate}
             className="btn-secondary btn-sm"
-            title="导入 .gosume-template 模板包"
+            title="导入 .zip 模板包"
           >
             {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             导入模板

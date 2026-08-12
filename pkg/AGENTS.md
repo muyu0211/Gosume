@@ -40,7 +40,7 @@ pkg/
 └── template/         # 模板系统
     ├── loader.go               #   Loader：通过 TemplateStore 接口加载模板
     ├── validator.go            #   根据模板 schema 校验简历数据
-    ├── package_importer.go     #   .gosume-template 模板包的 ZIP 解析与导入
+    ├── package_importer.go     #   模板包的 ZIP 解析与导入
     └── package_importer_test.go #   模板包导入单元测试
 ```
 
@@ -106,7 +106,7 @@ return UserWrap(err, "保存项目失败")
 ### 持久化模型
 
 - **简历数据**：JSON 序列化存入 SQLite 的 `resumes.data` 列。通过 `is_deleted` 标志实现软删除。
-- **模板**：内置模板从 `templates/` 目录嵌入。用户模板存储在 SQLite 中。支持导入模板包（`.gosume-template` zip 文件）。
+- **模板**：内置模板从 `templates/` 目录嵌入。用户模板存储在 SQLite 中。支持导入模板包（`.zip` 文件）。
 - **最近文件**：以 JSON 文件（`recent.json`）形式存储在数据目录中。
 
 SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
@@ -147,9 +147,9 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 ### 模板导入
 
-`TemplateService.ImportTemplatePackage()` 支持从本地文件导入 `.gosume-template` 模板包：
+`TemplateService.ImportTemplatePackage()` 支持从本地文件导入 `.zip` 模板包：
 
-1. 前端调用 → Go 弹出原生文件选择对话框（filter: `*.gosume-template`, `*.zip`）
+1. 前端调用 → Go 弹出原生文件选择对话框（filter: `*.zip`）
 2. `template.LoadPackageFromZip()` 解析 ZIP：提取 `manifest.json`（元数据）、`template.html`、`template.css`
 3. 检查模板 ID 是否已存在，存在则返回错误
 4. 通过 `TemplateStore.Create()` 将模板存入 SQLite

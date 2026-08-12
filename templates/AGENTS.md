@@ -198,14 +198,14 @@ templates/
 - `.page-break`：分页控制
 - 链接样式：导出的 PDF 中链接应有明显的颜色区分
 
-## 模板包格式（.gosume-template）
+## 模板包格式（.zip）
 
 用于用户间分享模板的 ZIP 打包格式。
 
 ### 文件结构
 
 ```
-<template-name>.gosume-template  (本质是 ZIP 文件)
+<template-name>.zip
 ├── manifest.json                 # 即 template.json 的内容
 ├── template.html
 └── styles.css
@@ -213,7 +213,7 @@ templates/
 
 ### 打包规范
 
-- 文件名必须以 `.gosume-template` 或 `.zip` 结尾
+- 文件名必须以`.zip` 结尾
 - 压缩包总大小 ≤ 10MB
 - 单个文件 ≤ 2MB
 - 仅包含根目录下的三个文件，不含子目录
@@ -223,8 +223,8 @@ templates/
 ### 创建模板包
 
 ```bash
-# 将模板的三个文件打包为 gosume-template 包
-zip my-template.gosume-template manifest.json template.html styles.css
+# 将模板的三个文件打包为 zip 包
+zip my-template.zip template.json template.html styles.css
 ```
 
 ## 新建模板清单
@@ -237,7 +237,7 @@ zip my-template.gosume-template manifest.json template.html styles.css
 4. 编写 `styles.css`：定义 A4 页面尺寸、CSS 变量、打印样式、技能点样式
 5. 验证：在应用中通过编辑器实时预览检查各区块显示效果
 6. 验证导出：导出 PDF 检查打印效果、分页、链接可点击性
-7. 打包分发（可选）：`zip <template-id>.gosume-template manifest.json template.html styles.css`
+7. 打包分发（可选）：`zip <template-id>.zip template.json template.html styles.css`
 
 ## 禁止事项
 

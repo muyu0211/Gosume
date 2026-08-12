@@ -27,7 +27,7 @@ Taskfile.yml         # 任务运行器入口（dev、build、package、docker �
 - **Go 服务**通过实现 Wails v3 的 `application.Service` 接口向前端暴露方法。方法名采用 PascalCase，前端调用时映射为 `ServiceName.MethodName`。
 - **前端状态**由 `frontend/src/stores/` 中的 zustand store 管理。需要持久化的变更通过后端服务调用完成；仅 UI 相关的状态保留在本地。
 - **数据持久化**使用 SQLite（modernc.org/sqlite，纯 Go 实现），存储在用户数据目录中，默认开启 WAL 模式。
-- **模板系统**：模板为 HTML+CSS 组合，附带元数据。内置模板存放在 `templates/` 目录；用户模板存储在 SQLite 中。支持导入模板包（`.gosume-template` zip 文件）。
+- **模板系统**：模板为 HTML+CSS 组合，附带元数据。内置模板存放在 `templates/` 目录；用户模板存储在 SQLite 中。支持导入模板包（`.zip`文件）。
 - **导出**使用无头浏览器（rod）将 HTML 渲染为 PDF/PNG。
 - **配置**：用户设置以 JSON 格式存储在 `{configRoot}/config.json`。数据目录支持热切换，切换时自动重新打开存储。
 
