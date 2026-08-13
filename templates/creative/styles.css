@@ -43,7 +43,7 @@ body {
     padding: calc(var(--resume-padding-y, 14mm) * 0.75) calc(var(--resume-padding-x, 12mm) * 0.75) calc(var(--resume-padding-y, 12mm) * 0.75) calc(var(--resume-padding-x, 12mm) * 0.75);
     color: var(--sidebar-text);
     overflow-wrap: break-word;
-    word-break: break-word;
+    /* word-break: break-word; */
 }
 
 .sidebar-avatar {
