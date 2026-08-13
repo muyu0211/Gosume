@@ -391,10 +391,15 @@ function rollbackRow(cursor: Cursor): void {
 
 /**
  * Row layout where `.resume-container` itself is a flex row: the first child
- * is a fixed sidebar cloned onto every page; the second child is a flow shell
- * whose descendants are placed one-by-one. Extra top-level sections append to
- * the flow. When a page overflows, a new page is created with a fresh sidebar
- * clone and the flow continues.
+ * is a fixed sidebar and the second child is a flow shell whose descendants
+ * are placed one-by-one. Extra top-level sections append to the flow.
+ *
+ * On the FIRST page the sidebar is cloned in full (with all its content).
+ * On CONTINUATION pages only the sidebar SHELL is cloned — same element, same
+ * classes/styles (so the dark background column still renders and the visual
+ * layout stays identical), but its children are stripped. This keeps every
+ * page a two-column page (no jarring switch to single-column) without
+ * duplicating the sidebar's personal-info content on later pages.
  */
 function paginateRow(ctx: PageCtx, cursor: Cursor, sections: HTMLElement[]): void {
   const sidebar = sections[0]
@@ -419,7 +424,11 @@ function paginateRow(ctx: PageCtx, cursor: Cursor, sections: HTMLElement[]): voi
       target.removeChild(clone)
 
       newPage(ctx, cursor)
-      cursor.container.appendChild(sidebar.cloneNode(true))
+      // Continuation page: clone the sidebar SHELL only (preserves the column's
+      // background/width/layout) but drop its children so the sidebar content
+      // (avatar, contact info, languages…) isn't duplicated on later pages.
+      const sidebarShell = sidebar.cloneNode(false) as HTMLElement
+      cursor.container.appendChild(sidebarShell)
       const newShell = flowing ? (flowing.cloneNode(false) as HTMLElement) : null
       if (newShell) cursor.container.appendChild(newShell)
       target = newShell || cursor.container
