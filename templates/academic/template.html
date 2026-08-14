@@ -23,7 +23,7 @@
         <!-- Education — emphasized for academic -->
         {{if .Education}}
         <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-        {{range .Education}}
+        {{range .Education}}{{if not .Hidden}}
         <div class="education-item">
             <div class="edu-header">
                 <div class="edu-main">
@@ -43,13 +43,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Internship Experience -->
         {{if .Internships}}
         <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
-        {{range .Internships}}
+        {{range .Internships}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div class="exp-main">
@@ -68,13 +68,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
-        {{range .Jobs}}
+        {{range .Jobs}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div class="exp-main">
@@ -93,13 +93,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Projects -->
         {{if .Projects}}
         <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
-        {{range .Projects}}
+        {{range .Projects}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div class="exp-main">
@@ -122,13 +122,13 @@
             {{end}}
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Awards — emphasized for academic -->
         {{if .Awards}}
         <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Honors & Awards"}}</div>
-        {{range .Awards}}
+        {{range .Awards}}{{if not .Hidden}}
         <div class="award-item">
             <div class="award-header">
                 <span class="award-title">{{.Title}}</span>
@@ -137,41 +137,41 @@
             {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Languages -->
         {{if .Languages}}
         <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
         <div class="languages-line">
-            {{range .Languages}}
+            {{range .Languages}}{{if not .Hidden}}
             <span><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
         <!-- Skills -->
         {{if .Skills}}
         <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
-        {{range .Skills}}
+        {{range .Skills}}{{if not .Hidden}}
         <div class="skill-category">
             <span class="skill-cat-name">{{.Category}}：</span>
-            {{range .Items}}<span class="skill-tag">{{.Name}}</span>{{end}}
+            {{range .Items}}{{if not .Hidden}}<span class="skill-tag">{{.Name}}</span>{{end}}{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Summary -->
-        {{if .Summary}}
+        {{if and .Summary (not .SummaryHidden)}}
         <div class="section-title">个人总结</div>
         <div class="summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom -->
         {{if .Custom}}
-        {{range .Custom}}
+        {{range .Custom}}{{if not .Hidden}}
         <div class="section-title">{{.Title}}</div>
-        {{range .Items}}
+        {{range .Items}}{{if not .Hidden}}
         <div class="custom-item">
             <div class="custom-header">
                 <span class="custom-title">{{.Title}}</span>
@@ -187,8 +187,8 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
-        {{end}}
+        {{end}}{{end}}
+        {{end}}{{end}}
         {{end}}
     </div>
 </body>

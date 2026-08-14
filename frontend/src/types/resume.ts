@@ -10,6 +10,12 @@ export interface Resume {
   meta: ResumeMeta
   personal: Personal
   summary?: string
+  /**
+   * Optional visibility toggle for the standalone "个人总结" entry. When true the
+   * summary is omitted from the rendered resume while keeping the text on disk.
+   * Pointer + optional keeps legacy data backward-compatible (treated as visible).
+   */
+  summary_hidden?: boolean
   internships?: Internship[]
   jobs?: Job[]
   projects?: Project[]
@@ -61,6 +67,11 @@ export interface Internship {
   summary?: string
   highlights?: string[]
   keywords?: string[]
+  /**
+   * Optional visibility toggle. When true the entry is hidden from the rendered
+   * resume but kept in the editor. Optional so legacy data remains valid.
+   */
+  hidden?: boolean
 }
 
 export interface Job {
@@ -75,6 +86,7 @@ export interface Job {
   summary?: string
   highlights?: string[]
   keywords?: string[]
+  hidden?: boolean
 }
 
 export interface ExtraField {
@@ -95,6 +107,7 @@ export interface Project {
   highlights?: string[]
   keywords?: string[]
   extras?: ExtraField[]
+  hidden?: boolean
 }
 
 export interface Education {
@@ -108,18 +121,21 @@ export interface Education {
   gpa?: string
   courses?: string
   highlights?: string[]
+  hidden?: boolean
 }
 
 export interface SkillGroup {
   id: string
   category: string
   items: Skill[]
+  hidden?: boolean
 }
 
 export interface Skill {
   name: string
   level?: number
   icon?: string
+  hidden?: boolean
 }
 
 export interface Language {
@@ -127,6 +143,7 @@ export interface Language {
   name: string
   level: string
   proficiency?: string
+  hidden?: boolean
 }
 
 export interface Award {
@@ -135,12 +152,14 @@ export interface Award {
   date: string
   issuer?: string
   summary?: string
+  hidden?: boolean
 }
 
 export interface CustomSection {
   id: string
   title: string
   items: CustomItem[]
+  hidden?: boolean
 }
 
 export interface CustomItem {
@@ -150,6 +169,7 @@ export interface CustomItem {
   date?: string
   description?: string
   highlights?: string[]
+  hidden?: boolean
 }
 
 export function createEmptyResume(templateId: string): Resume {

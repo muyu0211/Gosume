@@ -29,9 +29,9 @@
             {{if .Languages}}
             <div class="sidebar-section">
                 <div class="sidebar-section-title">语言能力</div>
-                {{range .Languages}}
+                {{range .Languages}}{{if not .Hidden}}
                 <div class="sidebar-lang"><span>{{.Name}}</span><span>{{.Level}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span></div>
-                {{end}}
+                {{end}}{{end}}
             </div>
             {{end}}
         </div>
@@ -40,7 +40,7 @@
         <div class="resume-main">
             {{if .Education}}
             <div class="section-title">教育背景</div>
-            {{range .Education}}
+            {{range .Education}}{{if not .Hidden}}
             <div class="education-item">
                 <div class="edu-header">
                     <div>
@@ -58,12 +58,12 @@
                 </ul>
                 {{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
             {{if .Internships}}
             <div class="section-title">实习经历</div>
-            {{range .Internships}}
+            {{range .Internships}}{{if not .Hidden}}
             <div class="experience-item">
                 <div class="exp-header">
                     <div>
@@ -82,12 +82,12 @@
                 </ul>
                 {{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
             {{if .Jobs}}
             <div class="section-title">工作经历</div>
-            {{range .Jobs}}
+            {{range .Jobs}}{{if not .Hidden}}
             <div class="experience-item">
                 <div class="exp-header">
                     <div>
@@ -106,12 +106,12 @@
                 </ul>
                 {{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
             {{if .Projects}}
             <div class="section-title">项目经历</div>
-            {{range .Projects}}
+            {{range .Projects}}{{if not .Hidden}}
             <div class="experience-item">
                 <div class="exp-header">
                     <span class="company">{{.Name}}</span>
@@ -132,12 +132,12 @@
                 {{end}}
                 {{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
             {{if .Awards}}
             <div class="section-title">奖项荣誉</div>
-            {{range .Awards}}
+            {{range .Awards}}{{if not .Hidden}}
             <div class="award-item">
                 <div class="award-header">
                     <span class="award-title">{{.Title}}</span>
@@ -146,34 +146,34 @@
                 {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
                 {{if .Summary}}<div class="award-desc">{{.Summary}}</div>{{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
             <!-- Skills -->
             {{if .Skills}}
             <div class="section-title">专业技能</div>
-            {{range .Skills}}
+            {{range .Skills}}{{if not .Hidden}}
             <div class="skill-group">
                 <h4>{{.Category}}</h4>
-                {{range .Items}}
+                {{range .Items}}{{if not .Hidden}}
                 <div class="skill-item">
                     <span>{{.Name}}</span>
                     {{if .Level}}<div class="skill-dots">{{skillLevel .Level}}</div>{{end}}
                 </div>
-                {{end}}
+                {{end}}{{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
             {{end}}
 
-            {{if .Summary}}
+            {{if and .Summary (not .SummaryHidden)}}
             <div class="section-title">个人总结</div>
             <div class="summary">{{nl2br .Summary}}</div>
             {{end}}
 
             {{if .Custom}}
-            {{range .Custom}}
+            {{range .Custom}}{{if not .Hidden}}
             <div class="section-title">{{.Title}}</div>
-            {{range .Items}}
+            {{range .Items}}{{if not .Hidden}}
             <div class="custom-item">
                 <h4>{{.Title}}</h4>
                 {{if .Subtitle}}<div class="custom-subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
@@ -186,8 +186,8 @@
                 </ul>
                 {{end}}
             </div>
-            {{end}}
-            {{end}}
+            {{end}}{{end}}
+            {{end}}{{end}}
             {{end}}
         </div>
     </div>

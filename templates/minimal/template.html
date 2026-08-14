@@ -28,7 +28,7 @@
         <!-- Education -->
         {{if .Education}}
         <div class="section-title">教育背景</div>
-        {{range .Education}}
+        {{range .Education}}{{if not .Hidden}}
         <div class="education-item">
             <div class="edu-header">
                 <div>
@@ -46,13 +46,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Internship Experience -->
         {{if .Internships}}
         <div class="section-title">实习经历</div>
-        {{range .Internships}}
+        {{range .Internships}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div>
@@ -71,13 +71,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-title">工作经历</div>
-        {{range .Jobs}}
+        {{range .Jobs}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div>
@@ -96,13 +96,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Projects -->
         {{if .Projects}}
         <div class="section-title">项目经历</div>
-        {{range .Projects}}
+        {{range .Projects}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <span class="company">{{.Name}}</span>
@@ -123,13 +123,13 @@
             {{end}}
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Awards -->
         {{if .Awards}}
         <div class="section-title">奖项荣誉</div>
-        {{range .Awards}}
+        {{range .Awards}}{{if not .Hidden}}
         <div class="award-item">
             <div class="award-header">
                 <span class="award-title">{{.Title}}</span>
@@ -138,45 +138,45 @@
             {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
             {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Languages -->
         {{if .Languages}}
         <div class="section-title">语言能力</div>
         <div class="inline-list">
-            {{range .Languages}}
+            {{range .Languages}}{{if not .Hidden}}
             <span><span class="label">{{.Name}}</span>{{if .Level}} · 熟练程度: {{.Level}}{{end}}{{if .Proficiency}} · 补充说明: {{.Proficiency}}{{end}}</span>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
         <!-- Skills -->
         {{if .Skills}}
         <div class="section-title">专业技能</div>
-        {{range .Skills}}
+        {{range .Skills}}{{if not .Hidden}}
         <div class="skill-category">
             <h4>{{.Category}}</h4>
             <div class="skill-list">
-                {{range .Items}}
+                {{range .Items}}{{if not .Hidden}}
                 <span class="skill-item">{{.Name}}{{if .Level}} <span class="skill-level">{{skillLevel .Level}}</span>{{end}}</span>
-                {{end}}
+                {{end}}{{end}}
             </div>
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Summary -->
-        {{if .Summary}}
+        {{if and .Summary (not .SummaryHidden)}}
         <div class="section-title">个人总结</div>
         <div class="summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom Sections -->
         {{if .Custom}}
-        {{range .Custom}}
+        {{range .Custom}}{{if not .Hidden}}
         <div class="section-title">{{.Title}}</div>
-        {{range .Items}}
+        {{range .Items}}{{if not .Hidden}}
         <div class="custom-item">
             <h4>{{.Title}}</h4>
             {{if .Subtitle}}<div class="custom-subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
@@ -189,8 +189,8 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
-        {{end}}
+        {{end}}{{end}}
+        {{end}}{{end}}
         {{end}}
     </div>
 </body>

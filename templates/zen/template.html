@@ -25,7 +25,7 @@
         <!-- Education -->
         {{if .Education}}
         <div class="section-title">{{i18n .Meta.Language "教育" "Education"}}</div>
-        {{range .Education}}
+        {{range .Education}}{{if not .Hidden}}
         <div class="education-item">
             <div class="edu-header">
                 <div>
@@ -35,14 +35,14 @@
             </div>
             {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Work Experience -->
         <!-- Internship Experience -->
         {{if .Internships}}
         <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
-        {{range .Internships}}
+        {{range .Internships}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div>
@@ -60,12 +60,12 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         {{if .Jobs}}
         <div class="section-title">{{i18n .Meta.Language "经历" "Experience"}}</div>
-        {{range .Jobs}}
+        {{range .Jobs}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div>
@@ -83,13 +83,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Projects -->
         {{if .Projects}}
         <div class="section-title">{{i18n .Meta.Language "项目" "Projects"}}</div>
-        {{range .Projects}}
+        {{range .Projects}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <div>
@@ -112,28 +112,28 @@
             {{end}}
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Awards -->
         {{if .Awards}}
         <div class="section-title">{{i18n .Meta.Language "荣誉" "Awards"}}</div>
-        {{range .Awards}}
+        {{range .Awards}}{{if not .Hidden}}
         <div class="award-item">
             <span class="award-title">{{.Title}}</span>
             {{if .Date}}<span class="date"> · {{.Date}}</span>{{end}}
             {{if .Issuer}}<span class="issuer"> · {{.Issuer}}</span>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Languages -->
         {{if .Languages}}
         <div class="section-title">{{i18n .Meta.Language "语言" "Languages"}}</div>
         <div class="languages-line">
-            {{range .Languages}}
+            {{range .Languages}}{{if not .Hidden}}
             <span><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}</span>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
@@ -141,24 +141,24 @@
         {{if .Skills}}
         <div class="section-title">{{i18n .Meta.Language "技能" "Skills"}}</div>
         <div class="skills-line">
-            {{range .Skills}}
+            {{range .Skills}}{{if not .Hidden}}
             <span class="skill-category-label">{{.Category}}</span>
-            {{range .Items}}<span class="skill-name">{{.Name}}</span>{{end}}
-            {{end}}
+            {{range .Items}}{{if not .Hidden}}<span class="skill-name">{{.Name}}</span>{{end}}{{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
         <!-- Summary -->
-        {{if .Summary}}
+        {{if and .Summary (not .SummaryHidden)}}
         <div class="section-title">个人总结</div>
         <div class="summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom -->
         {{if .Custom}}
-        {{range .Custom}}
+        {{range .Custom}}{{if not .Hidden}}
         <div class="section-title">{{.Title}}</div>
-        {{range .Items}}
+        {{range .Items}}{{if not .Hidden}}
         <div class="custom-item">
             <h4>{{.Title}}</h4>
             {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
@@ -171,8 +171,8 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
-        {{end}}
+        {{end}}{{end}}
+        {{end}}{{end}}
         {{end}}
     </div>
 </body>

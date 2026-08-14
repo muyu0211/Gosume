@@ -1,5 +1,5 @@
 import { useResumeStore } from '../../stores/resumeStore'
-import { Plus, Trash2, Languages, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Languages, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 
 export function LanguageSection() {
@@ -26,12 +26,14 @@ export function LanguageSection() {
       </div>
 
       <div className="space-y-2">
-        {items.map((lang, idx) => (
+        {items.map((lang, idx) => {
+          const isHidden = !!lang.hidden
+          return (
           <div
             key={lang.id}
             className={`border rounded-lg p-3 transition-colors ${
               overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-            } ${draggedIdx === idx ? 'opacity-40' : ''}`}
+            } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
             onDragOver={(e) => onDragOver(e, idx)}
             onDrop={() => onDrop(idx)}
           >
@@ -48,7 +50,7 @@ export function LanguageSection() {
                 <div>
                   <label className="form-label">语言名称 *</label>
                   <input
-                    className="form-input"
+                    className={`form-input ${isHidden ? 'text-surface-400 line-through' : ''}`}
                     value={lang.name || ''}
                     onChange={(e) => updateItem(idx, { name: e.target.value })}
                     placeholder="如：英语、日语"
@@ -71,6 +73,24 @@ export function LanguageSection() {
                   </select>
                 </div>
               </div>
+              {isHidden && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded flex-shrink-0 self-start mt-5">
+                  <EyeOff className="w-2.5 h-2.5" />
+                  已隐藏
+                </span>
+              )}
+              <label
+                className="flex items-center gap-1 px-1.5 py-1 text-xs text-surface-500 hover:text-surface-700 cursor-pointer select-none flex-shrink-0 self-start mt-5"
+                title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此项（不在简历中显示）'}
+              >
+                <input
+                  type="checkbox"
+                  className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  checked={!isHidden}
+                  onChange={(e) => updateItem(idx, { hidden: !e.target.checked })}
+                />
+                <span className="hidden sm:inline">显示</span>
+              </label>
               <button onClick={() => removeItem(idx)} className="p-1.5 text-surface-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -86,7 +106,8 @@ export function LanguageSection() {
               />
             </div>
           </div>
-        ))}
+          )
+        })}
 
         {items.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">

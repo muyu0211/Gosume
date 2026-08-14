@@ -25,7 +25,7 @@
         <!-- Education -->
         {{if .Education}}
         <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-        {{range .Education}}
+        {{range .Education}}{{if not .Hidden}}
         <div class="card education-item">
             <div class="edu-header">
                 <div>
@@ -35,13 +35,13 @@
             </div>
             {{if .Courses}}<div class="edu-courses">主修课程：{{.Courses}}</div>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Internship Experience -->
         {{if .Internships}}
         <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
-        {{range .Internships}}
+        {{range .Internships}}{{if not .Hidden}}
         <div class="card experience-item">
             <div class="exp-header">
                 <div>
@@ -59,13 +59,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Work Experience -->
         {{if .Jobs}}
         <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
-        {{range .Jobs}}
+        {{range .Jobs}}{{if not .Hidden}}
         <div class="card experience-item">
             <div class="exp-header">
                 <div>
@@ -83,13 +83,13 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Projects -->
         {{if .Projects}}
         <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
-        {{range .Projects}}
+        {{range .Projects}}{{if not .Hidden}}
         <div class="card experience-item">
             <div class="exp-header">
                 <span class="company">{{.Name}}</span>
@@ -110,14 +110,14 @@
             {{end}}
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Awards -->
         {{if .Awards}}
         <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
         <div class="card">
-            {{range .Awards}}
+            {{range .Awards}}{{if not .Hidden}}
             <div class="award-item">
                 <div class="award-header">
                     <span class="award-title">{{.Title}}</span>
@@ -125,7 +125,7 @@
                 </div>
                 {{if .Issuer}}<span class="award-issuer">{{.Issuer}}</span>{{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
@@ -133,9 +133,9 @@
         {{if .Languages}}
         <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
         <div class="card">
-            {{range .Languages}}
+            {{range .Languages}}{{if not .Hidden}}
             <div class="lang-item"><span class="lang-name">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}</div>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
@@ -143,31 +143,31 @@
         {{if .Skills}}
         <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
         <div class="card skill-card">
-            {{range .Skills}}
+            {{range .Skills}}{{if not .Hidden}}
             <div class="skill-category">
                 <h4>{{.Category}}</h4>
-                {{range .Items}}
+                {{range .Items}}{{if not .Hidden}}
                 <div class="skill-item">
                     <span>{{.Name}}</span>
                     {{if .Level}}<div class="skill-dots">{{skillLevel .Level}}</div>{{end}}
                 </div>
-                {{end}}
+                {{end}}{{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
         <!-- Summary -->
-        {{if .Summary}}
+        {{if and .Summary (not .SummaryHidden)}}
         <div class="section-title">个人总结</div>
         <div class="card summary">{{nl2br .Summary}}</div>
         {{end}}
 
         <!-- Custom -->
         {{if .Custom}}
-        {{range .Custom}}
+        {{range .Custom}}{{if not .Hidden}}
         <div class="section-title">{{.Title}}</div>
-        {{range .Items}}
+        {{range .Items}}{{if not .Hidden}}
         <div class="card custom-item">
             <h4>{{.Title}}</h4>
             {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
@@ -180,8 +180,8 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
-        {{end}}
+        {{end}}{{end}}
+        {{end}}{{end}}
         {{end}}
     </div>
 </body>

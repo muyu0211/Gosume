@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import type { Job, Project, Internship } from '../../types/resume'
-import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical, EyeOff } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { ExtrasEditor } from './ExtrasEditor'
@@ -69,6 +69,7 @@ export function ExperienceSection({ type, title }: Props) {
       <div className="space-y-2">
         {items?.map((item, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
+          const isHidden = !!(item as Entry).hidden
           const name = type === 'jobs' || type === 'internships' ? (item as Job).company : (item as Project).name
           const role = type === 'jobs' || type === 'internships' ? (item as Job).title : (item as Project).role
 
@@ -77,7 +78,7 @@ export function ExperienceSection({ type, title }: Props) {
               key={item.id}
               className={`border rounded-lg overflow-hidden transition-colors ${
                 overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-              } ${draggedIdx === idx ? 'opacity-40' : ''}`}
+              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
@@ -97,11 +98,30 @@ export function ExperienceSection({ type, title }: Props) {
                 </div>
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-surface-700 truncate">
+                  <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
                     {name || `未命名${type === 'jobs' ? '公司' : '项目'}`}
                   </span>
                   {role && <span className="text-xs text-surface-400 ml-2">{role}</span>}
+                  {isHidden && (
+                    <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
+                      <EyeOff className="w-2.5 h-2.5" />
+                      已隐藏
+                    </span>
+                  )}
                 </div>
+                <label
+                  className="flex items-center gap-1 px-1.5 py-1 text-xs text-surface-500 hover:text-surface-700 cursor-pointer select-none"
+                  title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此项（不在简历中显示）'}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    checked={!isHidden}
+                    onChange={(e) => updateItem(idx, { hidden: !e.target.checked } as Partial<Entry>)}
+                  />
+                  <span className="hidden sm:inline">在简历中显示</span>
+                </label>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeItem(idx) }}
                   className="p-1 text-surface-400 hover:text-red-500 transition-colors"

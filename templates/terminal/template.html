@@ -35,7 +35,7 @@
         <div class="section-title">
             <span class="prompt">$</span> cat /etc/education.conf
         </div>
-        {{range .Education}}
+        {{range .Education}}{{if not .Hidden}}
         <div class="education-item">
             <div class="edu-header">
                 <div>
@@ -45,7 +45,7 @@
             </div>
             {{if .Courses}}<div class="edu-detail">  courses: {{.Courses}}</div>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Work Experience -->
@@ -54,7 +54,7 @@
         <div class="section-title">
             <span class="prompt">$</span> grep "internship" ~/resume.json <span class="pipe">|</span> jq .internships[]
         </div>
-        {{range .Internships}}
+        {{range .Internships}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <span class="company">▸ {{.Company}}</span>
@@ -72,14 +72,14 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         {{if .Jobs}}
         <div class="section-title">
             <span class="prompt">$</span> grep "experience" ~/resume.json <span class="pipe">|</span> jq .jobs[]
         </div>
-        {{range .Jobs}}
+        {{range .Jobs}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <span class="company">▸ {{.Company}}</span>
@@ -97,7 +97,7 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Projects -->
@@ -105,7 +105,7 @@
         <div class="section-title">
             <span class="prompt">$</span> ls ~/projects/
         </div>
-        {{range .Projects}}
+        {{range .Projects}}{{if not .Hidden}}
         <div class="experience-item">
             <div class="exp-header">
                 <span class="company">▸ {{.Name}}</span>
@@ -126,7 +126,7 @@
             {{end}}
             {{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Awards -->
@@ -134,13 +134,13 @@
         <div class="section-title">
             <span class="prompt">$</span> cat /var/log/achievements.log
         </div>
-        {{range .Awards}}
+        {{range .Awards}}{{if not .Hidden}}
         <div class="award-item">
             <span class="award-star">★</span> <span class="award-title">{{.Title}}</span>
             {{if .Date}}<span class="date">// {{.Date}}</span>{{end}}
             {{if .Issuer}}<span class="issuer">// {{.Issuer}}</span>{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Languages -->
@@ -149,9 +149,9 @@
             <span class="prompt">$</span> locale -a
         </div>
         <div class="languages-line">
-            {{range .Languages}}
+            {{range .Languages}}{{if not .Hidden}}
             <span class="lang-item">[{{.Name}}{{if .Level}}::{{.Level}}{{end}}]</span>
-            {{end}}
+            {{end}}{{end}}
         </div>
         {{end}}
 
@@ -160,21 +160,21 @@
         <div class="section-title">
             <span class="prompt">$</span> ls -la /usr/local/skills/
         </div>
-        {{range .Skills}}
+        {{range .Skills}}{{if not .Hidden}}
         <div class="skill-block">
             <div class="skill-cat">drwxr-xr-x  {{.Category}}/</div>
-            {{range .Items}}
+            {{range .Items}}{{if not .Hidden}}
             <div class="skill-item">
                 <span class="skill-name">  {{.Name}}</span>
                 {{if .Level}}<span class="skill-dots">{{skillLevel .Level}}</span><span class="skill-pct">{{.Level}}/5</span>{{end}}
             </div>
-            {{end}}
+            {{end}}{{end}}
         </div>
-        {{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Summary -->
-        {{if .Summary}}
+        {{if and .Summary (not .SummaryHidden)}}
         <div class="summary-box">
             <div class="prompt-line"><span class="prompt">$</span> cat ~/summary.txt</div>
             <div class="summary">{{nl2br .Summary}}</div>
@@ -183,11 +183,11 @@
 
         <!-- Custom -->
         {{if .Custom}}
-        {{range .Custom}}
+        {{range .Custom}}{{if not .Hidden}}
         <div class="section-title">
             <span class="prompt">$</span> cat ~/{{.Title}}/
         </div>
-        {{range .Items}}
+        {{range .Items}}{{if not .Hidden}}
         <div class="custom-item">
             <h4>▸ {{.Title}}</h4>
             {{if .Subtitle}}<div class="subtitle">  {{.Subtitle}}{{if .Date}} // {{.Date}}{{end}}</div>{{end}}
@@ -200,8 +200,8 @@
             </ul>
             {{end}}
         </div>
-        {{end}}
-        {{end}}
+        {{end}}{{end}}
+        {{end}}{{end}}
         {{end}}
 
         <!-- Footer -->

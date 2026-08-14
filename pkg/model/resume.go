@@ -9,19 +9,22 @@ import (
 )
 
 // Resume is the root structure for a resume.
+// SummaryHidden toggles visibility of the "个人总结" section. Pointer + omitempty
+// keeps backward compatibility with legacy resumes (treated as visible).
 type Resume struct {
-	Version     string          `json:"version"`
-	Meta        ResumeMeta      `json:"meta"`
-	Personal    Personal        `json:"personal"`
-	Summary     string          `json:"summary,omitempty"`
-	Internships []Internship    `json:"internships,omitempty"`
-	Jobs        []Job           `json:"jobs,omitempty"`
-	Projects    []Project       `json:"projects,omitempty"`
-	Education   []Education     `json:"education,omitempty"`
-	Skills      []SkillGroup    `json:"skills,omitempty"`
-	Languages   []Language      `json:"languages,omitempty"`
-	Awards      []Award         `json:"awards,omitempty"`
-	Custom      []CustomSection `json:"custom,omitempty"`
+	Version       string          `json:"version"`
+	Meta          ResumeMeta      `json:"meta"`
+	Personal      Personal        `json:"personal"`
+	Summary       string          `json:"summary,omitempty"`
+	SummaryHidden *bool           `json:"summary_hidden,omitempty"`
+	Internships   []Internship    `json:"internships,omitempty"`
+	Jobs          []Job           `json:"jobs,omitempty"`
+	Projects      []Project       `json:"projects,omitempty"`
+	Education     []Education     `json:"education,omitempty"`
+	Skills        []SkillGroup    `json:"skills,omitempty"`
+	Languages     []Language      `json:"languages,omitempty"`
+	Awards        []Award         `json:"awards,omitempty"`
+	Custom        []CustomSection `json:"custom,omitempty"`
 }
 
 // ResumeMeta holds metadata about the resume document.

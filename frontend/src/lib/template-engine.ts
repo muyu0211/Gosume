@@ -237,6 +237,46 @@ function evalExpr(
 ): unknown {
   expr = expr.trim()
 
+  // Built-in boolean/comparison operators: not, and, or, eq, ne.
+  // These evaluate their operands as sub-expressions (Go template semantics)
+  // rather than as string args, so `not .Hidden` and `and .Summary (not .X)`
+  // resolve correctly. Must run before the generic func-call path below,
+  // otherwise `not`/`and`/... get misparsed as unresolved helper names and
+  // every `{{if not .Hidden}}` silently evaluates to false.
+  const opMatch = expr.match(/^(not|and|or|eq|ne)\b\s*(.*)$/)
+  if (opMatch) {
+    const op = opMatch[1]
+    const rest = opMatch[2].trim()
+    if (op === 'not') {
+      return !isGoTruthy(evalExpr(rest, data, funcs))
+    }
+    const args = parseExprArgs(rest, data, funcs)
+    if (op === 'and') {
+      // Go `and` returns the first falsy operand, otherwise the last one.
+      let result: unknown = true
+      for (const a of args) {
+        result = a
+        if (!isGoTruthy(a)) break
+      }
+      return result
+    }
+    if (op === 'or') {
+      // Go `or` returns the first truthy operand, otherwise the last one.
+      let result: unknown = false
+      for (const a of args) {
+        result = a
+        if (isGoTruthy(a)) break
+      }
+      return result
+    }
+    if (op === 'eq') {
+      return args.length >= 2 && args[0] === args[1]
+    }
+    if (op === 'ne') {
+      return args.length < 2 || args[0] !== args[1]
+    }
+  }
+
   // Function call: funcName arg1 arg2 ...
   const funcMatch = expr.match(/^(\w+)\s+(.+)$/)
   if (funcMatch && funcs[funcMatch[1]]) {
@@ -306,6 +346,55 @@ function parseArgs(argsStr: string): string[] {
   return args
 }
 
+/**
+ * Parses whitespace-separated operands for built-in operators (not/and/or/eq/ne).
+ * Unlike {@link parseArgs} (which returns raw strings for helper funcs), this
+ * evaluates each operand as a sub-expression so parenthesised groups such as
+ * `(not .Hidden)` and field paths such as `.Summary` resolve to actual values.
+ * Also recognises quoted string literals so comparisons like `eq .Lang "zh-CN"`
+ * work. Used exclusively by the operator branch of {@link evalExpr}.
+ */
+function parseExprArgs(
+  s: string,
+  data: Record<string, unknown>,
+  funcs: Record<string, TemplateFunc>,
+): unknown[] {
+  const args: unknown[] = []
+  let i = 0
+  while (i < s.length) {
+    while (i < s.length && s[i] === ' ') i++
+    if (i >= s.length) break
+    const ch = s[i]
+    if (ch === '(') {
+      // Match the closing paren at the same nesting depth and recurse.
+      let depth = 1
+      let j = i + 1
+      while (j < s.length && depth > 0) {
+        if (s[j] === '(') depth++
+        else if (s[j] === ')') {
+          depth--
+          if (depth === 0) break
+        }
+        j++
+      }
+      args.push(evalExpr(s.slice(i + 1, j), data, funcs))
+      i = j + 1
+    } else if (ch === '"' || ch === "'") {
+      let j = i + 1
+      while (j < s.length && s[j] !== ch) j++
+      args.push(s.slice(i + 1, j))
+      i = j + 1
+    } else {
+      // Bare token: read until whitespace, paren, or quote, then evaluate.
+      let j = i
+      while (j < s.length && s[j] !== ' ' && s[j] !== '(' && s[j] !== '"' && s[j] !== "'") j++
+      args.push(evalExpr(s.slice(i, j), data, funcs))
+      i = j
+    }
+  }
+  return args
+}
+
 function resolvePath(data: Record<string, unknown>, path: string): unknown {
   // {{.}} — return the current dot value
   if (path === '') {
@@ -358,10 +447,32 @@ function pascalToSnake(s: string): string {
 }
 
 function toGoShape(resume: Resume): Record<string, unknown> {
-  // Convert the snake_case frontend data to PascalCase for Go template compatibility
+  // Convert the snake_case frontend data to PascalCase for Go template compatibility.
+  // Arrays of entries with a Hidden flag are filtered here so that:
+  //   - {{if .Jobs}} reflects only visible entries → section title auto-hides
+  //     when every entry is hidden (no template changes needed).
+  //   - {{range .Jobs}} iterates only visible entries.
+  // The per-item {{if not .Hidden}} guards in the templates become redundant
+  // but remain harmless (they always evaluate true after filtering).
+  // Notes:
+  //   - Only objects whose Hidden field is strictly `true` are dropped; `false`
+  //     and `undefined` (legacy data) are kept, preserving backward compatibility.
+  //   - SkillGroup.Items is also filtered; if all skills in a group are hidden
+  //     the group's Items become empty (the group title still renders unless
+  //     the group itself is marked Hidden).
   function convert(obj: unknown): unknown {
     if (obj === null || obj === undefined) return obj
-    if (Array.isArray(obj)) return obj.map(convert)
+    if (Array.isArray(obj)) {
+      return obj
+        .map(convert)
+        .filter((item) => {
+          if (item && typeof item === 'object') {
+            const hidden = (item as Record<string, unknown>).Hidden
+            if (hidden === true) return false
+          }
+          return true
+        })
+    }
     if (typeof obj === 'object') {
       const result: Record<string, unknown> = {}
       for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
