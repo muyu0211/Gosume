@@ -37,9 +37,10 @@ func (s *ExportService) Inject(app *application.App, manager *export.ExportManag
 
 // ExportHTML exports pre-paginated HTML to the target format.
 // The frontend calls this for individual resume export.
+// resumeName is used as the default save filename; if empty it falls back to "简历".
 // format must be "pdf" or "png". For PDF, scale should be 1.0 to avoid
 // content overflow that produces blank pages.
-func (s *ExportService) ExportHTML(htmlContent string, format string, scale float64) (string, error) {
+func (s *ExportService) ExportHTML(htmlContent string, format string, scale float64, resumeName string) (string, error) {
 	opts, err := parseFormat(format, scale)
 	if err != nil {
 		return "", err
@@ -52,7 +53,13 @@ func (s *ExportService) ExportHTML(htmlContent string, format string, scale floa
 	}
 	s.wailsApp.Event.Emit("export:progress", 70)
 
-	defaultName := fmt.Sprintf("简历.%s", formatSuffix(opts.Format))
+	baseName := strings.TrimSpace(resumeName)
+	if baseName == "" {
+		baseName = "简历"
+	} else {
+		baseName = sanitizeFilename(baseName)
+	}
+	defaultName := fmt.Sprintf("%s.%s", baseName, formatSuffix(opts.Format))
 	filePath, err := s.showSaveDialog(defaultName, opts, "导出简历")
 	if err != nil || filePath == "" {
 		return filePath, err

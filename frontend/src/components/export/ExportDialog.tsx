@@ -61,12 +61,14 @@ export function ExportDialog({ onClose }: Props) {
       const paginatedHtml = await paginateHTMLString(previewHtml)
       let filePath: string | null = null
 
+      const resumeName = resume.meta.name || ''
+
       switch (selectedFormat) {
         case 'pdf':
-          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'pdf', 1.0)
+          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'pdf', 1.0, resumeName)
           break
         case 'png':
-          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'png', scale)
+          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'png', scale, resumeName)
           break
       }
 

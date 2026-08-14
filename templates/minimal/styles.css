@@ -75,6 +75,8 @@ body {
     font-size: 9.5pt;
     line-height: 1.7;
     color: var(--muted-color);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section titles */

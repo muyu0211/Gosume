@@ -101,6 +101,8 @@ body {
     line-height: 1.6;
     padding-left: 16pt;
     border-left: 2pt solid var(--accent-bg);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section Header */

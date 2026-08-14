@@ -186,6 +186,8 @@ body {
     background: var(--accent-bg);
     border-radius: 4pt;
     border-left: 3px solid var(--primary-color);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section titles */

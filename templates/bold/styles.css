@@ -79,6 +79,8 @@ body {
     padding: 8pt 0;
     border-top: 1pt solid var(--border-color);
     border-bottom: 1pt solid var(--border-color);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section Bar */

@@ -126,6 +126,8 @@ body {
     background: var(--accent-bg);
     border: 1pt solid var(--border-color);
     border-radius: 3pt;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section Titles */

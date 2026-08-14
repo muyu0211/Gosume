@@ -96,6 +96,8 @@ body {
     font-size: 9pt;
     line-height: 1.6;
     text-align: center;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section Titles */

@@ -43,7 +43,7 @@ body {
 }
 
 .header-left h1 {
-    font-size: 22pt;
+    font-size: 16pt;
     font-weight: 700;
     color: var(--heading-color);
     margin-bottom: 4pt;
@@ -64,7 +64,7 @@ body {
 }
 
 .header-avatar { flex-shrink: 0; }
-.header-avatar img { width: 72pt; height: 96pt; object-fit: cover; border-radius: 4pt; border: 1px solid var(--border-color); }
+.header-avatar img { width: 48pt; height: 64pt; object-fit: cover; border-radius: 4pt; border: 1px solid var(--border-color); }
 .contact-label { font-weight: 600; color: var(--heading-color); }
 .english-name { font-size: 10pt; color: var(--muted-color); margin-bottom: 4pt; }
 .years-exp { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 6pt; }
@@ -72,12 +72,14 @@ body {
 
 /* Summary */
 .summary {
-    margin-bottom: 14pt;
+    margin-bottom: 4pt;
     padding: 8pt 12pt;
     background: var(--bg-accent);
     border-radius: 4pt;
     font-size: 9.5pt;
     line-height: 1.6;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section titles */
@@ -85,7 +87,7 @@ body {
     font-size: 12pt;
     font-weight: 700;
     color: var(--heading-color);
-    margin-bottom: 8pt;
+    margin-bottom: 4pt;
     padding-bottom: 4pt;
     border-bottom: 1px solid var(--border-color);
     text-transform: uppercase;

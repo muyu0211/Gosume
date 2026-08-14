@@ -190,6 +190,8 @@ body {
     padding: 8pt 10pt;
     background: var(--accent-bg);
     border-radius: 3pt;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Experience */

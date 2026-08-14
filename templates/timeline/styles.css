@@ -65,6 +65,8 @@ body {
     border-left: 3pt solid var(--primary-color);
     font-size: 9.5pt;
     line-height: 1.65;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section Titles */

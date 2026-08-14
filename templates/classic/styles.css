@@ -67,6 +67,8 @@ body {
     text-align: justify;
     font-size: 10pt;
     line-height: 1.7;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section titles */
