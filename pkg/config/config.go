@@ -11,6 +11,9 @@ import (
 // Config holds user configuration.
 type Config struct {
 	DataDir string `json:"data_dir"`
+	// LayoutPresets holds the user-customized layout tier lists (page
+	// margins + section spacing). nil/omitted = built-in defaults.
+	LayoutPresets *LayoutPresetConfig `json:"layout_presets,omitempty"`
 }
 
 // Manager manages persisted user configuration with change callbacks.
@@ -97,6 +100,46 @@ func (m *Manager) RemoveOnChange(id int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.listeners, id)
+}
+
+// GetLayoutPresets returns the effective layout preset configuration,
+// falling back to built-in defaults when nothing has been customized.
+func (m *Manager) GetLayoutPresets() LayoutPresetConfig {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.config.LayoutPresets != nil {
+		return *m.config.LayoutPresets
+	}
+	return DefaultLayoutPresets()
+}
+
+// SetLayoutPresets validates and persists a layout preset configuration.
+func (m *Manager) SetLayoutPresets(cfg LayoutPresetConfig) error {
+	if err := ValidateLayoutPresets(cfg); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.config.LayoutPresets = &cfg
+	if err := m.saveLocked(); err != nil {
+		m.config.LayoutPresets = nil // rollback to previous persisted state on next load
+		return fmt.Errorf("save config: %w", err)
+	}
+	return nil
+}
+
+// ResetLayoutPresets removes any customization, restoring built-in defaults.
+func (m *Manager) ResetLayoutPresets() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.config.LayoutPresets == nil {
+		return nil
+	}
+	m.config.LayoutPresets = nil
+	if err := m.saveLocked(); err != nil {
+		return fmt.Errorf("save config: %w", err)
+	}
+	return nil
 }
 
 func (m *Manager) effectiveDir() string {

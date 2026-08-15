@@ -23,6 +23,7 @@ src/
 │   │   ├── TitleBar.tsx      #   自定义无框标题栏（拖拽区域）
 │   │   ├── Sidebar.tsx       #   侧边导航栏
 │   │   ├── Toolbar.tsx       #   编辑器工具栏
+│   │   ├── LayoutPopover.tsx #   页面布局弹层（页边距滑块 + 内容间距档位）
 │   │   └── StatusBar.tsx     #   底部状态栏
 │   ├── preview/              # 实时预览
 │   │   └── PreviewPanel.tsx  #   简历渲染预览
@@ -43,7 +44,9 @@ src/
 │   ├── useKeyboardShortcuts.ts   # 键盘快捷键
 │   └── usePreview.ts         # 预览 HTML 生成（带防抖）
 ├── lib/
-│   ├── template-engine.ts    # 客户端模板渲染（html2canvas）
+│   ├── template-engine.ts    # 客户端模板渲染（Go html/template 子集，含布尔运算符）
+│   ├── layoutPresets.ts      # 页面布局档位（页边距/内容间距枚举 → CSS 注入）
+│   ├── exportHtml.ts         # 导出用 HTML 分页与序列化
 │   ├── error-utils.ts        # 统一错误消息提取（兼容 Go 错误、JSON 错误、字符串）
 │   └── wails-runtime.ts      # Wails 运行时辅助函数
 ├── routes/
@@ -158,7 +161,7 @@ updateField('jobs[0].company', '某公司')
 
 ### 预览
 
-`usePreview` hook 通过调用 `ResumeService.RenderPreview`（服务端渲染）生成预览 HTML，带防抖处理。PreviewPanel 通过 iframe 渲染 HTML。
+`usePreview` hook 在客户端生成预览 HTML（带 300ms 防抖）：`renderTemplate`（lib/template-engine.ts）本地渲染模板 → `injectLayoutCss`（lib/layoutPresets.ts）注入页边距 CSS 变量与内容间距规则 → 写入 `resumeStore.previewHtml`。PreviewPanel 通过 iframe 渲染。不经过 Go 后端——后端内存仅在显式保存时同步，确保每次按键即时反映。单文件导出（ExportDialog）直接复用 `previewHtml`；批量导出（ResumeListDrawer）对每份简历独立执行相同的渲染 + 注入流程。
 
 模板引擎（`lib/template-engine.ts`）提供以下模板辅助函数：
 
@@ -169,6 +172,20 @@ updateField('jobs[0].company', '某公司')
 | `i18n(lang, zhKey, enKey)` | 根据简历语言字段切换中英文显示 |
 | `safeHTML(s)` | 输出原始 HTML（用于模板中已转义的内容） |
 | `defaultVal(fallback, val)` | 值为空时返回默认值 |
+| `not / and / or / eq / ne` | Go template 布尔运算符（`{{if not .Hidden}}` 等条件渲染） |
+
+### 页面布局档位
+
+`LayoutPopover`（Toolbar 内）提供两项布局设置，均以**枚举 key**持久化（禁止存储具体像素/毫米值），前端负责枚举 → CSS 的映射与注入，后端只透传存储：
+
+| 字段 | 类型 | UI |
+|------|------|-----|
+| `meta.page_margin` | `MarginKey`（compact/narrow/normal/wide/comfortable） | 5 档滑块 |
+| `meta.section_spacing` | `SectionSpacingKey`（同上五档） | 5 档按钮 |
+
+- 所有档位定义、默认值、枚举 → CSS 值映射集中在 `lib/layoutPresets.ts`；赋值必须引用导出的常量（`DEFAULT_MARGIN_KEY` 等），不得硬编码字符串
+- 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），`normal` 档不注入任何规则，保留模板原生节奏
+- 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"布局档位"小节，新增参与间距调整的组件需两侧同步
 
 ## 开发规范
 

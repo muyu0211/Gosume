@@ -3,7 +3,7 @@ import { useTemplateStore } from '../../stores/templateStore'
 import { useResumeStore } from '../../stores/resumeStore'
 import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumbnailService'
 import { importTemplatePackage, loadTemplateMetas } from '../../services/templateService'
-import { extractErrorMessage } from '../../lib/error-utils'
+import { extractErrorMessage } from '../../lib/errorUtils'
 import { Check, ChevronDown, Layout, Loader2, Upload } from 'lucide-react'
 
 const FALLBACK_COLORS: Record<string, string> = {

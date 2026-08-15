@@ -27,16 +27,56 @@ type Resume struct {
 	Custom        []CustomSection `json:"custom,omitempty"`
 }
 
+// PageMargin is the page-margin level of a resume. The enum keys are the
+// wire format shared with the frontend (resume.meta.page_margin); the
+// frontend maps each level to concrete CSS values per template component.
+type PageMargin string
+
+// Page margin levels.
+const (
+	PageMarginCompact     PageMargin = "compact"
+	PageMarginNarrow      PageMargin = "narrow"
+	PageMarginNormal      PageMargin = "normal"
+	PageMarginWide        PageMargin = "wide"
+	PageMarginComfortable PageMargin = "comfortable"
+)
+
+// SectionSpacing is the content-block spacing level of a resume. The enum
+// keys are the wire format shared with the frontend
+// (resume.meta.section_spacing).
+type SectionSpacing string
+
+// Section spacing levels.
+const (
+	SectionSpacingCompact     SectionSpacing = "compact"
+	SectionSpacingNarrow      SectionSpacing = "narrow"
+	SectionSpacingNormal      SectionSpacing = "normal"
+	SectionSpacingWide        SectionSpacing = "wide"
+	SectionSpacingComfortable SectionSpacing = "comfortable"
+)
+
+// FontSize is the base font size of a resume in pt. The wire format stays
+// numeric so resumes persisted before this enum was introduced remain valid.
+type FontSize int
+
+// Font size levels.
+const (
+	FontSizeSmall  FontSize = 9
+	FontSizeMedium FontSize = 10
+	FontSizeLarge  FontSize = 11
+)
+
 // ResumeMeta holds metadata about the resume document.
 type ResumeMeta struct {
-	TemplateID  string    `json:"template_id"`
-	Name        string    `json:"name"`
-	Language    string    `json:"language"`
-	FontSize    int       `json:"font_size"`
-	PageMargin  string    `json:"page_margin"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	ExportCount int       `json:"export_count"`
+	TemplateID     string         `json:"template_id"`
+	Name           string         `json:"name"`
+	Language       string         `json:"language"`
+	FontSize       FontSize       `json:"font_size"`
+	PageMargin     PageMargin     `json:"page_margin"`
+	SectionSpacing SectionSpacing `json:"section_spacing"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	ExportCount    int            `json:"export_count"`
 }
 
 // SetFieldByPath sets a field on the resume by dot-separated path.

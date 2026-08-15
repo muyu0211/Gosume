@@ -4,7 +4,7 @@ import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pen
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { TemplateSwitcher } from '../template/TemplateSwitcher'
-import { MarginPopover } from './MarginPopover'
+import { LayoutPopover } from './LayoutPopover'
 
 interface ToolbarProps {
   onSave: () => void
@@ -130,7 +130,7 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
 
       {/* Right */}
       <div className="flex items-center gap-1">
-        <MarginPopover />
+        <LayoutPopover />
         <TemplateSwitcher />
       </div>
     </div>

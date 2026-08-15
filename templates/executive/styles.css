@@ -306,7 +306,7 @@ body {
 /* Project extras (user-defined key/value) */
 .extra-row {
     font-size: 9pt;
-    margin-top: 3pt;
+    margin-bottom: 3pt;
     line-height: 1.5;
 }
 .extra-label {

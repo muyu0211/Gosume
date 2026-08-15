@@ -96,7 +96,7 @@ ZIP 内的目录条目会被忽略，只处理文件。但建议不要在包内�
 |------|------|------|
 | 简单字段路径 | `^.Field(\.Field)*$` | `{{.Personal.FullName}}`、`{{.Jobs}}` |
 | CSS 内联 | 精确匹配 `template "styles.css" .` | `{{template "styles.css" .}}` |
-| if 块 | `if <简单路径>` | `{{if .Jobs}}`、`{{if .Personal.Avatar}}` |
+| if 块 | `if <控制表达式>` | `{{if .Jobs}}`、`{{if not .Hidden}}`、`{{if and .Summary (not .SummaryHidden)}}` |
 | range 块 | `range <简单路径>` | `{{range .Jobs}}`、`{{range .Highlights}}` |
 | 支持的函数调用 | 函数名 + 参数 | `{{dateRange .StartDate .EndDate .IsCurrent}}` |
 
@@ -108,6 +108,31 @@ ZIP 内的目录条目会被忽略，只处理文件。但建议不要在包内�
 非法：`.Field[0]`、`.Field["key"]`、`.Field.Sub | filter`
 
 > 注意：range 内部访问当前元素的字段用 `{{.Field}}`（如 `{{.Company}}`），这算简单路径，合法。
+
+#### 控制表达式的判定（if 后）
+
+`if` 后除简单路径外，还接受 **`not` / `and` / `or` / `eq` / `ne` 布尔运算组合**（前缀式，与 Go html/template 语义一致，前端实时预览引擎同样支持）：
+
+- 操作数可以是：简单路径、`true` / `false`、带引号字符串字面量、括号子表达式
+- 元数规则：`not` 恰好 1 个操作数；`and` / `or` / `eq` / `ne` 至少 2 个
+
+合法：
+
+```html
+{{if not .Hidden}}
+{{if and .Summary (not .SummaryHidden)}}
+{{if or .Jobs .Internships}}
+{{if eq .Meta.Language "zh-CN"}}
+{{if ne .A .B}}
+```
+
+非法（仍会被拒绝）：
+
+```html
+{{if index .Jobs 0}}          {{! index 不在运算符白名单 }}
+{{if len .Jobs}}              {{! len 不是路径也不是布尔运算符 }}
+{{if .Jobs | limit}}          {{! 管道 }}
+```
 
 #### 支持的函数（白名单）
 
@@ -134,10 +159,9 @@ ZIP 内的目录条目会被忽略，只处理文件。但建议不要在包内�
 | `{{block "x" .}}` | block 块 |
 | `{{define "x"}}` | define 块 |
 | `{{template "foo" .}}` | 非 styles.css 的 template include |
-| `{{if eq .A .B}}` | if 后不是简单路径 |
-| `{{if not .Field}}` | if 后不是简单路径 |
+| `{{if index .Field 0}}` | index 不在运算符/函数白名单 |
+| `{{if len .Field}}` | len 不是路径也不是布尔运算符 |
 | `{{range .Field \| limit 5}}` | range 后含管道 |
-| `{{index .Field 0}}` | 不在函数白名单 |
 | `{{printf "%s" .Field}}` | printf 不在白名单 |
 
 ### 3.3 模板执行校验（validateTemplateExecution）

@@ -237,7 +237,7 @@ func validatePreviewCompatibleSyntax(html string) error {
 		}
 		if strings.HasPrefix(expr, "if ") || strings.HasPrefix(expr, "range ") {
 			target := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(expr, "if "), "range "))
-			if isSimpleTemplatePath(target) {
+			if isSupportedControlExpr(target) {
 				continue
 			}
 			return fmt.Errorf("unsupported template control expression for live preview: {{%s}}", expr)
@@ -255,6 +255,121 @@ func validatePreviewCompatibleSyntax(html string) error {
 
 func isSimpleTemplatePath(expr string) bool {
 	return regexp.MustCompile(`^\.[A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$`).MatchString(expr)
+}
+
+// isSupportedControlExpr reports whether the expression after {{if }} or
+// {{range }} is supported by the frontend live-preview engine. Besides a
+// simple field path it accepts the Go template boolean/comparison operators
+// not/and/or/eq/ne, whose operands may be simple paths, literals (true/false
+// or a quoted string) or parenthesized sub-expressions — mirroring
+// evalExpr in frontend/src/lib/templateEngine.ts. Imported templates thereby
+// get the same conditional powers as the built-in ones (e.g.
+// {{if not .Hidden}} and {{if and .Summary (not .SummaryHidden)}}).
+func isSupportedControlExpr(expr string) bool {
+	expr = strings.TrimSpace(expr)
+	if expr == "" {
+		return false
+	}
+	if isSimpleTemplatePath(expr) {
+		return true
+	}
+	tokens, ok := tokenizeControlExpr(expr)
+	if !ok || len(tokens) < 2 {
+		return false
+	}
+	// Argument-count rules per operator (Go html/template semantics).
+	minArgs, maxArgs := 0, 0
+	switch tokens[0] {
+	case "not":
+		minArgs, maxArgs = 1, 1
+	case "and", "or":
+		minArgs, maxArgs = 2, -1
+	case "eq", "ne":
+		minArgs, maxArgs = 2, -1
+	default:
+		return false
+	}
+	n := len(tokens) - 1
+	if n < minArgs || (maxArgs >= 0 && n > maxArgs) {
+		return false
+	}
+	for _, tok := range tokens[1:] {
+		if !isSupportedOperand(tok) {
+			return false
+		}
+	}
+	return true
+}
+
+// isSupportedOperand validates one operand of a boolean/comparison operator:
+// a simple path, a bool/string literal, or a parenthesized sub-expression.
+func isSupportedOperand(tok string) bool {
+	if strings.HasPrefix(tok, "(") && strings.HasSuffix(tok, ")") && len(tok) >= 2 {
+		return isSupportedControlExpr(strings.TrimSpace(tok[1 : len(tok)-1]))
+	}
+	if isSimpleTemplatePath(tok) {
+		return true
+	}
+	if tok == "true" || tok == "false" {
+		return true
+	}
+	if len(tok) >= 2 &&
+		((tok[0] == '"' && tok[len(tok)-1] == '"') || (tok[0] == '\'' && tok[len(tok)-1] == '\'')) {
+		return !strings.Contains(tok[1:len(tok)-1], "\"") && !strings.Contains(tok[1:len(tok)-1], "'")
+	}
+	return false
+}
+
+// tokenizeControlExpr splits an if/range target into top-level tokens.
+// A parenthesized group keeps its inner spacing and stays a single token
+// (recursively validated by isSupportedOperand). Returns false when quotes
+// or parentheses are unbalanced.
+func tokenizeControlExpr(expr string) ([]string, bool) {
+	var tokens []string
+	var cur strings.Builder
+	depth := 0
+	var quote byte
+	flush := func() {
+		if cur.Len() > 0 {
+			tokens = append(tokens, cur.String())
+			cur.Reset()
+		}
+	}
+	for i := 0; i < len(expr); i++ {
+		c := expr[i]
+		switch {
+		case quote != 0:
+			cur.WriteByte(c)
+			if c == quote {
+				quote = 0
+			}
+		case c == '"' || c == '\'':
+			quote = c
+			cur.WriteByte(c)
+		case c == '(':
+			depth++
+			cur.WriteByte(c)
+		case c == ')':
+			depth--
+			if depth < 0 {
+				return nil, false
+			}
+			cur.WriteByte(c)
+		case c == ' ' || c == '\t':
+			if depth > 0 {
+				cur.WriteByte(c)
+			} else {
+				flush()
+			}
+		default:
+			cur.WriteByte(c)
+		}
+	}
+	if quote != 0 || depth != 0 {
+		return nil, false
+	}
+	flush()
+	return tokens, true
 }
 
 func isSupportedFunctionCall(expr string) bool {
@@ -275,14 +390,15 @@ func sampleResume(templateID string) *model.Resume {
 	return &model.Resume{
 		Version: "1.0",
 		Meta: model.ResumeMeta{
-			TemplateID:  templateID,
-			Name:        "Sample Resume",
-			Language:    "zh-CN",
-			FontSize:    10,
-			PageMargin:  "normal",
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			ExportCount: 0,
+			TemplateID:     templateID,
+			Name:           "Sample Resume",
+			Language:       "zh-CN",
+			FontSize:       model.FontSizeMedium,
+			PageMargin:     model.PageMarginNormal,
+			SectionSpacing: model.SectionSpacingNormal,
+			CreatedAt:      now,
+			UpdatedAt:      now,
+			ExportCount:    0,
 		},
 		Personal: model.Personal{
 			FullName:   "Sample User",

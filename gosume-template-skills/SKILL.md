@@ -23,7 +23,7 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 
 ### 2. template.json 的 id 字段
 
-`id` 为UUID生成，导入时如果出现id重复，则由Gosume后台进行修改替换，这里只需使用UUID生成一个占位符性质的id即可。
+`id` 为UUID生成，导入时如果出现id重复，则由Gosume后台进行修改替换，这里只需使用UUID生成一个占位符性质的id即可。格式须匹配 `^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`（UUID v4 天然满足）。
 
 ### 3. paper_size 只支持 A4
 
@@ -42,27 +42,55 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 | `{{block "x" .}}` | 不支持 block |
 | `{{define "x"}}` | 不支持 define |
 | `{{template "foo" .}}`（除 styles.css 外） | 只允许 `{{template "styles.css" .}}` |
-| `{{if eq .A .B}}` | if 后只能跟简单字段路径 |
-| `{{range .Field \| filter}}` | range 后只能跟简单字段路径 |
+| `{{if index .Field 0}}` | if 后只能跟字段路径或布尔运算组合（见下） |
+| `{{range .Field \| filter}}` | range 后只能跟字段路径 |
 
 **允许的写法**：
 
 - 字段输出：`{{.Personal.FullName}}`、`{{.Jobs}}` 等简单点路径
-- 条件：`{{if .Field}}...{{end}}`、`{{if .Field.Sub}}...{{end}}`（if 后只能跟 `.Field.Sub` 形式）
-- 循环：`{{range .Field}}...{{end}}`（range 后同样只能跟简单路径）
+- 条件：`{{if .Field}}...{{end}}`、`{{if .Field.Sub}}...{{end}}`
+- 布尔运算组合（与内置模板一致，前后端渲染引擎均支持）：
+  - `{{if not .Field}}...{{end}}`
+  - `{{if and .A .B}}...{{end}}`、`{{if or .A .B}}...{{end}}`
+  - `{{if eq .Meta.Language "zh-CN"}}...{{end}}`、`{{if ne .A .B}}...{{end}}`
+  - 括号嵌套：`{{if and .Summary (not .SummaryHidden)}}...{{end}}`
+- 循环：`{{range .Field}}...{{end}}`
 - CSS 内联：`{{template "styles.css" .}}`（必须，用于内联样式）
 - 以下 7 个内置函数调用：`dateRange`、`skillLevel`、`i18n`、`nl2br`、`safeHTML`、`safeURL`、`defaultVal`
 
-### 5. safeURL 函数说明
+### 5. 条目隐藏机制（Hidden 字段）
+
+简历的每个条目（工作、教育、项目、奖项、语言、技能组、技能项、自定义区块/条目）都有 `Hidden` 可选布尔字段，用户可在应用中按条目控制显隐。模板的标准接入方式（与全部内置模板一致）：
+
+```html
+{{range .Jobs}}{{if not .Hidden}}
+<div class="experience-item">...</div>
+{{end}}{{end}}
+```
+
+个人总结区块用 `SummaryHidden` 字段：
+
+```html
+{{if and .Summary (not .SummaryHidden)}}
+<div class="section-title">...</div>
+<div class="summary">{{nl2br .Summary}}</div>
+{{end}}
+```
+
+说明：
+- 前端渲染时数据层已过滤 `Hidden=true` 的条目，且 `summary_hidden=true` 时 `Summary` 字段在数据层清空——旧写法 `{{if .Summary}}` 也能响应隐藏开关；`{{if not .Hidden}}` 守卫是双保险，照抄内置写法即可
+- 模块级隐藏（整个区块所有条目隐藏时标题不显示）由外层 `{{if .Jobs}}` 天然实现——过滤后数组为空即不渲染
+
+### 6. safeURL 函数说明
 
 渲染头像时推荐使用 `{{safeURL .Personal.Avatar}}`，与所有内置模板的写法一致。`safeURL` 会跳过 `html/template` 对 `src` 属性的默认 URL 过滤，避免 Base64 data URI 头像被不必要地转义。
 
 
-### 6. 必填元数据字段
+### 7. 必填元数据字段
 
 `validateMeta` 强制要求以下字段非空：
 
-- `id`（严格的64为UUID）
+- `id`（匹配 `^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`，推荐 UUID v4 或 kebab-case）
 - `name`（模板中文名）
 - `version`（如 `1.0.0`）
 - `author.name`（作者名）
@@ -162,6 +190,8 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 - 文件骨架固定：`<!DOCTYPE html>` + `<html lang="{{.Meta.Language}}">` + `<style>{{template "styles.css" .}}</style>`
 - 外层结构：`<body class="resume-page"><div class="resume-container">...区块...</div></body>`
 - **每个区块必须用 `{{if .Section}}...{{end}}` 包裹**，避免空数据时渲染空标题
+- **每个条目 range 内加 `{{if not .Hidden}}` 守卫**（条目隐藏开关，见第 5 节）
+- 个人总结区块用 `{{if and .Summary (not .SummaryHidden)}}`（见第 5 节）
 - 日期范围用 `{{dateRange .StartDate .EndDate .IsCurrent}}`
 - 多行文本（summary、description）用 `{{nl2br .Field}}`
 - 技能等级点用 `{{skillLevel .Level}}`（依赖 CSS 的 `.skill-dot` 和 `.skill-dot.filled`）
@@ -172,6 +202,17 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 #### styles.css 编写要点
 
 - `.resume-page` 必须设 `width: 210mm; min-height: 297mm;`（A4）
+- **页边距必须通过 CSS 变量消费**（应用按用户"页边距档位"注入变量）：
+  ```css
+  /* 单栏模板 */
+  .resume-page { padding: var(--resume-padding, 14mm 18mm); }
+  /* 双栏模板的内部分栏容器 */
+  .resume-sidebar { padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 16mm); }
+  ```
+  fallback 值是模板自己的默认边距；**不得硬编码 padding**
+- **垂直节奏间距一律用 `margin-bottom`**，禁止用 `margin-top` 表达模块内条目/细节行的间距（应用按用户"内容间距档位"注入 `margin-bottom !important` 覆盖规则，方向不一致会导致档位调整时行为错乱）。仅装饰元素（时间轴线、伪元素分隔符）和文档流末尾组件（如 `.footer`）允许 `margin-top`
+- 沿用标准类名（`experience-item`、`exp-header`、`highlights li`、`extra-row` 等，见 style-guide.md），模板自动接入应用的"内容间距"档位调整
+- `.summary`（个人总结）必须加 `overflow-wrap: break-word; word-break: break-word;`（处理长英文串/URL 换行）
 - `:root` 定义 CSS 变量，颜色值与 `template.json` 的 `colors` 一致
 - 字体栈用系统字体：`'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif`
 - 字号用 `pt`，间距用 `mm` 或 `pt`，避免 `px`
@@ -188,9 +229,12 @@ description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件�
 - [ ] `name`、`version`、`author.name` 非空
 - [ ] `template.html` 中**没有** `|`、`:=`、`$`、`with`、`block`、`define`
 - [ ] `{{template "styles.css" .}}` 是唯一的 template include
-- [ ] 所有 `{{if}}` / `{{range}}` 后跟的是简单字段路径（`.Field` 或 `.Field.Sub`），不是函数调用或表达式
-- [ ] 函数调用仅限：`dateRange`、`skillLevel`、`i18n`、`nl2br`、`safeHTML`、`defaultVal`
-- [ ] 每个区块都有 `{{if .Section}}` 包裹
+- [ ] 所有 `{{if}}` / `{{range}}` 后跟简单字段路径或布尔运算组合（`not/and/or/eq/ne` + 路径/字面量/括号），不是其他函数调用
+- [ ] 函数调用仅限：`dateRange`、`skillLevel`、`i18n`、`nl2br`、`safeHTML`、`safeURL`、`defaultVal`
+- [ ] 每个区块都有 `{{if .Section}}` 包裹；条目 range 内有 `{{if not .Hidden}}` 守卫；总结区块用 `{{if and .Summary (not .SummaryHidden)}}`
+- [ ] `.resume-page` 的 padding 用 `var(--resume-padding, 默认值)` 消费（双栏模板分栏容器用 `--resume-padding-y/-x`）
+- [ ] 节奏间距全部用 `margin-bottom`（无 `margin-top` 表达条目/细节间距）
+- [ ] `.summary` 有 `overflow-wrap: break-word; word-break: break-word;`
 - [ ] CSS 定义了 `.resume-page` 的 A4 尺寸、`@media print`、`.skill-dot`（若用技能点）
 
 ### 步骤 5：打包为 .zip
@@ -240,10 +284,10 @@ Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "
 
 | 错误信息 | 原因 | 修复 |
 |----------|------|------|
-| `template id must be 64 characters...` | id 格式不对 | 改为 kebab-case，如 `my-template` |
+| `template id must be 2-64 characters...` | id 格式不对 | 用 UUID v4 或 kebab-case（如 `my-template`） |
 | `only A4 templates are currently supported` | paper_size 不是 A4 | 改为 `"A4"` |
 | `unsupported template expression for live preview: {{...}}` | 用了禁止的语法 | 见上面"语法限制"表 |
-| `unsupported template control expression` | if/range 后跟了非简单路径 | 简化为 `{{if .Field}}` 或 `{{range .Field}}` |
+| `unsupported template control expression` | if/range 后跟了非路径、非布尔组合的表达式 | 简化为 `{{if .Field}}` 或 `{{if not .Field}}` 形式 |
 | `only {{template "styles.css" .}} includes are supported` | 用了其他 template include | 删除，只保留 styles.css |
 | `missing required file: template.json` | 文件名错或文件不在 zip 根目录 | 确保三文件在 zip 根目录，文件名精确 |
 | `template package is too large` | 超过 10MB | 精简 CSS/HTML，移除不必要的样式 |
@@ -265,12 +309,12 @@ Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "
 
 ### 双栏布局（侧边栏）
 
-若做双栏（如 creative 风格）：
+若做双栏（如 creative 风格），`.resume-page` 本身不设 padding，由两个分栏容器分别消费页边距变量：
 
 ```css
-.resume-container { display: flex; gap: 12pt; }
-.sidebar { width: 32%; }
-.main { flex: 1; }
+.resume-page { width: 210mm; min-height: 297mm; display: flex; }
+.resume-sidebar { width: 32%; padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 12mm); }
+.resume-main { flex: 1; padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 16mm); }
 ```
 
 侧边栏放：头像、联系方式、技能、语言
@@ -283,5 +327,7 @@ Compress-Archive -Path template.json,template.html,styles.css -DestinationPath "
 - 不得在 HTML/CSS 中引用外部资源（CDN 字体、外部图片、web font）
 - 不得用 `@import` 引入外部样式表
 - 不得在模板中执行 JavaScript（导出 PDF 时不执行 JS）
-- 不得用 `safeURL`（见上文解释）
+- 不得对用户输入数据使用 `safeHTML`（XSS 风险；头像的 `safeURL` 是允许且推荐的）
+- 不得硬编码页边距 padding（必须经 `var(--resume-padding[-y/-x], fallback)` 消费）
+- 不得用 `margin-top` 表达模块内条目/细节行的节奏间距（一律 `margin-bottom`）
 - 不得用非 `pt`/`mm` 单位作为核心字号和间距单位（`px` 仅限细微调整）

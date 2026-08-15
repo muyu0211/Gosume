@@ -8,7 +8,7 @@
  * resulting page count back to the iframe sizer.
  */
 
-import { paginateResume, readPageStyle } from './pagination-core'
+import { paginateResume, readPageStyle } from './paginationCore'
 
 export const MM_TO_PX = 96 / 25.4
 export const A4_W = Math.round(210 * MM_TO_PX)

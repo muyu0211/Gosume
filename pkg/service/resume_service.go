@@ -40,12 +40,13 @@ func (s *ResumeService) NewResume(templateID string, language string) (*model.Re
 	resume := &model.Resume{
 		Version: "1.0",
 		Meta: model.ResumeMeta{
-			TemplateID: templateID,
-			Language:   language,
-			FontSize:   10,
-			PageMargin: "normal",
-			CreatedAt:  now,
-			UpdatedAt:  now,
+			TemplateID:     templateID,
+			Language:       language,
+			FontSize:       model.FontSizeMedium,
+			PageMargin:     model.PageMarginNormal,
+			SectionSpacing: model.SectionSpacingNormal,
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		},
 		Personal: model.Personal{},
 	}

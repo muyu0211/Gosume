@@ -72,6 +72,29 @@ func (s *SystemService) GetDataDir() string {
 	return s.configMgr.DataDir()
 }
 
+// GetLayoutPresets returns the effective layout preset configuration
+// (customized tiers from config.json, or built-in defaults).
+func (s *SystemService) GetLayoutPresets() config.LayoutPresetConfig {
+	return s.configMgr.GetLayoutPresets()
+}
+
+// SetLayoutPresets validates and persists a customized layout preset
+// configuration (tier labels/values/count).
+func (s *SystemService) SetLayoutPresets(cfg config.LayoutPresetConfig) error {
+	if err := s.configMgr.SetLayoutPresets(cfg); err != nil {
+		return UserWrap(err, err.Error())
+	}
+	return nil
+}
+
+// ResetLayoutPresets restores the built-in default layout tiers.
+func (s *SystemService) ResetLayoutPresets() error {
+	if err := s.configMgr.ResetLayoutPresets(); err != nil {
+		return UserWrap(err, "恢复默认布局档位失败")
+	}
+	return nil
+}
+
 // GetOS returns the current operating system.
 func (s *SystemService) GetOS() string {
 	return runtime.GOOS

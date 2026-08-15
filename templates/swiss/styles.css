@@ -235,7 +235,7 @@ body {
     color: var(--text-color);
 }
 
-.edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-top: 2pt; }
+.edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-bottom: 2pt; }
 
 /* Skills */
 .skill-category { margin-bottom: 6pt; }
@@ -300,7 +300,7 @@ body {
 /* Project extras (user-defined key/value) */
 .extra-row {
     font-size: 9pt;
-    margin-top: 3pt;
+    margin-bottom: 3pt;
     line-height: 1.5;
 }
 .extra-label {

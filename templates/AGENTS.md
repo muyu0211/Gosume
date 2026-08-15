@@ -175,6 +175,17 @@ templates/
 5. **分页支持**：提供 `.page-break { page-break-after: always; break-after: page; }` 工具类
 6. **字号单位**：统一使用 `pt`（打印友好），不使用 `px` 作为主要字号单位
 7. **颜色值**：CSS 变量中的颜色应与 `template.json` 的 `colors` 字段一致
+8. **页边距消费**：`.resume-page`（或双栏模板的内部分栏容器）的 padding 必须通过 CSS 变量消费，并带上模板自己的默认值作 fallback：
+   ```css
+   /* 单栏模板 */
+   .resume-page { padding: var(--resume-padding, 14mm 18mm); }
+   /* 双栏模板的内部分栏 */
+   .resume-sidebar { padding: var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm); }
+   ```
+   前端按 `resume.meta.page_margin` 枚举档位注入这些变量（见下方"布局档位"），模板自身不得硬编码页边距。
+9. **垂直间距方向**：模块内条目与条目内部细节行的节奏间距**一律使用 `margin-bottom`**，禁止用 `margin-top` 表达垂直节奏。应用运行时会按"内容间距"档位注入 `margin-bottom` 覆盖规则（带 `!important`），方向不一致的模板会导致档位调整时组件行为不统一。仅有两类例外允许 `margin-top`：
+   - 装饰性元素（时间轴线 `.timeline-line`、强调线 `.exp-accent`、伪元素分隔符等非内容流组件）
+   - 文档流末尾的收尾组件（如 `.footer`，其后无兄弟元素，间距只能向上申请）
 
 ### 命名约定
 
@@ -197,6 +208,29 @@ templates/
 - `.skill-dot` 和 `.skill-dot.filled`：技能等级指示点（`skillLevel` 函数依赖这两个类）
 - `.page-break`：分页控制
 - 链接样式：导出的 PDF 中链接应有明显的颜色区分
+
+### 布局档位（页边距与内容间距）
+
+简历布局由两个枚举档位控制，存储在 `resume.meta` 中（枚举 key 为前后端共享的线上格式：前端定义在 `frontend/src/lib/layoutPresets.ts`，Go 定义在 `pkg/model/resume.go`）：
+
+| 字段 | 枚举值 | 控制内容 |
+|------|--------|----------|
+| `page_margin` | `compact / narrow / normal / wide / comfortable` | 页面四周留白，前端注入 `--resume-padding[-y/-x]` 变量 |
+| `section_spacing` | `compact / narrow / normal / wide / comfortable` | 内容组件之间的紧凑程度，三层节奏 |
+
+**内容间距的三层注入规则**（`normal` 档不注入任何规则，保留模板原生节奏；其余档位按以下选择器注入 `margin-bottom !important`）：
+
+| 层级 | 覆盖选择器 | 说明 |
+|------|-----------|------|
+| 模块 ↔ 模块 | `* + .section-title`（`margin-top`） | 各板块标题与上一板块的间距 |
+| 条目 ↔ 条目 | `.experience-item` `.education-item` `.award-item` `.custom-item` `.skill-category` `.skill-item` `.sidebar-item` | 模块内条目间距，以及 `.section-title` 自身的 `margin-bottom` |
+| 细节 ↔ 细节 | `.exp-header` `.exp-location` `.exp-summary` `.highlights li` `.edu-detail` `.edu-courses` `.extra-row` | 条目内部各行的间距 |
+
+模板设计要点：
+
+- 新模板只要沿用上述类名，即自动接入内容间距档位；使用其他类名的组件不参与调整
+- 条目/细节类组件的原始 `margin-bottom` 值是模板作者设计的 `normal` 档默认节奏，应与相邻组件视觉协调
+- 模块末尾条目的 `margin-bottom` 会被运行时归零（`*:has(+ .section-title)`），模块间距由 `* + .section-title` 的 `margin-top` 单独控制，不会叠加
 
 ## 模板包格式（.zip）
 

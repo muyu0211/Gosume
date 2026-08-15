@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../stores/resumeStore'
 import { useTemplateStore } from '../stores/templateStore'
-import { renderTemplate } from '../lib/template-engine'
+import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
+import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
-import { getMarginPreset, injectMarginCss } from '../lib/marginPresets'
+import { injectLayoutCss } from '../lib/layoutPresets'
 
 export function usePreview() {
   const resume = useResumeStore((s) => s.resume)
   const setPreviewHtml = useResumeStore((s) => s.setPreviewHtml)
   const setPreviewLoading = useResumeStore((s) => s.setPreviewLoading)
   const activeTemplateId = useTemplateStore((s) => s.activeTemplateId)
+  const layoutSettings = useLayoutSettingsStore()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refreshPreview = useCallback(async () => {
@@ -22,22 +24,24 @@ export function usePreview() {
       // synced on explicit save, not on every keystroke).
       const tmpl = await loadTemplateContent(activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0')
       const rendered = renderTemplate(tmpl, resume)
-      // Inject page margin CSS variables so templates can consume them
-      // via `padding: var(--resume-padding[-y/-x], <fallback>)`. This way
-      // the template itself owns the padding change (no white-margin
-      // artifacts from stacked rules) and internal elements like
-      // .summary / .section-title keep their design-intended padding.
-      // Split-column templates (gradient/creative) consume -y/-x on
-      // their inner containers since .resume-page has no padding there.
-      const marginPreset = getMarginPreset(resume.meta?.page_margin)
-      const htmlWithMargin = injectMarginCss(rendered, marginPreset)
-      setPreviewHtml(htmlWithMargin)
+      // Inject layout CSS (page margin + section spacing) from the meta
+      // tier keys, resolved against the user-customized tier lists.
+      // lib/layoutPresets maps each tier to concrete CSS values; the
+      // 'normal' spacing tier injects nothing so each template keeps its
+      // own block rhythm.
+      const htmlWithLayout = injectLayoutCss(
+        rendered,
+        resume.meta?.page_margin,
+        resume.meta?.section_spacing,
+        layoutSettings,
+      )
+      setPreviewHtml(htmlWithLayout)
     } catch (err) {
       console.error('Preview refresh failed:', err)
     } finally {
       setPreviewLoading(false)
     }
-  }, [resume, activeTemplateId, setPreviewHtml, setPreviewLoading])
+  }, [resume, activeTemplateId, layoutSettings, setPreviewHtml, setPreviewLoading])
 
   const debouncedRefresh = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)

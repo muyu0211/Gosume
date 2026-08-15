@@ -4,6 +4,7 @@ import { TitleBar } from './components/layout/TitleBar'
 import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
+import { useLayoutSettingsStore } from './stores/layoutSettingsStore'
 
 export default function App() {
   // Ensure frameless mode is applied (safeguard for Wails v3 alpha)
@@ -15,6 +16,12 @@ export default function App() {
         ;(wailsWindow.SetFrameless as (v: boolean) => void)(true)
       }
     } catch { /* non-Wails environment */ }
+  }, [])
+
+  // Load user-customized layout tiers once so custom presets are available
+  // to the preview, exports and the layout popover from the start.
+  useEffect(() => {
+    useLayoutSettingsStore.getState().ensureLoaded().catch(() => { /* defaults apply */ })
   }, [])
 
   return (

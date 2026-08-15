@@ -1,5 +1,6 @@
 import type { Resume } from '../types/resume'
-import { generateId } from '../types/resume'
+import { generateId, DEFAULT_FONT_SIZE } from '../types/resume'
+import { DEFAULT_MARGIN_KEY, DEFAULT_SECTION_SPACING_KEY } from '../lib/layoutPresets'
 import avatarUrl from '../assets/svg/identity.svg'
 
 export function createSampleResume(templateId: string): Resume {
@@ -8,8 +9,9 @@ export function createSampleResume(templateId: string): Resume {
     meta: {
       template_id: templateId,
       language: 'zh-CN',
-      font_size: 10,
-      page_margin: 'normal',
+      font_size: DEFAULT_FONT_SIZE,
+      page_margin: DEFAULT_MARGIN_KEY,
+      section_spacing: DEFAULT_SECTION_SPACING_KEY,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       export_count: 0,

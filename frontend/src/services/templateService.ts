@@ -1,6 +1,6 @@
 import { isWails, callService } from './backend'
 import type { TemplateMeta } from '../types/template'
-import type { TemplateSet } from '../lib/template-engine'
+import type { TemplateSet } from '../lib/templateEngine'
 
 // ---------------------------------------------------------------------------
 // Dynamic imports of template files from the ../../templates/ directory.

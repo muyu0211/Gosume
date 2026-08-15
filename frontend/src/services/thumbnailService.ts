@@ -1,8 +1,10 @@
 import html2canvas from 'html2canvas'
-import { renderTemplate } from '../lib/template-engine'
+import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from './templateService'
+import { DEFAULT_MARGIN_KEY, DEFAULT_SECTION_SPACING_KEY } from '../lib/layoutPresets'
+import { DEFAULT_FONT_SIZE } from '../types/resume'
 import type { Resume } from '../types/resume'
-import type { TemplateSet } from '../lib/template-engine'
+import type { TemplateSet } from '../lib/templateEngine'
 
 const CACHE_KEY = 'resume-craft-thumbnails'
 const CACHE_VERSION = 2
@@ -12,8 +14,9 @@ const SAMPLE_DATA: Resume = {
   meta: {
     template_id: '',
     language: 'zh-CN',
-    font_size: 10,
-    page_margin: 'normal',
+    font_size: DEFAULT_FONT_SIZE,
+    page_margin: DEFAULT_MARGIN_KEY,
+    section_spacing: DEFAULT_SECTION_SPACING_KEY,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     export_count: 0,

@@ -2,6 +2,8 @@
 
 导入校验白名单中的 7 个函数。所有函数在模板中通过 `{{funcName args}}` 调用。这些函数与渲染器（`pkg/render/html.go`）注册的函数表完全一致。
 
+> 另有 5 个**布尔/比较运算符** `not` / `and` / `or` / `eq` / `ne` 可用于 `{{if}}` 后的条件组合（如 `{{if not .Hidden}}`、`{{if and .Summary (not .SummaryHidden)}}`）。它们不是函数、不接受管道，规则详见 `validation-rules.md` 的"控制表达式的判定"。
+
 ## dateRange
 
 格式化日期范围。

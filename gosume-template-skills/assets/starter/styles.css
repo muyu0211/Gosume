@@ -81,7 +81,7 @@ body {
     color: var(--muted-color);
 }
 
-.contact-line.secondary { margin-top: 3pt; }
+.contact-line.secondary { margin-bottom: 3pt; }
 
 /* Summary */
 .summary {
@@ -90,6 +90,8 @@ body {
     line-height: 1.7;
     color: var(--text-color);
     text-align: justify;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Section titles */
@@ -196,7 +198,7 @@ body {
 .edu-detail {
     font-size: 9.5pt;
     color: var(--muted-color);
-    margin-top: 2pt;
+    margin-bottom: 2pt;
 }
 
 /* Skills */
@@ -271,7 +273,7 @@ body {
 .award-issuer {
     font-size: 9pt;
     color: var(--muted-color);
-    margin-top: 1pt;
+    margin-bottom: 1pt;
 }
 
 /* Custom */
@@ -286,13 +288,13 @@ body {
 .custom-subtitle {
     font-size: 9pt;
     color: var(--muted-color);
-    margin-top: 1pt;
+    margin-bottom: 1pt;
 }
 
 /* Project extras */
 .extra-row {
     font-size: 9.5pt;
-    margin-top: 3pt;
+    margin-bottom: 3pt;
     line-height: 1.5;
 }
 

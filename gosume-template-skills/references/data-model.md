@@ -2,6 +2,23 @@
 
 简历数据根对象为 `model.Resume`（Go 结构体）。模板通过 `{{.Field}}` 访问。所有字段名使用 PascalCase（Go 结构体字段名），不是 JSON 的 snake_case。
 
+## 条目隐藏字段（Hidden / SummaryHidden）
+
+所有条目类型都有可选的 `Hidden` 字段（`*bool`，nil 或 false 为可见），个人总结区块用 `SummaryHidden`。标准接入写法（与全部内置模板一致）：
+
+```html
+{{range .Jobs}}{{if not .Hidden}}
+<div class="experience-item">...</div>
+{{end}}{{end}}
+
+{{if and .Summary (not .SummaryHidden)}}
+<div class="summary">{{nl2br .Summary}}</div>
+{{end}}
+```
+
+- 前端渲染时数据层已过滤 `Hidden=true` 的条目，且 `summary_hidden=true` 时 `Summary` 字段同样在数据层清空——因此即使模板只写 `{{if .Summary}}`（旧写法）也能响应隐藏开关；`{{if not .Hidden}}` / `{{if and .Summary (not .SummaryHidden)}}` 守卫是双保险，照抄内置写法即可
+- 全部条目隐藏时，外层 `{{if .Jobs}}` 因数组为空而不渲染标题——模板无需额外处理
+
 ## 顶层结构
 
 | 模板路径 | 类型 | 说明 |
@@ -171,12 +188,12 @@
 
 ## 完整区块渲染模板
 
-以下是所有区块的标准渲染骨架，可直接复制到 `template.html` 中按需调整：
+以下是所有区块的标准渲染骨架，可直接复制到 `template.html` 中按需调整。头像用 `safeURL`，条目 range 内带 `{{if not .Hidden}}` 守卫，总结区块带 `SummaryHidden` 判断（均为标准写法）：
 
 ```html
 <!-- 个人信息 -->
 <div class="header">
-    {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{.Personal.Avatar}}" alt="头像" /></div>{{end}}
+    {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
     <h1>{{.Personal.FullName}}</h1>
     {{if .Personal.EnglishName}}<div class="english-name">{{.Personal.EnglishName}}</div>{{end}}
     {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
@@ -188,15 +205,15 @@
 </div>
 
 <!-- 个人总结 -->
-{{if .Summary}}
+{{if and .Summary (not .SummaryHidden)}}
 <div class="section-title">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
 <div class="summary">{{nl2br .Summary}}</div>
 {{end}}
 
-<!-- 工作经历 -->
-{{if .Jobs}}
-<div class="section-title">{{i18n .Meta.Language "工作经历" "Experience"}}</div>
-{{range .Jobs}}
+<!-- 实习经历（字段与 Jobs 完全相同，按需选用） -->
+{{if .Internships}}
+<div class="section-title">{{i18n .Meta.Language "实习经历" "Internships"}}</div>
+{{range .Internships}}{{if not .Hidden}}
 <div class="experience-item">
     <div class="exp-header">
         <div>
@@ -211,13 +228,34 @@
     <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
     {{end}}
 </div>
+{{end}}{{end}}
 {{end}}
+
+<!-- 工作经历 -->
+{{if .Jobs}}
+<div class="section-title">{{i18n .Meta.Language "工作经历" "Experience"}}</div>
+{{range .Jobs}}{{if not .Hidden}}
+<div class="experience-item">
+    <div class="exp-header">
+        <div>
+            <span class="company">{{.Company}}</span>
+            {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
+        </div>
+        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
+    </div>
+    {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
+    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+    {{if .Highlights}}
+    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
+    {{end}}
+</div>
+{{end}}{{end}}
 {{end}}
 
 <!-- 项目经历 -->
 {{if .Projects}}
 <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
-{{range .Projects}}
+{{range .Projects}}{{if not .Hidden}}
 <div class="experience-item">
     <div class="exp-header">
         <span class="company">{{.Name}}</span>
@@ -234,13 +272,13 @@
     {{end}}
     {{end}}
 </div>
-{{end}}
+{{end}}{{end}}
 {{end}}
 
 <!-- 教育经历 -->
 {{if .Education}}
 <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-{{range .Education}}
+{{range .Education}}{{if not .Hidden}}
 <div class="education-item">
     <div class="edu-header">
         <div>
@@ -256,38 +294,34 @@
     <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
     {{end}}
 </div>
-{{end}}
+{{end}}{{end}}
 {{end}}
 
 <!-- 技能 -->
 {{if .Skills}}
 <div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
-{{range .Skills}}
+{{range .Skills}}{{if not .Hidden}}
 <div class="skill-category">
     <h4>{{.Category}}</h4>
     <div class="skill-list">
-        {{range .Items}}
-        <span class="skill-item">{{.Name}}{{if .Level}} <span class="skill-level">{{skillLevel .Level}}</span>{{end}}</span>
-        {{end}}
+        {{range .Items}}{{if not .Hidden}}<span class="skill-item">{{.Name}}{{if .Level}} <span class="skill-level">{{skillLevel .Level}}</span>{{end}}</span>{{end}}{{end}}
     </div>
 </div>
-{{end}}
+{{end}}{{end}}
 {{end}}
 
 <!-- 语言能力 -->
 {{if .Languages}}
 <div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
 <div class="inline-list">
-    {{range .Languages}}
-    <span><span class="label">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>
-    {{end}}
+    {{range .Languages}}{{if not .Hidden}}<span><span class="label">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>{{end}}{{end}}
 </div>
 {{end}}
 
 <!-- 奖项荣誉 -->
 {{if .Awards}}
 <div class="section-title">{{i18n .Meta.Language "奖项荣誉" "Awards"}}</div>
-{{range .Awards}}
+{{range .Awards}}{{if not .Hidden}}
 <div class="award-item">
     <div class="award-header">
         <span class="award-title">{{.Title}}</span>
@@ -296,14 +330,14 @@
     {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
     {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
 </div>
-{{end}}
+{{end}}{{end}}
 {{end}}
 
 <!-- 自定义区块 -->
 {{if .Custom}}
-{{range .Custom}}
+{{range .Custom}}{{if not .Hidden}}
 <div class="section-title">{{.Title}}</div>
-{{range .Items}}
+{{range .Items}}{{if not .Hidden}}
 <div class="custom-item">
     <h4>{{.Title}}</h4>
     {{if .Subtitle}}<div class="custom-subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
@@ -312,7 +346,7 @@
     <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
     {{end}}
 </div>
-{{end}}
-{{end}}
+{{end}}{{end}}
+{{end}}{{end}}
 {{end}}
 ```

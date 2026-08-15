@@ -1,3 +1,8 @@
+import {
+  DEFAULT_MARGIN_KEY,
+  DEFAULT_SECTION_SPACING_KEY,
+} from '../lib/layoutPresets'
+
 export interface ResumeListItem {
   id: string
   name: string
@@ -26,11 +31,30 @@ export interface Resume {
   custom?: CustomSection[]
 }
 
+/**
+ * Base font size levels (pt). The wire format stays numeric so resumes
+ * persisted before this enum was introduced remain valid; assignments
+ * must go through these constants (mirrors model.FontSize in Go).
+ */
+export const FONT_SIZE_LEVELS = {
+  small: 9,
+  medium: 10,
+  large: 11,
+} as const
+
+export type FontSizeKey = keyof typeof FONT_SIZE_LEVELS
+
+export const DEFAULT_FONT_SIZE: number = FONT_SIZE_LEVELS.medium
+
 export interface ResumeMeta {
   template_id: string
   language: string
+  /** Base font size in pt; assign via FONT_SIZE_LEVELS (see above). */
   font_size: number
+  /** Page margin tier key; the frontend maps it to CSS values per component type. */
   page_margin: string
+  /** Section spacing tier key. */
+  section_spacing: string
   created_at: string
   updated_at: string
   export_count: number
@@ -178,8 +202,9 @@ export function createEmptyResume(templateId: string): Resume {
     meta: {
       template_id: templateId,
       language: 'zh-CN',
-      font_size: 10,
-      page_margin: 'normal',
+      font_size: DEFAULT_FONT_SIZE,
+      page_margin: DEFAULT_MARGIN_KEY,
+      section_spacing: DEFAULT_SECTION_SPACING_KEY,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       export_count: 0,

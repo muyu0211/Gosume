@@ -28,6 +28,7 @@ Taskfile.yml         # 任务运行器入口（dev、build、package、docker �
 - **前端状态**由 `frontend/src/stores/` 中的 zustand store 管理。需要持久化的变更通过后端服务调用完成；仅 UI 相关的状态保留在本地。
 - **数据持久化**使用 SQLite（modernc.org/sqlite，纯 Go 实现），存储在用户数据目录中，默认开启 WAL 模式。
 - **模板系统**：模板为 HTML+CSS 组合，附带元数据。内置模板存放在 `templates/` 目录；用户模板存储在 SQLite 中。支持导入模板包（`.zip`文件）。
+- **布局档位**：简历布局设置（页边距 `page_margin`、内容间距 `section_spacing`、字号 `font_size`）以**档位 key**存储在 `resume.meta` 中。档位列表（数量、名称、数值）由用户在设置页自定义，持久化到 `config.json` 的 `layout_presets` 字段（模型与校验见 `pkg/config/layout_presets.go`，经 `SystemService.Get/Set/ResetLayoutPresets` 读写；前端镜像定义在 `frontend/src/lib/layoutPresets.ts`，运行时经 `stores/layoutSettingsStore.ts` 加载）。两侧均须保留 `normal` 档作为回退：内容间距的 `normal` 档 gap 为 null（模板内置节奏，不可改值）；`resume.meta` 引用已删除的 key 时前端回退到 `normal` 档。key → 具体 CSS 值的映射与注入由前端完成；后端与模板只消费 key 或 CSS 变量，不得持久化像素值（详见 `templates/AGENTS.md` 布局档位小节）。
 - **导出**使用无头浏览器（rod）将 HTML 渲染为 PDF/PNG。
 - **配置**：用户设置以 JSON 格式存储在 `{configRoot}/config.json`。数据目录支持热切换，切换时自动重新打开存储。
 

@@ -4,9 +4,10 @@
 
 ## 必选样式元素
 
-### 1. A4 页面尺寸
+### 1. A4 页面尺寸与页边距变量
 
 ```css
+/* 单栏模板：.resume-page 直接消费页边距变量 */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
@@ -16,10 +17,66 @@
 ```
 
 - 宽度 210mm、最小高度 297mm（A4）
-- 内边距用 `--resume-padding` 变量，默认 14mm 18mm（上下 14mm，左右 18mm）
+- **padding 必须通过 `var(--resume-padding, 默认值)` 消费**：应用运行时按用户的"页边距档位"（紧凑/较窄/标准/较宽/宽松）注入该变量，fallback 值是模板自己的默认边距。硬编码 padding 会导致用户的页边距调整在此模板上失效
 - 背景白色
 
-### 2. CSS 变量定义
+**双栏模板**：`.resume-page` 不设 padding，由内部分栏容器分别消费变量：
+
+```css
+.resume-page { width: 210mm; min-height: 297mm; display: flex; }
+.resume-sidebar { padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 12mm); }
+.resume-main    { padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 16mm); }
+```
+
+| CSS 变量 | 注入内容 | 消费者 |
+|----------|----------|--------|
+| `--resume-padding` | 完整 `上下 左右` 简写 | 单栏模板的 `.resume-page` |
+| `--resume-padding-y` / `--resume-padding-x` | 纵向 / 横向分量 | 双栏模板的内部分栏容器 |
+
+### 2. 垂直间距方向（margin-bottom 规范）
+
+模块内条目与条目内部细节行的**节奏间距一律使用 `margin-bottom`**，禁止用 `margin-top` 表达垂直节奏：
+
+- 应用按用户的"内容间距档位"注入 `margin-bottom !important` 覆盖规则，方向不一致的模板在档位调整时行为错乱（旧 margin-top 残留 + 新 margin-bottom 叠加 = 双重间隙）
+- 仅两类例外允许 `margin-top`：
+  - **装饰性元素**：时间轴线（`.timeline-line`）、强调线（`.exp-accent`）、伪元素分隔符等非内容流组件
+  - **文档流末尾的收尾组件**：如 `.footer`（其后无兄弟元素，间距只能向上申请）
+
+正确示例：
+
+```css
+.experience-item { margin-bottom: 12pt; }   /* ✓ 条目间距 */
+.exp-header      { margin-bottom: 3pt; }    /* ✓ 细节间距 */
+.edu-detail      { margin-bottom: 2pt; }    /* ✓ 细节间距 */
+.extra-row       { margin-bottom: 3pt; }    /* ✓ 细节间距 */
+```
+
+### 3. 内容间距档位的自动接入
+
+用户可在应用中调整"内容间距"档位（紧凑/较窄/标准/较宽/宽松），运行时对以下三层选择器注入 `margin-bottom !important` 覆盖。**模板只要沿用标准类名，即自动参与间距调整**：
+
+| 层级 | 覆盖选择器 |
+|------|-----------|
+| 模块 ↔ 模块 | `* + .section-title`（margin-top） |
+| 条目 ↔ 条目 | `.experience-item` `.education-item` `.award-item` `.custom-item` `.skill-category` `.skill-item` `.sidebar-item`，以及 `.section-title` 自身的 margin-bottom |
+| 细节 ↔ 细节 | `.exp-header` `.exp-location` `.exp-summary` `.highlights li` `.edu-detail` `.edu-courses` `.extra-row` |
+
+- "标准"档不注入任何规则，保留模板原生节奏——即 CSS 里写的 margin-bottom 值就是模板的默认视觉效果
+- 使用非标准类名的组件不参与档位调整（仍显示模板自己的间距）
+
+### 4. 个人总结的换行处理
+
+`.summary`（个人总结区块）必须包含长词换行规则，否则长英文串/URL 会撑破版面：
+
+```css
+.summary {
+    margin-bottom: 18pt;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+```
+
+### 5. CSS 变量定义
 
 在 `:root` 中定义模板的主色调和字体变量：
 
@@ -47,7 +104,7 @@
 | `--text-color` | `colors.text` |
 | `--accent-bg` | `colors.accent` |
 
-### 3. 打印样式
+### 6. 打印样式
 
 ```css
 @media print {
@@ -63,7 +120,7 @@
 }
 ```
 
-### 4. 分页控制
+### 7. 分页控制
 
 ```css
 .page-break {
@@ -72,7 +129,7 @@
 }
 ```
 
-### 5. 技能等级点（若启用技能点）
+### 8. 技能等级点（若启用技能点）
 
 ```css
 .skill-dot {
@@ -238,19 +295,22 @@
 
 ### 双栏布局（侧边栏）
 
+`.resume-page` 不设 padding，由分栏容器消费页边距变量（见第 1 节）：
+
 ```css
-.resume-container {
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
     display: flex;
-    gap: 16pt;
 }
 .sidebar {
     width: 32%;
-    padding-right: 12pt;
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 12mm);
     border-right: 0.5pt solid var(--border-color);
 }
 .main {
     flex: 1;
-    padding-left: 12pt;
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 16mm);
 }
 ```
 
@@ -281,3 +341,7 @@
 | 分页位置错误 | 缺 `.page-break` 类 | 在需要分页处加 `<div class="page-break"></div>` |
 | 颜色与元数据不符 | CSS 变量与 template.json colors 不一致 | 对齐两者 |
 | 双栏溢出 | 总宽度超过 A4 可用宽度 | 减小 gap 或侧边栏宽度 |
+| 用户调页边距无效果 | padding 硬编码，未消费 `--resume-padding` 变量 | 改为 `padding: var(--resume-padding, 默认值)` |
+| 调内容间距时间距叠加/错乱 | 条目或细节间距用了 `margin-top` | 改为 `margin-bottom` |
+| 长英文串/URL 撑破版面 | `.summary` 缺换行规则 | 加 `overflow-wrap: break-word; word-break: break-word;` |
+| 隐藏单条目后仍渲染 | range 内缺 `{{if not .Hidden}}` 守卫 | 条目 range 内加守卫 |

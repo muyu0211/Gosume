@@ -13,7 +13,7 @@
             {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
             <h1>{{.Personal.FullName}}</h1>
             {{if .Personal.EnglishName}}<div class="english-name">英文名：{{.Personal.EnglishName}}</div>{{end}}
-            {{if .Personal.JobTitle}}<div class="contact-line" style="margin-top:4pt;"><span>职位：{{.Personal.JobTitle}}</span></div>{{end}}
+            {{if .Personal.JobTitle}}<div class="contact-line"><span>职位：{{.Personal.JobTitle}}</span></div>{{end}}
             {{if .Personal.YearsOfExp}}<div class="contact-line"><span>工作年限：{{.Personal.YearsOfExp}}年</span></div>{{end}}
             <div class="contact-line">
                 {{if .Personal.Email}}<span>邮箱：{{.Personal.Email}}</span>{{end}}

@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
-import { extractErrorMessage } from '../../lib/error-utils'
-import { paginateHTMLString } from '../../lib/export-html'
+import { extractErrorMessage } from '../../lib/errorUtils'
+import { paginateHTMLString } from '../../lib/exportHtml'
 
 interface Props {
   onClose: () => void
