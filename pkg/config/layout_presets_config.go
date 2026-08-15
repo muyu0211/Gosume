@@ -40,16 +40,16 @@ type SpacingPresetTier struct {
 
 // LayoutPresetConfig is the persisted layout tier configuration.
 type LayoutPresetConfig struct {
-	Margins   []MarginPresetTier  `json:"margins"`
-	Spacings  []SpacingPresetTier `json:"spacings"`
+	Margins  []MarginPresetTier  `json:"margins"`
+	Spacings []SpacingPresetTier `json:"spacings"`
 }
 
 // Tier keys reserved for the built-in default tiers. The "normal" tier is
 // the mandatory fallback for both lists and cannot be removed; for spacings
 // it must keep nil gaps (template default).
 const (
-	MarginTierNormalKey   = "normal"
-	SpacingTierNormalKey  = "normal"
+	MarginTierNormalKey            = "normal"
+	SpacingTierNormalKey           = "normal"
 	marginValueMin, marginValueMax = 5.0, 30.0 // mm
 	gapValueMin, gapValueMax       = 0.0, 40.0 // pt
 )
@@ -67,7 +67,7 @@ func DefaultLayoutPresets() LayoutPresetConfig {
 		},
 		Spacings: []SpacingPresetTier{
 			{Key: "compact", Label: "紧凑", SectionGap: ptr(4.0), ItemGap: ptr(3.0), DetailGap: ptr(1.0)},
-			{Key: "narrow", Label: "较窄", SectionGap: ptr(8.0), ItemGap: ptr(5.0), DetailGap: ptr(2.0)},
+			{Key: "narrow", Label: "较窄", SectionGap: ptr(8.0), ItemGap: ptr(4.0), DetailGap: ptr(2.0)},
 			{Key: "normal", Label: "标准", SectionGap: nil, ItemGap: nil, DetailGap: nil},
 			{Key: "wide", Label: "较宽", SectionGap: ptr(14.0), ItemGap: ptr(8.0), DetailGap: ptr(3.0)},
 			{Key: "comfortable", Label: "宽松", SectionGap: ptr(20.0), ItemGap: ptr(11.0), DetailGap: ptr(4.0)},

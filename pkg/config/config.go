@@ -10,9 +10,7 @@ import (
 
 // Config holds user configuration.
 type Config struct {
-	DataDir string `json:"data_dir"`
-	// LayoutPresets holds the user-customized layout tier lists (page
-	// margins + section spacing). nil/omitted = built-in defaults.
+	DataDir       string              `json:"data_dir"`
 	LayoutPresets *LayoutPresetConfig `json:"layout_presets,omitempty"`
 }
 
