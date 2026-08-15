@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, SlidersHorizontal, Plus, Trash2 } from 'lucide-react'
+import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, SlidersHorizontal, Plus, Trash2, RotateCcw } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { useResumeStore } from '../stores/resumeStore'
 import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
@@ -40,6 +40,7 @@ export function SettingsPage() {
   const [layoutSaving, setLayoutSaving] = useState(false)
   const [layoutStatus, setLayoutStatus] = useState<'' | 'success' | 'error'>('')
   const [layoutErrorMsg, setLayoutErrorMsg] = useState('')
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   // Sync the draft when the store loads its persisted values (app start
   // loads asynchronously) or after reset.
@@ -108,7 +109,7 @@ export function SettingsPage() {
   }
 
   const handleResetLayout = async () => {
-    if (!window.confirm('恢复所有布局档位为内置默认值？')) return
+    setShowResetConfirm(false)
     setLayoutStatus('')
     setLayoutErrorMsg('')
     setLayoutSaving(true)
@@ -394,7 +395,7 @@ export function SettingsPage() {
                 )}
               </button>
               <button
-                onClick={handleResetLayout}
+                onClick={() => setShowResetConfirm(true)}
                 disabled={layoutSaving}
                 className="btn-secondary btn-sm"
               >
@@ -466,6 +467,45 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
+
+      {/* Reset layout presets confirmation dialog */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter z-50"
+          onClick={() => setShowResetConfirm(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5 text-primary-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-surface-800">恢复默认布局档位</h3>
+                <p className="text-sm text-surface-500 mt-1">
+                  页边距与内容间距的所有档位将恢复为内置默认值，自定义档位会被移除。此操作不可撤销。
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 mt-6">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleResetLayout}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                恢复默认
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AnimatedPage>
   )
 }
