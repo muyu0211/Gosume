@@ -32,6 +32,7 @@
         "qr_code": false,
         "links_clickable": true
     },
+    "uses_unified_html": true,
     "sections": {
         "required": ["personal", "jobs", "education"],
         "optional": ["projects", "skills", "languages", "awards", "custom"],

@@ -1,4 +1,6 @@
-/* Terminal Hacker Template Styles */
+/* Terminal Hacker Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像右置，深色终端风。 */
 :root {
     --font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Source Code Pro', 'Courier New', monospace;
     --font-size-base: 9pt;
@@ -32,92 +34,52 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Prompt Style */
-.prompt { color: var(--primary-color); font-weight: 700; }
-
-.cursor {
-    color: var(--primary-color);
-    animation: none;
-}
-
-.pipe { color: var(--muted-color); }
-
-.bracket { color: var(--muted-color); }
-
-/* Header */
-.header {
-    margin-bottom: 14pt;
+/* ── 头部区：姓名文字左 + 头像右；联系方式/语言横向 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "text    avatar"
+        "contact contact"
+        "langs   langs";
+    column-gap: 14pt;
+    margin-bottom: 12pt;
     padding-bottom: 10pt;
     border-bottom: 1pt dashed var(--border-color);
 }
 
-.header-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 14pt;
-}
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
 
-.header-info {
-    flex: 1;
-}
+.r-name { font-size: 16pt; font-weight: 700; color: var(--primary-color); margin-bottom: 4pt; }
+.r-ename { font-size: 8pt; color: var(--muted-color); margin-bottom: 2pt; }
+.r-jobtitle { font-size: 9pt; color: var(--text-color); margin-bottom: 2pt; }
+.r-yoe { font-size: 8pt; color: var(--muted-color); }
 
-.header-avatar {
-    flex-shrink: 0;
-}
+.r-avatar img { width: 57pt; height: 76pt; object-fit: cover; border: 1.5pt solid var(--primary-color); border-radius: 2pt; filter: brightness(0.9); }
 
-.header-avatar img {
-    width: 57pt;
-    height: 76pt;
-    object-fit: cover;
-    border: 1.5pt solid var(--primary-color);
-    border-radius: 2pt;
-    filter: brightness(0.9);
-}
-
-.prompt-line {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    margin-bottom: 6pt;
-}
-
-.header h1 {
-    font-size: 16pt;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 4pt;
-}
-
-.header .job-title {
-    font-size: 9pt;
-    color: var(--text-color);
-    margin-bottom: 2pt;
-}
-
-.header .years {
-    font-size: 8pt;
-    color: var(--muted-color);
-    margin-bottom: 6pt;
-}
-
-.contact-prompt {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    margin-bottom: 3pt;
-}
-
-.contact-line {
+/* 联系方式：横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
     display: flex;
     flex-wrap: wrap;
-    gap: 3pt 10pt;
+    align-items: center;
+    gap: 3pt 12pt;
     font-size: 8pt;
     color: var(--text-color);
+    margin-top: 10pt;
+    padding-top: 8pt;
+    border-top: 1pt dashed var(--border-color);
 }
+.r-contact-item { display: flex; gap: 2pt; font-size: 8pt; color: var(--text-color); }
+.r-contact-label { font-weight: 700; color: var(--primary-color); }
+.r-langs { display: flex; flex-wrap: wrap; gap: 3pt 10pt; font-size: 8pt; color: var(--text-color); margin-top: 4pt; }
+
+/* ── 主内容区 ── */
 
 /* Summary */
-.summary-box {
-    margin-bottom: 14pt;
-}
-
 .summary {
     font-size: 8.5pt;
     color: var(--text-color);
@@ -126,6 +88,7 @@ body {
     background: var(--accent-bg);
     border: 1pt solid var(--border-color);
     border-radius: 3pt;
+    margin-bottom: 14pt;
     overflow-wrap: break-word;
     word-break: break-word;
 }
@@ -139,216 +102,55 @@ body {
     border-bottom: 1pt dotted var(--border-color);
 }
 
-/* Experience */
-.experience-item {
-    margin-bottom: 10pt;
-    padding: 6pt 8pt;
-    background: var(--accent-bg);
-    border: 1pt solid var(--border-color);
-    border-radius: 3pt;
-}
+/* Experience — 卡片 */
+.experience-item { margin-bottom: 10pt; padding: 6pt 8pt; background: var(--accent-bg); border: 1pt solid var(--border-color); border-radius: 3pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3pt; }
+.exp-header .company { font-weight: 700; font-size: 9.5pt; color: var(--heading-color); }
+.exp-header .title { font-size: 8.5pt; color: var(--primary-color); }
+.exp-header .date { font-size: 7.5pt; color: var(--muted-color); white-space: nowrap; }
+.exp-location { font-size: 8pt; color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary { font-size: 8pt; color: var(--text-color); margin-bottom: 3pt; }
 
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 3pt;
-}
+.highlights { list-style: none; padding-left: 0; }
+.highlights li { font-size: 8pt; color: var(--text-color); margin-bottom: 1.5pt; line-height: 1.45; }
+.highlights li::before { content: "> "; color: var(--primary-color); }
 
-.exp-header .company {
-    font-weight: 700;
-    font-size: 9.5pt;
-    color: var(--heading-color);
-}
-
-.exp-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-}
-
-.title {
-    font-size: 8.5pt;
-    color: var(--primary-color);
-    margin-bottom: 2pt;
-}
-
-.location {
-    font-size: 8pt;
-    color: var(--muted-color);
-    margin-bottom: 3pt;
-}
-
-.exp-summary {
-    font-size: 8pt;
-    color: var(--text-color);
-    margin-bottom: 3pt;
-}
-
-.highlights-label {
-    font-size: 8pt;
-    color: var(--muted-color);
-    margin-bottom: 2pt;
-}
-
-.highlights {
-    list-style: none;
-    padding-left: 0;
-}
-
-.highlights li {
-    font-size: 8pt;
-    color: var(--text-color);
-    margin-bottom: 1.5pt;
-    line-height: 1.45;
-}
-
-/* Education */
-.education-item {
-    margin-bottom: 8pt;
-    padding: 6pt 8pt;
-    background: var(--accent-bg);
-    border: 1pt solid var(--border-color);
-    border-radius: 3pt;
-}
-
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 3pt;
-}
-
-.edu-header .school {
-    font-weight: 700;
-    font-size: 9.5pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 8pt;
-    color: var(--text-color);
-}
+/* Education — 卡片 */
+.education-item { margin-bottom: 8pt; padding: 6pt 8pt; background: var(--accent-bg); border: 1pt solid var(--border-color); border-radius: 3pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3pt; }
+.edu-header .edu-school { font-weight: 700; font-size: 9.5pt; color: var(--heading-color); }
+.edu-header .date { font-size: 7.5pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 8pt; color: var(--text-color); }
+.edu-courses { font-size: 8pt; color: var(--muted-color); }
 
 /* Skills */
-.skill-block {
-    margin-bottom: 6pt;
-}
-
-.skill-cat {
-    font-size: 8pt;
-    color: var(--primary-color);
-    font-weight: 700;
-    margin-bottom: 4pt;
-}
-
-.skill-item {
-    display: inline-flex;
-    align-items: center;
-    font-size: 8pt;
-    margin-bottom: 2pt;
-    margin-right: 12pt;
-    gap: 8pt;
-}
-
-.skill-name {
-    min-width: 100pt;
-    color: var(--text-color);
-}
-
-.skill-dots {
-    display: flex;
-    gap: 2pt;
-}
-
-.skill-dot {
-    width: 5pt;
-    height: 5pt;
-    border-radius: 50%;
-    background: var(--border-color);
-}
-
+.skills-grid { display: block; }
+.skill-category { margin-bottom: 6pt; }
+.skill-category h4 { font-size: 8pt; color: var(--primary-color); font-weight: 700; margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; font-size: 8pt; margin-bottom: 2pt; margin-right: 12pt; gap: 8pt; }
+.skill-dots { display: flex; gap: 2pt; }
+.skill-dot { width: 5pt; height: 5pt; border-radius: 50%; background: var(--border-color); }
 .skill-dot.filled { background: var(--primary-color); }
 
-.skill-pct {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    margin-left: 4pt;
-}
-
-/* Languages */
-.languages-line {
-    font-size: 8pt;
-    color: var(--text-color);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3pt 10pt;
-}
-
 /* Awards */
-.award-item {
-    font-size: 8pt;
-    color: var(--text-color);
-    margin-bottom: 3pt;
-}
+.award-item { font-size: 8pt; color: var(--text-color); margin-bottom: 3pt; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-weight: 700; }
+.award-header .date, .award-issuer { color: var(--muted-color); }
 
-.award-star { color: var(--primary-color); }
-
-.date, .issuer { color: var(--muted-color); }
-
-/* Custom */
-.custom-item {
-    margin-bottom: 8pt;
-    padding: 6pt 8pt;
-    background: var(--accent-bg);
-    border: 1pt solid var(--border-color);
-    border-radius: 3pt;
-}
-
-.custom-item h4 {
-    font-size: 9pt;
-    font-weight: 700;
-    color: var(--heading-color);
-}
-
+/* Custom — 卡片 */
+.custom-item { margin-bottom: 8pt; padding: 6pt 8pt; background: var(--accent-bg); border: 1pt solid var(--border-color); border-radius: 3pt; }
+.custom-item h4 { font-size: 9pt; font-weight: 700; color: var(--heading-color); }
 .subtitle { font-size: 8pt; color: var(--muted-color); }
 
-/* Footer */
-.footer {
-    margin-top: 14pt;
-    font-size: 9pt;
-    color: var(--primary-color);
-}
+/* Project extras (user-defined key/value) */
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; color: #c9d1d9; }
+.extra-value { color: #8b949e; }
 
 /* Print */
-/* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-    color: #c9d1d9;
-}
-.extra-value {
-    color: #8b949e;
-}
-
 @media print {
-    .resume-page {
-        width: 100%;
-        margin: 0;
-        padding: var(--resume-padding, 10mm 14mm);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
+    .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 10mm 14mm); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { size: A4; margin: 0; }
 }
 

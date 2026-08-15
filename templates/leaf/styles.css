@@ -1,4 +1,6 @@
-/* Natural Leaf Template Styles */
+/* Natural Leaf Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：整个 header 为绿色渐变卡片（头像居中，姓名/联系方式/语言居中）。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 9.5pt;
@@ -11,7 +13,6 @@
     --border-color: #C8D6CA;
     --accent-bg: #F0F7F2;
     --shadow: 0 2pt 4pt rgba(74, 124, 89, 0.08);
-    --shadow-hover: 0 4pt 8pt rgba(74, 124, 89, 0.12);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,69 +34,66 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Header Card */
-.header-card {
+/* ── 头部区：卡片，头像居中在上，姓名/联系方式/语言居中 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+    justify-items: center;
     text-align: center;
-    padding: 16pt 20pt 18pt;
+    padding: 16pt 20pt 14pt;
     background: linear-gradient(180deg, var(--accent-bg) 0%, #fff 100%);
     border-radius: 6pt;
-    margin-bottom: 12pt;
-    box-shadow: var(--shadow);
-}
-
-.header-card h1 {
-    font-size: 20pt;
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: 4pt;
-}
-
-.header-card .job-title {
-    font-size: 10pt;
-    color: var(--primary-color);
-    font-weight: 500;
     margin-bottom: 10pt;
+    box-shadow: var(--shadow);
+    row-gap: 4pt;
 }
 
-.header-avatar { margin-bottom: 10pt; }
-.header-avatar img {
-    width: 56pt;
-    height: 56pt;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2pt solid var(--primary-color);
-}
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
 
-.leaf-divider {
-    width: 40pt;
-    height: 2pt;
-    background: var(--secondary-color);
-    border-radius: 1pt;
-    margin: 0 auto 8pt auto;
-}
+.r-name { font-size: 20pt; font-weight: 700; color: var(--heading-color); margin-bottom: 4pt; }
+.r-ename { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.r-jobtitle { font-size: 10pt; color: var(--primary-color); font-weight: 500; }
+.r-yoe { font-size: 8.5pt; color: var(--muted-color); }
 
-.contact-line {
+.r-avatar { margin-bottom: 8pt; }
+.r-avatar img { width: 56pt; height: 56pt; object-fit: cover; border-radius: 50%; border: 2pt solid var(--primary-color); }
+
+/* 联系方式：居中横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
     gap: 3pt 12pt;
+    margin-top: 8pt;
     font-size: 8pt;
     color: var(--muted-color);
 }
+.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-label { font-weight: 600; color: var(--heading-color); }
+.r-langs { display: flex; flex-wrap: wrap; justify-content: center; gap: 3pt 14pt; font-size: 8.5pt; }
 
-/* Cards */
-.card {
+/* ── 主内容区 ── */
+
+/* Summary */
+.summary {
+    font-size: 9pt;
+    line-height: 1.6;
+    text-align: center;
     background: var(--accent-bg);
     border-radius: 5pt;
     padding: 10pt 12pt;
     margin-bottom: 8pt;
     box-shadow: var(--shadow);
-}
-
-.summary.card {
-    font-size: 9pt;
-    line-height: 1.6;
-    text-align: center;
     overflow-wrap: break-word;
     word-break: break-word;
 }
@@ -112,155 +110,59 @@ body {
 
 /* Experience */
 .experience-item { margin-bottom: 6pt; }
-
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 3pt;
-}
-
-.exp-header .company {
-    font-weight: 700;
-    font-size: 10pt;
-    color: var(--heading-color);
-}
-
-.exp-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-}
-
-.title {
-    font-size: 9pt;
-    color: var(--primary-color);
-    font-weight: 500;
-    margin-bottom: 2pt;
-}
-
-.exp-summary {
-    font-size: 8.5pt;
-    color: var(--text-color);
-    margin-bottom: 3pt;
-}
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3pt; }
+.exp-header .company { font-weight: 700; font-size: 10pt; color: var(--heading-color); }
+.exp-header .title { font-size: 9pt; color: var(--primary-color); font-weight: 500; }
+.exp-header .date { font-size: 7.5pt; color: var(--muted-color); white-space: nowrap; }
+.exp-location { font-size: 8pt; color: var(--muted-color); margin-bottom: 2pt; }
+.exp-summary { font-size: 8.5pt; color: var(--text-color); margin-bottom: 3pt; }
 
 .highlights { padding-left: 14pt; }
-
-.highlights li {
-    font-size: 8.5pt;
-    margin-bottom: 1.5pt;
-    line-height: 1.45;
-}
+.highlights li { font-size: 8.5pt; margin-bottom: 1.5pt; line-height: 1.45; }
 
 /* Education */
 .education-item { margin-bottom: 6pt; }
-
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.edu-header .school {
-    font-weight: 700;
-    font-size: 9.5pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 700; font-size: 9.5pt; color: var(--heading-color); }
+.edu-header .date { font-size: 7.5pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
 .edu-detail { font-size: 8.5pt; color: var(--muted-color); }
-
 .edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-bottom: 2pt; }
 
-/* Skills */
-.skill-card { padding: 10pt 12pt; display: flex; flex-wrap: wrap; gap: 4pt 16pt; }
-
+/* Skills — 卡片内 pill */
+.skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4pt 16pt;
+    background: var(--accent-bg);
+    border-radius: 5pt;
+    padding: 10pt 12pt;
+    margin-bottom: 8pt;
+    box-shadow: var(--shadow);
+}
 .skill-category { margin-bottom: 6pt; }
-
-.skill-category h4 {
-    font-size: 9pt;
-    font-weight: 600;
-    color: var(--heading-color);
-    margin-bottom: 4pt;
-}
-
-.skill-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6pt;
-    font-size: 8.5pt;
-    margin-bottom: 2pt;
-}
-
+.skill-category h4 { font-size: 9pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 6pt; font-size: 8.5pt; margin-bottom: 2pt; }
 .skill-dots { display: flex; gap: 2pt; }
-
-.skill-dot {
-    width: 6pt;
-    height: 6pt;
-    border-radius: 50%;
-    background: var(--border-color);
-}
-
+.skill-dot { width: 6pt; height: 6pt; border-radius: 50%; background: var(--border-color); }
 .skill-dot.filled { background: var(--primary-color); }
-
-/* Languages */
-.card .lang-item {
-    font-size: 8.5pt;
-    margin-bottom: 2pt;
-}
-
-.lang-name { font-weight: 600; }
 
 /* Awards */
 .award-item { margin-bottom: 4pt; }
-
-.award-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.award-title {
-    font-size: 8.5pt;
-    font-weight: 600;
-}
-
-.award-date, .award-issuer {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-}
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-size: 8.5pt; font-weight: 600; }
+.award-header .date, .award-issuer { font-size: 7.5pt; color: var(--muted-color); }
 
 /* Custom */
 .custom-item { margin-bottom: 6pt; }
-
-.custom-item h4 {
-    font-size: 9pt;
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
+.custom-item h4 { font-size: 9pt; font-weight: 600; color: var(--heading-color); }
 .subtitle { font-size: 8.5pt; color: var(--muted-color); }
 
-/* Print */
 /* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-}
-.extra-value {
-    color: inherit;
-}
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
 
+/* Print */
 @media print {
     .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 10mm 14mm); }
     @page { size: A4; margin: 0; }

@@ -77,6 +77,10 @@ func (r *HTMLRenderer) RenderWithTemplate(resume *model.Resume, tmpl *Template) 
 		return "", fmt.Errorf("template %s has no HTML content", tmpl.Meta.ID)
 	}
 
+	// Gosume 一期：统一 HTML 不写 Hidden 守卫，隐藏由数据层负责（前端 toGoShape /
+	// 后端 WithoutHidden），两处语义保持一致。
+	resume = resume.WithoutHidden()
+
 	t := template.New("resume").Funcs(r.funcMap)
 
 	// If the HTML references {{template "styles.css"}}, define it as a sub-template first

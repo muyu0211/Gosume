@@ -13,9 +13,10 @@ import (
 
 // TemplateService manages template listing and operations.
 type TemplateService struct {
-	wailsApp *application.App
-	loader   *template.Loader
-	store    *store.TemplateStore
+	wailsApp    *application.App
+	loader      *template.Loader
+	store       *store.TemplateStore
+	unifiedHTML string
 }
 
 // ServiceName returns the service name.
@@ -24,10 +25,11 @@ func (s *TemplateService) ServiceName() string {
 }
 
 // Inject sets up dependencies.
-func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *store.TemplateStore) {
+func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *store.TemplateStore, unifiedHTML string) {
 	s.wailsApp = app
 	s.loader = loader
 	s.store = store
+	s.unifiedHTML = unifiedHTML
 }
 
 // GetTemplateMeta is a trimmed version of template.Meta for the frontend.
@@ -44,6 +46,7 @@ type GetTemplateMeta struct {
 	PaperSize      string                     `json:"paper_size"`
 	Colors         *template.TemplateColors   `json:"colors,omitempty"`
 	Features       *template.TemplateFeatures `json:"features,omitempty"`
+	UsesUnifiedHTML bool                      `json:"uses_unified_html,omitempty"`
 	IsBuiltin      bool                       `json:"is_builtin"`
 }
 
@@ -77,6 +80,15 @@ type TemplateContent struct {
 	CSS  string `json:"css"`
 }
 
+// effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
+// 或模板无自带 HTML 时使用应用内置的 unified.html（Gosume 一期改造）。
+func (s *TemplateService) effectiveHTML(t *template.Template) string {
+	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
+		return s.unifiedHTML
+	}
+	return t.HTML
+}
+
 // GetTemplateContent returns a template's HTML and CSS content.
 func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error) {
 	t, err := s.loader.LoadByID(id)
@@ -84,7 +96,7 @@ func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error
 		return nil, err
 	}
 	return &TemplateContent{
-		HTML: t.HTML,
+		HTML: s.effectiveHTML(t),
 		CSS:  t.CSS,
 	}, nil
 }
@@ -135,13 +147,12 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath string) (*Impor
 		return nil, UserMsg("模板已存在")
 	}
 
-	if err := s.store.Create(pkg.Meta, pkg.HTML, pkg.CSS); err != nil {
+	if err := s.store.Create(pkg.Meta, pkg.CSS); err != nil {
 		return nil, UserWrap(err, "保存模板失败")
 	}
 
 	meta := toGetTemplateMeta(&template.Template{
 		Meta:      pkg.Meta,
-		HTML:      pkg.HTML,
 		CSS:       pkg.CSS,
 		IsBuiltin: false,
 	})
@@ -166,16 +177,17 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 }
 
 // CreateTemplate creates a new user template.
-func (s *TemplateService) CreateTemplate(meta template.Meta, html, css string) error {
+// Gosume 一期改造：不再接收 html，模板只由 meta + css 构成。
+func (s *TemplateService) CreateTemplate(meta template.Meta, css string) error {
 	if meta.ID == "" {
 		return UserMsg("模板 ID 不能为空")
 	}
-	return UserWrap(s.store.Create(meta, html, css), "创建模板失败")
+	return UserWrap(s.store.Create(meta, css), "创建模板失败")
 }
 
 // UpdateTemplate updates an existing user template.
-func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, html, css string) error {
-	return UserWrap(s.store.Update(id, meta, html, css), "更新模板失败")
+func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, css string) error {
+	return UserWrap(s.store.Update(id, meta, css), "更新模板失败")
 }
 
 // DeleteTemplate soft-deletes a user template.
@@ -203,7 +215,7 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 		return UserMsg("模板 ID 已被占用")
 	}
 
-	return UserWrap(s.store.Create(meta, src.HTML, src.CSS), "克隆模板失败")
+	return UserWrap(s.store.Create(meta, src.CSS), "克隆模板失败")
 }
 
 func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
@@ -220,6 +232,7 @@ func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
 		PaperSize:      t.Meta.PaperSize,
 		Colors:         t.Meta.Colors,
 		Features:       t.Meta.Features,
+		UsesUnifiedHTML: t.Meta.UsesUnifiedHTML,
 		IsBuiltin:      t.IsBuiltin,
 	}
 }

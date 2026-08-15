@@ -1,4 +1,6 @@
-/* Ink Wash Template Styles */
+/* Ink Wash Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像居中在上，姓名/联系方式/语言居中（留白水墨风）。 */
 :root {
     --font-family: 'PingFang SC', 'Noto Serif SC', 'SimSun', 'Microsoft YaHei', serif;
     --font-size-base: 10pt;
@@ -30,48 +32,62 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Header — centered, airy */
-.header {
+/* ── 头部区：头像居中在上，姓名/联系方式/语言居中 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+    justify-items: center;
     text-align: center;
-    margin-bottom: 24pt;
+    margin-bottom: 18pt;
+    padding-top: 10pt;
+    border-top: 0.5pt solid var(--border-color);
+    row-gap: 4pt;
 }
 
-.header-rule {
-    width: 48pt;
-    height: 0.5pt;
-    background: var(--border-color);
-    margin: 0 auto;
-}
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
 
-.header-rule:first-child { margin-bottom: 14pt; }
-
-.header-rule:last-of-type { margin-top: 12pt; margin-bottom: 10pt; }
-
-.header h1 {
+.r-name {
     font-size: 18pt;
     font-weight: 400;
     color: var(--heading-color);
     letter-spacing: 6pt;
     margin-bottom: 6pt;
 }
+.r-ename { font-size: 9pt; color: var(--muted-color); font-weight: 300; letter-spacing: 2pt; margin-bottom: 2pt; }
+.r-jobtitle { font-size: 10pt; color: var(--muted-color); font-weight: 300; letter-spacing: 3pt; margin-bottom: 2pt; }
+.r-yoe { font-size: 8.5pt; color: var(--muted-color); letter-spacing: 1pt; }
 
-.header .job-title {
-    font-size: 10pt;
-    color: var(--muted-color);
-    font-weight: 300;
-    letter-spacing: 3pt;
-}
+.r-avatar { margin-bottom: 10pt; }
+.r-avatar img { width: 52pt; height: 52pt; object-fit: cover; border-radius: 50%; border: 1pt solid var(--border-color); }
 
-.contact-line {
+/* 联系方式：居中横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3pt 16pt;
     font-size: 8pt;
     color: var(--muted-color);
     letter-spacing: 1pt;
+    margin-top: 8pt;
+    padding-bottom: 12pt;
+    border-bottom: 0.5pt solid var(--border-color);
 }
+.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-label { font-weight: 500; color: var(--heading-color); }
+.r-langs { display: flex; flex-wrap: wrap; justify-content: center; gap: 3pt 12pt; font-size: 9pt; color: var(--text-color); }
 
-.contact-sep {
-    margin: 0 4pt;
-    color: var(--border-color);
-}
+/* ── 主内容区 ── */
 
 /* Summary */
 .summary {
@@ -85,7 +101,7 @@ body {
     word-break: break-word;
 }
 
-/* Section Titles */
+/* Section Titles（居中 + 细线） */
 .section-title {
     font-size: 9pt;
     font-weight: 400;
@@ -94,7 +110,6 @@ body {
     letter-spacing: 4pt;
     text-align: center;
 }
-
 .section-title::after {
     content: "";
     display: block;
@@ -106,167 +121,51 @@ body {
 
 /* Experience */
 .experience-item { margin-bottom: 14pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4pt; }
+.exp-header .company { font-weight: 500; font-size: 10pt; color: var(--heading-color); }
+.exp-header .title { font-size: 9pt; color: var(--muted-color); }
+.exp-header .date { font-size: 8pt; color: var(--muted-color); letter-spacing: 0.5pt; white-space: nowrap; }
+.exp-location { font-size: 8.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.exp-summary { font-size: 9pt; color: var(--text-color); line-height: 1.7; margin-bottom: 4pt; }
 
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 4pt;
-}
-
-.exp-header .company {
-    font-weight: 500;
-    font-size: 10pt;
-    color: var(--heading-color);
-}
-
-.exp-header .date {
-    font-size: 8pt;
-    color: var(--muted-color);
-    letter-spacing: 0.5pt;
-}
-
-.title {
-    font-size: 9pt;
-    color: var(--muted-color);
-    margin-bottom: 4pt;
-}
-
-.exp-summary {
-    font-size: 9pt;
-    color: var(--text-color);
-    line-height: 1.7;
-    margin-bottom: 4pt;
-}
-
-.highlights {
-    list-style: none;
-    padding-left: 0;
-}
-
-.highlights li {
-    position: relative;
-    padding-left: 10pt;
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.6;
-}
-
-.highlights li::before {
-    content: "—";
-    position: absolute;
-    left: 0;
-    color: var(--border-color);
-}
+.highlights { list-style: none; padding-left: 0; }
+.highlights li { position: relative; padding-left: 10pt; font-size: 9pt; margin-bottom: 3pt; line-height: 1.6; }
+.highlights li::before { content: "—"; position: absolute; left: 0; color: var(--border-color); }
 
 /* Education */
 .education-item { margin-bottom: 12pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 500; font-size: 10pt; color: var(--heading-color); }
+.edu-header .date { font-size: 8pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-courses { font-size: 9pt; color: var(--muted-color); }
 
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
+/* Skills — 行内 "·" 分隔 */
+.skills-grid { text-align: center; line-height: 2; }
+.skill-category { display: inline; margin-right: 14pt; font-size: 9pt; }
+.skill-category h4 { font-weight: 500; color: var(--heading-color); display: inline; }
+.skill-item { display: inline; margin-left: 3pt; color: var(--text-color); }
+.skill-dots { display: inline-flex; gap: 1pt; margin-left: 4pt; vertical-align: middle; }
+.skill-dot { width: 5pt; height: 5pt; border-radius: 50%; background: var(--border-color); }
+.skill-dot.filled { background: var(--primary-color); }
 
-.edu-header .school {
-    font-weight: 500;
-    font-size: 10pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 8pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 9pt;
-    color: var(--muted-color);
-    margin-bottom: 2pt;
-}
-
-/* Skills — inline with separators */
-.skills-row {
-    text-align: center;
-    line-height: 2;
-}
-
-.skill-category {
-    display: inline;
-    margin-right: 14pt;
-    font-size: 9pt;
-}
-
-.skill-cat-name {
-    font-weight: 500;
-    color: var(--heading-color);
-}
-
-.skill-name {
-    color: var(--text-color);
-    margin-left: 3pt;
-}
-
-.skill-name::after {
-    content: " ·";
-    color: var(--border-color);
-}
-
-.skill-name:last-child::after { content: ""; }
-
-/* Languages */
-.languages-line {
-    text-align: center;
-    font-size: 9pt;
-    color: var(--text-color);
-}
-
-.languages-line span { margin: 0 6pt; }
-
-.lang-name { font-weight: 500; }
-
-/* Awards */
-.award-item {
-    text-align: center;
-    font-size: 9pt;
-    color: var(--text-color);
-    margin-bottom: 4pt;
-}
-
+/* Awards（居中） */
+.award-item { text-align: center; font-size: 9pt; color: var(--text-color); margin-bottom: 4pt; }
+.award-header { display: flex; justify-content: center; align-items: baseline; gap: 8pt; }
 .award-title { font-weight: 500; }
-
-.date, .issuer { color: var(--muted-color); font-size: 8.5pt; }
+.award-header .date, .award-issuer { color: var(--muted-color); font-size: 8.5pt; }
 
 /* Custom */
 .custom-item { margin-bottom: 10pt; }
+.custom-item h4 { font-size: 10pt; font-weight: 500; color: var(--heading-color); }
+.subtitle { font-size: 9pt; color: var(--muted-color); }
 
-.custom-item h4 {
-    font-size: 10pt;
-    font-weight: 500;
-    color: var(--heading-color);
-}
-
-.subtitle {
-    font-size: 9pt;
-    color: var(--muted-color);
-}
+/* Project extras (user-defined key/value) */
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
 
 /* Print */
-/* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-}
-.extra-value {
-    color: inherit;
-}
-
 @media print {
     .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 14mm 18mm); }
     @page { size: A4; margin: 0; }

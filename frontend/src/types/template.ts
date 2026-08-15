@@ -30,6 +30,8 @@ export interface TemplateMeta {
     qr_code: boolean
     links_clickable: boolean
   }
+  /** 已迁移到统一 HTML 骨架（Gosume 一期改造）：true 时渲染使用 unified.html */
+  uses_unified_html?: boolean
   is_builtin: boolean
   thumbnail?: string
 }

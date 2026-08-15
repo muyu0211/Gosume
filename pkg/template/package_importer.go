@@ -5,14 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	htmltemplate "html/template"
 	"io"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
-
-	"gosume/pkg/model"
 )
 
 const (
@@ -23,13 +19,18 @@ const (
 var templateIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`)
 
 // Package is the validated content of a local .zip package.
+//
+// Gosume 一期改造：模板包不再携带 HTML——统一 HTML（templates/unified.html）
+// 由应用内置，模板制作者只需提供 template.json（元数据）+ styles.css（样式）。
 type Package struct {
 	Meta Meta
-	HTML string
 	CSS  string
 }
 
 // LoadPackageFromZip reads and validates a .zip package.
+//
+// 必须包含 template.json 与 styles.css；若压缩包内仍带 template.html
+// （历史模板包），宽松处理：忽略该文件，只取 css+json。
 func LoadPackageFromZip(filePath string) (*Package, error) {
 	reader, err := zip.OpenReader(filePath)
 	if err != nil {
@@ -56,7 +57,7 @@ func LoadPackageFromZip(filePath string) (*Package, error) {
 
 		base := filepath.Base(filepath.ToSlash(f.Name))
 		switch base {
-		case "template.json", "template.html", "styles.css":
+		case "template.json", "styles.css":
 			if _, exists := files[base]; exists {
 				return nil, fmt.Errorf("duplicate %s in template package", base)
 			}
@@ -65,10 +66,14 @@ func LoadPackageFromZip(filePath string) (*Package, error) {
 				return nil, err
 			}
 			files[base] = data
+		case "template.html":
+			// 历史模板包中的 HTML 已弃用（统一 HTML 由应用内置），宽松忽略。
+			// 不读取其内容，避免用户通过 HTML 干预数据形态。
+			continue
 		}
 	}
 
-	for _, required := range []string{"template.json", "template.html", "styles.css"} {
+	for _, required := range []string{"template.json", "styles.css"} {
 		if len(files[required]) == 0 {
 			return nil, fmt.Errorf("missing required file: %s", required)
 		}
@@ -82,7 +87,6 @@ func LoadPackageFromZip(filePath string) (*Package, error) {
 
 	pkg := &Package{
 		Meta: meta,
-		HTML: string(files["template.html"]),
 		CSS:  string(files["styles.css"]),
 	}
 	if err := ValidatePackage(pkg); err != nil {
@@ -91,7 +95,10 @@ func LoadPackageFromZip(filePath string) (*Package, error) {
 	return pkg, nil
 }
 
-// ValidatePackage ensures imported templates work with both renderers used by Gosume.
+// ValidatePackage ensures imported templates work with Gosume.
+//
+// Gosume 一期改造：HTML 已统一由应用提供，用户无法再提交 HTML，因此
+// 不再校验 HTML 语法/执行；只校验元数据与 CSS 基础合法性。
 func ValidatePackage(pkg *Package) error {
 	if pkg == nil {
 		return fmt.Errorf("template package is empty")
@@ -99,17 +106,8 @@ func ValidatePackage(pkg *Package) error {
 	if err := validateMeta(pkg.Meta); err != nil {
 		return err
 	}
-	if strings.TrimSpace(pkg.HTML) == "" {
-		return fmt.Errorf("template.html is empty")
-	}
 	if strings.TrimSpace(pkg.CSS) == "" {
 		return fmt.Errorf("styles.css is empty")
-	}
-	if err := validatePreviewCompatibleSyntax(pkg.HTML); err != nil {
-		return err
-	}
-	if err := validateTemplateExecution(pkg); err != nil {
-		return err
 	}
 	return nil
 }
@@ -188,337 +186,4 @@ func validateMeta(meta Meta) error {
 		return fmt.Errorf("only A4 templates are currently supported")
 	}
 	return nil
-}
-
-func validateTemplateExecution(pkg *Package) error {
-	t := htmltemplate.New("resume").Funcs(htmltemplate.FuncMap{
-		"dateRange":  previewDateRange,
-		"skillLevel": previewSkillLevel,
-		"i18n":       previewI18n,
-		"nl2br":      previewNL2BR,
-		"safeHTML":   previewSafeHTML,
-		"safeURL":    previewSafeURL,
-		"defaultVal": previewDefaultVal,
-	})
-
-	if strings.Contains(pkg.HTML, `{{template "styles.css"`) {
-		if _, err := t.New("styles.css").Parse(pkg.CSS); err != nil {
-			return fmt.Errorf("parse styles.css as template: %w", err)
-		}
-	}
-
-	parsed, err := t.Parse(pkg.HTML)
-	if err != nil {
-		return fmt.Errorf("parse template.html: %w", err)
-	}
-
-	var buf bytes.Buffer
-	if err := parsed.Execute(&buf, sampleResume(pkg.Meta.ID)); err != nil {
-		return fmt.Errorf("execute template with sample data: %w", err)
-	}
-	return nil
-}
-
-func validatePreviewCompatibleSyntax(html string) error {
-	actions := regexp.MustCompile(`\{\{([^{}]+)\}\}`).FindAllStringSubmatch(html, -1)
-	for _, action := range actions {
-		expr := strings.TrimSpace(action[1])
-		if expr == "" || expr == "end" || expr == "else" {
-			continue
-		}
-		if strings.Contains(expr, "|") || strings.Contains(expr, ":=") || strings.Contains(expr, "$") {
-			return fmt.Errorf("unsupported template expression for live preview: {{%s}}", expr)
-		}
-		if strings.HasPrefix(expr, "template ") {
-			if expr == `template "styles.css" .` {
-				continue
-			}
-			return fmt.Errorf("only {{template \"styles.css\" .}} includes are supported")
-		}
-		if strings.HasPrefix(expr, "if ") || strings.HasPrefix(expr, "range ") {
-			target := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(expr, "if "), "range "))
-			if isSupportedControlExpr(target) {
-				continue
-			}
-			return fmt.Errorf("unsupported template control expression for live preview: {{%s}}", expr)
-		}
-		if strings.HasPrefix(expr, "with ") || strings.HasPrefix(expr, "block ") || strings.HasPrefix(expr, "define ") {
-			return fmt.Errorf("unsupported template block for live preview: {{%s}}", expr)
-		}
-		if isSimpleTemplatePath(expr) || isSupportedFunctionCall(expr) {
-			continue
-		}
-		return fmt.Errorf("unsupported template expression for live preview: {{%s}}", expr)
-	}
-	return nil
-}
-
-func isSimpleTemplatePath(expr string) bool {
-	return regexp.MustCompile(`^\.[A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$`).MatchString(expr)
-}
-
-// isSupportedControlExpr reports whether the expression after {{if }} or
-// {{range }} is supported by the frontend live-preview engine. Besides a
-// simple field path it accepts the Go template boolean/comparison operators
-// not/and/or/eq/ne, whose operands may be simple paths, literals (true/false
-// or a quoted string) or parenthesized sub-expressions — mirroring
-// evalExpr in frontend/src/lib/templateEngine.ts. Imported templates thereby
-// get the same conditional powers as the built-in ones (e.g.
-// {{if not .Hidden}} and {{if and .Summary (not .SummaryHidden)}}).
-func isSupportedControlExpr(expr string) bool {
-	expr = strings.TrimSpace(expr)
-	if expr == "" {
-		return false
-	}
-	if isSimpleTemplatePath(expr) {
-		return true
-	}
-	tokens, ok := tokenizeControlExpr(expr)
-	if !ok || len(tokens) < 2 {
-		return false
-	}
-	// Argument-count rules per operator (Go html/template semantics).
-	minArgs, maxArgs := 0, 0
-	switch tokens[0] {
-	case "not":
-		minArgs, maxArgs = 1, 1
-	case "and", "or":
-		minArgs, maxArgs = 2, -1
-	case "eq", "ne":
-		minArgs, maxArgs = 2, -1
-	default:
-		return false
-	}
-	n := len(tokens) - 1
-	if n < minArgs || (maxArgs >= 0 && n > maxArgs) {
-		return false
-	}
-	for _, tok := range tokens[1:] {
-		if !isSupportedOperand(tok) {
-			return false
-		}
-	}
-	return true
-}
-
-// isSupportedOperand validates one operand of a boolean/comparison operator:
-// a simple path, a bool/string literal, or a parenthesized sub-expression.
-func isSupportedOperand(tok string) bool {
-	if strings.HasPrefix(tok, "(") && strings.HasSuffix(tok, ")") && len(tok) >= 2 {
-		return isSupportedControlExpr(strings.TrimSpace(tok[1 : len(tok)-1]))
-	}
-	if isSimpleTemplatePath(tok) {
-		return true
-	}
-	if tok == "true" || tok == "false" {
-		return true
-	}
-	if len(tok) >= 2 &&
-		((tok[0] == '"' && tok[len(tok)-1] == '"') || (tok[0] == '\'' && tok[len(tok)-1] == '\'')) {
-		return !strings.Contains(tok[1:len(tok)-1], "\"") && !strings.Contains(tok[1:len(tok)-1], "'")
-	}
-	return false
-}
-
-// tokenizeControlExpr splits an if/range target into top-level tokens.
-// A parenthesized group keeps its inner spacing and stays a single token
-// (recursively validated by isSupportedOperand). Returns false when quotes
-// or parentheses are unbalanced.
-func tokenizeControlExpr(expr string) ([]string, bool) {
-	var tokens []string
-	var cur strings.Builder
-	depth := 0
-	var quote byte
-	flush := func() {
-		if cur.Len() > 0 {
-			tokens = append(tokens, cur.String())
-			cur.Reset()
-		}
-	}
-	for i := 0; i < len(expr); i++ {
-		c := expr[i]
-		switch {
-		case quote != 0:
-			cur.WriteByte(c)
-			if c == quote {
-				quote = 0
-			}
-		case c == '"' || c == '\'':
-			quote = c
-			cur.WriteByte(c)
-		case c == '(':
-			depth++
-			cur.WriteByte(c)
-		case c == ')':
-			depth--
-			if depth < 0 {
-				return nil, false
-			}
-			cur.WriteByte(c)
-		case c == ' ' || c == '\t':
-			if depth > 0 {
-				cur.WriteByte(c)
-			} else {
-				flush()
-			}
-		default:
-			cur.WriteByte(c)
-		}
-	}
-	if quote != 0 || depth != 0 {
-		return nil, false
-	}
-	flush()
-	return tokens, true
-}
-
-func isSupportedFunctionCall(expr string) bool {
-	fields := strings.Fields(expr)
-	if len(fields) == 0 {
-		return false
-	}
-	switch fields[0] {
-	case "dateRange", "skillLevel", "i18n", "nl2br", "safeHTML", "safeURL", "defaultVal":
-		return true
-	default:
-		return false
-	}
-}
-
-func sampleResume(templateID string) *model.Resume {
-	now := time.Now()
-	return &model.Resume{
-		Version: "1.0",
-		Meta: model.ResumeMeta{
-			TemplateID:     templateID,
-			Name:           "Sample Resume",
-			Language:       "zh-CN",
-			FontSize:       model.FontSizeMedium,
-			PageMargin:     model.PageMarginNormal,
-			SectionSpacing: model.SectionSpacingNormal,
-			CreatedAt:      now,
-			UpdatedAt:      now,
-			ExportCount:    0,
-		},
-		Personal: model.Personal{
-			FullName:   "Sample User",
-			Email:      "sample@example.com",
-			Phone:      "138-0000-0000",
-			Location:   "Shanghai",
-			JobTitle:   "Frontend Engineer",
-			YearsOfExp: 5,
-			GitHub:     "github.com/sample",
-		},
-		Summary: "Experienced engineer focused on reliable products.",
-		Jobs: []model.Job{{
-			ID:         "sample-job",
-			Company:    "Sample Company",
-			Title:      "Senior Engineer",
-			Location:   "Shanghai",
-			StartDate:  "2020.01",
-			EndDate:    "",
-			IsCurrent:  true,
-			Summary:    "Built product systems and improved delivery quality.",
-			Highlights: []string{"Led core feature delivery", "Improved performance and reliability"},
-		}},
-		Projects: []model.Project{{
-			ID:         "sample-project",
-			Name:       "Template Compatibility",
-			Role:       "Owner",
-			StartDate:  "2023.01",
-			EndDate:    "2023.06",
-			Summary:    "Validated imported templates.",
-			Highlights: []string{"Preview and export render consistently"},
-		}},
-		Education: []model.Education{{
-			ID:        "sample-education",
-			School:    "Sample University",
-			Degree:    "Bachelor",
-			Major:     "Computer Science",
-			StartDate: "2016.09",
-			EndDate:   "2020.06",
-			GPA:       "3.8/4.0",
-		}},
-		Skills: []model.SkillGroup{{
-			ID:       "sample-skills",
-			Category: "Engineering",
-			Items: []model.Skill{
-				{Name: "React", Level: 5},
-				{Name: "Go", Level: 4},
-			},
-		}},
-		Languages: []model.Language{{
-			ID:    "sample-language",
-			Name:  "English",
-			Level: "Fluent",
-		}},
-		Awards: []model.Award{{
-			ID:      "sample-award",
-			Title:   "Outstanding Project",
-			Date:    "2023",
-			Issuer:  "Sample Organization",
-			Summary: "Recognized for delivery quality.",
-		}},
-		Custom: []model.CustomSection{{
-			ID:    "sample-custom",
-			Title: "Custom Section",
-			Items: []model.CustomItem{{
-				ID:          "sample-custom-item",
-				Title:       "Custom Item",
-				Subtitle:    "Subtitle",
-				Date:        "2024",
-				Description: "Additional information.",
-				Highlights:  []string{"Flexible content"},
-			}},
-		}},
-	}
-}
-
-func previewDateRange(start, end string, isCurrent bool) string {
-	if start == "" {
-		return ""
-	}
-	if isCurrent || end == "" {
-		return start + " - 至今"
-	}
-	return start + " - " + end
-}
-
-func previewSkillLevel(level int) htmltemplate.HTML {
-	var buf strings.Builder
-	for i := 0; i < 5; i++ {
-		if i < level {
-			buf.WriteString(`<span class="skill-dot filled"></span>`)
-		} else {
-			buf.WriteString(`<span class="skill-dot"></span>`)
-		}
-	}
-	return htmltemplate.HTML(buf.String())
-}
-
-func previewI18n(lang, zhKey, enKey string) string {
-	if lang == "zh-CN" {
-		return zhKey
-	}
-	return enKey
-}
-
-func previewNL2BR(s string) htmltemplate.HTML {
-	escaped := htmltemplate.HTMLEscapeString(s)
-	return htmltemplate.HTML(strings.ReplaceAll(escaped, "\n", "<br>"))
-}
-
-func previewSafeHTML(s string) htmltemplate.HTML {
-	return htmltemplate.HTML(s)
-}
-
-func previewSafeURL(s string) htmltemplate.URL {
-	return htmltemplate.URL(s)
-}
-
-func previewDefaultVal(defaultVal, val string) string {
-	if val == "" {
-		return defaultVal
-	}
-	return val
 }

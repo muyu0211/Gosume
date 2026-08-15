@@ -1,4 +1,6 @@
-/* Zen Minimalist Template Styles */
+/* Zen Minimalist Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像居中在上，姓名/联系方式/语言居中（侘寂极简风）。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 10pt;
@@ -30,40 +32,52 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Header */
-.header {
+/* ── 头部区：头像居中在上，姓名/联系方式/语言居中 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+    justify-items: center;
     text-align: center;
-    margin-bottom: 28pt;
+    margin-bottom: 20pt;
+    row-gap: 4pt;
 }
 
-.header h1 {
-    font-size: 18pt;
-    font-weight: 300;
-    color: var(--heading-color);
-    letter-spacing: 4pt;
-    margin-bottom: 8pt;
-}
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
 
-.header .job-title {
-    font-size: 10pt;
-    color: var(--muted-color);
-    font-weight: 300;
-    letter-spacing: 2pt;
-    margin-bottom: 12pt;
-}
+.r-name { font-size: 18pt; font-weight: 300; color: var(--heading-color); letter-spacing: 4pt; margin-bottom: 6pt; }
+.r-ename { font-size: 9pt; color: var(--muted-color); font-weight: 300; letter-spacing: 1pt; margin-bottom: 2pt; }
+.r-jobtitle { font-size: 10pt; color: var(--muted-color); font-weight: 300; letter-spacing: 2pt; margin-bottom: 2pt; }
+.r-yoe { font-size: 8.5pt; color: var(--muted-color); font-weight: 300; }
 
-.divider {
-    width: 24pt;
-    height: 0.75pt;
-    background: var(--primary-color);
-    margin: 0 auto 10pt auto;
-}
+.r-avatar { margin-bottom: 10pt; }
+.r-avatar img { width: 48pt; height: 48pt; object-fit: cover; border-radius: 50%; border: 0.75pt solid var(--border-color); }
 
-.contact-line {
+/* 联系方式：居中横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3pt 16pt;
     font-size: 8pt;
     color: var(--muted-color);
     letter-spacing: 1pt;
+    margin-top: 8pt;
 }
+.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-label { font-weight: 500; color: var(--heading-color); }
+.r-langs { display: flex; flex-wrap: wrap; justify-content: center; gap: 4pt 16pt; font-size: 9.5pt; color: var(--text-color); }
+
+/* ── 主内容区 ── */
 
 /* Summary */
 .summary {
@@ -77,7 +91,7 @@ body {
     word-break: break-word;
 }
 
-/* Section Titles */
+/* Section Titles（居中大写） */
 .section-title {
     font-size: 9pt;
     font-weight: 400;
@@ -90,169 +104,52 @@ body {
 
 /* Experience */
 .experience-item { margin-bottom: 14pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4pt; }
+.exp-header .company { font-weight: 500; font-size: 10.5pt; color: var(--heading-color); }
+.exp-header .title { font-weight: 300; color: var(--muted-color); }
+.exp-header .date { font-size: 8pt; color: var(--muted-color); white-space: nowrap; font-weight: 300; }
+.exp-location { font-size: 8.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.exp-summary { font-size: 9pt; color: var(--text-color); line-height: 1.6; margin-bottom: 4pt; }
 
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 4pt;
-}
-
-.exp-header .company {
-    font-weight: 500;
-    font-size: 10.5pt;
-    color: var(--heading-color);
-}
-
-.exp-header .title {
-    font-weight: 300;
-    color: var(--muted-color);
-}
-
-.exp-header .date {
-    font-size: 8pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    font-weight: 300;
-}
-
-.exp-summary {
-    font-size: 9pt;
-    color: var(--text-color);
-    line-height: 1.6;
-    margin-bottom: 4pt;
-}
-
-.highlights {
-    list-style: none;
-    padding-left: 0;
-}
-
-.highlights li {
-    position: relative;
-    padding-left: 10pt;
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.55;
-}
-
-.highlights li::before {
-    content: "—";
-    position: absolute;
-    left: 0;
-    color: var(--muted-color);
-}
+.highlights { list-style: none; padding-left: 0; }
+.highlights li { position: relative; padding-left: 10pt; font-size: 9pt; margin-bottom: 3pt; line-height: 1.55; }
+.highlights li::before { content: "—"; position: absolute; left: 0; color: var(--muted-color); }
 
 /* Education */
 .education-item { margin-bottom: 12pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 500; font-size: 10.5pt; color: var(--heading-color); }
+.edu-header .date { font-size: 8pt; color: var(--muted-color); font-weight: 300; white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-courses { font-size: 9pt; color: var(--muted-color); }
 
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
+/* Skills — 行内居中 */
+.skills-grid { font-size: 9pt; color: var(--text-color); line-height: 1.8; text-align: center; }
+.skill-category { display: inline; margin-right: 10pt; }
+.skill-category h4 { font-weight: 500; color: var(--heading-color); margin-right: 4pt; display: inline; }
+.skill-item { display: inline; margin-right: 5pt; color: var(--text-color); }
+.skill-dots { display: inline-flex; gap: 1pt; margin-left: 3pt; vertical-align: middle; }
+.skill-dot { width: 5pt; height: 5pt; border-radius: 50%; background: var(--border-color); }
+.skill-dot.filled { background: var(--primary-color); }
 
-.edu-header .school {
-    font-weight: 500;
-    font-size: 10.5pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 8pt;
-    color: var(--muted-color);
-    font-weight: 300;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 9pt;
-    color: var(--muted-color);
-    margin-bottom: 2pt;
-}
-
-/* Skills — Inline Flow */
-.skills-line {
-    font-size: 9pt;
-    color: var(--text-color);
-    line-height: 1.8;
-    text-align: center;
-}
-
-.skill-category-label {
-    font-weight: 500;
-    color: var(--heading-color);
-    margin-right: 4pt;
-}
-
-.skill-category-label::before {
-    content: "";
-    display: block;
-    margin-top: 6pt;
-}
-
-.skill-name {
-    margin-right: 5pt;
-    color: var(--text-color);
-}
-
-.skill-name::after {
-    content: " ·";
-    color: var(--muted-color);
-}
-
-.skill-name:last-child::after { content: ""; }
-
-/* Languages */
-.languages-line {
-    font-size: 9.5pt;
-    color: var(--text-color);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 4pt 16pt;
-}
-
-.lang-name { font-weight: 500; }
-
-/* Awards */
-.award-item {
-    font-size: 9.5pt;
-    color: var(--text-color);
-    margin-bottom: 4pt;
-    text-align: center;
-}
-
+/* Awards（居中） */
+.award-item { font-size: 9.5pt; color: var(--text-color); margin-bottom: 4pt; text-align: center; }
+.award-header { display: flex; justify-content: center; align-items: baseline; gap: 8pt; }
 .award-title { font-weight: 500; }
-
-.issuer { color: var(--muted-color); }
+.award-header .date { font-size: 8.5pt; color: var(--muted-color); }
+.award-issuer { color: var(--muted-color); }
 
 /* Custom */
 .custom-item { margin-bottom: 10pt; }
-
-.custom-item h4 {
-    font-size: 10pt;
-    font-weight: 500;
-    color: var(--heading-color);
-}
-
+.custom-item h4 { font-size: 10pt; font-weight: 500; color: var(--heading-color); }
 .subtitle { font-size: 9pt; color: var(--muted-color); }
 
-/* Print */
 /* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-}
-.extra-value {
-    color: inherit;
-}
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
 
+/* Print */
 @media print {
     .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 14mm 18mm); }
     @page { size: A4; margin: 0; }

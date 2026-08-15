@@ -18,14 +18,6 @@ func TestLoadPackageFromZip(t *testing.T) {
 			"description": "A local import test template",
 			"paper_size": "A4"
 		}`,
-		"template.html": `<!DOCTYPE html>
-<html>
-<head><style>{{template "styles.css" .}}</style></head>
-<body>
-	<h1>{{.Personal.FullName}}</h1>
-	{{if .Jobs}}{{range .Jobs}}<p>{{.Company}}</p>{{end}}{{end}}
-</body>
-</html>`,
 		"styles.css": `body { font-family: sans-serif; }`,
 	})
 
@@ -39,94 +31,51 @@ func TestLoadPackageFromZip(t *testing.T) {
 	if pkg.Meta.Category != "custom" {
 		t.Fatalf("default category = %q", pkg.Meta.Category)
 	}
+	if !strings.Contains(pkg.CSS, "sans-serif") {
+		t.Fatalf("CSS not loaded: %q", pkg.CSS)
+	}
 }
 
-func TestLoadPackageFromZipRejectsUnsupportedPreviewSyntax(t *testing.T) {
+// TestLoadPackageFromZipRequiresCss verifies styles.css is mandatory.
+func TestLoadPackageFromZipRequiresCss(t *testing.T) {
 	path := writeTemplatePackage(t, map[string]string{
 		"template.json": `{
-			"id": "local_bad_template",
-			"name": "Local Bad",
+			"id": "local_no_css",
+			"name": "No CSS",
 			"version": "1.0.0",
 			"author": {"name": "Gosume"},
 			"paper_size": "A4"
 		}`,
-		"template.html": `{{if index .Jobs 0}}中文{{end}}`, "styles.css": `body { color: #111; }`,
 	})
 
 	_, err := LoadPackageFromZip(path)
-	if err == nil {
-		t.Fatal("LoadPackageFromZip() expected error")
-	}
-	if !strings.Contains(err.Error(), "unsupported template control expression") {
-		t.Fatalf("unexpected error: %v", err)
+	if err == nil || !strings.Contains(err.Error(), "missing required file") {
+		t.Fatalf("expected missing required file error, got: %v", err)
 	}
 }
 
-// TestLoadPackageFromZipAcceptsBooleanOperators 验证 {{if}} 后跟
-// not/and/or/eq/ne 布尔组合表达式能通过导入校验。
-// 修复前：isSupportedControlExpr 只允许简单路径，导致用户自制模板使用
-// {{if not .Hidden}} / {{if and .Summary (not .SummaryHidden)}}
-// （与内置模板相同的写法）会被导入拒绝，而前端预览引擎
-// （templateEngine.ts evalExpr）与 Go html/template 均已支持这些运算符。
-func TestLoadPackageFromZipAcceptsBooleanOperators(t *testing.T) {
+// TestLoadPackageFromZipIgnoresLegacyHTML 验证：历史模板包即使携带
+// template.html（含任意模板语法/函数），Gosume 一期改造后也宽松忽略，
+// 只取 css+json —— 用户无法再通过 HTML 干预数据形态。
+func TestLoadPackageFromZipIgnoresLegacyHTML(t *testing.T) {
 	path := writeTemplatePackage(t, map[string]string{
 		"template.json": `{
-			"id": "local_bool_template",
-			"name": "Local Bool",
+			"id": "local_legacy_html",
+			"name": "Legacy HTML",
 			"version": "1.0.0",
 			"author": {"name": "Gosume"},
 			"paper_size": "A4"
 		}`,
-		"template.html": `<!DOCTYPE html>
-<html>
-<head><style>{{template "styles.css" .}}</style></head>
-<body>
-	{{if and .Summary (not .SummaryHidden)}}<div class="summary">{{nl2br .Summary}}</div>{{end}}
-	{{range .Jobs}}{{if not .Hidden}}<div class="experience-item">{{.Company}}</div>{{end}}{{end}}
-	{{if eq .Meta.Language "zh-CN"}}<div>中文简历</div>{{end}}
-</body>
-</html>`,
-		"styles.css": `body { font-family: sans-serif; }`,
+		// 历史包中曾要求 HTML 语法受限，现在这些内容被整体忽略
+		"template.html": `{{if index .Jobs 0}}中文{{end}}{{safeURL .Personal.Avatar}}`,
+		"styles.css":    `body { color: #111; }`,
 	})
 
 	pkg, err := LoadPackageFromZip(path)
 	if err != nil {
-		t.Fatalf("LoadPackageFromZip() with boolean operators error = %v", err)
+		t.Fatalf("LoadPackageFromZip() with legacy html error = %v", err)
 	}
-	if pkg.Meta.ID != "local_bool_template" {
-		t.Fatalf("Meta.ID = %q", pkg.Meta.ID)
-	}
-}
-
-// TestLoadPackageFromZipAcceptsSafeURL 验证 safeURL 函数能通过导入校验，
-// 与渲染器（pkg/render/html.go）注册的函数表保持一致。
-// 修复前：isSupportedFunctionCall 白名单漏了 safeURL，导致用户自制模板
-// 使用 {{safeURL .Personal.Avatar}}（与内置模板相同的写法）会被导入拒绝。
-func TestLoadPackageFromZipAcceptsSafeURL(t *testing.T) {
-	path := writeTemplatePackage(t, map[string]string{
-		"template.json": `{
-			"id": "local_safeurl_template",
-			"name": "Local SafeURL",
-			"version": "1.0.0",
-			"author": {"name": "Gosume"},
-			"paper_size": "A4"
-		}`,
-		"template.html": `<!DOCTYPE html>
-<html>
-<head><style>{{template "styles.css" .}}</style></head>
-<body>
-	{{if .Personal.Avatar}}<img src="{{safeURL .Personal.Avatar}}" alt="avatar" />{{end}}
-	<h1>{{.Personal.FullName}}</h1>
-</body>
-</html>`,
-		"styles.css": `body { font-family: sans-serif; }`,
-	})
-
-	pkg, err := LoadPackageFromZip(path)
-	if err != nil {
-		t.Fatalf("LoadPackageFromZip() with safeURL error = %v", err)
-	}
-	if pkg.Meta.ID != "local_safeurl_template" {
+	if pkg.Meta.ID != "local_legacy_html" {
 		t.Fatalf("Meta.ID = %q", pkg.Meta.ID)
 	}
 }

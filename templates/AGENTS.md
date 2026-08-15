@@ -2,16 +2,18 @@
 
 ## 模板系统概述
 
-每个模板是一个独立的子目录，包含三个文件，构成简历渲染的最小单元。模板分内置模板（`templates/` 目录下，编译时嵌入）和用户模板（存储在 SQLite 中，通过导入或创建产生）。
+每个模板是一个独立的子目录，包含**两个文件**：`template.json`（元数据）+ `styles.css`（样式）。简历的**数据形态**由应用内置的**统一 HTML**（`templates/unified.html`）承载，模板包不再携带 HTML——这是 Gosume 一期改造的核心约定。
+
+模板分内置模板（`templates/` 目录下，编译时嵌入）和用户模板（存储在 SQLite 中，通过导入或创建产生）。
 
 ## 模板目录结构
 
 ```
 templates/
-├── <dir-name>/              # 人类可读的目录名（如 modern、classic），与 id 无关
-│   ├── template.json        # 模板元数据
-│   ├── template.html        # Go html/template 语法编写的简历 HTML
-│   └── styles.css           # 打印 CSS 样式表
+├── unified.html            # 统一 HTML（应用内置，全模板共享，不随模板包分发）
+├── <dir-name>/             # 人类可读的目录名（如 modern、classic），与 id 无关
+│   ├── template.json       # 模板元数据
+│   └── styles.css          # 打印 CSS 样式表
 ```
 
 ## template.json — 元数据规范
@@ -49,11 +51,12 @@ templates/
         "accent":      "#强调色（浅色底色块）"
     },
     "features": {
-        "avatar":          true,    // 是否支持头像
-        "skill_bars":      false,   // 是否显示技能进度条
-        "qr_code":         false,   // 是否支持二维码
+        "avatar":          true,    // 是否支持头像（元数据，渲染不消费）
+        "skill_bars":      false,   // 是否显示技能进度条（元数据，暂不消费）
+        "qr_code":         false,   // 是否支持二维码（元数据，暂不渲染）
         "links_clickable": true     // 导出 PDF 时链接是否可点击
     },
+    "uses_unified_html": true,      // 一期改造迁移标记：true 时渲染使用应用内置 unified.html
     "sections": {
         "required":  ["personal", "jobs", "education"],
         "optional":  ["projects", "skills", "languages", "awards", "custom"],
@@ -68,98 +71,72 @@ templates/
 
 | 字段 | 规范 |
 |------|------|
-| `id` | UUID v4 格式（`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`），数据库主键，全局唯一。目录名与之无关。示例：`a406004d-d3b8-4900-969f-8094f8e85cf0` |
+| `id` | UUID v4 格式（`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`），数据库主键，全局唯一。目录名与之无关。 |
 | `version` | 严格遵循 SemVer，格式 `MAJOR.MINOR.PATCH` |
 | `category` | 必须是以下枚举之一：`tech` `business` `creative` `academic` `general` |
 | `tags` | 至少包含 3 个标签，中英文混合，纯英文标签使用小写 |
 | `page_count.min` | 最小为 1，不得大于 max |
 | `colors` | 所有颜色值必须为 6 位 HEX（`#RRGGBB`），需保证与白色背景的对比度达标 |
 | `sections.required` | 必须至少包含 `personal`；`jobs` 和 `education` 强烈建议放在 required 中 |
-| `sections.layout` | 指定区块在前端编辑器中的展示顺序 |
+| `sections.layout` | 指定区块在**前端编辑器**中的展示顺序，**不影响渲染顺序**（渲染顺序由统一 HTML 固定） |
+| `uses_unified_html` | 一期改造迁移标记。内置模板全部为 `true`；用户模板默认按"无自带 HTML"处理，始终使用统一 HTML |
 
-## template.html — 编写规范
+## 统一 HTML（unified.html）— 布局无关骨架
 
-### 模板引擎
+`templates/unified.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块
+（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），
+渲染顺序**固定**。
 
-使用 Go `html/template` 语法，数据根对象为 `model.Resume` 结构体。模板通过 `{{.Field}}` 访问字段，通过 `{{if .Field}}...{{end}}` 控制显隐。
+> **隐藏（Hidden）由数据层负责**：统一 HTML 不写 `{{if not .Hidden}}` 守卫。前端渲染前由
+> `templateEngine.ts` 的 `toGoShape` 过滤隐藏条目，后端渲染前由 `model.WithoutHidden()`
+> （`pkg/model/hidden.go`）过滤，两侧语义一致。模板 CSS 无需关心隐藏逻辑。
 
-### 文件结构约定
+它输出**稳定的 DOM 契约**（与分页子系统 `paginationCore.ts` 对齐，修改必须同步更新）：
 
-```html
-<!DOCTYPE html>
-<html lang="{{.Meta.Language}}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Personal.FullName}} - 简历</title>
-    <style>{{template "styles.css" .}}</style>
-</head>
-<body class="resume-page">
-    <div class="resume-container">
-        <!-- 各区块按 layout 顺序排列 -->
+```
+<body>                                 ← 中性，不承载任何页面样式（预览外壳可自由重绘 body）
+  <div class="resume-page">            ← 单页单元：210mm × 297mm + 页边距 + 白底
+    <div class="resume-container">     ← 分页算法的内容包裹层
+      <header class="r-header">        ← 个人信息区（本质同类的四子块，排布由 CSS 决定）
+        ├─ .r-header-text             ← 姓名/英文名/职位/年限
+        ├─ .r-avatar                  ← 头像（仅在简历含头像数据时渲染）
+        ├─ .r-contact                 ← 联系方式（含小节标题 .r-subtitle）
+        └─ .r-langs                   ← 语言（仅在含语言数据时渲染，含 .r-subtitle）
+      <main   class="r-main">          ← 各章节（section-title 与条目为兄弟节点）
     </div>
+  </div>
 </body>
-</html>
 ```
 
-### CSS 引用
+### 模板 CSS 的职责（关键约定）
 
-**必须**使用 `{{template "styles.css" .}}` 内联 CSS，不得使用 `<link>` 外部引用。这是为保证导出 PDF 时样式不丢失。
+1. **单栏/双栏完全由 CSS 决定**（分页核心按 `.resume-container` 的 computed `display` 区分）：
+   - 双栏：`.resume-container { display: grid; grid-template-columns: <侧栏宽> 1fr; grid-template-areas: "header main"; grid-template-rows: 1fr; }`，
+     `.r-header{grid-area:header}`（即侧栏，通高，左/右皆可）、`.r-main{grid-area:main}`。
+     侧栏内部用 `grid-template-areas` 竖向排布：头像在上 → 姓名 → 联系方式 → 语言。
+   - 单栏：`.resume-container { display: block; }`，`.r-header` 顶部块 → `.r-main` 章节。
+     `.r-header` 内部用 `grid-template-areas` 排布四子块——头像位置由 CSS 决定，三选一：
+     - **头像右置**：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact contact" "langs langs";`
+     - **头像居中**：`grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
+     - **头像左置**：与右置对称，`"avatar text"` 即可。
+2. **头像**：统一 HTML 仅在简历含头像数据时渲染 `.r-avatar`；**位置完全由 CSS 决定**
+   （双栏放侧栏、单栏可右置/居中/左置），不固定。是否显示同样由模板 CSS 决定。
+   `features.avatar` 仅为元数据，不参与渲染。
+3. **小节标题**：`.r-subtitle`（"个人信息"/"语言"）默认渲染；单栏横向信息带如不需要，
+   用 `.r-subtitle { display: none; }` 隐藏（双栏侧栏通常保留）。
+4. **章节类名沿用约定**：`.section-title`、`.experience-item`、`.exp-header`、`.exp-location`、
+   `.exp-summary`、`.education-item`、`.edu-header`、`.edu-detail`、`.edu-courses`、`.award-item`、
+   `.award-header`、`.award-title`、`.award-issuer`、`.skill-category`、`.skill-item`、`.skill-dots`、
+   `.skill-dot`、`.skill-dot.filled`、`.highlights`、`.custom-item`、`.subtitle`、`.extra-row`、
+   `.extra-label`、`.extra-value`、`.summary`——以继续接入"内容间距档位"注入规则（见下文）。
+5. **渲染顺序固定**：教育 → 实习 → 工作 → 项目 → 奖项 → 技能 → 总结 → 自定义。
+   如需调序，只能通过 CSS 重排（如 flex/grid `order`），不建议依赖。
 
-### 条件渲染
+### 统一 HTML 支持的模板语法（两侧引擎通用）
 
-所有区块**必须**用 `{{if .SectionName}}` 包裹，确保数据为空时不渲染空区块：
-
-```html
-{{if .Jobs}}
-<div class="section-title">工作经历</div>
-{{range .Jobs}}...{{end}}
-{{end}}
-```
-
-### 可访问的数据模型
-
-| 模板路径 | 说明 |
-|----------|------|
-| `{{.Meta.Language}}` | 简历语言（`zh-CN` / `en-US`） |
-| `{{.Personal.FullName}}` | 姓名 |
-| `{{.Personal.EnglishName}}` | 英文名 |
-| `{{.Personal.JobTitle}}` | 求职意向/职位 |
-| `{{.Personal.YearsOfExp}}` | 工作年限 |
-| `{{.Personal.Email}}` | 邮箱 |
-| `{{.Personal.Phone}}` | 手机号 |
-| `{{.Personal.Wechat}}` | 微信 |
-| `{{.Personal.QQ}}` | QQ |
-| `{{.Personal.Location}}` | 所在城市 |
-| `{{.Personal.Website}}` | 个人网站 |
-| `{{.Personal.GitHub}}` | GitHub |
-| `{{.Personal.LinkedIn}}` | LinkedIn |
-| `{{.Personal.Avatar}}` | 头像（Base64 data URI 或文件路径） |
-| `{{.Summary}}` | 个人总结（纯文本，使用 `nl2br` 渲染） |
-| `{{.Jobs}}` | 工作经历数组，每项含 Company、Title、StartDate、EndDate、IsCurrent、Location、Summary、Highlights |
-| `{{.Education}}` | 教育经历数组，每项含 School、Degree、Major、Minor、GPA、StartDate、EndDate、Highlights |
-| `{{.Skills}}` | 技能数组，每项含 Category 和 Items（每个 Item 含 Name、Level 0-5） |
-| `{{.Projects}}` | 项目经历数组，每项含 Name、Role、StartDate、EndDate、Summary、Highlights |
-| `{{.Languages}}` | 语言能力数组，每项含 Name、Level、Proficiency |
-| `{{.Awards}}` | 奖项数组，每项含 Title、Date、Issuer、Summary |
-| `{{.Custom}}` | 自定义区块数组，每项含 Title 和 Items |
-
-### 内置模板辅助函数
-
-| 函数 | 用法 | 说明 |
-|------|------|------|
-| `dateRange start end isCurrent` | `{{dateRange .StartDate .EndDate .IsCurrent}}` | 格式化日期范围，isCurrent 为 true 时显示"至今" |
-| `skillLevel level` | `{{skillLevel .Level}}` | 返回进度点 HTML（skill-dot filled/empty） |
-| `i18n lang zhKey enKey` | `{{i18n .Meta.Language "姓名" "Name"}}` | 根据简历语言输出中文或英文 |
-| `nl2br text` | `{{nl2br .Summary}}` | 换行符转 `<br>`（使用前自动 HTML 转义） |
-| `safeHTML html` | `{{safeHTML .SomeSafeHTML}}` | 输出原始 HTML，不做转义（仅用于已确保安全的内容） |
-| `defaultVal fallback val` | `{{defaultVal "未填写" .Personal.Phone}}` | 值为空时返回默认值 |
-
-### HTML 内容安全
-
-- 所有用户输入数据**默认经过 `html/template` 自动转义**，防 XSS
-- 如需输出原始 HTML，必须通过 `safeHTML` 函数显式标记
-- 不得在模板中硬编码外部资源 URL（图片、字体等），所有资源应内嵌或使用 CSS 系统字体栈
+`{{.Field}}` 简单路径、`{{if}}`/`{{range}}` + `not/and/or/eq/ne` 条件，
+以及辅助函数 `dateRange`、`skillLevel`、`i18n`、`nl2br`、`safeHTML`、`safeURL`、`defaultVal`。
+模板 CSS 不得依赖任何只在单套 HTML 中出现过的类名/结构。
 
 ## styles.css — CSS 样式规范
 
@@ -175,15 +152,24 @@ templates/
 5. **分页支持**：提供 `.page-break { page-break-after: always; break-after: page; }` 工具类
 6. **字号单位**：统一使用 `pt`（打印友好），不使用 `px` 作为主要字号单位
 7. **颜色值**：CSS 变量中的颜色应与 `template.json` 的 `colors` 字段一致
-8. **页边距消费**：`.resume-page`（或双栏模板的内部分栏容器）的 padding 必须通过 CSS 变量消费，并带上模板自己的默认值作 fallback：
+8. **页边距消费**：`.resume-page`（或双栏模板的内部分区）的 padding 必须通过 CSS 变量消费，
+   并带上模板自己的默认值作 fallback：
    ```css
    /* 单栏模板 */
    .resume-page { padding: var(--resume-padding, 14mm 18mm); }
-   /* 双栏模板的内部分栏 */
-   .resume-sidebar { padding: var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm); }
+   /* 双栏模板的分栏（header 即侧栏 / main） */
+   .r-header { padding: var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm); }
    ```
    前端按 `resume.meta.page_margin` 枚举档位注入这些变量（见下方"布局档位"），模板自身不得硬编码页边距。
-9. **垂直间距方向**：模块内条目与条目内部细节行的节奏间距**一律使用 `margin-bottom`**，禁止用 `margin-top` 表达垂直节奏。应用运行时会按"内容间距"档位注入 `margin-bottom` 覆盖规则（带 `!important`），方向不一致的模板会导致档位调整时组件行为不统一。仅有两类例外允许 `margin-top`：
+
+   > ⚠️ **单栏模板的页边距必须落在 `.resume-page` 的 padding 上，不得落在 `.r-header`/`.r-main`
+   > 等内容区自身的 padding 上**。分页与导出管线（`paginationCore.ts` + 导出器）只把 `.resume-page` 的 padding
+   > 当作"页边距"来消费/折叠：若页边距分散在内容区，会导致续页无顶边距、PDF 生硬截断、PNG 页间/页尾空白。
+   > 需要"全出血"头部时，也不得用负 margin 把头部拉出页面（同样会破坏分页测量与 PNG 连续渲染），
+   > 应退化为页面内的一块色块/卡片。
+9. **垂直间距方向**：模块内条目与条目内部细节行的节奏间距**一律使用 `margin-bottom`**，禁止用
+   `margin-top` 表达垂直节奏。应用运行时会按"内容间距"档位注入 `margin-bottom` 覆盖规则（带
+   `!important`），方向不一致的模板会导致档位调整时组件行为不统一。仅有两类例外允许 `margin-top`：
    - 装饰性元素（时间轴线 `.timeline-line`、强调线 `.exp-accent`、伪元素分隔符等非内容流组件）
    - 文档流末尾的收尾组件（如 `.footer`，其后无兄弟元素，间距只能向上申请）
 
@@ -191,17 +177,16 @@ templates/
 
 | 层级 | 命名方式 |
 |------|----------|
-| 页面容器 | `.resume-page`、`.resume-container` |
-| 头部 | `.header`、`.header-left`、`.header-avatar` |
+| 页面容器 | `.resume-page`（内层单页）、`.resume-container`（内容包裹层） |
+| 语义区 | `.r-header`（个人信息区）、`.r-main`（章节区） |
+| 头部 | `.r-header-text`、`.r-name`、`.r-ename`、`.r-jobtitle`、`.r-yoe`、`.r-avatar`（头像，位置由 CSS 定） |
+| 联系方式/语言 | `.r-contact`、`.r-contact-item`、`.r-contact-label`、`.r-contact-value`、`.r-langs`、`.r-lang`、`.r-subtitle` |
 | 章节标题 | `.section-title` |
 | 经历条目 | `.experience-item`、`.exp-header`、`.exp-summary` |
 | 教育条目 | `.education-item`、`.edu-header`、`.edu-detail` |
 | 技能 | `.skills-grid`、`.skill-category`、`.skill-item`、`.skill-dots`、`.skill-dot`、`.skill-dot.filled` |
 | 亮点列表 | `.highlights`、`.highlights li` |
-| 联系信息 | `.contact-info`、`.contact-item`、`.contact-label` |
 | 自定义区块 | `.custom-item` |
-
-> 自定义类名无强制要求，但推荐沿用上述 BEM-like 约定以保证模板间的一致性。
 
 ### 必选样式元素
 
@@ -241,24 +226,26 @@ templates/
 ```
 <template-name>.zip
 ├── template.json                 # 即 template.json 的内容
-├── template.html
 └── styles.css
 ```
+
+> 历史模板包若仍含 `template.html`：导入时**宽松忽略**该文件，只取 css+json
+> （Gosume 一期改造：统一 HTML 由应用内置，用户无法再通过 HTML 干预数据形态）。
 
 ### 打包规范
 
 - 文件名必须以`.zip` 结尾
 - 压缩包总大小 ≤ 10MB
 - 单个文件 ≤ 2MB
-- 仅包含根目录下的三个文件，不含子目录
-- 文件名必须精确匹配 `template.json` / `template.html` / `styles.css`
+- 仅包含根目录下的文件，不含子目录
+- 文件名必须精确匹配 `template.json` / `styles.css`
 - `template.json` 中的 `id` 必须与已有模板不冲突
 
 ### 创建模板包
 
 ```bash
-# 将模板的三个文件打包为zip压缩包
-zip my-template.zip template.json template.html styles.css
+# 将模板的两个文件打包为zip压缩包
+zip my-template.zip template.json styles.css
 ```
 
 ## 新建模板清单
@@ -266,18 +253,20 @@ zip my-template.zip template.json template.html styles.css
 创建新模板时，按以下步骤执行：
 
 1. 在 `templates/` 下创建 `templates/<dir-name>/` 目录（目录名使用 kebab-case 即可，如 `modern-pro`）
-2. 编写 `template.json`：填写完整元数据，`id` 字段使用 UUID v4（与目录名无关）
-3. 编写 `template.html`：使用 Go 模板语法，所有区块加 `{{if}}` 判断，添加 `{{template "styles.css" .}}` 内联样式
-4. 编写 `styles.css`：定义 A4 页面尺寸、CSS 变量、打印样式、技能点样式
-5. 验证：在应用中通过编辑器实时预览检查各区块显示效果
-6. 验证导出：导出 PDF 检查打印效果、分页、链接可点击性
-7. 打包分发（可选）：`zip <template-name>.zip template.json template.html styles.css`
+2. 编写 `template.json`：填写完整元数据，`id` 字段使用 UUID v4（与目录名无关），
+   `uses_unified_html` 置 `true`（使用应用内置统一 HTML）
+3. 编写 `styles.css`：适配统一 HTML 骨架（`r-header`/`r-main`），定义 A4 页面尺寸、
+   CSS 变量、单栏/双栏 Grid（头像位置用 `grid-template-areas` 控制）、打印样式、技能点样式
+4. 验证：在应用中通过编辑器实时预览检查各区块显示效果（预览与导出均走统一 HTML + 本模板 CSS）
+5. 验证导出：导出 PDF 检查打印效果、分页、链接可点击性
+6. 打包分发（可选）：`zip <template-name>.zip template.json styles.css`
 
 ## 禁止事项
 
-- 不得在 HTML/CSS 中引用外部资源（CDN 字体、外部图片等）
+- 不得在模板包中携带 `template.html`（统一 HTML 由应用内置，用户模板的 HTML 一律被忽略）
+- 不得在 CSS 中引用外部资源（CDN 字体、外部图片等）
 - 不得使用 `@import` 引入外部样式表
-- 不得在模板模板中执行 JavaScript（导出 PDF 时不执行 JS）
+- 不得依赖统一 HTML 之外的类名/结构（如旧版 `.sidebar`、`.header-left`、`.contact-info` 等仅存在于单套 HTML 中的类）
 - 不得省略 `data_schema` 中的验证规则（如果模板对某些字段有特殊要求）
 - 不得使用非 `pt`/`mm` 单位作为核心字号和间距单位（`px` 仅限细微调整）
 - 不得修改其他模板的文件

@@ -11,18 +11,28 @@ import type { TemplateSet } from '../lib/templateEngine'
 // ---------------------------------------------------------------------------
 
 const metaModules = import.meta.glob<Record<string, unknown>>(
-  '../../templates/*/template.json',
-  { eager: true },
+  '../../../templates/*/template.json',
+  { eager: true, import: 'default' },
 )
 
+// 统一 HTML（Gosume 一期改造）：全应用共享一份；已迁移模板（uses_unified_html）
+// 或模板无自带 HTML 时使用它。生产模式下由 Go 后端 GetTemplateContent 返回。
+// 路径从 frontend/src/services/ 出发需三层 ../ 才能到达项目根目录 templates/。
+const unifiedHtmlModules = import.meta.glob<string>(
+  '../../../templates/unified.html',
+  { eager: true, query: '?raw', import: 'default' },
+)
+const unifiedHtml = Object.values(unifiedHtmlModules)[0] ?? ''
+
+// 尚未迁移模板的 dev 兜底（模板文件全部移除后此 glob 为空，自然回退统一 HTML）
 const htmlModules = import.meta.glob<string>(
-  '../../templates/*/template.html',
-  { eager: true, query: '?raw' },
+  '../../../templates/*/template.html',
+  { eager: true, query: '?raw', import: 'default' },
 )
 
 const cssModules = import.meta.glob<string>(
-  '../../templates/*/styles.css',
-  { eager: true, query: '?raw' },
+  '../../../templates/*/styles.css',
+  { eager: true, query: '?raw', import: 'default' },
 )
 
 // ---------------------------------------------------------------------------
@@ -50,10 +60,13 @@ function buildTemplateMap(): Map<string, TemplateEntry> {
     const html = htmlModules[htmlPath] ?? ''
     const css = cssModules[cssPath] ?? ''
 
+    // 已迁移到统一骨架（uses_unified_html）或模板无自带 HTML → 使用统一 HTML
+    const entryHtml = meta.uses_unified_html || !html ? unifiedHtml : html
+
     // Built-in templates are always marked as such
     meta.is_builtin = true
 
-    map.set(meta.id, { meta, html, css })
+    map.set(meta.id, { meta, html: entryHtml, css })
   }
 
   return map

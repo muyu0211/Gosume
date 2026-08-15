@@ -1,4 +1,6 @@
-/* Swiss International Template Styles */
+/* Swiss International Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像右置，红色强调条。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 9pt;
@@ -31,68 +33,46 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Header — Asymmetric with red accent */
-.header {
+/* ── 头部区：左侧红色强调条，姓名文字左 + 头像右；联系方式/语言横向 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "text    avatar"
+        "contact contact"
+        "langs   langs";
+    column-gap: 12pt;
+    border-left: 4pt solid var(--primary-color);
+    padding-left: 12pt;
+    margin-bottom: 10pt;
+}
+
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
+
+.r-name { font-size: 22pt; font-weight: 900; color: var(--heading-color); letter-spacing: -0.5pt; line-height: 1.1; margin-bottom: 2pt; }
+.r-ename { font-size: 8.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.r-jobtitle { font-size: 9pt; font-weight: 600; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2pt; margin-bottom: 2pt; }
+.r-yoe { font-size: 8pt; color: var(--muted-color); }
+
+.r-avatar img { width: 47pt; height: 66pt; object-fit: cover; border-radius: 3pt; }
+
+/* 联系方式：横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
     display: flex;
-    margin-bottom: 14pt;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4pt 16pt;
+    margin-top: 8pt;
 }
+.r-contact-item { display: flex; gap: 2pt; font-size: 7.5pt; color: var(--muted-color); line-height: 1.6; }
+.r-contact-label { font-weight: 600; }
+.r-langs { display: flex; flex-wrap: wrap; gap: 3pt 14pt; font-size: 8.5pt; margin-top: 4pt; }
 
-.header-accent {
-    width: 4pt;
-    background: var(--primary-color);
-    margin-right: 12pt;
-    flex-shrink: 0;
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    flex: 1;
-    padding: 6pt 0;
-}
-
-.header-name h1 {
-    font-size: 22pt;
-    font-weight: 900;
-    color: var(--heading-color);
-    letter-spacing: -0.5pt;
-    line-height: 1.1;
-    margin-bottom: 2pt;
-}
-
-.header-name .job-title {
-    font-size: 9pt;
-    font-weight: 600;
-    color: var(--primary-color);
-    text-transform: uppercase;
-    letter-spacing: 2pt;
-}
-
-/* Header right cluster: contact info + avatar.
-   无头像时退化为纯联系信息块，保持原右对齐布局。 */
-.header-right {
-    display: flex;
-    align-items: flex-end;
-    gap: 10pt;
-}
-
-.header-contact {
-    text-align: right;
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    line-height: 1.6;
-}
-
-/* Swiss 头像：略带圆角的矩形，尺寸采用 1 寸证件照比例（25mm × 35mm ≈ 71pt × 99pt）。 */
-.header-avatar img {
-    width: 47pt;
-    height: 66pt;
-    object-fit: cover;
-    border-radius: 3pt;
-    display: block;
-    flex-shrink: 0;
-}
+/* ── 主内容区 ── */
 
 /* Summary */
 .summary {
@@ -105,211 +85,72 @@ body {
     word-break: break-word;
 }
 
-/* Section Header */
-.section-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8pt;
-    gap: 8pt;
-}
-
-.section-accent {
-    width: 24pt;
-    height: 3pt;
-    background: var(--primary-color);
-    flex-shrink: 0;
-}
-
+/* Section title — 前置红色小色块 */
 .section-title {
     font-size: 9pt;
     font-weight: 900;
     color: var(--heading-color);
     text-transform: uppercase;
     letter-spacing: 1.5pt;
+    margin-bottom: 8pt;
+}
+.section-title::before {
+    content: "";
+    display: inline-block;
+    width: 24pt;
+    height: 3pt;
+    background: var(--primary-color);
+    margin-right: 8pt;
+    vertical-align: middle;
 }
 
-/* Experience — with mini accent bar */
-.experience-item {
-    display: flex;
-    margin-bottom: 9pt;
-    gap: 10pt;
-}
+/* Experience — 条目左侧细强调线 */
+.experience-item { margin-bottom: 9pt; border-left: 2pt solid var(--border-color); padding-left: 10pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.exp-header .company { font-weight: 900; font-size: 9.5pt; color: var(--heading-color); }
+.exp-header .title { font-size: 8.5pt; font-weight: 600; color: var(--dark-color); }
+.exp-header .date { font-size: 7.5pt; color: var(--muted-color); font-weight: 400; white-space: nowrap; }
+.exp-location { font-size: 8pt; color: var(--muted-color); margin-bottom: 2pt; }
+.exp-summary { font-size: 8pt; color: var(--text-color); margin-bottom: 3pt; }
 
-.exp-accent {
-    width: 2pt;
-    background: var(--border-color);
-    flex-shrink: 0;
-    margin-top: 3pt;
-    align-self: stretch;
-    min-height: 100%;
-}
-
-.exp-content { flex: 1; }
-
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 2pt;
-}
-
-.exp-header .company {
-    font-weight: 900;
-    font-size: 9.5pt;
-    color: var(--heading-color);
-}
-
-.exp-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    font-weight: 400;
-}
-
-.title {
-    font-size: 8.5pt;
-    font-weight: 600;
-    color: var(--dark-color);
-    margin-bottom: 2pt;
-}
-
-.exp-summary {
-    font-size: 8pt;
-    color: var(--text-color);
-    margin-bottom: 3pt;
-}
-
-.highlights {
-    padding-left: 12pt;
-    list-style: none;
-}
-
-.highlights li {
-    position: relative;
-    padding-left: 8pt;
-    font-size: 8pt;
-    margin-bottom: 1.5pt;
-    line-height: 1.4;
-}
-
-.highlights li::before {
-    content: "—";
-    position: absolute;
-    left: 0;
-    color: var(--primary-color);
-    font-size: 7pt;
-    font-weight: 700;
-}
-
-/* Two-Column Grid */
-.grid-2col {
-    display: flex;
-    gap: 20pt;
-}
-
-.grid-col { flex: 1; }
+.highlights { padding-left: 12pt; list-style: none; }
+.highlights li { position: relative; padding-left: 8pt; font-size: 8pt; margin-bottom: 1.5pt; line-height: 1.4; }
+.highlights li::before { content: "—"; position: absolute; left: 0; color: var(--primary-color); font-size: 7pt; font-weight: 700; }
 
 /* Education */
 .education-item { margin-bottom: 7pt; }
-
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.edu-header .school {
-    font-weight: 700;
-    font-size: 9pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 8pt;
-    color: var(--text-color);
-}
-
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 700; font-size: 9pt; color: var(--heading-color); }
+.edu-header .date { font-size: 7.5pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 8pt; color: var(--text-color); }
 .edu-courses { font-size: 7.5pt; color: var(--muted-color); margin-bottom: 2pt; }
 
-/* Skills */
+/* Skills — 标签 */
+.skills-grid { display: block; }
 .skill-category { margin-bottom: 6pt; }
-
-.skill-category h4 {
-    font-size: 8pt;
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: 2pt;
-    text-transform: uppercase;
-}
-
-.skill-tags { display: flex; flex-wrap: wrap; gap: 3pt; }
-
-.skill-tag {
-    font-size: 7.5pt;
-    padding: 1pt 6pt;
-    background: var(--accent-bg);
-    border-radius: 2pt;
-    color: var(--text-color);
-}
-
-/* Languages */
-.lang-item {
-    font-size: 8.5pt;
-    margin-bottom: 2pt;
-}
-
-.lang-name { font-weight: 700; }
+.skill-category h4 { font-size: 8pt; font-weight: 700; color: var(--heading-color); margin-bottom: 2pt; text-transform: uppercase; }
+.skill-item { display: inline-flex; align-items: center; gap: 5pt; font-size: 7.5pt; padding: 1pt 6pt; margin: 0 3pt 3pt 0; background: var(--accent-bg); border-radius: 2pt; color: var(--text-color); }
+.skill-dots { display: inline-flex; gap: 1pt; }
+.skill-dot { width: 4pt; height: 4pt; border-radius: 50%; background: var(--border-color); }
+.skill-dot.filled { background: var(--primary-color); }
 
 /* Awards */
 .award-item { margin-bottom: 4pt; }
-
-.award-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.award-title {
-    font-size: 8.5pt;
-    font-weight: 600;
-}
-
-.award-date, .award-issuer {
-    font-size: 7.5pt;
-    color: var(--muted-color);
-}
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-size: 8.5pt; font-weight: 600; }
+.award-header .date, .award-issuer { font-size: 7.5pt; color: var(--muted-color); }
 
 /* Custom */
 .custom-item { margin-bottom: 6pt; }
-
-.custom-item h4 {
-    font-size: 9pt;
-    font-weight: 700;
-    color: var(--heading-color);
-}
-
+.custom-item h4 { font-size: 9pt; font-weight: 700; color: var(--heading-color); }
 .subtitle { font-size: 8pt; color: var(--muted-color); }
 
-/* Print */
 /* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-}
-.extra-value {
-    color: inherit;
-}
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
 
+/* Print */
 @media print {
     .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 10mm 14mm); }
     @page { size: A4; margin: 0; }

@@ -242,13 +242,6 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 	page.MustSetViewport(794, 1123, 1.0, false)
 	page.MustWaitStable()
 
-	// 注入连续渲染 CSS：让每个 .resume-page 收缩到实际内容高度，
-	// 取消分页算法强制的固定 297mm 高度 + overflow:hidden + page-break。
-	//
-	// 注意：rod 的 page.Eval(js) 会把 js 包成
-	//   function() { return (<js>).apply(this, arguments) }
-	// 因此 js 必须是"函数表达式"（如 `() => {...}`），不能是已立即执行
-	// 完的 IIFE（`(() => {...})()` 返回 undefined，再 .apply 会报错）。
 	if _, err := page.Eval(pngContinuousCSSJS); err != nil {
 		return nil, fmt.Errorf("注入连续渲染 CSS 失败: %w", err)
 	}
@@ -292,22 +285,25 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 // 首个 page 的原始 padding），左右 padding 保留不动。
 //
 // 注意：rod 的 page.Eval(js) 会把 js 包成
-//   function() { return (<js>).apply(this, arguments) }
+//
+//	function() { return (<js>).apply(this, arguments) }
+//
 // 因此这里必须返回一个"函数表达式"，由 rod 包装后 .apply 调用。
 // 不能写成 IIFE（`(() => {...})()`），否则 IIFE 返回 undefined，再 .apply 报错。
 // Go 原始字符串用反引号包裹，故 JS 内部不能再用反引号（模板字符串），
 // CSS 文本改用单引号字符串拼接。
 const pngContinuousCSSJS = `() => {
 	var pages = document.querySelectorAll('.resume-page');
-	var padTop = '0px', padBottom = '0px';
+	var padTop = '0px', padBottom = '0px', pageBg = '#ffffff';
 	if (pages.length > 0) {
 		var cs = getComputedStyle(pages[0]);
 		padTop = cs.paddingTop;
 		padBottom = cs.paddingBottom;
+		pageBg = cs.backgroundColor;
 	}
 	var style = document.createElement('style');
 	style.id = 'png-continuous-style';
-	style.textContent = '.resume-page{height:auto !important;min-height:0 !important;overflow:visible !important;page-break-after:auto !important;break-after:auto !important;margin:0 auto !important;padding-top:0 !important;padding-bottom:0 !important}.resume-pages-wrapper{display:block !important;padding-top:' + padTop + ' !important;padding-bottom:' + padBottom + ' !important}html,body{height:auto !important;overflow:visible !important}';
+		style.textContent = '.resume-page{height:auto !important;min-height:0 !important;overflow:visible !important;page-break-after:auto !important;break-after:auto !important;margin:0 auto !important;padding-top:0 !important;padding-bottom:0 !important}.resume-container{min-height:0 !important;height:auto !important}.resume-pages-wrapper{display:block !important;background:' + pageBg + ' !important;padding-top:' + padTop + ' !important;padding-bottom:' + padBottom + ' !important}html,body{height:auto !important;overflow:visible !important}';
 	document.head.appendChild(style);
 }`
 
@@ -316,19 +312,12 @@ const pngContinuousCSSJS = `() => {
 // (has <!DOCTYPE), it injects the CSS into the existing <head>; otherwise it
 // wraps the content in a minimal document.
 func wrapStandaloneHTML(bodyHTML string) string {
-	css := `@page { size: A4; margin: 0; }
-body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }`
+	css := `
+			@page { size: A4; margin: 0; }
+			body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+		`
 	if !strings.Contains(bodyHTML, "<!DOCTYPE") {
-		return fmt.Sprintf(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>%s</style>
-</head>
-<body>
-%s
-</body>
-</html>`, css, bodyHTML)
+		return fmt.Sprintf(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>%s</style></head><body>%s</body></html>`, css, bodyHTML)
 	}
 	return strings.Replace(bodyHTML, "</head>", "<style>"+css+"</style></head>", 1)
 }

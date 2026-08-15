@@ -106,7 +106,7 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 			continue
 		}
 
-		htmlData, _ := fs.ReadFile(builtinFS, path.Join(prefix, "template.html"))
+		// Gosume 一期改造：内置模板不再读入/存储 HTML（统一 HTML 由应用内置）。
 		cssData, _ := fs.ReadFile(builtinFS, path.Join(prefix, "styles.css"))
 
 		metaJSON, err := json.Marshal(meta)
@@ -114,7 +114,7 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 			return fmt.Errorf("marshal meta for %s: %w", tmplID, err)
 		}
 
-		contentHash := hashContent(htmlData, cssData, metaJSON)
+		contentHash := hashContent(cssData, metaJSON)
 
 		var storedHash string
 		var isDeleted int
@@ -126,9 +126,9 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 		if err == sql.ErrNoRows {
 			now := time.Now().UTC().Format(time.RFC3339)
 			_, err = s.db.Exec(
-				`INSERT INTO templates (id, meta, html, css, is_builtin, builtin_version, created_at, updated_at)
-				 VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
-				tmplID, string(metaJSON), string(htmlData), string(cssData), contentHash, now, now,
+				`INSERT INTO templates (id, meta, css, is_builtin, builtin_version, created_at, updated_at)
+				 VALUES (?, ?, ?, 1, ?, ?, ?)`,
+				tmplID, string(metaJSON), string(cssData), contentHash, now, now,
 			)
 			if err != nil {
 				log.Error("[template_store] insert builtin %s: %v", tmplID, err)
@@ -140,9 +140,9 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 		} else if storedHash != contentHash || isDeleted == 1 {
 			now := time.Now().UTC().Format(time.RFC3339)
 			_, err = s.db.Exec(
-				`UPDATE templates SET meta=?, html=?, css=?, builtin_version=?, updated_at=?, is_deleted=0
+				`UPDATE templates SET meta=?, css=?, builtin_version=?, updated_at=?, is_deleted=0
 				 WHERE id=? AND is_builtin=1`,
-				string(metaJSON), string(htmlData), string(cssData), contentHash, now, tmplID,
+				string(metaJSON), string(cssData), contentHash, now, tmplID,
 			)
 			if err != nil {
 				log.Error("[template_store] update builtin %s: %v", tmplID, err)
@@ -231,7 +231,8 @@ func (s *TemplateStore) GetByID(id string) (*template.Template, error) {
 }
 
 // Create inserts a new user template.
-func (s *TemplateStore) Create(meta template.Meta, html, css string) error {
+// Gosume 一期改造：不再接收 HTML，模板只保存 meta + css。
+func (s *TemplateStore) Create(meta template.Meta, css string) error {
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("marshal meta: %w", err)
@@ -239,9 +240,9 @@ func (s *TemplateStore) Create(meta template.Meta, html, css string) error {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	_, err = s.db.Exec(
-		`INSERT INTO templates (id, meta, html, css, is_builtin, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, 0, ?, ?)`,
-		meta.ID, string(metaJSON), html, css, now, now,
+		`INSERT INTO templates (id, meta, css, is_builtin, created_at, updated_at)
+		 VALUES (?, ?, ?, 0, ?, ?)`,
+		meta.ID, string(metaJSON), css, now, now,
 	)
 	if err != nil {
 		return fmt.Errorf("insert template: %w", err)
@@ -251,7 +252,7 @@ func (s *TemplateStore) Create(meta template.Meta, html, css string) error {
 }
 
 // Update modifies a user template (built-in templates are immutable).
-func (s *TemplateStore) Update(id string, meta template.Meta, html, css string) error {
+func (s *TemplateStore) Update(id string, meta template.Meta, css string) error {
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("marshal meta: %w", err)
@@ -259,8 +260,8 @@ func (s *TemplateStore) Update(id string, meta template.Meta, html, css string) 
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	result, err := s.db.Exec(
-		`UPDATE templates SET meta=?, html=?, css=?, updated_at=? WHERE id=? AND is_builtin=0 AND is_deleted=0`,
-		string(metaJSON), html, css, now, id,
+		`UPDATE templates SET meta=?, css=?, updated_at=? WHERE id=? AND is_builtin=0 AND is_deleted=0`,
+		string(metaJSON), css, now, id,
 	)
 	if err != nil {
 		return fmt.Errorf("update template: %w", err)
@@ -307,7 +308,6 @@ func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 
 		tmplDir := entry.Name()
 		metaPath := filepath.Join(dir, tmplDir, "template.json")
-		htmlPath := filepath.Join(dir, tmplDir, "template.html")
 		cssPath := filepath.Join(dir, tmplDir, "styles.css")
 
 		metaData, err := os.ReadFile(metaPath)
@@ -326,10 +326,9 @@ func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 			continue
 		}
 
-		htmlData, _ := os.ReadFile(htmlPath)
 		cssData, _ := os.ReadFile(cssPath)
 
-		if err := s.Create(meta, string(htmlData), string(cssData)); err != nil {
+		if err := s.Create(meta, string(cssData)); err != nil {
 			log.Warn("[template_store] import %s: %v", meta.ID, err)
 			continue
 		}
@@ -354,7 +353,6 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 
 		tmplDir := entry.Name()
 		metaPath := filepath.Join(dir, tmplDir, "template.json")
-		htmlPath := filepath.Join(dir, tmplDir, "template.html")
 		cssPath := filepath.Join(dir, tmplDir, "styles.css")
 
 		metaData, err := os.ReadFile(metaPath)
@@ -367,7 +365,6 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 			continue
 		}
 
-		htmlData, _ := os.ReadFile(htmlPath)
 		cssData, _ := os.ReadFile(cssPath)
 
 		metaJSON, err := json.Marshal(meta)
@@ -379,8 +376,8 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 
 		// Upsert: try update first, then insert if not exists
 		result, err := s.db.Exec(
-			`UPDATE templates SET meta=?, html=?, css=?, updated_at=? WHERE id=?`,
-			string(metaJSON), string(htmlData), string(cssData), now, meta.ID,
+			`UPDATE templates SET meta=?, css=?, updated_at=? WHERE id=?`,
+			string(metaJSON), string(cssData), now, meta.ID,
 		)
 		if err != nil {
 			log.Warn("[template_store] reload update %s: %v", meta.ID, err)
@@ -390,9 +387,9 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 		n, _ := result.RowsAffected()
 		if n == 0 {
 			_, err = s.db.Exec(
-				`INSERT INTO templates (id, meta, html, css, is_builtin, created_at, updated_at)
-				 VALUES (?, ?, ?, ?, 1, ?, ?)`,
-				meta.ID, string(metaJSON), string(htmlData), string(cssData), now, now,
+				`INSERT INTO templates (id, meta, css, is_builtin, created_at, updated_at)
+				 VALUES (?, ?, ?, 1, ?, ?)`,
+				meta.ID, string(metaJSON), string(cssData), now, now,
 			)
 			if err != nil {
 				log.Warn("[template_store] reload insert %s: %v", meta.ID, err)
@@ -467,9 +464,11 @@ func (s *TemplateStore) WatchDir(dir string) (chan struct{}, error) {
 	return stop, nil
 }
 
-func hashContent(html, css, metaJSON []byte) string {
+// hashContent 计算内置模板内容哈希（Gosume 一期改造：只包含 css + meta，
+// 不再包含 html —— 模板变更以样式/元数据为准）。
+func hashContent(css, metaJSON []byte) string {
 	h := sha256.New()
-	h.Write(html)
+	h.Write(css)
 	h.Write(css)
 	h.Write(metaJSON)
 	return fmt.Sprintf("%x", h.Sum(nil))

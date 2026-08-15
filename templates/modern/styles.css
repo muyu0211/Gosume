@@ -1,4 +1,6 @@
-/* Modern Professional Template Styles */
+/* Modern Professional Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像右置（姓名文字左 + 头像右），联系方式/语言为下方横向信息带。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 10pt;
@@ -28,47 +30,62 @@ body {
     background: #fff;
 }
 
-.resume-container {
-    max-width: 100%;
-}
+.resume-container { max-width: 100%; }
 
-/* Header / Personal Info */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 4pt;
+/* ── 头部区：姓名文字左 + 头像右；联系方式/语言横向信息带 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "text    avatar"
+        "contact contact"
+        "langs   langs";
+    column-gap: 14pt;
+    margin-bottom: 10pt;
     padding-bottom: 4pt;
     border-bottom: 2px solid var(--primary-color);
 }
 
-.header-left h1 {
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
+
+.r-name {
     font-size: 16pt;
     font-weight: 700;
     color: var(--heading-color);
-    margin-bottom: 4pt;
+    margin-bottom: 2pt;
+}
+.r-ename { font-size: 10pt; color: var(--muted-color); margin-bottom: 2pt; }
+.r-jobtitle { font-size: 11pt; color: var(--muted-color); }
+.r-yoe { font-size: 9.5pt; color: var(--muted-color); }
+
+.r-avatar img {
+    width: 48pt;
+    height: 64pt;
+    object-fit: cover;
+    border-radius: 4pt;
+    border: 1px solid var(--border-color);
 }
 
-.header-left .job-title {
-    font-size: 11pt;
-    color: var(--muted-color);
-    margin-bottom: 8pt;
-}
-
-.contact-info {
+/* 联系方式：横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
     display: flex;
     flex-wrap: wrap;
-    gap: 4pt 16pt;
-    font-size: 9pt;
-    color: var(--muted-color);
+    align-items: center;
+    gap: 6pt 18pt;
+    padding: 8pt 0;
+    margin-bottom: 8pt;
+    border-bottom: 1px solid var(--border-color);
 }
+.r-contact-item { display: flex; gap: 3pt; font-size: 9pt; color: var(--muted-color); }
+.r-contact-label { font-weight: 600; color: var(--heading-color); }
 
-.header-avatar { flex-shrink: 0; }
-.header-avatar img { width: 48pt; height: 64pt; object-fit: cover; border-radius: 4pt; border: 1px solid var(--border-color); }
-.contact-label { font-weight: 600; color: var(--heading-color); }
-.english-name { font-size: 10pt; color: var(--muted-color); margin-bottom: 4pt; }
-.years-exp { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 6pt; }
-.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
+.r-langs { display: flex; flex-wrap: wrap; gap: 4pt 16pt; font-size: 9.5pt; }
+
+/* ── 主内容区 ── */
 
 /* Summary */
 .summary {
@@ -95,44 +112,15 @@ body {
 }
 
 /* Jobs & Experience */
-.experience-item {
-    margin-bottom: 12pt;
-}
+.experience-item { margin-bottom: 12pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3pt; }
+.exp-header .company { font-weight: 700; font-size: 10.5pt; }
+.exp-header .title { color: var(--primary-color); font-weight: 600; }
+.exp-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; }
+.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary { font-size: 9.5pt; margin-bottom: 4pt; color: #4B5563; }
 
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 3pt;
-}
-
-.exp-header .company {
-    font-weight: 700;
-    font-size: 10.5pt;
-}
-
-.exp-header .title {
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-.exp-header .date {
-    font-size: 9pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-}
-
-.exp-summary {
-    font-size: 9.5pt;
-    margin-bottom: 4pt;
-    color: #4B5563;
-}
-
-.highlights {
-    list-style: none;
-    padding-left: 0;
-}
-
+.highlights { list-style: none; padding-left: 0; }
 .highlights li {
     position: relative;
     padding-left: 12pt;
@@ -140,7 +128,6 @@ body {
     font-size: 9.5pt;
     line-height: 1.5;
 }
-
 .highlights li::before {
     content: "•";
     position: absolute;
@@ -150,142 +137,43 @@ body {
 }
 
 /* Skills */
-.skills-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12pt;
-}
-
-.skill-category {
-    flex: 1;
-    min-width: 120pt;
-}
-
-.skill-category h4 {
-    font-size: 9.5pt;
-    font-weight: 600;
-    color: var(--heading-color);
-    margin-bottom: 4pt;
-}
-
-.skill-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6pt;
-    margin-bottom: 2pt;
-    font-size: 9pt;
-}
-
-.skill-dots {
-    display: flex;
-    gap: 2pt;
-}
-
-.skill-dot {
-    width: 7pt;
-    height: 7pt;
-    border-radius: 50%;
-    background: var(--border-color);
-}
-
-.skill-dot.filled {
-    background: var(--primary-color);
-}
+.skills-grid { display: flex; flex-wrap: wrap; gap: 12pt; }
+.skill-category { flex: 1; min-width: 120pt; }
+.skill-category h4 { font-size: 9.5pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 6pt; margin-bottom: 2pt; font-size: 9pt; }
+.skill-dots { display: flex; gap: 2pt; }
+.skill-dot { width: 7pt; height: 7pt; border-radius: 50%; background: var(--border-color); }
+.skill-dot.filled { background: var(--primary-color); }
 
 /* Education */
-.education-item {
-    margin-bottom: 8pt;
-}
+.education-item { margin-bottom: 8pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 700; font-size: 10pt; }
+.edu-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9.5pt; color: #4B5563; }
+.edu-courses { font-size: 9pt; color: #4B5563; }
 
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.edu-header .school {
-    font-weight: 700;
-    font-size: 10pt;
-}
-
-.edu-header .date {
-    font-size: 9pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 9.5pt;
-    color: #4B5563;
-}
-
-/* Languages & Awards */
-.inline-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4pt 16pt;
-    font-size: 9.5pt;
-}
-
-.inline-list .label {
-    font-weight: 600;
-}
+/* Awards */
+.award-item { margin-bottom: 8pt; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-weight: 700; font-size: 10pt; }
+.award-header .date { font-size: 9pt; color: var(--muted-color); }
+.award-issuer { font-size: 9pt; color: var(--muted-color); }
 
 /* Custom Section */
-.custom-item {
-    margin-bottom: 8pt;
-}
+.custom-item { margin-bottom: 8pt; }
+.custom-item h4 { font-size: 10pt; font-weight: 600; }
+.custom-item .subtitle { font-size: 9pt; color: var(--muted-color); }
 
-.custom-item h4 {
-    font-size: 10pt;
-    font-weight: 600;
-}
-
-.custom-item .subtitle {
-    font-size: 9pt;
-    color: var(--muted-color);
-}
-
-.award-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.award-header .date {
-    font-size: 9pt;
-    color: var(--muted-color);
-}
+/* Project extras (user-defined key/value) */
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; color: var(--primary-color); }
+.extra-value { color: inherit; }
 
 /* Print styles */
-/* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-    color: var(--primary-color);
-}
-.extra-value {
-    color: inherit;
-}
-
 @media print {
-    .resume-page {
-        width: 100%;
-        margin: 0;
-        padding: var(--resume-padding, 10mm 12mm);
-    }
-    @page {
-        size: A4;
-        margin: 0;
-    }
+    .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 10mm 12mm); }
+    @page { size: A4; margin: 0; }
 }
 
-.page-break {
-    page-break-after: always;
-    break-after: page;
-}
+.page-break { page-break-after: always; break-after: page; }

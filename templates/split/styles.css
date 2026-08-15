@@ -1,4 +1,6 @@
-/* Split Panel Template Styles */
+/* Split Panel Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 双栏：左侧栏 = 头像+姓名+联系方式+语言（r-header 即侧栏，通高），右栏 = 章节。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 9.5pt;
@@ -25,55 +27,65 @@ body {
     background: #fff;
 }
 
+/* ── 单页单元 ── */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
     background: #fff;
 }
 
+/* ── 双栏网格：左 header（侧栏）通高，右 main ── */
 .resume-container {
-    display: flex;
+    display: grid;
+    grid-template-columns: 62mm 1fr;
+    grid-template-areas: "header main";
+    grid-template-rows: 1fr;
     min-height: 297mm;
 }
 
-/* Sidebar */
-.sidebar {
-    width: 62mm;
+/* ── 侧栏 = 个人信息区（r-header）：头像在上，姓名/联系方式/语言依次竖排 ── */
+.r-header {
+    grid-area: header;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
-    padding: calc(var(--resume-padding-y, 14mm) * 0.75) calc(var(--resume-padding-x, 12pt) * 0.75) calc(var(--resume-padding-y, 12mm) * 0.75) calc(var(--resume-padding-x, 12pt) * 0.75);
-    display: flex;
-    flex-direction: column;
+    padding: calc(var(--resume-padding-y, 14mm) * 0.75) calc(var(--resume-padding-x, 12pt) * 0.75);
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+    align-content: start;
     gap: 14pt;
+    overflow-wrap: break-word;
 }
 
-.sidebar h1 {
-    font-size: 14pt;
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; justify-self: center; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
+
+/* 侧栏内的姓名/职位采用浅色配色 */
+.r-name {
+    font-size: 17pt;
     font-weight: 700;
     color: var(--sidebar-heading);
     margin-bottom: 2pt;
-    text-align: center;
 }
+.r-ename { font-size: 9.5pt; color: var(--sidebar-text); margin-bottom: 2pt; }
+.r-jobtitle { font-size: 11pt; color: var(--sidebar-accent); font-weight: 500; }
+.r-yoe { font-size: 9pt; color: var(--sidebar-text); }
 
-.sidebar .job-title {
-    font-size: 9pt;
-    color: var(--sidebar-accent);
-    text-align: center;
-    font-weight: 500;
-}
-
-.avatar { text-align: center; }
-.avatar img {
-    width: 56pt;
-    height: 56pt;
+.r-avatar img {
+    width: 72pt;
+    height: 72pt;
     object-fit: cover;
     border-radius: 50%;
     border: 2pt solid var(--sidebar-accent);
 }
 
-.sidebar-section { margin-bottom: 2pt; }
-
-.sidebar-title {
+.r-subtitle {
     font-size: 8pt;
     font-weight: 700;
     color: var(--sidebar-accent);
@@ -84,7 +96,17 @@ body {
     border-bottom: 1pt solid rgba(255,255,255,0.12);
 }
 
-.sidebar-item {
+.r-contact-item {
+    font-size: 7.5pt;
+    color: var(--sidebar-text);
+    margin-bottom: 3pt;
+    line-height: 1.4;
+    word-break: break-all;
+}
+.r-contact-label { display: block; font-size: 7pt; color: var(--sidebar-accent); text-transform: uppercase; }
+.r-contact-value { color: var(--sidebar-text); }
+
+.r-lang {
     font-size: 7.5pt;
     color: var(--sidebar-text);
     margin-bottom: 3pt;
@@ -92,81 +114,10 @@ body {
     line-height: 1.4;
 }
 
-.sidebar-skill-group { margin-bottom: 6pt; }
-
-.sidebar-skill-cat {
-    font-size: 7.5pt;
-    font-weight: 600;
-    color: var(--sidebar-heading);
-    margin-bottom: 3pt;
-}
-
-.sidebar-skill-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 7pt;
-    margin-bottom: 2pt;
-    gap: 6pt;
-}
-
-.sidebar-skill-dots {
-    display: flex;
-    gap: 2pt;
-}
-
-.sidebar-skill-dots .skill-dot {
-    width: 5pt;
-    height: 5pt;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-}
-
-.sidebar-skill-dots .skill-dot.filled {
-    background: var(--sidebar-accent);
-}
-
-/* Main content skills */
-.skill-group {
-    margin-bottom: 10pt;
-}
-
-.skill-group h4 {
-    font-size: 9.5pt;
-    font-weight: 600;
-    color: var(--heading-color);
-    margin-bottom: 4pt;
-}
-
-.skill-group .skill-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6pt;
-    font-size: 9pt;
-    margin-bottom: 2pt;
-    margin-right: 14pt;
-}
-
-.skill-dots {
-    display: flex;
-    gap: 2pt;
-}
-
-.skill-dot {
-    width: 5pt;
-    height: 5pt;
-    border-radius: 50%;
-    background: #E5E7EB;
-}
-
-.skill-dot.filled {
-    background: var(--primary-color);
-}
-
-/* Main Content */
-.main-content {
-    flex: 1;
-    padding: calc(var(--resume-padding-y, 14mm) * 0.75) calc(var(--resume-padding-x, 14mm) * 0.75) calc(var(--resume-padding-y, 12mm) * 0.75) calc(var(--resume-padding-x, 14mm) * 0.75);
+/* ── 主内容区（右栏） ── */
+.r-main {
+    grid-area: main;
+    padding: 10pt calc(var(--resume-padding-x, 14mm) * 0.75) calc(var(--resume-padding-y, 12mm) * 0.75);
 }
 
 /* Section Titles */
@@ -196,101 +147,55 @@ body {
 
 /* Experience */
 .experience-item { margin-bottom: 10pt; }
-
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 3pt;
-}
-
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3pt; }
 .exp-header .company { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
-
 .exp-header .title { color: var(--muted-color); font-weight: 500; }
-
-.exp-header .date {
-    font-size: 8pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-}
-
+.exp-header .date { font-size: 8pt; color: var(--muted-color); white-space: nowrap; }
 .exp-location { font-size: 8.5pt; color: var(--muted-color); margin-bottom: 2pt; }
-
-.exp-title { font-size: 9pt; color: var(--muted-color); margin-bottom: 2pt; font-weight: 500; }
-
-.exp-summary {
-    font-size: 9pt;
-    color: var(--text-color);
-    margin-bottom: 3pt;
-}
+.exp-summary { font-size: 9pt; color: var(--text-color); margin-bottom: 3pt; }
 
 .highlights { padding-left: 14pt; }
+.highlights li { font-size: 8.5pt; margin-bottom: 2pt; line-height: 1.45; }
 
-.highlights li {
-    font-size: 8.5pt;
-    margin-bottom: 2pt;
-    line-height: 1.45;
-}
+/* Skills */
+.skills-grid { display: flex; flex-wrap: wrap; gap: 10pt; }
+.skill-category { min-width: 120pt; }
+.skill-category h4 { font-size: 9.5pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 6pt; font-size: 9pt; margin-bottom: 2pt; margin-right: 14pt; }
+.skill-dots { display: flex; gap: 2pt; }
+.skill-dot { width: 5pt; height: 5pt; border-radius: 50%; background: #E5E7EB; }
+.skill-dot.filled { background: var(--primary-color); }
 
 /* Education */
 .education-item { margin-bottom: 8pt; }
-
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 2pt;
-}
-
-.edu-header .school { font-weight: 700; font-size: 10pt; color: var(--heading-color); }
-
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.edu-header .edu-school { font-weight: 700; font-size: 10pt; color: var(--heading-color); }
 .edu-header .date { font-size: 8pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
-
 .edu-detail { font-size: 9pt; color: var(--muted-color); }
+.edu-courses { font-size: 9pt; color: var(--muted-color); }
 
 /* Awards */
 .award-item { margin-bottom: 6pt; }
-
-.award-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
 .award-title { font-weight: 600; font-size: 9.5pt; }
-
+.award-header .date { font-size: 8pt; color: var(--muted-color); }
 .award-issuer { font-size: 8.5pt; color: var(--muted-color); }
 
 /* Custom */
 .custom-item { margin-bottom: 8pt; }
-
-.custom-item h4 {
-    font-size: 9.5pt;
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
+.custom-item h4 { font-size: 9.5pt; font-weight: 600; color: var(--heading-color); }
 .subtitle { font-size: 8.5pt; color: var(--muted-color); }
 
-/* Print */
 /* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-    color: var(--primary-color);
-}
-.extra-value {
-    color: inherit;
-}
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; color: var(--primary-color); }
+.extra-value { color: inherit; }
 
+/* Print */
 @media print {
     .resume-page { width: 100%; margin: 0; }
     @page { size: A4; margin: 0; }
-    .sidebar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .r-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 .page-break { page-break-after: always; break-after: page; }

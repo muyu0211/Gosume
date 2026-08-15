@@ -1,4 +1,6 @@
-/* Compact Efficient Template Styles */
+/* Compact Efficient Template Styles
+ * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
+ * 单栏：头像右置，青色色块标题。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 10.5pt;
@@ -30,48 +32,48 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* Header — Compact inline */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* ── 头部区：姓名文字左 + 头像右；联系方式/语言横向信息带 ── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "text    avatar"
+        "contact contact"
+        "langs   langs";
+    column-gap: 12pt;
     margin-bottom: 8pt;
     padding-bottom: 6pt;
     border-bottom: 2px solid var(--primary-color);
 }
 
-.header-left {
-    display: flex;
-    align-items: baseline;
-    gap: 8pt;
-}
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
 
-.header-left h1 {
-    font-size: 18pt;
-    font-weight: 700;
-    color: var(--heading-color);
-}
+.r-name { font-size: 18pt; font-weight: 700; color: var(--heading-color); }
+.r-ename { font-size: 9.5pt; color: var(--muted-color); }
+.r-jobtitle { font-size: 10.5pt; color: var(--primary-color); font-weight: 500; }
+.r-yoe { font-size: 9.5pt; color: var(--muted-color); }
 
-.job-title {
-    font-size: 10.5pt;
-    color: var(--primary-color);
-    font-weight: 500;
-}
+.r-avatar img { width: 40pt; height: 40pt; object-fit: cover; border-radius: 50%; border: 2pt solid var(--primary-color); }
 
-.years-exp {
-    font-size: 9.5pt;
-    color: var(--muted-color);
-}
-
-.header-right {
+/* 联系方式：横向信息带（隐藏小节标题） */
+.r-subtitle { display: none; }
+.r-contact {
     display: flex;
     flex-wrap: wrap;
-    gap: 2pt 12pt;
+    align-items: center;
+    gap: 2pt 14pt;
     font-size: 9pt;
     color: var(--muted-color);
-    text-align: right;
-    max-width: 50%;
+    margin-bottom: 6pt;
 }
+.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-label { font-weight: 600; color: var(--heading-color); }
+.r-langs { display: flex; flex-wrap: wrap; gap: 2pt 12pt; font-size: 9.5pt; color: var(--text-color); }
+
+/* ── 主内容区 ── */
 
 /* Summary */
 .summary {
@@ -83,7 +85,7 @@ body {
     word-break: break-word;
 }
 
-/* Section titles */
+/* Section titles — 青色色块 */
 .section-title {
     font-size: 10.5pt;
     font-weight: 700;
@@ -96,229 +98,56 @@ body {
 }
 
 /* Experience */
-.experience-item {
-    margin-bottom: 7pt;
-}
+.experience-item { margin-bottom: 7pt; }
+.exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt; }
+.exp-header .company { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
+.exp-header .title { font-weight: 500; color: var(--primary-color); font-size: 9.5pt; }
+.exp-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; }
+.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
+.exp-summary { font-size: 9.5pt; color: var(--text-color); margin-bottom: 2pt; }
 
-.exp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 1pt;
-}
-
-.exp-header .company {
-    font-weight: 700;
-    font-size: 10.5pt;
-    color: var(--heading-color);
-}
-
-.exp-header .title {
-    font-weight: 500;
-    color: var(--primary-color);
-    font-size: 9.5pt;
-}
-
-.exp-header .date {
-    font-size: 9pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-}
-
-.exp-location {
-    font-size: 9pt;
-    color: var(--muted-color);
-    margin-bottom: 1pt;
-}
-
-.exp-summary {
-    font-size: 9.5pt;
-    color: var(--text-color);
-    margin-bottom: 2pt;
-}
-
-.highlights {
-    list-style: none;
-    padding-left: 0;
-    columns: 2;
-    column-gap: 16pt;
-}
-
-.highlights li {
-    position: relative;
-    padding-left: 8pt;
-    margin-bottom: 1pt;
-    font-size: 9pt;
-    line-height: 1.4;
-    break-inside: avoid;
-}
-
-.highlights li::before {
-    content: "›";
-    position: absolute;
-    left: 0;
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-/* Two-column layout for Education + Skills */
-.two-col {
-    display: flex;
-    gap: 16pt;
-    margin-bottom: 6pt;
-}
-
-.col-left {
-    flex: 1;
-}
-
-.col-right {
-    flex: 1;
-}
+.highlights { list-style: none; padding-left: 0; columns: 2; column-gap: 16pt; }
+.highlights li { position: relative; padding-left: 8pt; margin-bottom: 1pt; font-size: 9pt; line-height: 1.4; break-inside: avoid; }
+.highlights li::before { content: "›"; position: absolute; left: 0; color: var(--primary-color); font-weight: 700; }
 
 /* Education */
-.education-item {
-    margin-bottom: 5pt;
-}
-
-.edu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.edu-header .school {
-    font-weight: 700;
-    font-size: 10pt;
-    color: var(--heading-color);
-}
-
-.edu-header .date {
-    font-size: 9pt;
-    color: var(--muted-color);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.edu-detail {
-    font-size: 9pt;
-    color: var(--muted-color);
-}
+.education-item { margin-bottom: 5pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.edu-header .edu-school { font-weight: 700; font-size: 10pt; color: var(--heading-color); }
+.edu-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9pt; color: var(--muted-color); }
+.edu-courses { font-size: 9pt; color: var(--muted-color); }
 
 /* Skills */
-.skill-category {
-    margin-bottom: 4pt;
-    font-size: 9.5pt;
-}
+.skills-grid { display: block; }
+.skill-category { margin-bottom: 4pt; font-size: 9.5pt; }
+.skill-category h4 { font-weight: 600; color: var(--heading-color); display: inline; margin-right: 6pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 3pt; margin-right: 8pt; font-size: 9.5pt; color: var(--text-color); }
+.skill-dots { display: inline-flex; gap: 1pt; margin-left: 2pt; }
+.skill-dot { display: inline-block; width: 5pt; height: 5pt; border-radius: 2pt; background: #CCFBF1; }
+.skill-dot.filled { background: var(--primary-color); }
 
-.skill-cat-name {
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
-.skill-tag {
-    display: inline;
-    margin-right: 6pt;
-    font-size: 9.5pt;
-    color: var(--text-color);
-}
-
-.skill-dot {
-    display: inline-block;
-    width: 5pt;
-    height: 5pt;
-    border-radius: 2pt;
-    background: #CCFBF1;
-    margin-left: 1pt;
-    vertical-align: middle;
-}
-
-.skill-dot.filled {
-    background: var(--primary-color);
-}
-
-/* Languages — Inline compact */
-.languages-line {
-    font-size: 9.5pt;
-    color: var(--text-color);
-    margin-bottom: 6pt;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2pt 12pt;
-}
-
-.lang-label {
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
-.languages-line .label {
-    font-weight: 600;
-}
-
-/* Awards — Tags */
-.awards-inline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4pt;
-    margin-bottom: 6pt;
-}
-
-.award-tag {
-    font-size: 9pt;
-    padding: 2pt 6pt;
-    background: var(--accent-bg);
-    border-radius: 2pt;
-    color: var(--text-color);
-}
-
-.award-date {
-    color: var(--muted-color);
-}
+/* Awards — 标签 */
+.award-item { margin-bottom: 3pt; font-size: 9pt; }
+.award-header { display: flex; align-items: baseline; gap: 6pt; }
+.award-title { font-weight: 600; }
+.award-header .date { color: var(--muted-color); }
+.award-issuer { color: var(--muted-color); }
 
 /* Custom */
-.custom-item {
-    margin-bottom: 5pt;
-}
+.custom-item { margin-bottom: 5pt; }
+.custom-item h4 { font-size: 10pt; font-weight: 600; color: var(--heading-color); }
+.subtitle { font-size: 9pt; color: var(--muted-color); }
 
-.custom-item h4 {
-    font-size: 10pt;
-    font-weight: 600;
-    color: var(--heading-color);
-}
-
-.custom-subtitle {
-    font-size: 9pt;
-    color: var(--muted-color);
-}
+/* Project extras (user-defined key/value) */
+.extra-row { font-size: 9pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
 
 /* Print */
-/* Project extras (user-defined key/value) */
-.extra-row {
-    font-size: 9pt;
-    margin-bottom: 3pt;
-    line-height: 1.5;
-}
-.extra-label {
-    font-weight: 600;
-}
-.extra-value {
-    color: inherit;
-}
-
 @media print {
-    .resume-page {
-        width: 100%;
-        margin: 0;
-        padding: var(--resume-padding, 10mm 14mm);
-    }
-    @page {
-        size: A4;
-        margin: 0;
-    }
+    .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 10mm 14mm); }
+    @page { size: A4; margin: 0; }
 }
 
-.page-break {
-    page-break-after: always;
-    break-after: page;
-}
+.page-break { page-break-after: always; break-after: page; }

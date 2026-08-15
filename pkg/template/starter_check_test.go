@@ -10,13 +10,12 @@ import (
 )
 
 // TestStarterSkillPackagePassesValidation verifies the gosume-template-skills
-// starter assets satisfy the real import validation (syntax + execution).
+// starter assets satisfy the real import validation.
+//
+// Gosume 一期改造：模板包不再校验/携带 HTML（统一 HTML 由应用内置），
+// 这里只校验 starter 的 template.json + styles.css 可通过导入。
 func TestStarterSkillPackagePassesValidation(t *testing.T) {
 	starterDir := filepath.Join("..", "..", "gosume-template-skills", "assets", "starter")
-	html, err := os.ReadFile(filepath.Join(starterDir, "template.html"))
-	if err != nil {
-		t.Fatalf("read starter template.html: %v", err)
-	}
 	css, err := os.ReadFile(filepath.Join(starterDir, "styles.css"))
 	if err != nil {
 		t.Fatalf("read starter styles.css: %v", err)
@@ -32,20 +31,20 @@ func TestStarterSkillPackagePassesValidation(t *testing.T) {
 	}
 	if err := ValidatePackage(&Package{
 		Meta: metaVal,
-		HTML: string(html),
 		CSS:  string(css),
 	}); err != nil {
 		t.Fatalf("starter package failed validation: %v", err)
 	}
 
-	// Also verify round-trip through the ZIP loader path.
+	// Also verify round-trip through the ZIP loader path, including a legacy
+	// template.html that must be ignored leniently.
 	path := filepath.Join(t.TempDir(), "starter.zip")
 	f, _ := os.Create(path)
 	defer f.Close()
 	zw := zip.NewWriter(f)
 	for name, content := range map[string]string{
 		"template.json": string(meta),
-		"template.html": string(html),
+		"template.html": "<html><body>{{if .Jobs}}{{end}}</body></html>",
 		"styles.css":    string(css),
 	} {
 		w, _ := zw.Create(name)
@@ -57,7 +56,10 @@ func TestStarterSkillPackagePassesValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPackageFromZip(starter) error = %v", err)
 	}
-	if !strings.Contains(pkg.HTML, "if not .Hidden") {
-		t.Fatal("starter HTML expected to contain Hidden guards")
+	if pkg.Meta.ID != metaVal.ID {
+		t.Fatalf("starter meta id = %q, want %q", pkg.Meta.ID, metaVal.ID)
+	}
+	if strings.TrimSpace(pkg.CSS) == "" {
+		t.Fatal("starter CSS expected to be non-empty")
 	}
 }

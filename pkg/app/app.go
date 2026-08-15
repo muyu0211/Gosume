@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gosume/pkg/appconfig"
 	"gosume/pkg/config"
@@ -48,8 +49,16 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 	templateLoader := template.NewLoader(templateStore)
 	stopWatch := initDevWatcher(templateStore)
 
+	// 统一 HTML（Gosume 一期改造）：全应用共享一份，模板包不再携带 HTML。
+	// 已迁移模板（uses_unified_html=true）或模板无自带 HTML 时，渲染/预览使用它。
+	unifiedHTML, err := builtinTemplates.ReadFile("templates/unified.html")
+	if err != nil {
+		log.Error("[main] read unified.html: %v", err)
+		unifiedHTML = []byte{}
+	}
+
 	// Render & export
-	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader})
+	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(unifiedHTML)})
 	exportManager := initExportManager()
 
 	// Project store
@@ -75,7 +84,7 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 
 	// Dependency injection
 	resumeSvc.Inject(resumeStore, htmlRenderer)
-	templateSvc.Inject(wailsApp, templateLoader, templateStore)
+	templateSvc.Inject(wailsApp, templateLoader, templateStore, string(unifiedHTML))
 	exportSvc.Inject(wailsApp, exportManager)
 	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 	systemSvc.Inject(wailsApp, configMgr, win, appCfg)
@@ -104,7 +113,7 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 		log.Init(newDir, "Gosume", log.INFO, true)
 
 		resumeSvc.Inject(resumeStore, htmlRenderer)
-		templateSvc.Inject(wailsApp, templateLoader, templateStore)
+		templateSvc.Inject(wailsApp, templateLoader, templateStore, string(unifiedHTML))
 		fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 
 		wailsApp.Event.Emit("config:datadir-changed", newDir)
@@ -236,7 +245,17 @@ func registerEvents() {
 // --- adapters ---
 
 type templateAdapter struct {
-	loader *template.Loader
+	loader      *template.Loader
+	unifiedHTML string
+}
+
+// effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
+// 或模板无自带 HTML 时使用应用内置的 unified.html。
+func (a *templateAdapter) effectiveHTML(t *template.Template) string {
+	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
+		return a.unifiedHTML
+	}
+	return t.HTML
 }
 
 func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
@@ -246,7 +265,7 @@ func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
 	}
 	return &render.Template{
 		Meta:    render.TemplateMeta{ID: t.Meta.ID},
-		HTML:    t.HTML,
+		HTML:    a.effectiveHTML(t),
 		CSS:     t.CSS,
 		DirPath: t.DirPath,
 	}, nil
@@ -261,7 +280,7 @@ func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
 	for _, t := range templates {
 		result = append(result, &render.Template{
 			Meta:    render.TemplateMeta{ID: t.Meta.ID},
-			HTML:    t.HTML,
+			HTML:    a.effectiveHTML(t),
 			CSS:     t.CSS,
 			DirPath: t.DirPath,
 		})

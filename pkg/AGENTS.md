@@ -2,47 +2,6 @@
 
 ## 后端 — Go
 
-## 目录结构
-
-```
-pkg/
-├── app/              # 应用启动与依赖组装
-│   └── app.go        #   依赖注入、Wails 窗口创建、事件注册
-├── config/           # 用户配置
-│   └── config.go     #   JSON 配置管理器，支持热切换
-├── export/           # 简历导出引擎
-│   ├── exporter.go   #   ExportManager：导出资排
-│   ├── browser.go    #   BrowserManager：无头浏览器生命周期管理（rod）
-│   ├── pdf.go        #   PDF 导出（通过无头 Chrome）
-│   └── png.go        #   PNG 导出（通过截图）
-├── log/              # 结构化日志
-│   └── logger.go     #   zap 日志封装，支持轮转
-├── model/            # 数据模型（store、render、service 共用）
-│   ├── resume.go     #   Resume、ResumeMeta、SetFieldByPath
-│   ├── personal.go   #   个人信息字段
-│   ├── experience.go #   工作经历模型
-│   ├── education.go  #   教育经历模型
-│   ├── skill.go      #   技能分组与技能项模型
-│   └── migration.go  #   旧格式简历的 schema 迁移
-├── render/           # HTML 渲染
-│   └── html.go       #   HTMLRenderer：模板 + 数据 → HTML 输出
-├── service/          # Wails 服务层（对前端暴露的 API）
-│   ├── errors.go             #   统一用户友好错误：UserError、UserMsg、UserWrap、IsCancel
-│   ├── resume_service.go    #   ResumeService：简历 CRUD、预览、保存
-│   ├── template_service.go  #   TemplateService：模板列表、内容、导入、CRUD
-│   ├── export_service.go    #   ExportService：PDF/PNG 导出
-│   ├── file_service.go      #   FileService：项目文件的打开与保存
-│   └── system_service.go    #   SystemService：应用信息、配置、系统集成
-├── store/            # 数据持久化（SQLite）
-│   ├── resume_store.go      #   ResumeStore：resumes 表 CRUD
-│   ├── template_store.go    #   TemplateStore：templates 表 + 文件导入
-│   └── project.go           #   ProjectStore：最近打开文件列表
-└── template/         # 模板系统
-    ├── loader.go               #   Loader：通过 TemplateStore 接口加载模板
-    ├── validator.go            #   根据模板 schema 校验简历数据
-    ├── package_importer.go     #   模板包的 ZIP 解析与导入
-    └── package_importer_test.go #   模板包导入单元测试
-```
 
 ## 技术栈
 
