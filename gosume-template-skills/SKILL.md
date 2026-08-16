@@ -1,6 +1,6 @@
 ---
 name: gosume-template-creator
-description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件）。Gosume 是基于 Wails v3 的桌面简历工具。一期改造后，模板只由 template.json（元数据）+ styles.css（样式）两个文件组成——简历的 HTML 结构由应用内置的统一 HTML（unified.html）承载，模板制作者只需写 CSS 决定"简历长什么样"。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 的统一 HTML DOM 契约，生成风格一致的可导入模板。当用户提到"简历模板"、"gosume 模板"、"制作可导入的简历模板"、"照着这个简历做一个模板"、"参考这张图/PDF 生成模板"，或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
+description: 创建可导入 Gosume 简历制作应用的模板包（.zip文件）。Gosume 是基于 Wails v3 的桌面简历工具。一期改造后，模板只由 template.json（元数据）+ styles.css（样式）两个文件组成——简历的 HTML 结构由应用内置的统一 HTML（template.html）承载，模板制作者只需写 CSS 决定"简历长什么样"。支持两种输入方式：(1) 根据用户描述的风格需求从零创建模板；(2) 根据用户传入的简历图片/PDF/HTML 参考素材，提取风格特征并映射到 Gosume 的统一 HTML DOM 契约，生成风格一致的可导入模板。当用户提到"简历模板"、"gosume 模板"、"制作可导入的简历模板"、"照着这个简历做一个模板"、"参考这张图/PDF 生成模板"，或希望为 Gosume 应用创建/设计/编写新模板时，使用此 skill。即使用户没明确提到"gosume"，只要上下文涉及这个项目的模板生成或希望参考某份简历样式生成模板，也应触发。
 ---
 
 # Gosume 简历模板创建器
@@ -14,7 +14,7 @@ Gosume 一期改造后，模板从"三板斧"（html + css + json）简化为**�
 - `template.json`：模板元数据（名称、作者、分类、颜色、特性等）
 - `styles.css`：样式表（针对统一 HTML 的固定 DOM 结构写样式）
 
-简历的 HTML 结构**不再由模板提供**，而是由应用内置的**统一 HTML**（`templates/unified.html`）承载。它定义了固定的 DOM 契约（见下文），模板制作者的唯一职责是**写 CSS 决定"简历长什么样"**——布局（单栏/双栏）、配色、字体、间距、头像位置等，全部由 CSS 控制。
+简历的 HTML 结构**不再由模板提供**，而是由应用内置的**统一 HTML**（`templates/template.html`）承载。它定义了固定的 DOM 契约（见下文），模板制作者的唯一职责是**写 CSS 决定"简历长什么样"**——布局（单栏/双栏）、配色、字体、间距、头像位置等，全部由 CSS 控制。
 
 > 为什么这样设计：HTML 控制"简历里有什么数据"（对所有简历都一样，且涉及应用数据逻辑，用户不该干预）；CSS 控制"数据怎么呈现"（这才是模板制作者该提供的）。统一 HTML 后，用户模板无法通过 HTML 干预数据形态，导入更安全、渲染更稳定。
 
@@ -35,7 +35,7 @@ Gosume 一期改造后，模板从"三板斧"（html + css + json）简化为**�
 
 ### 2. 统一 HTML 的 DOM 契约（最重要！）
 
-模板制作者**不写 HTML**，但必须知道统一 HTML 会渲染出什么结构，才能写对 CSS 选择器。契约如下（与 `templates/unified.html` 对齐，修改必须同步更新）：
+模板制作者**不写 HTML**，但必须知道统一 HTML 会渲染出什么结构，才能写对 CSS 选择器。契约如下（与 `templates/template.html` 对齐，修改必须同步更新）：
 
 ```
 <body>
@@ -124,9 +124,10 @@ Gosume 一期改造后，模板从"三板斧"（html + css + json）简化为**�
 
 - **双栏**：`.r-avatar` 放侧栏（`.r-header` 内部 grid-template-areas 排布，头像通常在最上）。
 - **单栏**：`.r-header` 内部用 grid-template-areas 排布，三选一：
-  - 头像右置：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact contact" "langs langs";`
+  - 头像右置：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact avatar" "langs avatar";`
+    （头像独占右侧一列、跨三行；文字/联系方式/语言全排左列，头像调大不会挤压下方内容）
   - 头像居中：`grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
-  - 头像左置：与右置对称 `"avatar text"`。
+  - 头像左置：与右置对称 `grid-template-areas: "avatar text" "avatar contact" "avatar langs"`。
 
 是否显示头像由模板 CSS 决定（`features.avatar` 仅为元数据，不参与渲染）。
 

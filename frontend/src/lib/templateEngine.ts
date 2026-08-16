@@ -457,6 +457,8 @@ function snakeToPascal(s: string): string {
     .replace(/\bGpa\b/g, 'GPA')
     .replace(/\bPdf\b/g, 'PDF')
     .replace(/\bPng\b/g, 'PNG')
+    .replace(/\bGithub\b/g, 'GitHub')
+    .replace(/\bLinkedin\b/g, 'LinkedIn')
 }
 
 function pascalToSnake(s: string): string {

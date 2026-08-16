@@ -47,6 +47,14 @@ export function PreviewPanel() {
       const h = doc.body?.scrollHeight || result.paper.pxH
       setContainerHeight(h)
 
+      // 测量头像在简历中的实际渲染尺寸（分页后取第一个 .r-avatar img），
+      const avatarImg = doc.querySelector('.r-avatar img') as HTMLImageElement | null
+      const aw = avatarImg?.offsetWidth ?? 0
+      const ah = avatarImg?.offsetHeight ?? 0
+      useResumeStore.getState().setAvatarRenderedSize(
+        aw > 0 && ah > 0 ? { width: aw, height: ah } : null,
+      )
+
       // Inject wheel listener into iframe document for Ctrl+scroll zoom.
       // Events inside the iframe do not bubble to the parent document,
       // so we must listen directly on the iframe's contentDocument.

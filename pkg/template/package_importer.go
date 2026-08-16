@@ -20,7 +20,7 @@ var templateIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`)
 
 // Package is the validated content of a local .zip package.
 //
-// Gosume 一期改造：模板包不再携带 HTML——统一 HTML（templates/unified.html）
+// Gosume 一期改造：模板包不再携带 HTML——统一 HTML（templates/template.html）
 // 由应用内置，模板制作者只需提供 template.json（元数据）+ styles.css（样式）。
 type Package struct {
 	Meta Meta

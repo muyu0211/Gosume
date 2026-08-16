@@ -106,9 +106,9 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 ### 模板系统（一期改造后）
 
-Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式），模板包不再携带 HTML。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式），模板包不再携带 HTML。
 
-- `templates/unified.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），渲染顺序固定。它输出稳定的 DOM 契约（`.resume-page > .resume-container > .r-header + .r-main`），与前端分页子系统 `paginationCore.ts` 对齐。
+- `templates/template.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），渲染顺序固定。它输出稳定的 DOM 契约（`.resume-page > .resume-container > .r-header + .r-main`），与前端分页子系统 `paginationCore.ts` 对齐。
 - 模板加载：`template.Loader` 从 `TemplateStore`（内置 `templates/` 目录 + SQLite 用户模板）加载；`GetTemplateContent` 返回模板的 HTML（`effectiveHTML`：`uses_unified_html` 或空 HTML 时用统一 HTML）+ CSS + 纸张规格（`paper_size`/`orientation`，供前端分页与导出使用）。
 - 隐藏（Hidden）由数据层处理：后端渲染前用 `model.WithoutHidden()` 过滤隐藏条目，统一 HTML 不写 Hidden 守卫（前端 `toGoShape` 语义一致）。
 - 模板元数据定义在 `pkg/template/loader.go`（`Meta` 结构），字段规范见 `templates/AGENTS.md`。

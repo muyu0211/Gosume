@@ -1,6 +1,8 @@
 /* Modern Professional Template Styles
- * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
- * 单栏：头像右置（姓名文字左 + 头像右），联系方式/语言为下方横向信息带。 */
+ * 页边距统一在 .resume-page（与分页/导出管线约定一致）。\
+ */
+
+ /* 当前模板全局样式 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 10pt;
@@ -32,31 +34,25 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* ── 头部区：姓名文字左 + 头像右；联系方式/语言横向信息带 ── */
+/* ── 头部区：文字内容左 + 头像右；（grid-template-areas 布局） ── */
 .r-header {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas:
         "text    avatar"
-        "contact contact"
-        "langs   langs";
+        "contact avatar"
+        "langs   avatar";
     column-gap: 14pt;
     margin-bottom: 10pt;
     padding-bottom: 4pt;
     border-bottom: 2px solid var(--primary-color);
 }
-
 .r-header-text { grid-area: text; }
 .r-avatar { grid-area: avatar; }
 .r-contact { grid-area: contact; }
 .r-langs { grid-area: langs; }
 
-.r-name {
-    font-size: 16pt;
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: 2pt;
-}
+.r-name {font-size: 16pt;font-weight: 700;color: var(--heading-color);margin-bottom: 2pt;}
 .r-ename { font-size: 10pt; color: var(--muted-color); margin-bottom: 2pt; }
 .r-jobtitle { font-size: 11pt; color: var(--muted-color); }
 .r-yoe { font-size: 9.5pt; color: var(--muted-color); }
@@ -75,14 +71,11 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6pt 18pt;
-    padding: 8pt 0;
+    gap: 3pt 16pt;
     margin-bottom: 8pt;
-    border-bottom: 1px solid var(--border-color);
 }
 .r-contact-item { display: flex; gap: 3pt; font-size: 9pt; color: var(--muted-color); }
 .r-contact-label { font-weight: 600; color: var(--heading-color); }
-
 .r-langs { display: flex; flex-wrap: wrap; gap: 4pt 16pt; font-size: 9.5pt; }
 
 /* ── 主内容区 ── */

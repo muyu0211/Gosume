@@ -52,23 +52,22 @@ function compressImage(file: File): Promise<string> {
 export function PersonalSection() {
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
+  const avatarRenderedSize = useResumeStore((s) => s.avatarRenderedSize)
   const p = resume?.personal
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
-  // 简历中头像显示尺寸（px）。未设置时回退到 100×100，渲染时由 injectAvatarSizeCss
-  // 注入到预览/导出的 .r-avatar img，覆盖模板默认尺寸。
-  const [avatarW, setAvatarW] = useState<number>(p.avatar_width ?? 100)
-  const [avatarH, setAvatarH] = useState<number>(p.avatar_height ?? 100)
+  const [avatarW, setAvatarW] = useState<number>(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
+  const [avatarH, setAvatarH] = useState<number>(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
   const [lockRatio, setLockRatio] = useState(true)
   const [ratioPreset, setRatioPreset] = useState<string>('custom')
   const ratioRef = useRef(1)
 
-  // 同步外部数据（载入/切换简历、导入模板时）。
+  // 同步外部数据（载入/切换简历、导入模板时），并跟随预览测量出的实际渲染尺寸。
   useEffect(() => {
-    setAvatarW(p.avatar_width ?? 100)
-    setAvatarH(p.avatar_height ?? 100)
-  }, [p.avatar_width, p.avatar_height])
+    setAvatarW(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
+    setAvatarH(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
+  }, [p.avatar_width, p.avatar_height, avatarRenderedSize])
 
   // 维护宽高比例（固定比例 checkbox 开启时用）。存 ref 避免触发额外渲染。
   useEffect(() => {
@@ -140,7 +139,7 @@ export function PersonalSection() {
     }
     setAvatarW(w)
     updateField('personal.avatar_width', w)
-    if (lockRatio) updateField('personal.avatar_height', newH)
+    updateField('personal.avatar_height', newH)
   }
 
   const handleHeightChange = (h: number) => {
@@ -153,10 +152,10 @@ export function PersonalSection() {
     }
     setAvatarH(h)
     updateField('personal.avatar_height', h)
-    if (lockRatio) updateField('personal.avatar_width', newW)
+    updateField('personal.avatar_width', newW)
   }
 
-  // 选择比例预设（一寸/二寸）时：锁定比例、按预设比例调整高度（保持当前宽度），
+  // 选择比例预设（1:1/一寸/二寸）时：锁定比例、按预设比例调整高度（保持当前宽度），
   // 便于用户恢复到标准证件照比例。选"自定义"则不改变当前比例。
   const handlePresetChange = (key: string) => {
     setRatioPreset(key)
@@ -166,6 +165,7 @@ export function PersonalSection() {
     ratioRef.current = preset.ratio
     const newH = clampDim(Math.round(avatarW / preset.ratio))
     setAvatarH(newH)
+    updateField('personal.avatar_width', avatarW)
     updateField('personal.avatar_height', newH)
   }
 

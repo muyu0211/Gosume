@@ -18,9 +18,9 @@ func (l staticLoader) LoadAll() ([]*Template, error)         { return []*Templat
 
 func unifiedTemplateForTest(t *testing.T) *Template {
 	t.Helper()
-	html, err := os.ReadFile("../../templates/unified.html")
+	html, err := os.ReadFile("../../templates/template.html")
 	if err != nil {
-		t.Fatalf("read unified.html: %v", err)
+		t.Fatalf("read template.html: %v", err)
 	}
 	return &Template{
 		Meta: TemplateMeta{ID: "unified-test"},
@@ -48,14 +48,14 @@ func TestUnifiedTemplateRenders(t *testing.T) {
 		`class="r-contact"`,
 		`class="r-langs"`,
 		`class="r-subtitle"`,
-		`教育背景`,   // 章节标题（i18n zh）
+		`教育背景`, // 章节标题（i18n zh）
 		`实习经历`,
 		`工作经历`,
 		`项目经历`,
 		`荣誉奖项`,
 		`技能`,
 		`个人总结`,
-		`skill-dot filled`, // skillLevel 圆点
+		`skill-dot filled`,  // skillLevel 圆点
 		`class="extra-row"`, // 项目 Extras
 		`<ul class="highlights">`,
 		`custom-item`,
@@ -144,11 +144,11 @@ func TestUnifiedTemplateHiddenFiltered(t *testing.T) {
 }
 
 // TestAllBuiltinTemplatesRenderWithUnified 验证 16 套内置模板的 styles.css
-// 都能与统一 HTML（templates/unified.html）配对渲染（Gosume 一期改造 M3 验收）。
+// 都能与统一 HTML（templates/template.html）配对渲染（Gosume 一期改造 M3 验收）。
 func TestAllBuiltinTemplatesRenderWithUnified(t *testing.T) {
-	unifiedHTML, err := os.ReadFile("../../templates/unified.html")
+	unifiedHTML, err := os.ReadFile("../../templates/template.html")
 	if err != nil {
-		t.Fatalf("read unified.html: %v", err)
+		t.Fatalf("read template.html: %v", err)
 	}
 
 	dirs, err := os.ReadDir("../../templates")
@@ -194,14 +194,14 @@ func sampleResumeForUnified() *model.Resume {
 			Language:   "zh-CN",
 		},
 		Personal: model.Personal{
-			FullName:   "张三",
+			FullName:    "张三",
 			EnglishName: "San Zhang",
-			JobTitle:   "前端工程师",
-			YearsOfExp: 5,
-			Email:      "zhangsan@example.com",
-			Phone:      "13800000000",
-			Location:   "上海",
-			Avatar:     "data:image/png;base64,AAAA",
+			JobTitle:    "前端工程师",
+			YearsOfExp:  5,
+			Email:       "zhangsan@example.com",
+			Phone:       "13800000000",
+			Location:    "上海",
+			Avatar:      "data:image/png;base64,AAAA",
 		},
 		Summary: "第一行\n第二行",
 		Internships: []model.Internship{{
@@ -233,10 +233,10 @@ func sampleResumeForUnified() *model.Resume {
 			}},
 		}},
 		Education: []model.Education{{
-			ID:      "e1",
-			School:  "示例大学",
-			Degree:  "本科",
-			Major:   "计算机",
+			ID:        "e1",
+			School:    "示例大学",
+			Degree:    "本科",
+			Major:     "计算机",
 			StartDate: "2016.09",
 			EndDate:   "2020.06",
 		}},

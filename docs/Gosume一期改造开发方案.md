@@ -79,7 +79,7 @@
 ## 3. 核心设计：统一 HTML（草案）
 
 ### 3.1 单一数据源
-新增 **`templates/unified.html`**（一个 Go 模板，同时被前端引擎与后端渲染器消费）。所有模板**不再各自持有 HTML**；`template.json` + `styles.css` 决定"长什么样"，`unified.html` 决定"有什么数据、怎么显隐"。
+新增 **`templates/template.html`**（一个 Go 模板，同时被前端引擎与后端渲染器消费）。所有模板**不再各自持有 HTML**；`template.json` + `styles.css` 决定"长什么样"，`template.html` 决定"有什么数据、怎么显隐"。
 
 ### 3.2 布局无关骨架（**已确认：CSS Grid 命名区域**）
 
@@ -166,7 +166,7 @@
 ## 4. 改造清单（文件级）
 
 ### 4.1 新增
-- `templates/unified.html`：统一 HTML 模板（单一数据源）。
+- `templates/template.html`：统一 HTML 模板（单一数据源）。
 - （可选）`frontend/src/lib/unifiedTemplate.ts`：dev 模式下导出统一 HTML 字符串（见 4.3）。
 
 ### 4.2 删除
@@ -174,13 +174,13 @@
 
 ### 4.3 前端
 - `frontend/src/services/templateService.ts`：
-  - dev 兜底 `import.meta.glob('../../templates/*/template.html')` 改为加载**单一** `unified.html`（如 `import unifiedHtml from '../../templates/unified.html?raw'`）。
+  - dev 兜底 `import.meta.glob('../../templates/*/template.html')` 改为加载**单一** `template.html`（如 `import unifiedHtml from '../../templates/template.html?raw'`）。
   - `loadTemplateContent(id)` 返回 `{ html: unifiedHtml, css: entry.css }`（不再按模板取不同 HTML）。
 - `frontend/src/lib/templateEngine.ts`：若统一 HTML 仅用受支持语法，则**无需改**；按 Q2/A5/A6 `features` 不消费，**不注入任何 body class**，本条无需实施。
 - `frontend/src/hooks/usePreview.ts`、`thumbnailService.ts`、`lib/exportHtml.ts`：按 Q2/A5/A6 `features` 不消费，**不注入 body class**，本条无需实施。
 
 ### 4.4 后端（Go）
-- `pkg/render/html.go`：`HTMLRenderer` 不再读 `tmpl.HTML`，改为使用**统一 HTML 常量**（应用启动时加载 `unified.html`）＋ 按模板注入 `styles.css`。
+- `pkg/render/html.go`：`HTMLRenderer` 不再读 `tmpl.HTML`，改为使用**统一 HTML 常量**（应用启动时加载 `template.html`）＋ 按模板注入 `styles.css`。
 - `pkg/service/template_service.go`：
   - `GetTemplateContent` 返回 `{ html: unifiedHTML, css: t.CSS }`。
   - `CreateTemplate/UpdateTemplate/CloneTemplate` 去掉 `html` 参数（模板不再含 HTML）。
@@ -190,7 +190,7 @@
   - `hashContent` 的 hash 输入去掉 html（改 html+css+meta → css+meta），避免每次升级统一 HTML 导致全部内置模板被重刷（可选：仅当 css/json 变化才视为变更）。
 - `pkg/template/package_importer.go`（§5 重点）：移除 `template.html` 必填与 `validateTemplateExecution`/`validatePreviewCompatibleSyntax` 对 HTML 的校验。
 - `pkg/template/loader.go`：`Template.HTML` 字段语义改为"统一 HTML（由渲染器注入）"，或保留但渲染器统一覆盖。
-- `main.go`：通过 `//go:embed` 把 `unified.html` 提供给 `TemplateService`/`HTMLRenderer`（可放在 `builtinTemplates` FS 的 `templates/unified.html` 路径下读取）。
+- `main.go`：通过 `//go:embed` 把 `template.html` 提供给 `TemplateService`/`HTMLRenderer`（可放在 `builtinTemplates` FS 的 `templates/template.html` 路径下读取）。
 
 ### 4.5 测试与文档
 - `pkg/template/package_importer_test.go`：移除/改写依赖 `template.html` 的用例（如"含 `{{safeURL .Personal.Avatar}}` 的 HTML 被拒"等），改为"仅 css+json 的包可通过"。
@@ -257,7 +257,7 @@
 
 0. **前置·字段统一（里程碑 M0，独立且优先）**：盘点 Go 模型字段命名不一致清单（如 `GitHub`/`Github`、`Location` 等），冻结统一命名；写数据迁移脚本（旧 resume 数据字段重映射）。完成后方可进入 M1。——对应 R7。
 0. **前置·回归基线（里程碑 M0b）**：在改动任何模板前，对 16 套内置模板用代表性简历数据，在**两条链路**（前端引擎 + 后端渲染器）各渲染一次，固化"改造前 golden 输出"（HTML 结构快照 + 关键模板 PDF 截图）。作为 R5 的对比基准。
-1. **骨架与样板（里程碑 M1）**：写 `unified.html`（按 §3.4 不写 Hidden 守卫；按 §4.6 不引入任何 `features` 分支）；选 1 套单栏（如 `modern`）+ 1 套双栏（如 `split`）改写 `styles.css` 适配 §3.2 骨架；**对齐 16 套内置模板 JSON 的 `features` 声明至真实渲染语义（§4.6）**；打通前端引擎 + 后端渲染器读取统一 HTML；补两条链路对拍测试（含隐藏场景 R3）；**M1 验收门槛 = 样板模板渲染 diff 不超出预期**（R5/R6/R9）。
+1. **骨架与样板（里程碑 M1）**：写 `template.html`（按 §3.4 不写 Hidden 守卫；按 §4.6 不引入任何 `features` 分支）；选 1 套单栏（如 `modern`）+ 1 套双栏（如 `split`）改写 `styles.css` 适配 §3.2 骨架；**对齐 16 套内置模板 JSON 的 `features` 声明至真实渲染语义（§4.6）**；打通前端引擎 + 后端渲染器读取统一 HTML；补两条链路对拍测试（含隐藏场景 R3）；**M1 验收门槛 = 样板模板渲染 diff 不超出预期**（R5/R6/R9）。
 2. **导入/存储改造（M2，可与 M1 并行）**：改 `package_importer.go` 简化校验（§5）；改 `template_service.go`/`template_store.go` 去 html；改 dev glob；评估旧用户模板包兼容（R8）。
 3. **全量内置模板迁移（M3）**：其余 14 套 `styles.css` 逐一改写 + 预览/导出回归（按 3~4 套一批），每批与 M0b 基线 diff。
 4. **清理与文档（M4）**：删 16 个 `template.html`；更新 `AGENTS.md`、测试用例；收尾。
@@ -280,7 +280,7 @@
 | Q1 | 统一 HTML 布局骨架 | **CSS Grid 命名区域**：统一 HTML 只输出 header/aside/main 语义块，单栏/双栏完全由每套模板 CSS 经 `grid-template-areas` 决定。 |
 | Q2 | 头像显示控制 | **仅数据存在 + CSS**：统一 HTML 仅在简历含头像时渲染；是否显示由模板 CSS 决定；`features.avatar` 维持元数据，渲染器不消费。 |
 | Q3 | 导入包向后兼容 | **宽松**：zip 内若仍含 `template.html` 则忽略，只取 css+json；老用户包仍可导入。 |
-| Q4 | 改造节奏 | **先样板验证再分批**：先写 `unified.html` 并改造 modern/split 两套样板打通双链路回归，再分批迁移其余 14 套。 |
+| Q4 | 改造节奏 | **先样板验证再分批**：先写 `template.html` 并改造 modern/split 两套样板打通双链路回归，再分批迁移其余 14 套。 |
 | Q5 | 模块隐藏是否本期新增 | **否**：经代码核对（§2.5）该能力已实现，本期不重复开发、不新增 UI/模型。 |
 | Q6 | 统一 HTML 的 Hidden 守卫 | **移除**：统一 HTML 不写 `{{if not .Hidden}}` 类守卫，隐藏完全由数据层（前端 `toGoShape` + 后端 `toTemplateData` 过滤）负责；后端渲染需补齐等价过滤。 |
 | Q7 | 实施前置里程碑 | **新增 M0（字段命名统一）+ M0b（回归基线）**：先冻结并统一 Go 模型字段名 + 写数据迁移，先固化改造前 golden 渲染；再进入 M1 统一 HTML。 |
@@ -299,14 +299,14 @@
 
 | 里程碑 | 内容 | 状态 |
 |--------|------|------|
-| M1 骨架与样板 | 新增 `templates/unified.html`（header/aside/main Grid 语义块 + 全章节超集）；重写 `modern`（单栏）、`split`（双栏）`styles.css`；后端 `templateAdapter`/`TemplateService` 按 `uses_unified_html` 注入统一 HTML；前端 dev 兜底改读统一 HTML | ✅ |
+| M1 骨架与样板 | 新增 `templates/template.html`（header/aside/main Grid 语义块 + 全章节超集）；重写 `modern`（单栏）、`split`（双栏）`styles.css`；后端 `templateAdapter`/`TemplateService` 按 `uses_unified_html` 注入统一 HTML；前端 dev 兜底改读统一 HTML | ✅ |
 | M2 导入/存储 | `package_importer.go` 去掉 `template.html` 必填与执行/语法校验（删 `validateTemplateExecution`/`validatePreviewCompatibleSyntax` 及预览函数）；`template_store.go` 写路径去 html、hash 改 css+meta；`template_service.go` Create/Update/Clone/Import 去 html | ✅ |
 | M3 全量迁移 | 16 套内置 `styles.css` 全部改写为统一骨架（保留各自视觉），`template.json` 全部置 `uses_unified_html: true` | ✅ |
 | M4 清理与文档 | 删除 16 个 `template.html`；重写 `templates/AGENTS.md`（两件套规范 + 布局无关约定 + 统一 HTML 契约） | ✅ |
 
 ### 9.2 关键实现细节（与方案 §4 的偏差/补充）
 
-1. **`uses_unified_html` 迁移标志**（方案未提，实施新增）：`template.json` 增加可选字段，Go `Meta`/前端 `TemplateMeta`/`GetTemplateMeta` 三处同步。`effectiveHTML()`（app.go adapter + TemplateService）规则：`uses_unified_html=true 或模板 HTML 为空 → 用 unified.html`。16 套内置模板全部置 true。
+1. **`uses_unified_html` 迁移标志**（方案未提，实施新增）：`template.json` 增加可选字段，Go `Meta`/前端 `TemplateMeta`/`GetTemplateMeta` 三处同步。`effectiveHTML()`（app.go adapter + TemplateService）规则：`uses_unified_html=true 或模板 HTML 为空 → 用 template.html`。16 套内置模板全部置 true。
 2. **后端渲染器不改 `pkg/render/html.go`**（方案 §4.4 曾列此项）：改为在 `pkg/app/app.go` 的 `templateAdapter` 注入统一 HTML，渲染器代码零改动，风险更小。
 3. **`syncBuiltins` 不再读/存每模板 html**，`hashContent` 改为 css+meta（避免统一 HTML 升级触发全量重刷）。DB `html` 列保留但不再写入/读取。
 4. **导入宽松策略落地**：zip 内含 `template.html` 直接忽略（不读取内容），仅要求 `template.json` + `styles.css`。

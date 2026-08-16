@@ -51,9 +51,9 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 
 	// 统一 HTML（Gosume 一期改造）：全应用共享一份，模板包不再携带 HTML。
 	// 已迁移模板（uses_unified_html=true）或模板无自带 HTML 时，渲染/预览使用它。
-	unifiedHTML, err := builtinTemplates.ReadFile("templates/unified.html")
+	unifiedHTML, err := builtinTemplates.ReadFile("templates/template.html")
 	if err != nil {
-		log.Error("[main] read unified.html: %v", err)
+		log.Error("[main] read template.html: %v", err)
 		unifiedHTML = []byte{}
 	}
 
@@ -250,7 +250,7 @@ type templateAdapter struct {
 }
 
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
-// 或模板无自带 HTML 时使用应用内置的 unified.html。
+// 或模板无自带 HTML 时使用应用内置的 template.html。
 func (a *templateAdapter) effectiveHTML(t *template.Template) string {
 	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
 		return a.unifiedHTML

@@ -73,7 +73,7 @@ container.className = 'resume-container'
 
 ### 2.2 本次改造改掉了什么
 
-统一 HTML（`templates/unified.html`）的骨架是：
+统一 HTML（`templates/template.html`）的骨架是：
 
 ```html
 <body class="resume-page">
