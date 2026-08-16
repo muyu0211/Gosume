@@ -15,26 +15,22 @@ ZIP 包根目录下必须存在以下两个文件（文件名精确匹配）：
 
 缺失任何一个 → 错误 `missing required file: <文件名>`
 
-### 1.2 历史 HTML 宽松忽略
-
-若压缩包内仍带 `template.html`（历史模板包），**宽松忽略**——不读取其内容，不影响导入。新模板不应再生成此文件。
-
-### 1.3 重复文件
+### 1.2 重复文件
 
 `template.json` / `styles.css` 每个文件名只能出现一次。重复 → 错误 `duplicate <文件名> in template package`
 
-### 1.4 路径安全
+### 1.3 路径安全
 
 ZIP 内文件路径不得：以 `../` 开头、等于 `..`、以 `/` 开头、是系统绝对路径。违反 → 错误 `unsafe path in template package: <路径>`
 
-### 1.5 大小限制
+### 1.4 大小限制
 
 - 单文件 ≤ 2MB（`MaxTemplateFileSize = 2 << 20`）
 - 整包累计 ≤ 10MB（`MaxTemplatePackageSize = 10 << 20`）
 
 超限 → 错误 `template file <文件名> is too large` 或 `template package is too large`
 
-### 1.6 目录条目
+### 1.5 目录条目
 
 ZIP 内的目录条目会被忽略，只处理文件。建议不要在包内放目录。
 
@@ -74,8 +70,7 @@ ZIP 内的目录条目会被忽略，只处理文件。建议不要在包内放�
 ## 3. CSS 校验
 
 - `styles.css` trim 后不能为空 → 错误 `styles.css is empty`
-
-> 一期改造后**不再校验 HTML**（`validatePreviewCompatibleSyntax`、`validateTemplateExecution` 已移除），CSS 也不作为模板解析执行。模板能否正常渲染取决于 CSS 是否对齐统一 HTML 的类名契约（见 `style-guide.md`），这属于"渲染正确性"而非"导入校验"范畴——导入只保证元数据与 CSS 非空合法。
+- 模板能否正常渲染取决于 CSS 是否对齐统一 HTML 的类名契约（见 `style-guide.md`），这属于"渲染正确性"而非"导入校验"范畴——导入只保证元数据与 CSS 非空合法。
 
 ## 4. 常见导入失败排查
 
@@ -100,5 +95,3 @@ ZIP 内的目录条目会被忽略，只处理文件。建议不要在包内放�
 2. 在应用中尝试导入（导入校验只查元数据 + CSS 非空）
 3. 导入后在应用中实时预览，确认 CSS 对齐统一 HTML 类名、各区块样式正确
 4. 导出 PDF 验证打印效果与分页
-
-如果反复试错成本高，可以临时修改 `pkg/template/package_importer_test.go` 添加测试用例，跑 `go test` 验证。但这需要 Go 开发环境。
