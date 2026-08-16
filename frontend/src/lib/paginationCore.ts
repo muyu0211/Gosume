@@ -33,17 +33,27 @@
  * measurements and the pages end up with the wrong background / padding.
  */
 
+import { DEFAULT_PAPER, resolvePaper, type PaperSpec } from './paper'
+
 export interface PageStyle {
   padTop: number
   padRight: number
   padBottom: number
   padLeft: number
   pageBg: string
+  paper: PaperSpec
 }
+
+export type PageMode = 'paged' | 'continuous'
 
 export interface PaginateOptions extends PageStyle {
   /** CSS `margin-bottom` applied to each `.resume-page`. */
   pageMarginBottom?: string
+  /**
+   * 'paged' (default) splits content into fixed-size pages; 'continuous'
+   * produces a single seamless page sized to its content, used for PNG export.
+   */
+  mode?: PageMode
 }
 
 export interface PaginateResult {
@@ -60,6 +70,8 @@ interface PageCtx {
   padLeft: number
   pageBg: string
   pageMarginBottom: string
+  /** Paper spec the generated pages are sized to. */
+  paper: PaperSpec
   /** true when the template is double-column (grid layout). */
   double: boolean
   /** Reference to the original `.r-header` (personal info block; persistent
@@ -79,8 +91,14 @@ interface Cursor {
 
 /** px slack when comparing scrollHeight vs offsetHeight (sub-pixel rounding). */
 const OVERFLOW_TOLERANCE = 2
-/** How deep `placeSection` may recurse when splitting an oversized section. */
-const MAX_SPLIT_DEPTH = 2
+/**
+ * Upper bound on recursion depth when splitting an oversized section.
+ * Real template DOM depth is far below this bound; the cap only guards against
+ * pathological cycles. An oversized section is split down to its leaf children
+ * so nothing is silently dropped — the only kept-whole case is a leaf whose own
+ * height exceeds a full page (a single text block that cannot be split further).
+ */
+const MAX_SPLIT_DEPTH = 12
 
 /**
  * Reads the original `.resume-page` element's padding + background.
@@ -96,7 +114,39 @@ export function readPageStyle(doc: Document): PageStyle | null {
     padBottom: parseFloat(s.paddingBottom) || 0,
     padLeft: parseFloat(s.paddingLeft) || 0,
     pageBg: s.backgroundColor || '#ffffff',
+    paper: resolvePaper(el.dataset.paperSize, el.dataset.orientation),
   }
+}
+
+/**
+ * Waits until fonts and images in `doc` are ready so pagination measures the
+ * final layout instead of a half-loaded one (avatars, custom fonts). Never
+ * rejects — a hung image only delays up to its timeout.
+ */
+export async function waitForDocumentReady(doc: Document): Promise<void> {
+  try {
+    await doc.fonts.ready
+  } catch {
+    /* fonts.ready unsupported in some environments */
+  }
+
+  const images = Array.from(doc.images) as HTMLImageElement[]
+  if (images.length === 0) return
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve()
+            return
+          }
+          const done = () => resolve()
+          img.addEventListener('load', done, { once: true })
+          img.addEventListener('error', done, { once: true })
+          setTimeout(done, 3000)
+        }),
+    ),
+  )
 }
 
 /**
@@ -133,15 +183,21 @@ export function paginateResume(
     padLeft: options.padLeft,
     pageBg: options.pageBg,
     pageMarginBottom,
+    paper: options.paper ?? DEFAULT_PAPER,
     double,
     header,
     main,
   }
 
+  if (options.mode === 'continuous') {
+    paginateContinuous(ctx, header, main, mainSections)
+    return { wrapper, pageCount: 1 }
+  }
+
   const cursor: Cursor = { page: makePage(ctx), container: null as unknown as HTMLElement, count: 1 }
   wrapper.appendChild(cursor.page)
 
-  const c = cursor.page.querySelector('.resume-container')!
+  const c = cursor.page.querySelector('.resume-container') as HTMLElement
   // Page 1 carries the header (personal info). In double mode it is the full
   // sidebar content; in single mode it is the leading block.
   if (header) c.appendChild(header.cloneNode(true))
@@ -149,13 +205,35 @@ export function paginateResume(
   // its own padding/background on continuation pages too, instead of flattening
   // the sections onto the bare container.
   cursor.container = appendMainShell(c, main)
-  for (const section of mainSections) placeSection(ctx, cursor, section, 0)
+  placeSections(ctx, cursor, mainSections)
 
   return { wrapper, pageCount: cursor.count }
 }
 
 function isDoubleColumn(doc: Document, container: HTMLElement): boolean {
-  return doc.defaultView!.getComputedStyle(container).display === 'grid'
+  const s = doc.defaultView!.getComputedStyle(container)
+  if (s.display !== 'grid') return false
+
+  // A single-column template may still use `display: grid` for its header area,
+  // so `display === 'grid'` alone over-detects. The reliable signal for a
+  // double-column layout is that `.r-header` (the sidebar) sits side-by-side
+  // with `.r-main` and vertically overlaps it.
+  const header = container.querySelector('.r-header') as HTMLElement | null
+  const main = container.querySelector('.r-main') as HTMLElement | null
+  if (header && main) {
+    const hr = header.getBoundingClientRect()
+    const mr = main.getBoundingClientRect()
+    const sideBySide = hr.right <= mr.left + 1 || mr.right <= hr.left + 1
+    const verticallyOverlapping = hr.bottom > mr.top + 1 && mr.bottom > hr.top + 1
+    return sideBySide && verticallyOverlapping
+  }
+
+  // Fallback: no header/main present — fall back to a single-row grid area.
+  const areas = s.gridTemplateAreas
+  if (areas && areas !== 'none') {
+    return areas.split('"').filter((seg) => seg.trim().length > 0).length === 1
+  }
+  return false
 }
 
 /**
@@ -173,10 +251,94 @@ function appendMainShell(container: HTMLElement, main: HTMLElement | null): HTML
 // ── Section placement ───────────────────────────────────────────────────────
 
 /**
+ * Places the flat list of `.r-main` children in order, keeping each
+ * `.section-title` on the same page as the first entry that follows it, so a
+ * module heading never ends up orphaned at the bottom of a page.
+ */
+function placeSections(ctx: PageCtx, cursor: Cursor, sections: HTMLElement[]): void {
+  let pendingTitle: HTMLElement | null = null
+
+  for (const section of sections) {
+    if (isSectionTitle(section)) {
+      if (pendingTitle) placeBlock(cursor, pendingTitle)
+      pendingTitle = section
+      continue
+    }
+
+    if (pendingTitle) {
+      const title = pendingTitle
+      pendingTitle = null
+      // Keep the title on the same page as the first piece of the entry that
+      // follows it. Probe "title + first piece" together; if they don't fit the
+      // current page, move both to a fresh page. The entry's remaining pieces
+      // are then flowed via placeChildren, so only the tail may spill over.
+      const first = firstPiece(section)
+      if (blockFits(ctx, cursor, [title, first])) {
+        placeBlock(cursor, title)
+        placeChildren(ctx, cursor, section, 0)
+      } else {
+        newPage(ctx, cursor)
+        placeBlock(cursor, title)
+        placeChildren(ctx, cursor, section, 0)
+      }
+      continue
+    }
+
+    placeSection(ctx, cursor, section, 0)
+  }
+
+  if (pendingTitle) placeBlock(cursor, pendingTitle)
+}
+
+/** True when the element is a module heading (`.section-title`). */
+function isSectionTitle(el: HTMLElement): boolean {
+  return el.classList.contains('section-title')
+}
+
+/** Places a leaf block (a short heading) directly into the flow target. */
+function placeBlock(cursor: Cursor, block: HTMLElement): void {
+  cursor.container.appendChild(block.cloneNode(true))
+}
+
+/**
+ * Probes whether `blocks` (cloned and appended in order) fit the current page
+ * without overflowing. Always restores the flow target afterwards.
+ */
+function blockFits(ctx: PageCtx, cursor: Cursor, blocks: HTMLElement[]): boolean {
+  const clones = blocks.map((b) => b.cloneNode(true) as HTMLElement)
+  for (const c of clones) cursor.container.appendChild(c)
+  void cursor.page.offsetHeight
+  const fits = !overflows(cursor.page)
+  for (const c of clones) cursor.container.removeChild(c)
+  return fits
+}
+
+/** Returns the first element child of a section, or the section itself if it
+ *  is a leaf. Used to keep a heading attached to the start of an entry. */
+function firstPiece(section: HTMLElement): HTMLElement {
+  const first = section.firstElementChild as HTMLElement | null
+  return first ?? section
+}
+
+/**
+ * Flows a section's children individually so an oversized section can break
+ * across pages at its child boundaries. A leaf section falls back to placing
+ * the whole block (kept whole if it still overflows).
+ */
+function placeChildren(ctx: PageCtx, cursor: Cursor, section: HTMLElement, depth: number): void {
+  const children = Array.from(section.children) as HTMLElement[]
+  if (children.length === 0) {
+    placeSection(ctx, cursor, section, depth)
+    return
+  }
+  for (const child of children) placeSection(ctx, cursor, child, depth + 1)
+}
+
+/**
  * Places `section` into the current page's flow target. If it overflows the
  * page: start a fresh page; if it still overflows alone, split it by its own
- * children (up to MAX_SPLIT_DEPTH). Leaf nodes that exceed a full page are kept
- * whole so their visible portion renders rather than being dropped.
+ * children (down to leaves). A leaf that exceeds a full page is kept whole so
+ * its visible portion renders rather than being dropped.
  */
 function placeSection(ctx: PageCtx, cursor: Cursor, section: HTMLElement, depth: number): void {
   const clone = section.cloneNode(true) as HTMLElement
@@ -197,9 +359,7 @@ function placeSection(ctx: PageCtx, cursor: Cursor, section: HTMLElement, depth:
   }
 
   if (depth < MAX_SPLIT_DEPTH && section.children.length > 0) {
-    for (const child of Array.from(section.children) as HTMLElement[]) {
-      placeSection(ctx, cursor, child, depth + 1)
-    }
+    placeChildren(ctx, cursor, section, depth)
   } else {
     cursor.container.appendChild(clone)
   }
@@ -210,7 +370,7 @@ function placeSection(ctx: PageCtx, cursor: Cursor, section: HTMLElement, depth:
 function newPage(ctx: PageCtx, cursor: Cursor): void {
   cursor.page = makePage(ctx)
   ctx.wrapper.appendChild(cursor.page)
-  const c = cursor.page.querySelector('.resume-container')!
+  const c = cursor.page.querySelector('.resume-container') as HTMLElement
   // Continuation pages: double-column repeats the sidebar SHELL (same column
   // width/background, empty content) so the main column stays aligned;
   // single-column starts directly at the main shell. Both get a fresh empty
@@ -227,10 +387,41 @@ function overflows(page: HTMLElement): boolean {
 function makePage(ctx: PageCtx): HTMLElement {
   const page = ctx.doc.createElement('div')
   page.className = 'resume-page'
-  page.style.cssText = `width: 210mm;height: 297mm;padding: ${ctx.padTop}px ${ctx.padRight}px ${ctx.padBottom}px ${ctx.padLeft}px;overflow: hidden;background: ${ctx.pageBg};margin: 0 auto ${ctx.pageMarginBottom};box-sizing: border-box;`
+  page.style.cssText = `width: ${ctx.paper.mmW}mm;height: ${ctx.paper.mmH}mm;padding: ${ctx.padTop}px ${ctx.padRight}px ${ctx.padBottom}px ${ctx.padLeft}px;overflow: hidden;background: ${ctx.pageBg};margin: 0 auto ${ctx.pageMarginBottom};box-sizing: border-box;`
   const container = ctx.doc.createElement('div')
   container.className = 'resume-container'
   container.style.maxWidth = '100%'
   page.appendChild(container)
   return page
+}
+
+/**
+ * Builds a single seamless page holding all content, sized to its own height
+ * (used by PNG export). Top/bottom page margins are applied once to the wrapper;
+ * left/right margins stay on the page so text wraps at the correct width. No
+ * fixed height, no overflow clipping, no page breaks.
+ */
+function paginateContinuous(
+  ctx: PageCtx,
+  header: HTMLElement | null,
+  main: HTMLElement | null,
+  mainSections: HTMLElement[],
+): void {
+  ctx.wrapper.style.background = ctx.pageBg
+  ctx.wrapper.style.paddingTop = `${ctx.padTop}px`
+  ctx.wrapper.style.paddingBottom = `${ctx.padBottom}px`
+
+  const page = ctx.doc.createElement('div')
+  page.className = 'resume-page'
+  page.style.cssText = `width: ${ctx.paper.mmW}mm;min-height: 0;padding: 0 ${ctx.padRight}px 0 ${ctx.padLeft}px;overflow: visible;background: ${ctx.pageBg};margin: 0 auto;box-sizing: border-box;`
+  const container = ctx.doc.createElement('div')
+  container.className = 'resume-container'
+  container.style.maxWidth = '100%'
+  container.style.minHeight = '0'
+  page.appendChild(container)
+  ctx.wrapper.appendChild(page)
+
+  if (header) container.appendChild(header.cloneNode(true))
+  const target = appendMainShell(container, main)
+  for (const section of mainSections) target.appendChild(section.cloneNode(true))
 }

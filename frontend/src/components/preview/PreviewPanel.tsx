@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { paginateContent, A4_W, A4_H } from '../../lib/paginate'
+import { waitForDocumentReady } from '../../lib/paginationCore'
 
 export function PreviewPanel() {
   const previewHtml = useResumeStore((s) => s.previewHtml)
@@ -31,52 +32,57 @@ export function PreviewPanel() {
     doc.write(previewHtml)
     doc.close()
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const pages = paginateContent(iframe)
-        setPageCount(pages)
-        const h = doc.body?.scrollHeight || A4_H
-        setContainerHeight(h)
+    let cancelled = false
+    ;(async () => {
+      // Wait for fonts/images, then one more frame to settle layout.
+      await waitForDocumentReady(doc)
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      if (cancelled) return
 
-        // Inject wheel listener into iframe document for Ctrl+scroll zoom.
-        // Events inside the iframe do not bubble to the parent document,
-        // so we must listen directly on the iframe's contentDocument.
-        const onWheel = (e: WheelEvent) => {
-          if (e.ctrlKey) {
-            e.preventDefault()
-            const container = scrollRef.current
-            const oldZoom = useEditorStore.getState().zoom
-            const delta = e.deltaY > 0 ? -0.05 : 0.05
-            const newZoom = Math.max(0.5, Math.min(2.0, oldZoom + delta))
-            if (newZoom === oldZoom || !container) {
-              if (!container) setZoom(newZoom)
-              return
-            }
+      const pages = paginateContent(iframe)
+      setPageCount(pages)
+      const h = doc.body?.scrollHeight || A4_H
+      setContainerHeight(h)
 
-            const rect = container.getBoundingClientRect()
-            const cx = e.clientX
-            const cy = e.clientY
-
-            // Content point in logical (1x) coordinates under the cursor
-            const logicalX = (container.scrollLeft + cx - rect.left) / oldZoom
-            const logicalY = (container.scrollTop + cy - rect.top) / oldZoom
-
-            setZoom(newZoom)
-
-            // After React commits the zoom change, adjust scroll to keep
-            // the same content point under the cursor
-            requestAnimationFrame(() => {
-              container.scrollLeft = logicalX * newZoom - (cx - rect.left)
-              container.scrollTop = logicalY * newZoom - (cy - rect.top)
-            })
+      // Inject wheel listener into iframe document for Ctrl+scroll zoom.
+      // Events inside the iframe do not bubble to the parent document,
+      // so we must listen directly on the iframe's contentDocument.
+      const onWheel = (e: WheelEvent) => {
+        if (e.ctrlKey) {
+          e.preventDefault()
+          const container = scrollRef.current
+          const oldZoom = useEditorStore.getState().zoom
+          const delta = e.deltaY > 0 ? -0.05 : 0.05
+          const newZoom = Math.max(0.5, Math.min(2.0, oldZoom + delta))
+          if (newZoom === oldZoom || !container) {
+            if (!container) setZoom(newZoom)
+            return
           }
+
+          const rect = container.getBoundingClientRect()
+          const cx = e.clientX
+          const cy = e.clientY
+
+          // Content point in logical (1x) coordinates under the cursor
+          const logicalX = (container.scrollLeft + cx - rect.left) / oldZoom
+          const logicalY = (container.scrollTop + cy - rect.top) / oldZoom
+
+          setZoom(newZoom)
+
+          // After React commits the zoom change, adjust scroll to keep
+          // the same content point under the cursor
+          requestAnimationFrame(() => {
+            container.scrollLeft = logicalX * newZoom - (cx - rect.left)
+            container.scrollTop = logicalY * newZoom - (cy - rect.top)
+          })
         }
-        doc.addEventListener('wheel', onWheel, { passive: false })
-        wheelCleanupRef.current = () => doc.removeEventListener('wheel', onWheel)
-      })
-    })
+      }
+      doc.addEventListener('wheel', onWheel, { passive: false })
+      wheelCleanupRef.current = () => doc.removeEventListener('wheel', onWheel)
+    })()
 
     return () => {
+      cancelled = true
       if (wheelCleanupRef.current) {
         wheelCleanupRef.current()
         wheelCleanupRef.current = null

@@ -5,6 +5,10 @@ type TemplateFunc = (...args: string[]) => string
 export interface TemplateSet {
   html: string
   css: string
+  /** Template paper size (e.g. "A4" / "Letter"); attached to the page DOM. */
+  paperSize?: string
+  /** Template orientation ("portrait" / "landscape"). */
+  orientation?: string
 }
 
 /**
@@ -45,8 +49,21 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
   // Convert resume to PascalCase for Go-template compatibility
   const data = toGoShape(resume)
 
-  // Evaluate the template
-  return evaluate(merged, data, funcs)
+  // Evaluate the template, then tag the page with its paper spec so the
+  // pagination core and export pipeline can size pages from the template's
+  // metadata instead of a hardcoded A4 assumption.
+  const rendered = evaluate(merged, data, funcs)
+  return attachPaperMeta(rendered, tmpl.paperSize, tmpl.orientation)
+}
+
+/**
+ * Tags the first `.resume-page` with its paper size + orientation so downstream
+ * consumers (readPageStyle → paginateResume, headless renderer) can read it.
+ */
+function attachPaperMeta(html: string, paperSize?: string, orientation?: string): string {
+  if (!paperSize) return html
+  const attrs = ` data-paper-size="${paperSize}" data-orientation="${orientation || 'portrait'}"`
+  return html.replace(/<div([^>]*class="resume-page"[^>]*)>/, `<div$1${attrs}>`)
 }
 
 function resolveIncludes(html: string): string {
@@ -96,7 +113,7 @@ function evaluate(
             // . inside range refers to the current item
             // Spread object fields so .Company works; set $ for {{.}} to resolve
             const itemObj = typeof item === 'object' && item !== null ? item as Record<string, unknown> : null
-            const scopedData = itemObj
+            const scopedData: Record<string, unknown> = itemObj
               ? { ...data, ...itemObj, $: item }
               : { ...data, $: item }
             // Prevent parent data from leaking into range scope when the item

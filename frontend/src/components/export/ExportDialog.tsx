@@ -58,7 +58,7 @@ export function ExportDialog({ onClose }: Props) {
     }
 
     try {
-      const paginatedHtml = await paginateHTMLString(previewHtml)
+      const paginatedHtml = await paginateHTMLString(previewHtml, selectedFormat === 'png' ? 'continuous' : 'paged')
       let filePath: string | null = null
 
       const resumeName = resume.meta.name || ''

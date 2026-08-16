@@ -9,10 +9,8 @@
  */
 
 import { paginateResume, readPageStyle } from './paginationCore'
+export { MM_TO_PX, A4_W, A4_H } from './paper'
 
-export const MM_TO_PX = 96 / 25.4
-export const A4_W = Math.round(210 * MM_TO_PX)
-export const A4_H = Math.round(297 * MM_TO_PX)
 export const PAGE_GAP = 16
 
 /**

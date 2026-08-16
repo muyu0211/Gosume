@@ -17,6 +17,7 @@ export interface TemplateMeta {
     default: number
   }
   paper_size: string
+  orientations?: string[]
   colors?: {
     primary: string
     secondary: string

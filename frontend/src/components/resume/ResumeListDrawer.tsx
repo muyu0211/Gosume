@@ -174,7 +174,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           resume.meta?.section_spacing,
           { margins, spacings },
         )
-        const paginatedHtml = await paginateHTMLString(htmlWithLayout)
+        const paginatedHtml = await paginateHTMLString(htmlWithLayout, batchExportFormat === 'png' ? 'continuous' : 'paged')
         items.push({ name, html: paginatedHtml })
       }
 

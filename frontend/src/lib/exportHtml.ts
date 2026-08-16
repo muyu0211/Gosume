@@ -18,7 +18,8 @@
  *   - Clean body styling (no scroll/padding from the preview chrome)
  */
 
-import { paginateResume, readPageStyle, type PageStyle } from './paginationCore'
+import { paginateResume, readPageStyle, waitForDocumentReady, type PageStyle, type PageMode } from './paginationCore'
+import { DEFAULT_PAPER } from './paper'
 
 // ── Serialization ────────────────────────────────────────────────────────────
 
@@ -51,38 +52,39 @@ function cleanAndSerialize(doc: Document): string {
  * Loads raw template-rendered HTML into a hidden iframe, paginates it, and
  * returns the complete print-ready HTML. Never touches the visible preview.
  */
-export function paginateHTMLString(previewHtml: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;'
-    iframe.sandbox.add('allow-same-origin')
-    document.body.appendChild(iframe)
+export async function paginateHTMLString(previewHtml: string, mode: PageMode = 'paged'): Promise<string> {
+  const iframe = document.createElement('iframe')
+  iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${DEFAULT_PAPER.mmW}mm;height:${DEFAULT_PAPER.mmH}mm;`
+  iframe.sandbox.add('allow-same-origin')
+  document.body.appendChild(iframe)
 
-    const doc = iframe.contentDocument
-    if (!doc) {
-      document.body.removeChild(iframe)
-      reject(new Error('无法创建导出文档'))
-      return
-    }
+  const doc = iframe.contentDocument
+  if (!doc) {
+    document.body.removeChild(iframe)
+    throw new Error('无法创建导出文档')
+  }
 
+  try {
     doc.open()
     doc.write(previewHtml)
     doc.close()
 
-    // Wait two frames for layout to settle before paginating.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        try {
-          paginateInIframe(doc)
-          const result = cleanAndSerialize(doc)
-          document.body.removeChild(iframe)
-          resolve(result)
-        } catch (err) {
-          document.body.removeChild(iframe)
-          reject(err)
-        }
-      })
-    })
+    // Wait for fonts + images so pagination measures the final layout, then
+    // yield one more frame to let the browser settle before splitting.
+    await waitForDocumentReady(doc)
+    await nextFrame()
+
+    paginateInIframe(doc, mode)
+    return cleanAndSerialize(doc)
+  } finally {
+    document.body.removeChild(iframe)
+  }
+}
+
+/** Resolves after two animation frames so the browser settles layout. */
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   })
 }
 
@@ -92,7 +94,7 @@ export function paginateHTMLString(previewHtml: string): Promise<string> {
  * Resets the iframe body to clean print defaults and delegates to the shared
  * pagination core. Page-break rules are applied later by cleanAndSerialize.
  */
-function paginateInIframe(doc: Document): void {
+function paginateInIframe(doc: Document, mode: PageMode): void {
   // Snapshot padding + background before repainting body for the print chrome,
   // so pages get the template's values (not the print repaint's).
   const pageStyle = readPageStyle(doc)
@@ -103,6 +105,6 @@ function paginateInIframe(doc: Document): void {
   body.style.padding = '0'
   body.style.background = '#ffffff'
 
-  const fallback: PageStyle = { padTop: 0, padRight: 0, padBottom: 0, padLeft: 0, pageBg: '#ffffff' }
-  paginateResume(doc, body, { ...(pageStyle ?? fallback), pageMarginBottom: '0' })
+  const fallback: PageStyle = { padTop: 0, padRight: 0, padBottom: 0, padLeft: 0, pageBg: '#ffffff', paper: DEFAULT_PAPER }
+  paginateResume(doc, body, { ...(pageStyle ?? fallback), pageMarginBottom: '0', mode })
 }

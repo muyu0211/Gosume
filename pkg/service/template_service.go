@@ -34,20 +34,20 @@ func (s *TemplateService) Inject(app *application.App, loader *template.Loader, 
 
 // GetTemplateMeta is a trimmed version of template.Meta for the frontend.
 type GetTemplateMeta struct {
-	ID             string                     `json:"id"`
-	Name           string                     `json:"name"`
-	Version        string                     `json:"version"`
-	Author         template.Author            `json:"author"`
-	Description    string                     `json:"description"`
-	Category       string                     `json:"category"`
-	Tags           []string                   `json:"tags"`
-	TargetLanguage []string                   `json:"target_language"`
-	PageCount      template.PageCount         `json:"page_count"`
-	PaperSize      string                     `json:"paper_size"`
-	Colors         *template.TemplateColors   `json:"colors,omitempty"`
-	Features       *template.TemplateFeatures `json:"features,omitempty"`
-	UsesUnifiedHTML bool                      `json:"uses_unified_html,omitempty"`
-	IsBuiltin      bool                       `json:"is_builtin"`
+	ID              string                     `json:"id"`
+	Name            string                     `json:"name"`
+	Version         string                     `json:"version"`
+	Author          template.Author            `json:"author"`
+	Description     string                     `json:"description"`
+	Category        string                     `json:"category"`
+	Tags            []string                   `json:"tags"`
+	TargetLanguage  []string                   `json:"target_language"`
+	PageCount       template.PageCount         `json:"page_count"`
+	PaperSize       string                     `json:"paper_size"`
+	Colors          *template.TemplateColors   `json:"colors,omitempty"`
+	Features        *template.TemplateFeatures `json:"features,omitempty"`
+	UsesUnifiedHTML bool                       `json:"uses_unified_html,omitempty"`
+	IsBuiltin       bool                       `json:"is_builtin"`
 }
 
 // ListTemplates returns all available templates' metadata.
@@ -74,10 +74,12 @@ func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 	return &meta, nil
 }
 
-// TemplateContent is the HTML+CSS content for a template.
+// TemplateContent is the HTML+CSS content for a template, plus its paper spec.
 type TemplateContent struct {
-	HTML string `json:"html"`
-	CSS  string `json:"css"`
+	HTML        string `json:"html"`
+	CSS         string `json:"css"`
+	PaperSize   string `json:"paper_size"`
+	Orientation string `json:"orientation"`
 }
 
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
@@ -95,9 +97,15 @@ func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error
 	if err != nil {
 		return nil, err
 	}
+	orientation := ""
+	if len(t.Meta.Orientations) > 0 {
+		orientation = t.Meta.Orientations[0]
+	}
 	return &TemplateContent{
-		HTML: s.effectiveHTML(t),
-		CSS:  t.CSS,
+		HTML:        s.effectiveHTML(t),
+		CSS:         t.CSS,
+		PaperSize:   t.Meta.PaperSize,
+		Orientation: orientation,
 	}, nil
 }
 
@@ -220,19 +228,19 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 
 func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
 	return GetTemplateMeta{
-		ID:             t.Meta.ID,
-		Name:           t.Meta.Name,
-		Version:        t.Meta.Version,
-		Author:         t.Meta.Author,
-		Description:    t.Meta.Description,
-		Category:       t.Meta.Category,
-		Tags:           t.Meta.Tags,
-		TargetLanguage: t.Meta.TargetLanguage,
-		PageCount:      t.Meta.PageCount,
-		PaperSize:      t.Meta.PaperSize,
-		Colors:         t.Meta.Colors,
-		Features:       t.Meta.Features,
+		ID:              t.Meta.ID,
+		Name:            t.Meta.Name,
+		Version:         t.Meta.Version,
+		Author:          t.Meta.Author,
+		Description:     t.Meta.Description,
+		Category:        t.Meta.Category,
+		Tags:            t.Meta.Tags,
+		TargetLanguage:  t.Meta.TargetLanguage,
+		PageCount:       t.Meta.PageCount,
+		PaperSize:       t.Meta.PaperSize,
+		Colors:          t.Meta.Colors,
+		Features:        t.Meta.Features,
 		UsesUnifiedHTML: t.Meta.UsesUnifiedHTML,
-		IsBuiltin:      t.IsBuiltin,
+		IsBuiltin:       t.IsBuiltin,
 	}
 }

@@ -127,22 +127,36 @@ export async function loadTemplateMetas(): Promise<TemplateMeta[]> {
 export async function loadTemplateContent(templateId: string): Promise<TemplateSet> {
   if (isWails()) {
     try {
-      const content = await callService<{ html: string; css: string }>(
+      const content = await callService<{ html: string; css: string; paper_size?: string; orientation?: string }>(
         'TemplateService',
         'GetTemplateContent',
         templateId,
       )
-      if (content && content.html) return content
+      if (content && content.html) {
+        return {
+          html: content.html,
+          css: content.css,
+          paperSize: content.paper_size,
+          orientation: content.orientation,
+        }
+      }
     } catch { /* fallback to built-in */ }
   }
 
   const entry = templateMap.get(templateId)
   if (entry) {
-    return { html: entry.html, css: entry.css }
+    return {
+      html: entry.html,
+      css: entry.css,
+      paperSize: entry.meta.paper_size,
+      orientation: entry.meta.orientations?.[0],
+    }
   }
   // Fallback: return the first available template, or empty
   const first = templateMap.values().next().value
-  return first ? { html: first.html, css: first.css } : { html: '', css: '' }
+  return first
+    ? { html: first.html, css: first.css, paperSize: first.meta.paper_size, orientation: first.meta.orientations?.[0] }
+    : { html: '', css: '' }
 }
 
 export async function importTemplatePackage(): Promise<ImportTemplateResult | null> {
