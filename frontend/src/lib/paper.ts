@@ -69,10 +69,3 @@ function round2(v: number): number {
 
 /** Default A4-portrait spec. */
 export const DEFAULT_PAPER: PaperSpec = resolvePaper()
-
-/**
- * A4-portrait shortcuts kept for existing call sites (e.g. the preview panel's
- * chrome width). Prefer {@link resolvePaper} for anything template-dependent.
- */
-export const A4_W = DEFAULT_PAPER.pxW
-export const A4_H = DEFAULT_PAPER.pxH

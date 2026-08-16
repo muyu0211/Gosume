@@ -9,23 +9,29 @@
  */
 
 import { paginateResume, readPageStyle } from './paginationCore'
-export { MM_TO_PX, A4_W, A4_H } from './paper'
+import { DEFAULT_PAPER, type PaperSpec } from './paper'
 
 export const PAGE_GAP = 16
 
+export interface PaginateContentResult {
+  pageCount: number
+  /** Resolved paper spec the preview is laid out at (drives chrome width). */
+  paper: PaperSpec
+}
+
 /**
- * Paginates the content inside a resume iframe into separate A4 pages.
- * Returns the number of pages created.
+ * Paginates the content inside a resume iframe into separate pages.
+ * Returns the number of pages created plus the resolved paper spec.
  */
-export function paginateContent(iframe: HTMLIFrameElement): number {
+export function paginateContent(iframe: HTMLIFrameElement): PaginateContentResult {
   const doc = iframe.contentDocument
-  if (!doc) return 1
+  if (!doc) return { pageCount: 1, paper: DEFAULT_PAPER }
 
   // Snapshot the original .resume-page padding + background BEFORE we
   // repaint body for the preview chrome — otherwise pagination reads the
   // chrome values and pages end up grey with zero horizontal padding.
   const pageStyle = readPageStyle(doc)
-  if (!pageStyle) return 1
+  if (!pageStyle) return { pageCount: 1, paper: DEFAULT_PAPER }
 
   const body = doc.body
   body.className = ''
@@ -41,5 +47,5 @@ export function paginateContent(iframe: HTMLIFrameElement): number {
 
   void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`
-  return pageCount
+  return { pageCount, paper: pageStyle.paper }
 }

@@ -3,6 +3,7 @@ import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from './templateService'
 import { DEFAULT_MARGIN_KEY, DEFAULT_SECTION_SPACING_KEY } from '../lib/layoutPresets'
 import { DEFAULT_FONT_SIZE } from '../types/resume'
+import { resolvePaper } from '../lib/paper'
 import type { Resume } from '../types/resume'
 import type { TemplateSet } from '../lib/templateEngine'
 
@@ -137,11 +138,12 @@ function setCache(data: Record<string, string>): void {
 }
 
 async function captureOne(templateId: string, tmpl: TemplateSet): Promise<string> {
+  const paper = resolvePaper(tmpl.paperSize, tmpl.orientation)
   const html = renderTemplate(tmpl, { ...SAMPLE_DATA, meta: { ...SAMPLE_DATA.meta, template_id: templateId } })
 
   // Use iframe to preserve full HTML structure (doctype, <style>, body classes)
   const iframe = document.createElement('iframe')
-  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:0;'
+  iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${paper.pxW}px;height:${paper.pxH}px;border:0;`
   iframe.srcdoc = html
   document.body.appendChild(iframe)
 
@@ -163,13 +165,13 @@ async function captureOne(templateId: string, tmpl: TemplateSet): Promise<string
       logging: false,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      windowWidth: 794,
-      windowHeight: 1123,
+      windowWidth: paper.pxW,
+      windowHeight: paper.pxH,
     })
 
-    // Scale down to thumbnail size (A4 ratio: 1:√2)
+    // Scale down to thumbnail size, preserving the template's aspect ratio
     const thumbW = 280
-    const thumbH = Math.round(thumbW * Math.SQRT2)
+    const thumbH = Math.round((thumbW * paper.pxH) / paper.pxW)
     const thumb = document.createElement('canvas')
     thumb.width = thumbW
     thumb.height = thumbH

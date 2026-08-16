@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
@@ -7,7 +7,7 @@ import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
-import { A4_W, A4_H } from '../lib/paginate'
+import { resolvePaper } from '../lib/paper'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { createSampleResume } from '../services/sampleData'
 import { callService } from '../services/backend'
@@ -59,7 +59,7 @@ export function WelcomePage() {
           const tmpl = await loadTemplateContent(meta.id)
           const sampleResume = createSampleResume(meta.id)
           // Prevent scrollbars in the fixed-size iframe without affecting the
-          // template's CSS layout. The container's aspect-[210/297] + overflow-hidden
+          // template's CSS layout. The card's paper aspect-ratio + overflow-hidden
           // naturally clips to the first page, matching the EditorPage rendering.
           const html = renderTemplate(tmpl, sampleResume)
             .replace('<head>', '<head><style>html{overflow:hidden}</style>')
@@ -333,19 +333,23 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
   const [isHovered, setIsHovered] = useState(false)
+  const paper = useMemo(
+    () => resolvePaper(template.paper_size, template.orientations?.[0]),
+    [template.paper_size, template.orientations],
+  )
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const update = () => {
       const w = el.clientWidth
-      if (w > 0) setScale(w / A4_W)
+      if (w > 0) setScale(w / paper.pxW)
     }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [paper.pxW])
 
   return (
     <div
@@ -356,14 +360,14 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Preview area */}
-      <div ref={containerRef} className="aspect-[210/297] relative overflow-hidden bg-surface-100">
+      <div ref={containerRef} className="relative overflow-hidden bg-surface-100" style={{ aspectRatio: `${paper.mmW} / ${paper.mmH}` }}>
         {previewHtml ? (
           <iframe
             srcDoc={previewHtml}
             className="absolute border-0 pointer-events-none"
             style={{
-              width: A4_W,
-              height: A4_H,
+              width: paper.pxW,
+              height: paper.pxH,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}

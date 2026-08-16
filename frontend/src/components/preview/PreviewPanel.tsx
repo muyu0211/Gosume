@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useEditorStore } from '../../stores/editorStore'
-import { paginateContent, A4_W, A4_H } from '../../lib/paginate'
+import { paginateContent } from '../../lib/paginate'
+import { DEFAULT_PAPER, type PaperSpec } from '../../lib/paper'
 import { waitForDocumentReady } from '../../lib/paginationCore'
 
 export function PreviewPanel() {
@@ -12,7 +13,8 @@ export function PreviewPanel() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const wheelCleanupRef = useRef<(() => void) | null>(null)
   const [pageCount, setPageCount] = useState(1)
-  const [containerHeight, setContainerHeight] = useState(A4_H)
+  const [paper, setPaper] = useState<PaperSpec>(DEFAULT_PAPER)
+  const [containerHeight, setContainerHeight] = useState(DEFAULT_PAPER.pxH)
 
   // Load preview HTML into iframe, paginate, and inject Ctrl+wheel listener
   useEffect(() => {
@@ -39,9 +41,10 @@ export function PreviewPanel() {
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       if (cancelled) return
 
-      const pages = paginateContent(iframe)
-      setPageCount(pages)
-      const h = doc.body?.scrollHeight || A4_H
+      const result = paginateContent(iframe)
+      setPageCount(result.pageCount)
+      setPaper(result.paper)
+      const h = doc.body?.scrollHeight || result.paper.pxH
       setContainerHeight(h)
 
       // Inject wheel listener into iframe document for Ctrl+scroll zoom.
@@ -124,28 +127,31 @@ export function PreviewPanel() {
     <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden mr-1">
       <div
         style={{
-          width: `${A4_W * effectiveScale}px`,
+          width: `${paper.pxW * effectiveScale}px`,
           margin: '24px auto',
         }}
       >
-        <div
-          style={{
-            transform: `scale(${effectiveScale})`,
-            transformOrigin: 'top left',
-            width: `${A4_W}px`,
-            marginBottom: '8px',
-          }}
-        >
-          <iframe
-            ref={iframeRef}
-            className="w-full border-none"
-            style={{ height: `${containerHeight}px`, overflow: 'hidden' }}
-            title="简历预览"
-            sandbox="allow-same-origin"
-          />
+        {/* 占位容器：按缩放后的实际高度占位，裁掉 transform 的布局溢出，
+            让状态栏紧贴缩放后的简历末尾，而不是原始高度下方。 */}
+        <div style={{ height: `${containerHeight * effectiveScale}px`, overflow: 'hidden' }}>
+          <div
+            style={{
+              transform: `scale(${effectiveScale})`,
+              transformOrigin: 'top left',
+              width: `${paper.pxW}px`,
+            }}
+          >
+            <iframe
+              ref={iframeRef}
+              className="w-full border-none"
+              style={{ height: `${containerHeight}px`, overflow: 'hidden' }}
+              title="简历预览"
+              sandbox="allow-same-origin"
+            />
+          </div>
         </div>
-        <div className="text-center py-1.5 text-xs text-surface-400 bg-surface-50 border-t border-surface-100">
-          共 {pageCount} 页 · A4 · {Math.round(effectiveScale * 100)}%
+        <div className="mt-2 text-center py-1.5 text-xs text-surface-400 bg-surface-50 border-t border-surface-100">
+          共 {pageCount} 页 · {paper.name} · {Math.round(effectiveScale * 100)}%
         </div>
       </div>
     </div>

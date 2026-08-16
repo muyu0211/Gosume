@@ -13,6 +13,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { usePreview } from '../hooks/usePreview'
 import { useAutoSave } from '../hooks/useAutoSave'
 import { callService } from '../services/backend'
+import { DEFAULT_PAPER } from '../lib/paper'
 import { FileText, Loader2 } from 'lucide-react'
 
 const SAVE_KEY = 'resume-craft-project'
@@ -195,7 +196,7 @@ function EditorSkeleton() {
 
         {/* Preview skeleton */}
         <div className="flex-1 flex items-start justify-center py-8 bg-surface-200">
-          <div className="bg-white rounded-xl shadow-sm flex flex-col items-center justify-center gap-4" style={{ width: 210 * 3.78, height: 297 * 3.78 * 0.7 }}>
+          <div className="bg-white rounded-xl shadow-sm flex flex-col items-center justify-center gap-4" style={{ width: DEFAULT_PAPER.pxW, height: DEFAULT_PAPER.pxH * 0.7 }}>
             <FileText className="w-12 h-12 text-surface-300" />
             <div className="flex items-center gap-2 text-surface-400">
               <Loader2 className="w-4 h-4 animate-spin" />
