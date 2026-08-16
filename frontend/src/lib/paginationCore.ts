@@ -158,11 +158,18 @@ export function paginateResume(
   doc: Document,
   body: HTMLElement,
   options: PaginateOptions,
+  sourceEl?: HTMLElement,
+  targetEl?: HTMLElement,
 ): PaginateResult {
   const pageMarginBottom = options.pageMarginBottom ?? '0'
   const empty: PaginateResult = { wrapper: doc.createElement('div'), pageCount: 1 }
 
-  const container = body.querySelector('.resume-container') as HTMLElement | null
+  // 源/目标分离：实时预览从「隐藏源容器」读内容、把分页结果写进「展示层」，
+  // 从而在分页后仍能对源容器做增量 diff（方案 4）。默认 body（导出路径不变）。
+  const source = sourceEl ?? body
+  const target = targetEl ?? body
+
+  const container = source.querySelector('.resume-container') as HTMLElement | null
   if (!container) return empty
 
   const double = isDoubleColumn(doc, container)
@@ -172,7 +179,7 @@ export function paginateResume(
 
   const wrapper = doc.createElement('div')
   wrapper.className = 'resume-pages-wrapper'
-  body.replaceChildren(wrapper)
+  target.replaceChildren(wrapper)
 
   const ctx: PageCtx = {
     doc,

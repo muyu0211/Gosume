@@ -14,6 +14,7 @@
     "@wailsio/runtime": "latest",
     "html2canvas": "^1.4.1",
     "lucide-react": "^1.17.0",
+    "morphdom": "^2.7.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.76.1",

@@ -241,6 +241,21 @@ body {
   animation: card-enter 0.25s ease-out both;
 }
 
+/* Preview fade-in：编辑页首次渲染预览时的淡入过渡（纯 opacity，不动 translate，
+   避免干扰滚动位置）。编辑过程中的增量 diff 不重播此动画。 */
+@keyframes preview-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-preview-enter {
+  animation: preview-enter 0.28s ease-out both;
+}
+
 /* Title Bar */
 .titlebar {
   height: var(--titlebar-height);

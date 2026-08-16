@@ -291,6 +291,21 @@ iframe 内：
   预览外层用 `transform: scale(zoom)` 包裹 iframe（`PreviewPanel.tsx:139`），双缓冲切换在缩放态下需保证尺寸/坐标一致。
   **动作**：双缓冲两个 buffer 用同一尺寸 + 同一 `transform-origin`，切换只改 `visibility`/`display`，不动 transform。
 
+- **Q7 — morphdom 对 `DocumentFragment` 会折叠为 `firstElementChild`（实现中踩到的坑）。**
+  用 `<template>.content`（DocumentFragment）作为 morphdom 的 `toNode` 时，morphdom 内部 `toNode = toNode.firstElementChild`，只 diff 第一个子元素（`header`），`main` 被丢弃——导致预览只更新 header、章节全部消失。
+  **动作（已落地）**：改用 `doc.createElement('div')` 包裹新内容（`wrapper.innerHTML = contentHtml`），再 `morphdom(sourceContainer, wrapper, { childrenOnly: true })`。探针实测：`name`/`school`/`company` 全部正确更新，`data-id` 与 `header/main` 结构完整保留。
+
+---
+
+## 7.1 实现结果（M0/M1/M2 已完成）
+
+- **M0 核对结论**：Q1 确认 morphdom 用模块级全局 `document`、必须注入 iframe（`sandbox="allow-same-origin"` 下 `contentWindow.eval` 实测可用，无需放宽 `allow-scripts`）；Q3 确认后端字段名为 `ID`；Q5 已加 `sourceEl`/`targetEl` 参数；Q2/Q4/Q6 按方案处理。
+- **M1 落地**：`paginationCore.ts`/`paginate.ts` 源/展示分离；`morphPreview.ts`（extractContentHtml / injectMorphdom / morphSourceContent / setupSourceShell）；`PreviewPanel.tsx` 全量/增量双路径（headKey 判全量）；`usePreview.ts` 模板缓存；`template.html` 补 `data-id`；`unified_template_test.go` 补 `data-id` 断言。
+- **M2 落地**：滚动保持（分页前后记录/恢复 `scrollTop`）+ 进入淡入（`animate-preview-enter`）+ **布局/头像档位增量更新**（见下）。
+- **M2.5（§4.6 落地，修复调档位跳变）**：页边距/间距/头像尺寸本质是纯 CSS 变化，不该走全量 `doc.write`。`layoutPresets.ts` 抽出 `buildLayoutCss`/`buildAvatarCss`，注入规则改为独立的 `<style id="layout-inject">`/`<style id="avatar-inject">`；`PreviewPanel.tsx` 用三个独立签名（模板/布局/头像）区分四种更新路径——切模板全量、切布局档位/头像尺寸只 `updateStyleById` + 重分页、纯编辑 diff。rod 探针实测 style 更新后 padding 立即生效。
+- **未实现（判断为过度设计，暂缓）**：分页双缓冲（分页是同步 `replaceChildren`，无中间态，双缓冲无收益）、分页签名 memo（收益有限，待有真实性能诉求再补）、keyed diff（M3，依赖 `data-id` 已就绪）。
+- **验证**：`go test ./pkg/...` 全绿（含 data-id 断言）；前端 `vite build` 成功（1871 模块）；`go build` 成功；rod 端到端探针验证 sandbox eval + morphdom diff + style 增量更新均正确。
+
 ---
 
 ## 8. 测试与验证方案

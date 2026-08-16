@@ -13,17 +13,22 @@ import { DEFAULT_PAPER, type PaperSpec } from './paper'
 
 export const PAGE_GAP = 16
 
-export interface PaginateContentResult {
-  pageCount: number
-  /** Resolved paper spec the preview is laid out at (drives chrome width). */
-  paper: PaperSpec
+export interface PaginateContentOptions {
+  /** 源容器（含 `.resume-container`）。缺省时回退到 body（导出/主页卡片路径）。 */
+  sourceEl?: HTMLElement
+  /** 展示容器（分页结果写入）。缺省时回退到 body。 */
+  targetEl?: HTMLElement
 }
 
 /**
  * Paginates the content inside a resume iframe into separate pages.
  * Returns the number of pages created plus the resolved paper spec.
+ *
+ * When `sourceEl` / `targetEl` are provided, content is read from the hidden
+ * source container and pages are written into the display container — keeping
+ * the source intact so it can be incrementally diffed on subsequent edits.
  */
-export function paginateContent(iframe: HTMLIFrameElement): PaginateContentResult {
+export function paginateContent(iframe: HTMLIFrameElement, opts: PaginateContentOptions = {}): PaginateContentResult {
   const doc = iframe.contentDocument
   if (!doc) return { pageCount: 1, paper: DEFAULT_PAPER }
 
@@ -40,10 +45,7 @@ export function paginateContent(iframe: HTMLIFrameElement): PaginateContentResul
   body.style.padding = `${PAGE_GAP}px 0`
   body.style.overflowX = 'hidden'
 
-  const { pageCount } = paginateResume(doc, body, {
-    ...pageStyle,
-    pageMarginBottom: `${PAGE_GAP}px`,
-  })
+  const { pageCount } = paginateResume(doc, body, {...pageStyle, pageMarginBottom: `${PAGE_GAP}px`,},opts.sourceEl,opts.targetEl)
 
   void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`

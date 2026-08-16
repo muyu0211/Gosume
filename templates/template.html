@@ -73,7 +73,7 @@
                 <div class="r-langs">
                     <div class="r-subtitle">{{i18n .Meta.Language "语言" "Languages"}}</div>
                     {{range .Languages}}
-                    <div class="r-lang">{{.Name}}{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</div>
+                    <div class="r-lang" data-id="{{.ID}}">{{.Name}}{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</div>
                     {{end}}
                 </div>
                 {{end}}
@@ -87,7 +87,7 @@
                 {{if .Education}}
                 <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
                 {{range .Education}}
-                <div class="education-item">
+                <div class="education-item" data-id="{{.ID}}">
                     <div class="edu-header">
                         <div class="edu-school">{{.School}}{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
@@ -107,7 +107,7 @@
                 {{if .Internships}}
                 <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
                 {{range .Internships}}
-                <div class="experience-item">
+                <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
                         <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> · {{.Title}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
@@ -127,7 +127,7 @@
                 {{if .Jobs}}
                 <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
                 {{range .Jobs}}
-                <div class="experience-item">
+                <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
                         <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> · {{.Title}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
@@ -147,7 +147,7 @@
                 {{if .Projects}}
                 <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
                 {{range .Projects}}
-                <div class="experience-item">
+                <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
                         <div><span class="company">{{.Name}}</span>{{if .Role}}<span class="title"> · {{.Role}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
@@ -171,7 +171,7 @@
                 {{if .Awards}}
                 <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
                 {{range .Awards}}
-                <div class="award-item">
+                <div class="award-item" data-id="{{.ID}}">
                     <div class="award-header">
                         <span class="award-title">{{.Title}}</span>
                         {{if .Date}}<span class="date">{{.Date}}</span>{{end}}
@@ -187,7 +187,7 @@
                 <div class="section-title">{{i18n .Meta.Language "技能" "Skills"}}</div>
                 <div class="skills-grid">
                     {{range .Skills}}
-                    <div class="skill-category">
+                    <div class="skill-category" data-id="{{.ID}}">
                         <h4>{{.Category}}</h4>
                         {{range .Items}}
                         <div class="skill-item">
@@ -211,7 +211,7 @@
                 {{range .Custom}}
                 <div class="section-title">{{.Title}}</div>
                 {{range .Items}}
-                <div class="custom-item">
+                <div class="custom-item" data-id="{{.ID}}">
                     <h4>{{.Title}}</h4>
                     {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
                     {{if .Description}}<div class="exp-summary">{{nl2br .Description}}</div>{{end}}

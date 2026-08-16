@@ -179,8 +179,16 @@ const DETAIL_SELECTORS =
  *
  * If no `<style>` tag is found, appends a new one before `</head>`.
  */
-export function injectLayoutCss(
-  html: string,
+/** 布局档位注入的固定 style id（iframe 内），供增量更新（方案 4 的 CSS 注入改造）。 */
+export const LAYOUT_STYLE_ID = 'layout-inject'
+/** 头像尺寸注入的固定 style id。 */
+export const AVATAR_STYLE_ID = 'avatar-inject'
+
+/**
+ * 构建布局档位 CSS 规则（不含 `<style>` 标签）。
+ * 供 injectLayoutCss 使用，也供 PreviewPanel 增量更新时直接写入 iframe 内 style。
+ */
+export function buildLayoutCss(
   marginKey: string | undefined | null,
   sectionSpacingKey: string | undefined | null,
   settings?: LayoutPresetSettings,
@@ -191,7 +199,7 @@ export function injectLayoutCss(
     : DEFAULT_LAYOUT_SETTINGS.spacings
 
   const margin = findMarginTier(marginKey, margins)
-  let rule = `\n:root { --resume-padding: ${margin.padding_y}mm ${margin.padding_x}mm; --resume-padding-y: ${margin.padding_y}mm; --resume-padding-x: ${margin.padding_x}mm; }\n`
+  let rule = `:root { --resume-padding: ${margin.padding_y}mm ${margin.padding_x}mm; --resume-padding-y: ${margin.padding_y}mm; --resume-padding-x: ${margin.padding_x}mm; }`
 
   const spacing = findSpacingTier(sectionSpacingKey, spacings)
   if (spacing.section_gap !== null && spacing.item_gap !== null && spacing.detail_gap !== null) {
@@ -212,47 +220,53 @@ export function injectLayoutCss(
       `* + .section-title { margin-top: ${sectionGap}pt !important; }\n`
   }
 
-  // Try to inject before the first closing </style> tag so it wins over
-  // any `:root` rules already present in the template.
-  const styleCloseIdx = html.indexOf('</style>')
-  if (styleCloseIdx !== -1) {
-    return html.slice(0, styleCloseIdx) + rule + html.slice(styleCloseIdx)
-  }
-  // Fallback: inject a new <style> before </head>
-  const headCloseIdx = html.indexOf('</head>')
-  if (headCloseIdx !== -1) {
-    return html.slice(0, headCloseIdx) + `<style>${rule}</style>` + html.slice(headCloseIdx)
-  }
-  // Last resort: prepend
-  return `<style>${rule}</style>` + html
+  return rule
 }
 
 /**
- * Injects a CSS rule that overrides the rendered avatar's display size, so
- * users can control the on-page photo dimensions (width × height in px) from
- * the editor without touching template CSS. Targets the unified HTML's
- * `.r-avatar img` so the `!important` wins over per-template `width`/`height`
- * rules (e.g. `min/styles.css`'s `width: 72pt; height: 90pt`).
- *
- * No-op if either dimension is missing or non-positive. The rule is inserted
- * before the first `</style>` so it overrides the template's own avatar
- * sizing rules by source order + `!important`.
+ * 构建头像尺寸 CSS 规则（不含 `<style>` 标签）。无头像尺寸时返回空字符串。
+ */
+export function buildAvatarCss(personal?: { avatar_width?: number; avatar_height?: number }): string {
+  const w = personal?.avatar_width
+  const h = personal?.avatar_height
+  if (!w || !h) return ''
+  return `.r-avatar img { width: ${w}px !important; height: ${h}px !important; }`
+}
+
+/**
+ * Injects layout CSS (page margin + section spacing) from the meta tier keys.
+ * 规则以独立的 `<style id="layout-inject">` 标签插入 `</head>` 前（source order
+ * 在模板 `<style>` 之后），便于实时预览增量更新时只改写该 style，不重写文档。
+ */
+export function injectLayoutCss(
+  html: string,
+  marginKey: string | undefined | null,
+  sectionSpacingKey: string | undefined | null,
+  settings?: LayoutPresetSettings,
+): string {
+  const rule = buildLayoutCss(marginKey, sectionSpacingKey, settings)
+  return injectStyleTag(html, rule, LAYOUT_STYLE_ID)
+}
+
+/**
+ * Injects a CSS rule that overrides the rendered avatar's display size.
+ * 规则以独立的 `<style id="avatar-inject">` 标签插入 `</head>` 前。
+ * No-op if either dimension is missing or non-positive.
  */
 export function injectAvatarSizeCss(
   html: string,
   personal?: { avatar_width?: number; avatar_height?: number },
 ): string {
-  const w = personal?.avatar_width
-  const h = personal?.avatar_height
-  if (!w || !h) return html
-  const rule = `\n.r-avatar img { width: ${w}px !important; height: ${h}px !important; }\n`
-  const styleCloseIdx = html.indexOf('</style>')
-  if (styleCloseIdx !== -1) {
-    return html.slice(0, styleCloseIdx) + rule + html.slice(styleCloseIdx)
-  }
+  const rule = buildAvatarCss(personal)
+  if (!rule) return html
+  return injectStyleTag(html, rule, AVATAR_STYLE_ID)
+}
+
+/** 把规则包成 `<style id>` 标签插到 `</head>` 前（source order 在模板 style 之后）。 */
+function injectStyleTag(html: string, rule: string, id: string): string {
   const headCloseIdx = html.indexOf('</head>')
   if (headCloseIdx !== -1) {
-    return html.slice(0, headCloseIdx) + `<style>${rule}</style>` + html.slice(headCloseIdx)
+    return html.slice(0, headCloseIdx) + `<style id="${id}">${rule}</style>` + html.slice(headCloseIdx)
   }
-  return `<style>${rule}</style>` + html
+  return `<style id="${id}">${rule}</style>` + html
 }

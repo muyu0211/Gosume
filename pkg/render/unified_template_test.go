@@ -59,6 +59,15 @@ func TestUnifiedTemplateRenders(t *testing.T) {
 		`class="extra-row"`, // 项目 Extras
 		`<ul class="highlights">`,
 		`custom-item`,
+		// data-id：方案 4（增量 diff）的稳定锚点，前端 morphdom / 未来 keyed diff 依赖。
+		`data-id="i1"`, // Internship
+		`data-id="j1"`, // Job
+		`data-id="p1"`, // Project
+		`data-id="e1"`, // Education
+		`data-id="s1"`, // SkillGroup
+		`data-id="l1"`, // Language
+		`data-id="a1"`, // Award
+		`data-id="c1i1"`, // CustomItem
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("rendered unified HTML missing %q", want)

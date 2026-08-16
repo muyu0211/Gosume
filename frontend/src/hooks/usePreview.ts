@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../stores/resumeStore'
 import { useTemplateStore } from '../stores/templateStore'
 import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
-import { renderTemplate } from '../lib/templateEngine'
+import { renderTemplate, type TemplateSet } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
 import { injectLayoutCss, injectAvatarSizeCss } from '../lib/layoutPresets'
 
@@ -13,6 +13,16 @@ export function usePreview() {
   const activeTemplateId = useTemplateStore((s) => s.activeTemplateId)
   const layoutSettings = useLayoutSettingsStore()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 模板内容缓存：编辑期间模板不变，避免每次编辑都走一次后端 GetTemplateContent。
+  const templateCacheRef = useRef<{ id: string; tmpl: TemplateSet } | null>(null)
+
+  const getTemplate = useCallback(async (): Promise<TemplateSet> => {
+    const id = activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
+    if (templateCacheRef.current?.id === id) return templateCacheRef.current.tmpl
+    const tmpl = await loadTemplateContent(id)
+    templateCacheRef.current = { id, tmpl }
+    return tmpl
+  }, [activeTemplateId])
 
   const refreshPreview = useCallback(async () => {
     if (!resume) return
@@ -22,7 +32,7 @@ export function usePreview() {
       // Always use client-side rendering for live preview so it reflects
       // the current Zustand state immediately (Go backend memory is only
       // synced on explicit save, not on every keystroke).
-      const tmpl = await loadTemplateContent(activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0')
+      const tmpl = await getTemplate()
       const rendered = renderTemplate(tmpl, resume)
       // Inject layout CSS (page margin + section spacing) from the meta
       // tier keys, resolved against the user-customized tier lists.
@@ -44,7 +54,7 @@ export function usePreview() {
     } finally {
       setPreviewLoading(false)
     }
-  }, [resume, activeTemplateId, layoutSettings, setPreviewHtml, setPreviewLoading])
+  }, [resume, layoutSettings, setPreviewHtml, setPreviewLoading, getTemplate])
 
   const debouncedRefresh = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
