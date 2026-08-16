@@ -11,6 +11,7 @@ interface ResumeState {
   isPreviewLoading: boolean
   resumeList: ResumeListItem[]
   currentId: string | null
+  avatarRenderedSize: { width: number; height: number } | null
 
   clearResume: () => void
   newResume: (templateId: string) => Promise<void>
@@ -19,6 +20,7 @@ interface ResumeState {
   markSaved: (filePath?: string) => void
   setPreviewHtml: (html: string) => void
   setPreviewLoading: (loading: boolean) => void
+  setAvatarRenderedSize: (size: { width: number; height: number } | null) => void
   setResumeList: (list: ResumeListItem[]) => void
   loadResume: (id: string) => Promise<Resume | null>
   saveCurrent: () => Promise<void>
@@ -67,6 +69,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   isPreviewLoading: false,
   resumeList: [],
   currentId: null,
+  avatarRenderedSize: null,
 
   clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null }),
 
@@ -99,6 +102,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 
   setPreviewHtml: (html) => set({ previewHtml: html }),
   setPreviewLoading: (loading) => set({ isPreviewLoading: loading }),
+  setAvatarRenderedSize: (size) => set({ avatarRenderedSize: size }),
 
   setResumeList: (list) => set({ resumeList: list }),
 

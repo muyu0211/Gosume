@@ -1,6 +1,8 @@
 /* Compact Efficient Template Styles
- * Gosume 一期优化：统一 HTML 契约（header/aside 合并为单一 header 区）
- * 单栏：头像右置，青色色块标题。 */
+ * 页边距统一在 .resume-page（与分页/导出管线约定一致）。\
+ */
+
+ /* 当前模板全局样式 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     --font-size-base: 10.5pt;
@@ -24,9 +26,9 @@ body {
 }
 
 .resume-page {
-    width: 210mm;
+    width: 215mm;
     min-height: 297mm;
-    padding: var(--resume-padding, 10mm 14mm);
+    padding: var(--resume-padding, 10mm 12mm);
     background: #fff;
 }
 
@@ -38,8 +40,8 @@ body {
     grid-template-columns: 1fr auto;
     grid-template-areas:
         "text    avatar"
-        "contact contact"
-        "langs   langs";
+        "contact avatar"
+        "langs   avatar";
     column-gap: 12pt;
     margin-bottom: 8pt;
     padding-bottom: 6pt;
@@ -56,7 +58,13 @@ body {
 .r-jobtitle { font-size: 10.5pt; color: var(--primary-color); font-weight: 500; }
 .r-yoe { font-size: 9.5pt; color: var(--muted-color); }
 
-.r-avatar img { width: 40pt; height: 40pt; object-fit: cover; border-radius: 50%; border: 2pt solid var(--primary-color); }
+.r-avatar img { 
+    width: 40pt; 
+    height: 40pt; 
+    object-fit: cover; 
+    border-radius: 50%; 
+    border: 2pt solid var(--primary-color); 
+}
 
 /* 联系方式：横向信息带（隐藏小节标题） */
 .r-subtitle { display: none; }

@@ -1,6 +1,6 @@
 # 统一 HTML 内置函数（模板作者须知）
 
-Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，以下函数由统一 HTML**内部使用**。模板作者**不写 HTML、不直接调用这些函数**，但需要了解它们对渲染输出的影响，尤其是对 CSS 类名的依赖。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，以下函数由统一 HTML**内部使用**。模板作者**不写 HTML、不直接调用这些函数**，但需要了解它们对渲染输出的影响，尤其是对 CSS 类名的依赖。
 
 ## 与模板 CSS 相关的关键副作用
 

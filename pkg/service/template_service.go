@@ -83,7 +83,7 @@ type TemplateContent struct {
 }
 
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
-// 或模板无自带 HTML 时使用应用内置的 unified.html（Gosume 一期改造）。
+// 或模板无自带 HTML 时使用应用内置的 template.html（Gosume 一期改造）。
 func (s *TemplateService) effectiveHTML(t *template.Template) string {
 	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
 		return s.unifiedHTML

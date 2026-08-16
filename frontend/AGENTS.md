@@ -95,7 +95,7 @@ updateField('jobs[0].company', '某公司')
 
 ### 预览与渲染（统一 HTML）
 
-Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式）。前端 `renderTemplate`（`lib/templateEngine.ts`）在客户端把模板 CSS 内联进统一 HTML 并渲染为完整 HTML，随后 `injectLayoutCss`（`lib/layoutPresets.ts`）注入页边距变量与内容间距规则；`renderTemplate` 还会把模板的 `paper_size`/`orientations` 标注为 `.resume-page` 的 `data-paper-size`/`data-orientation` 属性。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式）。前端 `renderTemplate`（`lib/templateEngine.ts`）在客户端把模板 CSS 内联进统一 HTML 并渲染为完整 HTML，随后 `injectLayoutCss`（`lib/layoutPresets.ts`）注入页边距变量与内容间距规则；`renderTemplate` 还会把模板的 `paper_size`/`orientations` 标注为 `.resume-page` 的 `data-paper-size`/`data-orientation` 属性。
 
 `usePreview` hook 以 300ms 防抖生成 `previewHtml` 写入 `resumeStore`。不经过 Go 后端——后端内存仅在显式保存时同步，确保每次按键即时反映。单文件导出（ExportDialog）直接复用 `previewHtml`；批量导出（ResumeListDrawer）对每份简历独立执行相同的渲染 + 注入流程。
 

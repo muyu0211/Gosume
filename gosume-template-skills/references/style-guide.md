@@ -1,6 +1,6 @@
 # 样式规范
 
-本文档定义 `styles.css` 的编写规范和命名约定。Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，模板 CSS 必须**针对统一 HTML 的固定 DOM 契约**写样式。
+本文档定义 `styles.css` 的编写规范和命名约定。Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板 CSS 必须**针对统一 HTML 的固定 DOM 契约**写样式。
 
 ## 统一 HTML 的 DOM 契约
 
@@ -220,7 +220,7 @@
 
 ```css
 /* 头像右置 */
-.r-header { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact contact" "langs langs"; }
+.r-header { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact avatar" "langs avatar"; }
 .r-header-text { grid-area: text; }
 .r-avatar { grid-area: avatar; }
 .r-contact { grid-area: contact; }

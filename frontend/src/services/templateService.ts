@@ -19,7 +19,7 @@ const metaModules = import.meta.glob<Record<string, unknown>>(
 // 或模板无自带 HTML 时使用它。生产模式下由 Go 后端 GetTemplateContent 返回。
 // 路径从 frontend/src/services/ 出发需三层 ../ 才能到达项目根目录 templates/。
 const unifiedHtmlModules = import.meta.glob<string>(
-  '../../../templates/unified.html',
+  '../../../templates/template.html',
   { eager: true, query: '?raw', import: 'default' },
 )
 const unifiedHtml = Object.values(unifiedHtmlModules)[0] ?? ''

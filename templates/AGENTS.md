@@ -2,7 +2,7 @@
 
 ## 模板系统概述
 
-每个模板是一个独立的子目录，包含**两个文件**：`template.json`（元数据）+ `styles.css`（样式）。简历的**数据形态**由应用内置的**统一 HTML**（`templates/unified.html`）承载，模板包不再携带 HTML——这是 Gosume 一期改造的核心约定。
+每个模板是一个独立的子目录，包含**两个文件**：`template.json`（元数据）+ `styles.css`（样式）。简历的**数据形态**由应用内置的**统一 HTML**（`templates/template.html`）承载，模板包不再携带 HTML——这是 Gosume 一期改造的核心约定。
 
 模板分内置模板（`templates/` 目录下，编译时嵌入）和用户模板（存储在 SQLite 中，通过导入或创建产生）。
 
@@ -10,7 +10,7 @@
 
 ```
 templates/
-├── unified.html            # 统一 HTML（应用内置，全模板共享，不随模板包分发）
+├── template.html            # 统一 HTML（应用内置，全模板共享，不随模板包分发）
 ├── <dir-name>/             # 人类可读的目录名（如 modern、classic），与 id 无关
 │   ├── template.json       # 模板元数据
 │   └── styles.css          # 打印 CSS 样式表
@@ -56,7 +56,7 @@ templates/
         "qr_code":         false,   // 是否支持二维码（元数据，暂不渲染）
         "links_clickable": true     // 导出 PDF 时链接是否可点击
     },
-    "uses_unified_html": true,      // 一期改造迁移标记：true 时渲染使用应用内置 unified.html
+    "uses_unified_html": true,      // 一期改造迁移标记：true 时渲染使用应用内置 template.html
     "sections": {
         "required":  ["personal", "jobs", "education"],
         "optional":  ["projects", "skills", "languages", "awards", "custom"],
@@ -81,9 +81,9 @@ templates/
 | `sections.layout` | 指定区块在**前端编辑器**中的展示顺序，**不影响渲染顺序**（渲染顺序由统一 HTML 固定） |
 | `uses_unified_html` | 一期改造迁移标记。内置模板全部为 `true`；用户模板默认按"无自带 HTML"处理，始终使用统一 HTML |
 
-## 统一 HTML（unified.html）— 布局无关骨架
+## 统一 HTML（template.html）— 布局无关骨架
 
-`templates/unified.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块
+`templates/template.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块
 （personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），
 渲染顺序**固定**。
 
@@ -116,9 +116,10 @@ templates/
      侧栏内部用 `grid-template-areas` 竖向排布：头像在上 → 姓名 → 联系方式 → 语言。
    - 单栏：`.resume-container { display: block; }`，`.r-header` 顶部块 → `.r-main` 章节。
      `.r-header` 内部用 `grid-template-areas` 排布四子块——头像位置由 CSS 决定，三选一：
-     - **头像右置**：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact contact" "langs langs";`
+     - **头像右置**：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact avatar" "langs avatar";`
+       （头像独占右侧一列、跨 text/contact/langs 三行；文字/联系方式/语言全部排左列，头像调大不会挤压下方内容）
      - **头像居中**：`grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
-     - **头像左置**：与右置对称，`"avatar text"` 即可。
+     - **头像左置**：与右置对称，`grid-template-areas: "avatar text" "avatar contact" "avatar langs";` 即可。
 2. **头像**：统一 HTML 仅在简历含头像数据时渲染 `.r-avatar`；**位置完全由 CSS 决定**
    （双栏放侧栏、单栏可右置/居中/左置），不固定。是否显示同样由模板 CSS 决定。
    `features.avatar` 仅为元数据，不参与渲染。

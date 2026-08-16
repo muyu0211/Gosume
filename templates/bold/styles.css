@@ -33,14 +33,14 @@ body {
 
 .resume-container { max-width: 100%; }
 
-/* ── 头部区：姓名文字左 + 头像右；联系方式/语言横向信息带 ── */
+/* ── 头部区：文字内容左 + 头像右；（grid-template-areas 布局） ── */
 .r-header {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas:
         "text    avatar"
-        "contact contact"
-        "langs   langs";
+        "contact avatar"
+        "langs   avatar";
     column-gap: 16pt;
     margin-bottom: 12pt;
     padding-bottom: 10pt;
@@ -52,15 +52,7 @@ body {
 .r-contact { grid-area: contact; }
 .r-langs { grid-area: langs; }
 
-.r-name {
-    font-size: 28pt;
-    font-weight: 900;
-    color: var(--heading-color);
-    letter-spacing: 1pt;
-    line-height: 1.1;
-    margin-bottom: 4pt;
-    text-transform: uppercase;
-}
+.r-name {font-size: 28pt;font-weight: 900;color: var(--heading-color);letter-spacing: 1pt;line-height: 1.1;margin-bottom: 4pt;text-transform: uppercase;}
 .r-ename { font-size: 10pt; color: var(--muted-color); letter-spacing: 1pt; margin-bottom: 2pt; }
 .r-jobtitle { font-size: 13pt; font-weight: 400; color: var(--gold); letter-spacing: 2pt; text-transform: uppercase; margin-bottom: 6pt; }
 .r-yoe { font-size: 9pt; color: var(--muted-color); letter-spacing: 0.5pt; }

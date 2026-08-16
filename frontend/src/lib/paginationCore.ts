@@ -5,7 +5,7 @@
  * (export-html.ts) so that "what you see is what you export".
  *
  * DOM contract (Gosume 一期 · 优化版) — MUST stay in sync with
- * `templates/unified.html` and `templates/AGENTS.md`:
+ * `templates/template.html` and `templates/AGENTS.md`:
  *
  *   <body>
  *     <div class="resume-page">        ← one page (size + margin + background)

@@ -27,7 +27,7 @@ type Meta struct {
 	DataSchema     *DataSchema       `json:"data_schema,omitempty"`
 	CSSVariables   map[string]string `json:"css_variables,omitempty"`
 	// UsesUnifiedHTML 标记该模板已迁移到统一 HTML 骨架（Gosume 一期改造）。
-	// 为 true 时渲染/预览使用应用内置的 templates/unified.html，忽略模板包自带的 HTML。
+	// 为 true 时渲染/预览使用应用内置的 templates/template.html，忽略模板包自带的 HTML。
 	UsesUnifiedHTML bool `json:"uses_unified_html,omitempty"`
 }
 

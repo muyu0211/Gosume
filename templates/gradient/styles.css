@@ -47,8 +47,8 @@ body {
     grid-template-columns: 1fr auto;
     grid-template-areas:
         "text    avatar"
-        "contact contact"
-        "langs   langs";
+        "contact avatar"
+        "langs   avatar";
     column-gap: 16pt;
     margin-bottom: 10pt;
 }
