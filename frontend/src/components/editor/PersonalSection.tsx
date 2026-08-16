@@ -62,17 +62,71 @@ export function PersonalSection() {
   const [lockRatio, setLockRatio] = useState(true)
   const [ratioPreset, setRatioPreset] = useState<string>('custom')
   const ratioRef = useRef(1)
+  // 动画状态：追踪当前显示值 + rAF 句柄，用于从默认值平滑过渡到实际渲染值。
+  const animWRef = useRef(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
+  const animHRef = useRef(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
+  const rafRef = useRef<number | null>(null)
+
+  // 立即设置宽高（用户拖动 / 选择预设），取消进行中的动画。
+  const setAvatarDims = useCallback((w: number, h: number) => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+    animWRef.current = w
+    animHRef.current = h
+    setAvatarW(w)
+    setAvatarH(h)
+  }, [])
+
+  // 平滑过渡到目标值（easeOutCubic）。用户拖动时目标值=当前值，动画退化为 no-op。
+  const animateTo = useCallback((targetW: number, targetH: number) => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    const startW = animWRef.current
+    const startH = animHRef.current
+    const start = performance.now()
+    const DURATION = 400
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / DURATION)
+      const eased = 1 - Math.pow(1 - t, 3) // easeOutCubic
+      const w = Math.round(startW + (targetW - startW) * eased)
+      const h = Math.round(startH + (targetH - startH) * eased)
+      animWRef.current = w
+      animHRef.current = h
+      setAvatarW(w)
+      setAvatarH(h)
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step)
+      } else {
+        rafRef.current = null
+      }
+    }
+    rafRef.current = requestAnimationFrame(step)
+  }, [])
 
   // 同步外部数据（载入/切换简历、导入模板时），并跟随预览测量出的实际渲染尺寸。
+  // 用动画从旧值过渡到新值，避免从默认值直接跳变。
   useEffect(() => {
-    setAvatarW(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
-    setAvatarH(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
-  }, [p.avatar_width, p.avatar_height, avatarRenderedSize])
+    animateTo(
+      p.avatar_width ?? avatarRenderedSize?.width ?? 100,
+      p.avatar_height ?? avatarRenderedSize?.height ?? 100,
+    )
+  }, [p.avatar_width, p.avatar_height, avatarRenderedSize, animateTo])
 
   // 维护宽高比例（固定比例 checkbox 开启时用）。存 ref 避免触发额外渲染。
   useEffect(() => {
     if (avatarH > 0) ratioRef.current = avatarW / avatarH
   }, [avatarW, avatarH])
+
+  // 卸载时取消进行中的动画，避免 rAF 在组件卸载后继续 setState。
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
+  }, [])
 
   if (!p) return null
 
@@ -130,27 +184,25 @@ export function PersonalSection() {
   const clampDim = (v: number) => Math.min(200, Math.max(40, v))
 
   const handleWidthChange = (w: number) => {
-    let newH = avatarH
+    let newH = animHRef.current
     if (lockRatio) {
       newH = clampDim(Math.round(w / ratioRef.current))
-      setAvatarH(newH)
     } else {
       setRatioPreset('custom')
     }
-    setAvatarW(w)
+    setAvatarDims(w, newH)
     updateField('personal.avatar_width', w)
     updateField('personal.avatar_height', newH)
   }
 
   const handleHeightChange = (h: number) => {
-    let newW = avatarW
+    let newW = animWRef.current
     if (lockRatio) {
       newW = clampDim(Math.round(h * ratioRef.current))
-      setAvatarW(newW)
     } else {
       setRatioPreset('custom')
     }
-    setAvatarH(h)
+    setAvatarDims(newW, h)
     updateField('personal.avatar_height', h)
     updateField('personal.avatar_width', newW)
   }
@@ -163,9 +215,10 @@ export function PersonalSection() {
     if (!preset || preset.ratio === null) return
     setLockRatio(true)
     ratioRef.current = preset.ratio
-    const newH = clampDim(Math.round(avatarW / preset.ratio))
-    setAvatarH(newH)
-    updateField('personal.avatar_width', avatarW)
+    const w = animWRef.current
+    const newH = clampDim(Math.round(w / preset.ratio))
+    setAvatarDims(w, newH)
+    updateField('personal.avatar_width', w)
     updateField('personal.avatar_height', newH)
   }
 

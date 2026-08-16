@@ -142,6 +142,7 @@ export function SettingsPage() {
   const [isChangingDir, setIsChangingDir] = useState(false)
   const [dirStatus, setDirStatus] = useState<'' | 'success' | 'error'>('')
   const [dirErrorMsg, setDirErrorMsg] = useState('')
+  const [pendingDir, setPendingDir] = useState<string | null>(null)
 
   useEffect(() => {
     callService<string>('SystemService', 'GetDataDir').then((dir) => {
@@ -166,13 +167,15 @@ export function SettingsPage() {
     const dir = await callService<string>('SystemService', 'PickDataDir')
     if (!dir) return // user cancelled
 
-    // Step 2: Confirm
-    const confirmed = window.confirm(
-      `确认将数据目录更改为：\n${dir}\n\n现有数据将被完整迁移到新位置，迁移后无需重启即可生效。`
-    )
-    if (!confirmed) return
+    // Step 2: 弹出确认模态（复用 ConfirmDialog，替代 window.confirm）
+    setPendingDir(dir)
+  }
 
-    // Step 3: Migrate
+  const confirmChangeDataDir = async () => {
+    if (!pendingDir) return
+    const dir = pendingDir
+
+    // Step 3: Migrate（迁移期间模态保持打开并显示 loading）
     setIsChangingDir(true)
     try {
       await callService('SystemService', 'SetDataDir', dir)
@@ -184,6 +187,7 @@ export function SettingsPage() {
       setDirErrorMsg(err?.message || String(err))
     } finally {
       setIsChangingDir(false)
+      setPendingDir(null)
     }
   }
 
@@ -500,6 +504,18 @@ export function SettingsPage() {
         icon={<RotateCcw className="w-5 h-5 text-primary-600" />}
         onConfirm={handleResetLayout}
         onCancel={() => setShowResetConfirm(false)}
+      />
+
+      {/* Change data directory confirmation dialog */}
+      <ConfirmDialog
+        open={!!pendingDir}
+        title="更改数据目录"
+        description={`确认将数据目录更改为：\n${pendingDir}\n\n现有数据将被完整迁移到新位置，迁移后无需重启即可生效。`}
+        confirmText="确认迁移"
+        loading={isChangingDir}
+        icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
+        onConfirm={confirmChangeDataDir}
+        onCancel={() => setPendingDir(null)}
       />
     </AnimatedPage>
   )
