@@ -297,7 +297,7 @@ func (s *TemplateStore) SoftDelete(id string) error {
 func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, nil // directory doesn't exist, nothing to import
+		return 0, nil
 	}
 
 	imported := 0
@@ -374,7 +374,6 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 
 		now := time.Now().UTC().Format(time.RFC3339)
 
-		// Upsert: try update first, then insert if not exists
 		result, err := s.db.Exec(
 			`UPDATE templates SET meta=?, css=?, updated_at=? WHERE id=?`,
 			string(metaJSON), string(cssData), now, meta.ID,

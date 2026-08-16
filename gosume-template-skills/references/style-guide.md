@@ -160,6 +160,22 @@
 
 `skillLevel` 函数（统一 HTML 内置）输出的 HTML 依赖这两个类：输出 5 个 `<span>`，前 N 个是 `.skill-dot.filled`，其余是 `.skill-dot`。
 
+### 9. 头像尺寸必须固定（若启用头像）
+
+`.r-avatar img` 必须显式设置宽高，禁止依赖图片原始尺寸：
+
+```css
+.r-avatar img {
+    width: 72pt;        /* 单栏常为矩形 60–80pt；双栏侧栏常为 64–90pt */
+    height: 72pt;       /* 单栏常为矩形 60–80pt；双栏侧栏常为 64–90pt */
+    object-fit: cover;  /* 裁剪填充，避免拉伸变形 */
+    border-radius: 50%; /* 圆形头像可选 */
+}
+```
+
+- 必须同时写 `width` + `height` + `object-fit`，否则用户导入任意尺寸头像时会渲染为图片默认大小，体验差。
+- 单栏头像通常 60–80pt（矩形或圆形）；双栏侧栏头像 64–90pt（可选为圆形 `border-radius: 50%`）。
+
 ## 命名约定
 
 模板 CSS 必须沿用统一 HTML 的固定类名，推荐 BEM-like 风格组织，保持模板间一致性。
@@ -216,7 +232,7 @@
 
 ### 单栏布局（默认）
 
-`.resume-container { display: block; }`，`.r-header` 是顶部块，`.r-main` 是下方章节。`.r-header` 内部用 grid-template-areas 排布头像/姓名/联系方式/语言，头像位置三选一：
+`.resume-container { display: block; }`，`.r-header` 是顶部块，`.r-main` 是下方章节。`.r-header` **必须**用 `grid-template-areas` 显式排布头像/姓名/联系方式/语言——这是模板的固定约束，无论有无头像都不得省略（不得仅靠 `text-align: center` 等隐式流式方式代替）。⚠️ `grid-template-areas` 只有配合 `display: grid` 才生效，二者必须同时出现。头像位置三选一：
 
 ```css
 /* 头像右置 */
@@ -227,7 +243,8 @@
 .r-langs { grid-area: langs; }
 ```
 
-（头像居中 = 单列 `"avatar" "text" "contact" "langs"` + `justify-items: center`；头像左置 = `"avatar text"` 对称）
+- 头像居中：单列 `display: grid; grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
+- 头像左置：与右置对称 `display: grid; grid-template-columns: auto 1fr; grid-template-areas: "avatar text" "avatar contact" "avatar langs";`
 
 ### 双栏布局（侧边栏）
 

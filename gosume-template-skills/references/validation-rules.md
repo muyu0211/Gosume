@@ -44,7 +44,7 @@ ZIP 内的目录条目会被忽略，只处理文件。建议不要在包内放�
 
 | 字段 | 规则 | 错误信息 |
 |------|------|----------|
-| `id` | 匹配 `^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$` | `template id must be 2-64 characters and contain only letters, numbers, hyphens, or underscores` |
+| `id` | 为标准UUID, 匹配 `^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`, 导入校验中会根据id判断模板是否已经导入过 | `template id must be 2-64 characters and contain only letters, numbers, hyphens, or underscores` |
 | `name` | trim 后非空 | `template name is required` |
 | `version` | trim 后非空 | `template version is required` |
 | `author.name` | trim 后非空 | `template author name is required` |

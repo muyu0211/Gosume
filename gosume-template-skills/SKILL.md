@@ -116,16 +116,20 @@ Gosume 支持的模板包主要包含**两个文件**：
 
 侧栏（`.r-header`）内部用 `grid-template-areas` 竖向排布：头像在上 → 姓名 → 联系方式 → 语言。
 
-### 4. 头像位置由 CSS 决定
+### 4. 头像位置由 CSS 决定（`.r-header` 必须用 grid-template-areas 排布）
 
-统一 HTML 仅在简历含头像数据时渲染 `.r-avatar`，**位置完全由 CSS 决定**：
+统一 HTML 仅在简历含头像数据时渲染 `.r-avatar`，**位置完全由 CSS 决定**。
+
+**固定约束**：`.r-header` 的排布必须显式用 `grid-template-areas` 约束——单栏三选一、双栏侧栏竖向，**无论有无头像都不得省略**。不得只靠 `text-align` / `flex` 等隐式流式排布代替（即便居中模板无头像时 DOM 靠其他字段也能渲染，`grid-template-areas` 仍是模板的固定契约，必须保留）。⚠️ `grid-template-areas` 只有在 `display: grid`（或 `inline-grid`）下才生效——二者必须同时出现，否则写了等于没写。
 
 - **双栏**：`.r-avatar` 放侧栏（`.r-header` 内部 grid-template-areas 排布，头像通常在最上）。
 - **单栏**：`.r-header` 内部用 grid-template-areas 排布，三选一：
-  - 头像右置：`grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact avatar" "langs avatar";`
+  - 头像右置：`display: grid; grid-template-columns: 1fr auto; grid-template-areas: "text avatar" "contact avatar" "langs avatar";`
     （头像独占右侧一列、跨三行；文字/联系方式/语言全排左列，头像调大不会挤压下方内容）
-  - 头像居中：`grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
-  - 头像左置：与右置对称 `grid-template-areas: "avatar text" "avatar contact" "avatar langs"`。
+  - 头像居中：`display: grid; grid-template-columns: 1fr; grid-template-areas: "avatar" "text" "contact" "langs"; justify-items: center; text-align: center;`
+  - 头像左置：与右置对称 `display: grid; grid-template-columns: auto 1fr; grid-template-areas: "avatar text" "avatar contact" "avatar langs";`
+
+**头像尺寸必须由 CSS 固定**：`.r-avatar img` 必须显式设置 `width` + `height`（配 `object-fit: cover`），禁止依赖图片原始尺寸——否则用户导入任意尺寸头像时会渲染为图片默认大小，体验差。建议单栏 60–80pt，双栏侧栏 64–90pt（常为圆形 `border-radius: 50%`）。
 
 是否显示头像由模板 CSS 决定（`features.avatar` 仅为元数据，不参与渲染）。
 
@@ -236,6 +240,8 @@ Gosume 支持的模板包主要包含**两个文件**：
 - `:root` 定义 CSS 变量，颜色值与 `template.json` 的 `colors` 一致
 - 字体栈用系统字体：`'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif`
 - 字号用 `pt`，间距用 `mm` 或 `pt`，避免 `px`
+- **`.r-header` 必须用 `grid-template-areas` 显式排布**（单栏头像右置/居中/左置三选一、双栏侧栏竖向），无论有无头像都不得省略，见第 4 节
+- **`.r-avatar img` 必须显式设置 `width` + `height`（配 `object-fit: cover`）**，禁止依赖图片原始尺寸，见第 4 节
 - 必须包含 `@media print` 和 `@page { size: A4; margin: 0; }`
 - 若启用技能点，必须定义 `.skill-dot` 和 `.skill-dot.filled`（`skillLevel` 函数依赖）
 - 必须定义 `.page-break { page-break-after: always; break-after: page; }`
@@ -250,6 +256,8 @@ Gosume 支持的模板包主要包含**两个文件**：
 - [ ] 包内只有 `template.json` + `styles.css` 两文件，**没有** `template.html`
 - [ ] CSS 选择器全部对齐统一 HTML 类名（`.r-header`/`.r-contact`/`.edu-school`/`.skill-dots` 等），无自造类名
 - [ ] 单栏 `.resume-container` 是 `block`；双栏是 `grid`（`grid-template-areas: "header main"`）
+- [ ] `.r-header` 用 `grid-template-areas` 排布（单栏三选一 / 双栏侧栏），无省略、无只靠 `text-align` 代替
+- [ ] `.r-avatar img` 有 `width` + `height` + `object-fit`（若启用头像）
 - [ ] `.resume-page`（单栏）或 `.r-header`/`.r-main`（双栏）的 padding 用 `var(--resume-padding[-y/-x], 默认值)` 消费
 - [ ] 节奏间距全部用 `margin-bottom`（无 `margin-top` 表达条目/细节间距）
 - [ ] `.summary` 有 `overflow-wrap: break-word; word-break: break-word;`

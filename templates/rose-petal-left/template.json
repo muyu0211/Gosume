@@ -1,0 +1,41 @@
+{
+    "id": "rose-petal-left",
+    "name": "蔷薇粉彩",
+    "name_en": "Rose Petal",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏柔和创意风，玫瑰粉主色与圆形头像左置，温馨亲和，适合设计、时尚、内容、教育类岗位",
+    "description_en": "Single-column soft creative style with rose-pink primary and circular avatar on the left. Warm and approachable, ideal for design, fashion, content and education roles",
+    "category": "creative",
+    "tags": ["柔和", "创意", "单栏", "粉色", "creative", "rose"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#B85C7A",
+        "secondary": "#D98AA0",
+        "text": "#3B2E34",
+        "background": "#FFFFFF",
+        "accent": "#FBEEF4"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

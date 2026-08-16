@@ -1,0 +1,217 @@
+/* Charcoal Minimal Styles
+ * Gosume 一期改造：统一 HTML 契约（单栏）。
+ * .r-header 为顶部块（头像居中，圆形），.r-main 为下方章节。极简黑白、大留白。 */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10pt;
+    --line-height: 1.65;
+    --primary-color: #1A1A1A;
+    --heading-color: #1A1A1A;
+    --text-color: #333333;
+    --muted-color: #8A8A8A;
+    --border-color: #E8E8E8;
+    --accent-color: #555555;
+    --accent-bg: #F5F5F5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+/* ── 单页单元（页边距经变量消费）── */
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: var(--resume-padding, 16mm 20mm);
+    background: #fff;
+}
+
+/* 单栏：内容包裹层 block */
+.resume-container { max-width: 100%; }
+
+/* ── 个人信息区（r-header 顶部块，头像居中，圆形）── */
+.r-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+    justify-items: center;
+    text-align: center;
+    margin-bottom: 20pt;
+    padding-bottom: 18pt;
+    border-bottom: 1pt solid var(--border-color);
+}
+
+.r-avatar { grid-area: avatar; }
+.r-header-text { grid-area: text; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
+
+.r-name {
+    font-size: 24pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    letter-spacing: 3pt;
+    margin-bottom: 4pt;
+}
+
+.r-ename { font-size: 10pt; color: var(--muted-color); letter-spacing: 1pt; margin-bottom: 5pt; }
+.r-jobtitle { font-size: 11pt; color: var(--accent-color); font-weight: 600; margin-bottom: 3pt; }
+.r-yoe { font-size: 9pt; color: var(--muted-color); }
+
+.r-avatar img {
+    width: 72pt;
+    height: 72pt;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1pt solid var(--border-color);
+    margin-bottom: 10pt;
+}
+
+/* 联系方式：横向居中，隐藏小节标题 */
+.r-subtitle { display: none; }
+
+.r-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4pt 16pt;
+    font-size: 9.5pt;
+}
+.r-contact-item { display: inline-flex; align-items: baseline; color: var(--muted-color); }
+.r-contact-label { color: var(--muted-color); }
+.r-contact-label::after { content: ": "; }
+.r-contact-value { color: var(--text-color); }
+
+.r-langs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4pt 16pt;
+    font-size: 9.5pt;
+}
+.r-lang { color: var(--muted-color); }
+
+/* ── 章节标题（居中 + 底部细线）── */
+.section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    text-align: center;
+    letter-spacing: 3pt;
+    margin-bottom: 12pt;
+    padding-bottom: 6pt;
+    border-bottom: 0.75pt solid var(--border-color);
+}
+
+/* ── 个人总结 ── */
+.summary {
+    margin-bottom: 16pt;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: var(--text-color);
+    text-align: justify;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* ── 工作/实习/项目经历 ── */
+.experience-item { margin-bottom: 12pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+.exp-header .company { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
+.exp-header .title { font-weight: 400; color: var(--accent-color); }
+.exp-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+
+.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary { font-size: 10pt; color: var(--text-color); margin-bottom: 4pt; }
+
+.highlights { list-style: none; padding-left: 0; }
+.highlights li {
+    position: relative;
+    padding-left: 13pt;
+    margin-bottom: 2pt;
+    font-size: 9.5pt;
+    line-height: 1.55;
+}
+.highlights li::before {
+    content: "\2013";
+    position: absolute;
+    left: 0;
+    color: var(--accent-color);
+}
+
+/* ── 教育 ── */
+.education-item { margin-bottom: 10pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.edu-header .edu-school { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
+.edu-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-courses { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+
+/* ── 技能（进度点，炭黑）── */
+.skills-grid { display: flex; flex-wrap: wrap; gap: 8pt 18pt; }
+.skill-category { margin-bottom: 8pt; }
+.skill-category h4 { font-size: 10pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 6pt; font-size: 9.5pt; margin-bottom: 2pt; margin-right: 14pt; }
+.skill-dots { display: flex; gap: 2pt; }
+
+.skill-dot {
+    display: inline-block;
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    background: #D9D9D9;
+    margin: 0 1pt;
+    vertical-align: middle;
+}
+.skill-dot.filled { background: var(--primary-color); }
+
+/* ── 奖项 ── */
+.award-item { margin-bottom: 8pt; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-weight: 600; font-size: 10.5pt; color: var(--heading-color); }
+.award-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; }
+.award-issuer { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 自定义区块 ── */
+.custom-item { margin-bottom: 8pt; }
+.custom-item h4 { font-size: 10.5pt; font-weight: 600; color: var(--heading-color); }
+.subtitle { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 项目扩展字段 ── */
+.extra-row { font-size: 9.5pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
+
+/* ── 打印 ── */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: var(--resume-padding, 16mm 20mm);
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}

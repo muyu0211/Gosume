@@ -50,7 +50,6 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 	stopWatch := initDevWatcher(templateStore)
 
 	// 统一 HTML（Gosume 一期改造）：全应用共享一份，模板包不再携带 HTML。
-	// 已迁移模板（uses_unified_html=true）或模板无自带 HTML 时，渲染/预览使用它。
 	unifiedHTML, err := builtinTemplates.ReadFile("templates/template.html")
 	if err != nil {
 		log.Error("[main] read template.html: %v", err)

@@ -1,0 +1,41 @@
+{
+    "id": "jade-bamboo-left",
+    "name": "墨竹青翠",
+    "name_en": "Jade Bamboo",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏清新自然风，墨绿主色与青绿强调，头像左置，适合设计、文化、教育等偏人文与创意岗位",
+    "description_en": "Single-column fresh natural style with ink-green primary and jade accents, avatar on the left. Ideal for design, culture and education roles",
+    "category": "creative",
+    "tags": ["清新", "自然", "单栏", "绿色", "creative", "fresh"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#2F6B4F",
+        "secondary": "#4CAF7D",
+        "text": "#2B2B2B",
+        "background": "#FFFFFF",
+        "accent": "#EDF7F1"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "id": "mono-minimal-center",
+    "name": "炭黑极简",
+    "name_en": "Charcoal Minimal",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏极简黑白风，炭黑主色与大留白，圆形头像居中，克制耐看，适合商务、产品、管理类岗位",
+    "description_en": "Single-column minimal monochrome style with charcoal primary and generous whitespace, circular avatar centered. Suitable for business, product and management roles",
+    "category": "general",
+    "tags": ["极简", "黑白", "单栏", "居中", "minimal", "monochrome"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#1A1A1A",
+        "secondary": "#555555",
+        "text": "#333333",
+        "background": "#FFFFFF",
+        "accent": "#F5F5F5"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

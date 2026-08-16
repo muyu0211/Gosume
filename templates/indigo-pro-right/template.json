@@ -1,0 +1,41 @@
+{
+    "id": "indigo-pro-right",
+    "name": "靛蓝专业",
+    "name_en": "Indigo Pro",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏商务专业风，靛蓝主色与克制的灰阶层次，头像右置，适合金融、咨询、法务等稳重岗位",
+    "description_en": "Single-column business style with indigo primary and restrained grey hierarchy, avatar on the right. Ideal for finance, consulting and legal roles",
+    "category": "business",
+    "tags": ["商务", "专业", "单栏", "靛蓝", "business", "indigo"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#3F4E8C",
+        "secondary": "#5A6BB5",
+        "text": "#2E3440",
+        "background": "#FFFFFF",
+        "accent": "#EEF1F9"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

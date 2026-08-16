@@ -1,0 +1,232 @@
+/* Warm Coral Styles
+ * Gosume 一期改造：统一 HTML 契约（双栏·右侧栏）。
+ * .resume-container 为 grid，.r-header 为右侧栏（暖橙浅底，通高），.r-main 为主栏（左侧）。 */
+:root {
+    --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-size-base: 10pt;
+    --line-height: 1.6;
+    --primary-color: #C0573F;
+    --heading-color: #C0573F;
+    --text-color: #3A3230;
+    --muted-color: #7A7266;
+    --border-color: #EBDAD2;
+    --accent-color: #E08A5C;
+    --accent-bg: #FBF0EA;
+    --sidebar-bg: #FBF0EA;
+    --sidebar-text: #3A3230;
+    --sidebar-muted: #9A8377;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+/* ── 单页单元 ── */
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+}
+
+/* ── 双栏：右侧栏（grid-template-areas: "main header"）── */
+.resume-container {
+    display: grid;
+    grid-template-columns: 1fr 62mm;
+    grid-template-areas: "main header";
+    grid-template-rows: 1fr;
+    min-height: 297mm;
+}
+
+.r-header { grid-area: header; }
+.r-main { grid-area: main; }
+
+/* ── 侧栏（.r-header）：暖橙浅底深字，竖向排布 ── */
+.r-header {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 10mm);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16pt;
+}
+
+.r-header .r-subtitle {
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1.2pt;
+    margin-bottom: 8pt;
+    padding-bottom: 4pt;
+    border-bottom: 0.75pt solid var(--border-color);
+}
+
+.r-avatar { text-align: center; }
+.r-avatar img {
+    width: 74pt;
+    height: 74pt;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2pt solid #FFFFFF;
+}
+
+.r-header-text { text-align: center; }
+.r-name {
+    font-size: 19pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    letter-spacing: 1pt;
+    margin-bottom: 3pt;
+}
+.r-ename { font-size: 9.5pt; color: var(--sidebar-muted); margin-bottom: 3pt; }
+.r-jobtitle { font-size: 10.5pt; color: var(--primary-color); font-weight: 600; margin-bottom: 2pt; }
+.r-yoe { font-size: 9pt; color: var(--sidebar-muted); }
+
+/* 侧栏联系方式：每项竖排，label 在上、value 在下 */
+.r-contact { display: flex; flex-direction: column; gap: 8pt; }
+.r-contact-item { display: flex; flex-direction: column; }
+.r-contact-label {
+    font-size: 7.5pt;
+    color: var(--sidebar-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 1pt;
+}
+.r-contact-value {
+    font-size: 9pt;
+    color: var(--sidebar-text);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* 侧栏语言 */
+.r-langs { display: flex; flex-direction: column; gap: 4pt; }
+.r-lang { font-size: 9.5pt; color: var(--sidebar-text); }
+
+/* ── 主栏（.r-main）：页边距经变量消费 ── */
+.r-main {
+    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 14mm);
+}
+
+/* ── 章节标题（珊瑚主色 + 底部细线）── */
+.section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 10pt;
+    padding-bottom: 3pt;
+    border-bottom: 0.75pt solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 1.2pt;
+}
+
+/* ── 个人总结 ── */
+.summary {
+    margin-bottom: 16pt;
+    font-size: 10pt;
+    line-height: 1.65;
+    color: var(--text-color);
+    text-align: justify;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* ── 工作/实习/项目经历 ── */
+.experience-item { margin-bottom: 12pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+.exp-header .company { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
+.exp-header .title { font-weight: 500; color: var(--accent-color); }
+.exp-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+
+.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary { font-size: 10pt; color: var(--text-color); margin-bottom: 4pt; }
+
+.highlights { list-style: none; padding-left: 0; }
+.highlights li {
+    position: relative;
+    padding-left: 13pt;
+    margin-bottom: 2pt;
+    font-size: 9.5pt;
+    line-height: 1.55;
+}
+.highlights li::before {
+    content: "\25AA";
+    position: absolute;
+    left: 0;
+    color: var(--accent-color);
+    font-size: 8pt;
+}
+
+/* ── 教育 ── */
+.education-item { margin-bottom: 10pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.edu-header .edu-school { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
+.edu-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-courses { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+
+/* ── 技能（进度点）── */
+.skills-grid { display: flex; flex-wrap: wrap; gap: 8pt 18pt; }
+.skill-category { margin-bottom: 8pt; }
+.skill-category h4 { font-size: 10pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-item { display: inline-flex; align-items: center; gap: 6pt; font-size: 9.5pt; margin-bottom: 2pt; margin-right: 14pt; }
+.skill-dots { display: flex; gap: 2pt; }
+
+.skill-dot {
+    display: inline-block;
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    background: #E3CFC6;
+    margin: 0 1pt;
+    vertical-align: middle;
+}
+.skill-dot.filled { background: var(--primary-color); }
+
+/* ── 奖项 ── */
+.award-item { margin-bottom: 8pt; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-weight: 600; font-size: 10.5pt; color: var(--heading-color); }
+.award-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; }
+.award-issuer { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 自定义区块 ── */
+.custom-item { margin-bottom: 8pt; }
+.custom-item h4 { font-size: 10.5pt; font-weight: 600; color: var(--heading-color); }
+.subtitle { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 项目扩展字段 ── */
+.extra-row { font-size: 9.5pt; margin-bottom: 3pt; line-height: 1.5; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
+
+/* ── 打印 ── */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}
