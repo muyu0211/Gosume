@@ -1,0 +1,41 @@
+{
+    "id": "tech-mono-terminal",
+    "name": "极客终端",
+    "name_en": "Geek Terminal",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏技术极客风，等宽字体点缀联系方式与日期，深色主色与蓝色强调色构成清晰层次，适合工程师与开发者简历",
+    "description_en": "Single-column tech style with monospace accents for contacts and dates, dark primary color with blue accents for clear hierarchy. Ideal for engineers and developers",
+    "category": "tech",
+    "tags": ["技术", "极客", "单栏", "工程师", "tech", "developer"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#111827",
+        "secondary": "#2563EB",
+        "text": "#1F2937",
+        "background": "#FFFFFF",
+        "accent": "#EFF6FF"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

@@ -71,7 +71,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   currentId: null,
   avatarRenderedSize: null,
 
-  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null }),
+  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null, avatarRenderedSize: null }),
 
   newResume: async (templateId) => {
     try {
@@ -88,7 +88,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null })
   },
 
-  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '' }),
+  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null }),
 
   updateField: (path, value) => {
     const resume = get().resume
@@ -110,7 +110,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     try {
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
-        set({ resume, isDirty: false, currentId: id, previewHtml: '' })
+        set({ resume, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null })
         return resume
       }
     } catch (err) {

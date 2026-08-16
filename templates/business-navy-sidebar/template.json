@@ -1,0 +1,41 @@
+{
+    "id": "business-navy-sidebar",
+    "name": "藏青商务",
+    "name_en": "Navy Business",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "双栏商务专业风，左侧藏青侧栏放置头像、姓名与联系方式，右侧主栏承载经历与技能，稳重可信，适合商务与职场通用场景",
+    "description_en": "Two-column business style with a navy sidebar for avatar, name and contacts, and a main column for experience and skills. Trustworthy and professional, ideal for business and general career use",
+    "category": "business",
+    "tags": ["商务", "专业", "双栏", "侧栏", "business", "professional"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#1E3A5F",
+        "secondary": "#2C5282",
+        "text": "#333333",
+        "background": "#FFFFFF",
+        "accent": "#EEF3F8"
+    },
+    "features": {
+        "avatar": true,
+        "skill_bars": true,
+        "qr_code": false,
+        "links_clickable": true
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "jobs", "education"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+    }
+}

@@ -1,0 +1,220 @@
+/* Scholarly Serif Styles
+ * Gosume 一期改造：统一 HTML 契约（单栏）。
+ * 衬线字体 + 酒红主色，姓名居中，无头像，技能以标签云呈现。 */
+:root {
+    --font-family: 'Noto Serif SC', 'SimSun', 'PingFang SC', serif;
+    --font-size-base: 10.5pt;
+    --line-height: 1.65;
+    --primary-color: #7C2D2D;
+    --heading-color: #7C2D2D;
+    --text-color: #33302B;
+    --muted-color: #7A7266;
+    --border-color: #D9D0C2;
+    --accent-color: #9A6A4A;
+    --accent-bg: #F7F3EE;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--text-color);
+    background: #fff;
+}
+
+/* ── 单页单元（页边距经变量消费）── */
+.resume-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: var(--resume-padding, 16mm 20mm);
+    background: #fff;
+}
+
+/* 单栏：内容包裹层 block */
+.resume-container { max-width: 100%; }
+
+/* ── 个人信息区（r-header 顶部块，无头像，居中）── */
+.r-header {
+    text-align: center;
+    margin-bottom: 10pt;
+    grid-template-areas:
+        "avatar"
+        "text"
+        "contact"
+        "langs";
+}
+
+.r-header-text { grid-area: text; }
+.r-avatar { grid-area: avatar; }
+.r-contact { grid-area: contact; }
+.r-langs { grid-area: langs; }
+
+.r-avatar img {
+    width: 64pt;
+    height: 80pt;
+    object-fit: cover;
+    border-radius: 4pt;
+    border: 1px solid var(--border-color);
+}
+
+.r-name {
+    font-size: 24pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    letter-spacing: 2pt;
+    margin-bottom: 6pt;
+}
+
+.r-ename {
+    font-size: 10.5pt;
+    color: var(--muted-color);
+    font-style: italic;
+    letter-spacing: 1pt;
+    margin-bottom: 6pt;
+}
+
+.r-jobtitle {
+    font-size: 11.5pt;
+    color: var(--accent-color);
+    font-weight: 600;
+    margin-bottom: 4pt;
+}
+
+.r-yoe { font-size: 9.5pt; color: var(--muted-color); }
+
+.r-header-text { margin-bottom: 8pt; }
+
+/* 联系方式：横向居中，隐藏小节标题 */
+.r-subtitle { display: none; }
+
+.r-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4pt 16pt;
+    font-size: 9.5pt;
+    margin-bottom: 4pt;
+}
+
+.r-contact-item { display: inline-flex; align-items: baseline; color: var(--muted-color); }
+.r-contact-label { color: var(--muted-color); }
+.r-contact-label::after { content: ": "; }
+.r-contact-value { color: var(--text-color); }
+
+.r-langs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4pt 16pt;
+    font-size: 9.5pt;
+}
+.r-lang { color: var(--muted-color); }
+
+/* ── 章节标题（居中 + 两侧细线）── */
+.section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--heading-color);
+    text-align: center;
+    letter-spacing: 3pt;
+    margin-bottom: 12pt;
+    padding-bottom: 6pt;
+    border-bottom: 0.75pt solid var(--border-color);
+}
+
+/* ── 个人总结 ── */
+.summary {
+    margin-bottom: 16pt;
+    font-size: 10.5pt;
+    line-height: 1.75;
+    color: var(--text-color);
+    text-align: justify;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* ── 工作/实习/项目经历 ── */
+.experience-item { margin-bottom: 12pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3pt;
+}
+
+.exp-header .company { font-weight: 700; font-size: 11pt; color: var(--heading-color); }
+.exp-header .title { font-weight: 500; color: var(--accent-color); }
+.exp-header .date { font-size: 9.5pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+
+.exp-location { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary { font-size: 10.5pt; color: var(--text-color); margin-bottom: 4pt; }
+
+.highlights { list-style: none; padding-left: 0; }
+.highlights li {
+    position: relative;
+    padding-left: 14pt;
+    margin-bottom: 2pt;
+    font-size: 10pt;
+    line-height: 1.6;
+}
+.highlights li::before {
+    content: "\2014";
+    position: absolute;
+    left: 0;
+    color: var(--accent-color);
+}
+
+/* ── 教育 ── */
+.education-item { margin-bottom: 10pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.edu-header .edu-school { font-weight: 700; font-size: 11pt; color: var(--heading-color); }
+.edu-header .date { font-size: 9.5pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.edu-detail { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-courses { font-size: 9.5pt; color: var(--muted-color); font-style: italic; margin-bottom: 2pt; }
+
+/* ── 技能（标签云：隐藏等级点，仅罗列技能名）── */
+.skills-grid { display: flex; flex-wrap: wrap; gap: 6pt 16pt; }
+.skill-category { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3pt 8pt; margin-bottom: 8pt; width: 100%; }
+.skill-category h4 { flex-basis: 100%; font-size: 10.5pt; font-weight: 600; color: var(--heading-color); margin-bottom: 2pt; }
+.skill-item { font-size: 10pt; }
+.skill-item::after { content: "\00B7"; color: var(--accent-color); margin-left: 8pt; }
+.skill-item:last-child::after { content: ""; margin-left: 0; }
+.skill-dots { display: none; }
+
+/* ── 奖项 ── */
+.award-item { margin-bottom: 8pt; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-title { font-weight: 600; font-size: 10.5pt; color: var(--heading-color); }
+.award-header .date { font-size: 9.5pt; color: var(--muted-color); white-space: nowrap; }
+.award-issuer { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 自定义区块 ── */
+.custom-item { margin-bottom: 8pt; }
+.custom-item h4 { font-size: 11pt; font-weight: 600; color: var(--heading-color); }
+.subtitle { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 1pt; }
+
+/* ── 项目扩展字段 ── */
+.extra-row { font-size: 10pt; margin-bottom: 3pt; line-height: 1.55; }
+.extra-label { font-weight: 600; }
+.extra-value { color: inherit; }
+
+/* ── 打印 ── */
+@media print {
+    .resume-page {
+        width: 100%;
+        margin: 0;
+        padding: var(--resume-padding, 16mm 20mm);
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+.page-break {
+    page-break-after: always;
+    break-after: page;
+}

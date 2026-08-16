@@ -1,0 +1,41 @@
+{
+    "id": "academic-serif-scholar",
+    "name": "学术典雅",
+    "name_en": "Scholarly Serif",
+    "version": "1.0.0",
+    "author": {
+        "name": "Gosume",
+        "email": "templates@gosume.local"
+    },
+    "description": "单栏正式学术风，衬线字体与酒红主色营造典雅稳重气质，技能以标签云呈现，适合研究生、教师与科研求职场景",
+    "description_en": "Single-column formal academic style with serif typography and wine-red primary color. Skills render as tag cloud. Ideal for graduates, academics and researchers",
+    "category": "academic",
+    "tags": ["学术", "正式", "单栏", "衬线", "academic", "serif"],
+    "target_language": ["zh-CN", "en-US"],
+    "page_count": {
+        "min": 1,
+        "max": 4,
+        "default": 1
+    },
+    "paper_size": "A4",
+    "orientations": ["portrait"],
+    "colors": {
+        "primary": "#7C2D2D",
+        "secondary": "#9A6A4A",
+        "text": "#33302B",
+        "background": "#FFFFFF",
+        "accent": "#F7F3EE"
+    },
+    "features": {
+        "avatar": false,
+        "skill_bars": false,
+        "qr_code": false,
+        "links_clickable": false
+    },
+    "uses_unified_html": true,
+    "sections": {
+        "required": ["personal", "education", "jobs"],
+        "optional": ["projects", "skills", "languages", "awards", "custom"],
+        "layout": ["personal", "education", "summary", "jobs", "projects", "awards", "skills", "languages", "custom"]
+    }
+}

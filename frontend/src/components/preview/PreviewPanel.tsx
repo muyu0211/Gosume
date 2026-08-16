@@ -105,6 +105,18 @@ export function PreviewPanel() {
       const h = doc.body?.scrollHeight || result.paper.pxH
       setContainerHeight(h)
 
+      // 测量头像实际渲染尺寸，回传 store 供编辑器 slider 初始值使用：
+      // 无 avatar_width/height 时反映模板默认渲染值，避免硬编码 100px。
+      // 值比较后再写入，避免每次编辑分页都触发编辑器的同步 effect。
+      const avatarImg = doc.querySelector('.r-avatar img') as HTMLImageElement | null
+      const measured = avatarImg && avatarImg.offsetWidth > 0
+        ? { width: avatarImg.offsetWidth, height: avatarImg.offsetHeight }
+        : null
+      const prevSize = useResumeStore.getState().avatarRenderedSize
+      if ((measured?.width ?? 0) !== (prevSize?.width ?? 0) || (measured?.height ?? 0) !== (prevSize?.height ?? 0)) {
+        useResumeStore.getState().setAvatarRenderedSize(measured)
+      }
+
       // Inject wheel listener into iframe document for Ctrl+scroll zoom.
       // Events inside the iframe do not bubble to the parent document,
       // so we must listen directly on the iframe's contentDocument.
