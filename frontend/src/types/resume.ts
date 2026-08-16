@@ -73,6 +73,10 @@ export interface Personal {
   linkedin?: string
   github?: string
   avatar?: string
+  /** 简历中头像显示宽度（px）。未设置时使用模板默认尺寸。 */
+  avatar_width?: number
+  /** 简历中头像显示高度（px）。未设置时使用模板默认尺寸。 */
+  avatar_height?: number
   birthday?: string
   gender?: 'male' | 'female' | 'other'
   job_title?: string

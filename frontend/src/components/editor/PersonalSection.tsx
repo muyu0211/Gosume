@@ -1,10 +1,18 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
 const PHOTO_QUALITY = 0.8 // JPEG compression quality
+
+// 证件照标准比例预设（宽 / 高）。custom 表示自由调整。
+const RATIO_PRESETS = [
+  { key: 'custom', label: '自定义', ratio: null as number | null },
+  { key: '1x1', label: '1:1（正方形）', ratio: 1 },
+  { key: '1inch', label: '一寸（25×35）', ratio: 25 / 35 },
+  { key: '2inch', label: '二寸（35×53）', ratio: 35 / 53 },
+]
 
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,6 +56,24 @@ export function PersonalSection() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
+  // 简历中头像显示尺寸（px）。未设置时回退到 100×100，渲染时由 injectAvatarSizeCss
+  // 注入到预览/导出的 .r-avatar img，覆盖模板默认尺寸。
+  const [avatarW, setAvatarW] = useState<number>(p.avatar_width ?? 100)
+  const [avatarH, setAvatarH] = useState<number>(p.avatar_height ?? 100)
+  const [lockRatio, setLockRatio] = useState(true)
+  const [ratioPreset, setRatioPreset] = useState<string>('custom')
+  const ratioRef = useRef(1)
+
+  // 同步外部数据（载入/切换简历、导入模板时）。
+  useEffect(() => {
+    setAvatarW(p.avatar_width ?? 100)
+    setAvatarH(p.avatar_height ?? 100)
+  }, [p.avatar_width, p.avatar_height])
+
+  // 维护宽高比例（固定比例 checkbox 开启时用）。存 ref 避免触发额外渲染。
+  useEffect(() => {
+    if (avatarH > 0) ratioRef.current = avatarW / avatarH
+  }, [avatarW, avatarH])
 
   if (!p) return null
 
@@ -100,6 +126,47 @@ export function PersonalSection() {
     setPhotoError(null)
     updateField('personal.avatar', '')
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const clampDim = (v: number) => Math.min(200, Math.max(40, v))
+
+  const handleWidthChange = (w: number) => {
+    let newH = avatarH
+    if (lockRatio) {
+      newH = clampDim(Math.round(w / ratioRef.current))
+      setAvatarH(newH)
+    } else {
+      setRatioPreset('custom')
+    }
+    setAvatarW(w)
+    updateField('personal.avatar_width', w)
+    if (lockRatio) updateField('personal.avatar_height', newH)
+  }
+
+  const handleHeightChange = (h: number) => {
+    let newW = avatarW
+    if (lockRatio) {
+      newW = clampDim(Math.round(h * ratioRef.current))
+      setAvatarW(newW)
+    } else {
+      setRatioPreset('custom')
+    }
+    setAvatarH(h)
+    updateField('personal.avatar_height', h)
+    if (lockRatio) updateField('personal.avatar_width', newW)
+  }
+
+  // 选择比例预设（一寸/二寸）时：锁定比例、按预设比例调整高度（保持当前宽度），
+  // 便于用户恢复到标准证件照比例。选"自定义"则不改变当前比例。
+  const handlePresetChange = (key: string) => {
+    setRatioPreset(key)
+    const preset = RATIO_PRESETS.find((pr) => pr.key === key)
+    if (!preset || preset.ratio === null) return
+    setLockRatio(true)
+    ratioRef.current = preset.ratio
+    const newH = clampDim(Math.round(avatarW / preset.ratio))
+    setAvatarH(newH)
+    updateField('personal.avatar_height', newH)
   }
 
   return (
@@ -163,6 +230,71 @@ export function PersonalSection() {
           />
         </div>
       </div>
+
+      {/* 简历中头像显示尺寸（宽/高 px） */}
+      {p.avatar && (
+        <div className="mb-4 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-surface-600">简历中显示尺寸</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={ratioPreset}
+                onChange={(e) => handlePresetChange(e.target.value)}
+                className="text-xs border border-surface-200 rounded-md px-1.5 py-0.5 bg-white text-surface-600 focus:outline-none focus:border-primary-500"
+                title="选择标准证件照比例"
+              >
+                {RATIO_PRESETS.map((pr) => (
+                  <option key={pr.key} value={pr.key}>{pr.label}</option>
+                ))}
+              </select>
+              <label className="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={lockRatio}
+                  onChange={(e) => {
+                    setLockRatio(e.target.checked)
+                    if (!e.target.checked) setRatioPreset('custom')
+                  }}
+                  className="w-3.5 h-3.5 rounded accent-primary-600"
+                />
+                固定比例
+              </label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+                <span>宽</span>
+                <span className="tabular-nums font-medium text-surface-700">{avatarW}px</span>
+              </div>
+              <input
+                type="range"
+                min={40}
+                max={200}
+                step={1}
+                value={avatarW}
+                onChange={(e) => handleWidthChange(Number(e.target.value))}
+                className="w-full accent-primary-600"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+                <span>高</span>
+                <span className="tabular-nums font-medium text-surface-700">{avatarH}px</span>
+              </div>
+              <input
+                type="range"
+                min={40}
+                max={200}
+                step={1}
+                value={avatarH}
+                onChange={(e) => handleHeightChange(Number(e.target.value))}
+                className="w-full accent-primary-600"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">

@@ -4,7 +4,7 @@ import { useTemplateStore } from '../stores/templateStore'
 import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
 import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
-import { injectLayoutCss } from '../lib/layoutPresets'
+import { injectLayoutCss, injectAvatarSizeCss } from '../lib/layoutPresets'
 
 export function usePreview() {
   const resume = useResumeStore((s) => s.resume)
@@ -35,7 +35,10 @@ export function usePreview() {
         resume.meta?.section_spacing,
         layoutSettings,
       )
-      setPreviewHtml(htmlWithLayout)
+      // Apply user-controlled avatar display size (overrides the template's
+      // own .r-avatar img width/height via !important).
+      const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
+      setPreviewHtml(htmlWithAvatar)
     } catch (err) {
       console.error('Preview refresh failed:', err)
     } finally {

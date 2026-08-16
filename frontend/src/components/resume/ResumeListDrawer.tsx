@@ -5,7 +5,7 @@ import { callService } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
-import { injectLayoutCss } from '../../lib/layoutPresets'
+import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
 import { useLayoutSettingsStore } from '../../stores/layoutSettingsStore'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
@@ -174,7 +174,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           resume.meta?.section_spacing,
           { margins, spacings },
         )
-        const paginatedHtml = await paginateHTMLString(htmlWithLayout, batchExportFormat === 'png' ? 'continuous' : 'paged')
+        // Apply user-controlled avatar display size (consistent with preview).
+        const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
+        const paginatedHtml = await paginateHTMLString(htmlWithAvatar, batchExportFormat === 'png' ? 'continuous' : 'paged')
         items.push({ name, html: paginatedHtml })
       }
 

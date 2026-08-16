@@ -226,3 +226,33 @@ export function injectLayoutCss(
   // Last resort: prepend
   return `<style>${rule}</style>` + html
 }
+
+/**
+ * Injects a CSS rule that overrides the rendered avatar's display size, so
+ * users can control the on-page photo dimensions (width × height in px) from
+ * the editor without touching template CSS. Targets the unified HTML's
+ * `.r-avatar img` so the `!important` wins over per-template `width`/`height`
+ * rules (e.g. `min/styles.css`'s `width: 72pt; height: 90pt`).
+ *
+ * No-op if either dimension is missing or non-positive. The rule is inserted
+ * before the first `</style>` so it overrides the template's own avatar
+ * sizing rules by source order + `!important`.
+ */
+export function injectAvatarSizeCss(
+  html: string,
+  personal?: { avatar_width?: number; avatar_height?: number },
+): string {
+  const w = personal?.avatar_width
+  const h = personal?.avatar_height
+  if (!w || !h) return html
+  const rule = `\n.r-avatar img { width: ${w}px !important; height: ${h}px !important; }\n`
+  const styleCloseIdx = html.indexOf('</style>')
+  if (styleCloseIdx !== -1) {
+    return html.slice(0, styleCloseIdx) + rule + html.slice(styleCloseIdx)
+  }
+  const headCloseIdx = html.indexOf('</head>')
+  if (headCloseIdx !== -1) {
+    return html.slice(0, headCloseIdx) + `<style>${rule}</style>` + html.slice(headCloseIdx)
+  }
+  return `<style>${rule}</style>` + html
+}
