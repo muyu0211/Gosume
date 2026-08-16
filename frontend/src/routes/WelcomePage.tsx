@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FolderOpen, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
+import { FolderOpen, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
-import { importTemplatePackage, loadTemplateMetas, loadTemplateContent } from '../services/templateService'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
 import { resolvePaper } from '../lib/paper'
 import { extractErrorMessage } from '../lib/errorUtils'
@@ -22,6 +23,8 @@ export function WelcomePage() {
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [importingTemplate, setImportingTemplate] = useState(false)
   const [importError, setImportError] = useState('')
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
@@ -153,6 +156,27 @@ export function WelcomePage() {
     }
   }
 
+  const handleDeleteTemplate = (id: string, name: string) => {
+    setDeleteTarget({ id, name })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeletingTemplateId(id)
+    setImportError('')
+    try {
+      await deleteTemplate(id)
+      await loadData()
+    } catch (err) {
+      console.error('Delete template failed:', err)
+      setImportError(extractErrorMessage(err, '模板删除失败'))
+    } finally {
+      setDeletingTemplateId(null)
+      setDeleteTarget(null)
+    }
+  }
+
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
@@ -227,6 +251,8 @@ export function WelcomePage() {
                 previewHtml={previewHtmls[tmpl.id]}
                 onSelect={() => handleNewResume(tmpl.id)}
                 onPreview={() => handlePreviewWithSample(tmpl.id)}
+                onDelete={!tmpl.is_builtin ? () => handleDeleteTemplate(tmpl.id, tmpl.name) : undefined}
+                isDeleting={deletingTemplateId === tmpl.id}
                 index={i}
               />
             ))}
@@ -285,6 +311,17 @@ export function WelcomePage() {
         onClose={() => setShowDrawer(false)}
         onOpenResume={handleOpenFromDrawer}
       />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="删除模板"
+        description={`确定要删除模板「${deleteTarget?.name}」吗？此操作不可恢复。`}
+        confirmText="删除"
+        danger
+        loading={!!deletingTemplateId}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </AnimatedPage>
   )
 }
@@ -329,7 +366,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
   )
 }
 
-function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; onPreview: () => void; index?: number }) {
+function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, isDeleting = false, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; onPreview: () => void; onDelete?: () => void; isDeleting?: boolean; index?: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
   const [isHovered, setIsHovered] = useState(false)
@@ -397,14 +434,26 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, index = 0 }:
               background: 'rgba(255,255,255,0.25)',
             }}
           />
-          {/* Preview button on top of blur */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onPreview() }}
-            className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50/95 text-surface-800 text-sm font-medium border border-white shadow-md hover:bg-amber-50 hover:border-surface-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm"
-          >
-            <Eye className="w-4 h-4" />
-            预览
-          </button>
+          {/* Preview + delete buttons on top of blur */}
+          <div className="relative z-10 flex flex-col items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); onPreview() }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50/95 text-surface-800 text-sm font-medium border border-white shadow-md hover:bg-amber-50 hover:border-surface-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm"
+            >
+              <Eye className="w-4 h-4" />
+              预览
+            </button>
+            {!template.is_builtin && onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete() }}
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50/95 text-red-600 text-sm font-medium border border-white shadow-md hover:bg-red-50 hover:border-red-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                删除
+              </button>
+            )}
+          </div>
         </div>
       </div>
       {/* Meta info */}

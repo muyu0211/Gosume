@@ -104,13 +104,22 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 使用 zap 结构化日志。日志文件写入 `{dataDir}/log/` 目录。日志级别通过 `log.INFO`、`log.DEBUG` 等设置。辅助函数：`log.Info`、`log.Error`、`log.Warn`、`log.Debug`、`log.Fatal`。
 
+### 模板系统（一期改造后）
+
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式），模板包不再携带 HTML。
+
+- `templates/unified.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），渲染顺序固定。它输出稳定的 DOM 契约（`.resume-page > .resume-container > .r-header + .r-main`），与前端分页子系统 `paginationCore.ts` 对齐。
+- 模板加载：`template.Loader` 从 `TemplateStore`（内置 `templates/` 目录 + SQLite 用户模板）加载；`GetTemplateContent` 返回模板的 HTML（`effectiveHTML`：`uses_unified_html` 或空 HTML 时用统一 HTML）+ CSS + 纸张规格（`paper_size`/`orientation`，供前端分页与导出使用）。
+- 隐藏（Hidden）由数据层处理：后端渲染前用 `model.WithoutHidden()` 过滤隐藏条目，统一 HTML 不写 Hidden 守卫（前端 `toGoShape` 语义一致）。
+- 模板元数据定义在 `pkg/template/loader.go`（`Meta` 结构），字段规范见 `templates/AGENTS.md`。
+
 ### 模板导入
 
 `TemplateService.ImportTemplatePackage()` 支持从本地文件导入 `.zip` 模板包：
 
 1. 前端调用 → Go 弹出原生文件选择对话框（filter: `*.zip`）
-2. `template.LoadPackageFromZip()` 解析 ZIP：提取 `manifest.json`（元数据）、`template.html`、`template.css`
-3. 检查模板 ID 是否已存在，存在则返回错误
+2. `template.LoadPackageFromZip()` 解析 ZIP：提取 `template.json`（元数据）+ `styles.css`（样式）；若仍含 `template.html`（历史包）则宽松忽略
+3. 校验：元数据（id/name/version/author.name/paper_size=A4）+ CSS 非空（`ValidatePackage`）
 4. 通过 `TemplateStore.Create()` 将模板存入 SQLite
 5. 返回 `ImportTemplateResult{ID, Name, Version, Meta}` 给前端
 

@@ -30,9 +30,9 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 | 服务 | 可调用方法 |
 |------|-----------|
-| `ResumeService` | NewResume, LoadResume, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, UpdateField, RenderPreview, ListResumes, UpdateResumeMeta |
+| `ResumeService` | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, UpdateField, RenderPreview, ListResumes, UpdateResumeMeta |
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ValidateForTemplate |
-| `ExportService` | ExportPDF, ExportPNG |
+| `ExportService` | ExportHTML, ExportBatchHTML |
 | `FileService` | OpenFile, SaveFile, GetRecentFiles |
 | `SystemService` | GetAppInfo, GetConfig, SetConfig, SetDataDir, GetDefaultDataDir, OpenDataDir, GetSystemInfo |
 
@@ -40,10 +40,10 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 ### 错误处理
 
-所有 Go 服务方法返回的错误统一使用中文用户友好消息（`UserError`）。前端通过 `lib/error-utils.ts` 中的 `extractErrorMessage` 统一提取：
+所有 Go 服务方法返回的错误统一使用中文用户友好消息（`UserError`）。前端通过 `lib/errorUtils.ts` 中的 `extractErrorMessage` 统一提取：
 
 ```ts
-import { extractErrorMessage } from '../lib/error-utils'
+import { extractErrorMessage } from '../lib/errorUtils'
 
 try {
   await callService('ExportService', 'ExportPDF', ...)
@@ -93,20 +93,37 @@ updateField('jobs[0].company', '某公司')
 
 `useAutoSave` hook 监听 `isDirty` 状态，在防抖延迟后调用 `ResumeService.AutoSave`。手动保存（`Ctrl+S`）调用 `ResumeService.ExplicitSave`。
 
-### 预览
+### 预览与渲染（统一 HTML）
 
-`usePreview` hook 在客户端生成预览 HTML（带 300ms 防抖）：`renderTemplate`（lib/template-engine.ts）本地渲染模板 → `injectLayoutCss`（lib/layoutPresets.ts）注入页边距 CSS 变量与内容间距规则 → 写入 `resumeStore.previewHtml`。PreviewPanel 通过 iframe 渲染。不经过 Go 后端——后端内存仅在显式保存时同步，确保每次按键即时反映。单文件导出（ExportDialog）直接复用 `previewHtml`；批量导出（ResumeListDrawer）对每份简历独立执行相同的渲染 + 注入流程。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式）。前端 `renderTemplate`（`lib/templateEngine.ts`）在客户端把模板 CSS 内联进统一 HTML 并渲染为完整 HTML，随后 `injectLayoutCss`（`lib/layoutPresets.ts`）注入页边距变量与内容间距规则；`renderTemplate` 还会把模板的 `paper_size`/`orientations` 标注为 `.resume-page` 的 `data-paper-size`/`data-orientation` 属性。
 
-模板引擎（`lib/template-engine.ts`）提供以下模板辅助函数：
+`usePreview` hook 以 300ms 防抖生成 `previewHtml` 写入 `resumeStore`。不经过 Go 后端——后端内存仅在显式保存时同步，确保每次按键即时反映。单文件导出（ExportDialog）直接复用 `previewHtml`；批量导出（ResumeListDrawer）对每份简历独立执行相同的渲染 + 注入流程。
+
+模板引擎（`lib/templateEngine.ts`）是 Go `html/template` 语法的前端实现，提供以下辅助函数与运算符：
 
 | 辅助函数 | 用途 |
 |----------|------|
-| `escapeHtml` | HTML 转义，防 XSS |
-| `nl2br` | 换行符转 `<br>` |
-| `i18n(lang, zhKey, enKey)` | 根据简历语言字段切换中英文显示 |
-| `safeHTML(s)` | 输出原始 HTML（用于模板中已转义的内容） |
+| `dateRange(start, end, isCurrent)` | 日期范围，在职/无结束日期显示"至今" |
+| `skillLevel(level)` | 输出 5 个 `.skill-dot`/`.skill-dot.filled` 等级点 |
+| `i18n(lang, zhKey, enKey)` | 根据简历语言切换中英文 |
+| `nl2br(s)` | 换行转 `<br>`，自动 HTML 转义 |
+| `safeHTML(s)` | 输出原始 HTML（仅限已确保安全的内容） |
+| `safeURL(s)` | 标记可信 URL（头像 data URI 不被转义） |
 | `defaultVal(fallback, val)` | 值为空时返回默认值 |
-| `not / and / or / eq / ne` | Go template 布尔运算符（`{{if not .Hidden}}` 等条件渲染） |
+| `not / and / or / eq / ne` | Go 布尔运算符（`{{if .Jobs}}` 等条件渲染） |
+
+### 分页与导出
+
+分页核心在 `lib/paginationCore.ts`，预览和导出共用，保证"所见即所得"：
+
+- `readPageStyle(doc)` 读取 `.resume-page` 的 padding/背景/纸张规格（`data-paper-size`），必须在调用方重绘 body 之前调用。
+- `paginateResume(doc, body, options)` 把 `.resume-container` 内容按纸张规格拆成多页 `.resume-page`，支持 `paged`（固定尺寸分页，预览/PDF）与 `continuous`（单页连续，PNG）两种模式。
+- 预览：`lib/paginate.ts` 的 `paginateContent(iframe)` 返回 `{ pageCount, paper }`，`PreviewPanel` 据此设预览宽度与页数。
+- 导出：`lib/exportHtml.ts` 的 `paginateHTMLString(previewHtml, mode)` 在隐藏 iframe 中分页后序列化，交给后端 `ExportService.ExportHTML` 转 PDF（paged）或 PNG（continuous）。
+- 纸张规格单一来源：`lib/paper.ts`（A4/Letter 的 mm/px/in 三套单位），所有尺寸换算走 `resolvePaper`/`DEFAULT_PAPER`，不再硬编码 A4 像素。
+- 分页前 `waitForDocumentReady(doc)` 等待字体与图片就绪，避免测量高度偏小导致分页错位。
+
+分页 DOM 契约（与 `templates/AGENTS.md` 对齐）：`.resume-page > .resume-container > .r-header + .r-main`；单栏 `.resume-container` 为 block，双栏为 grid（`.r-header` 即侧栏）。
 
 ### 页面布局档位
 

@@ -1,352 +1,157 @@
-# 数据模型参考
+# 数据模型与渲染契约
 
-简历数据根对象为 `model.Resume`（Go 结构体）。模板通过 `{{.Field}}` 访问。所有字段名使用 PascalCase（Go 结构体字段名），不是 JSON 的 snake_case。
+本文档说明简历数据模型，以及统一 HTML（`templates/unified.html`）如何把这些数据渲染成固定 DOM 结构。模板制作者**不写 HTML**，但需要据此理解：每个区块会渲染出什么元素和类名，才能写对 CSS。
 
-## 条目隐藏字段（Hidden / SummaryHidden）
+## 渲染顺序（固定）
 
-所有条目类型都有可选的 `Hidden` 字段（`*bool`，nil 或 false 为可见），个人总结区块用 `SummaryHidden`。标准接入写法（与全部内置模板一致）：
+统一 HTML 的区块渲染顺序固定：**教育 → 实习 → 工作 → 项目 → 奖项 → 技能 → 总结 → 自定义**。若需调序只能用 CSS `order`（不建议依赖）。
 
-```html
-{{range .Jobs}}{{if not .Hidden}}
-<div class="experience-item">...</div>
-{{end}}{{end}}
+## 区块渲染契约（DOM 结构 + 类名）
 
-{{if and .Summary (not .SummaryHidden)}}
-<div class="summary">{{nl2br .Summary}}</div>
-{{end}}
-```
+每个区块由统一 HTML 的 `{{if .Section}}` 包裹——该区块数据为空时，整个区块（含标题）不渲染。因此模板 CSS 无需处理"空标题"。
 
-- 前端渲染时数据层已过滤 `Hidden=true` 的条目，且 `summary_hidden=true` 时 `Summary` 字段同样在数据层清空——因此即使模板只写 `{{if .Summary}}`（旧写法）也能响应隐藏开关；`{{if not .Hidden}}` / `{{if and .Summary (not .SummaryHidden)}}` 守卫是双保险，照抄内置写法即可
-- 全部条目隐藏时，外层 `{{if .Jobs}}` 因数组为空而不渲染标题——模板无需额外处理
+### 个人信息（始终渲染，位于 `.r-header`）
 
-## 顶层结构
+`.r-header` 含 4 个子块，均为 grid/flex 子项，排布由 CSS 控制（双栏 = 侧栏，单栏 = 顶部块）：
 
-| 模板路径 | 类型 | 说明 |
-|----------|------|------|
-| `{{.Meta.Language}}` | string | 简历语言，`"zh-CN"` 或 `"en-US"` |
-| `{{.Personal}}` | Personal | 个人信息 |
-| `{{.Summary}}` | string | 个人总结（纯文本，用 `nl2br` 渲染换行） |
-| `{{.Internships}}` | []Internship | 实习经历数组 |
-| `{{.Jobs}}` | []Job | 工作经历数组 |
-| `{{.Projects}}` | []Project | 项目经历数组 |
-| `{{.Education}}` | []Education | 教育经历数组 |
-| `{{.Skills}}` | []SkillGroup | 技能分组数组 |
-| `{{.Languages}}` | []Language | 语言能力数组 |
-| `{{.Awards}}` | []Award | 奖项数组 |
-| `{{.Custom}}` | []CustomSection | 自定义区块数组 |
+| 子块 | 类名 | 内部结构 |
+|------|------|----------|
+| 头像 | `.r-avatar` | 仅简历含头像数据（`avatar` 字段）时渲染，内含 `<img>` |
+| 姓名区 | `.r-header-text` | `.r-name`（h1，姓名）→ `.r-ename`（英文名，可选）→ `.r-jobtitle`（职位，可选）→ `.r-yoe`（工作年限，可选） |
+| 联系方式 | `.r-contact` | `.r-subtitle`（小节标题）+ 多个 `.r-contact-item`（每个含 `.r-contact-label` + `.r-contact-value`） |
+| 语言 | `.r-langs` | 仅含语言数据时渲染；`.r-subtitle` + 多个 `.r-lang` |
 
-> 注意：`Meta` 只暴露 `Language` 字段给模板用，其他元数据（TemplateID、CreatedAt 等）不需要在模板中渲染。
+> 联系方式各项（邮箱/手机/微信/QQ/城市/网站/GitHub/LinkedIn）均为可选，有值才渲染对应 `.r-contact-item`。单栏横向信息带如不需要 `.r-subtitle`，用 `.r-subtitle { display: none; }` 隐藏。
 
-## Personal（个人信息）
+### 教育背景（`.education-item`）
 
-| 模板路径 | JSON key | 类型 | 说明 |
-|----------|----------|------|------|
-| `{{.Personal.FullName}}` | `full_name` | string | 姓名 |
-| `{{.Personal.EnglishName}}` | `english_name` | string | 英文名 |
-| `{{.Personal.Email}}` | `email` | string | 邮箱 |
-| `{{.Personal.Phone}}` | `phone` | string | 手机号 |
-| `{{.Personal.Wechat}}` | `wechat` | string | 微信 |
-| `{{.Personal.QQ}}` | `qq` | string | QQ |
-| `{{.Personal.Location}}` | `location` | string | 所在城市 |
-| `{{.Personal.Website}}` | `website` | string | 个人网站 |
-| `{{.Personal.LinkedIn}}` | `linkedin` | string | LinkedIn |
-| `{{.Personal.GitHub}}` | `github` | string | GitHub |
-| `{{.Personal.Avatar}}` | `avatar` | string | 头像（Base64 data URI 或文件路径） |
-| `{{.Personal.Birthday}}` | `birthday` | string | 生日 |
-| `{{.Personal.Gender}}` | `gender` | string | 性别 |
-| `{{.Personal.JobTitle}}` | `job_title` | string | 求职意向/职位 |
-| `{{.Personal.YearsOfExp}}` | `years_of_exp` | int | 工作年限（整数） |
+| 元素 | 类名 | 字段 |
+|------|------|------|
+| 头部 | `.edu-header` | `.edu-school`（学校 · 学位 · 专业 · GPA）+ `.date`（日期范围） |
+| 辅修 | `.edu-detail` | `minor` |
+| 主修课程 | `.edu-courses` | `courses` |
+| 亮点 | `.highlights` > li | `highlights[]` |
 
-## Job / Internship（工作/实习经历）
+### 实习 / 工作 / 项目（`.experience-item`）
 
-字段完全相同。
+三者共用 `.experience-item` 结构，字段略有差异：
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID（一般不渲染） |
-| `{{.Company}}` | `company` | string | 公司名 |
-| `{{.CompanyURL}}` | `company_url` | string | 公司网址 |
-| `{{.Title}}` | `title` | string | 职位 |
-| `{{.Location}}` | `location` | string | 工作地点 |
-| `{{.StartDate}}` | `start_date` | string | 开始日期（如 `2020.01`） |
-| `{{.EndDate}}` | `end_date` | string | 结束日期 |
-| `{{.IsCurrent}}` | `is_current` | bool | 是否在职（影响 dateRange 显示"至今"） |
-| `{{.Summary}}` | `summary` | string | 经历概述 |
-| `{{.Highlights}}` | `highlights` | []string | 亮点列表（数组，需 range） |
-| `{{.Keywords}}` | `keywords` | []string | 关键词列表 |
+| 元素 | 类名 | 实习/工作 | 项目 |
+|------|------|-----------|------|
+| 头部 | `.exp-header` | `.company`（公司）+ `.title`（职位）+ `.date` | `.company`（项目名）+ `.title`（角色）+ `.date` |
+| 地点 | `.exp-location` | 有 | 无 |
+| 概述 | `.exp-summary` | 有 | 有 |
+| 亮点 | `.highlights` > li | 有 | 有 |
+| 扩展字段 | `.extra-row`（`.extra-label` + `.extra-value`） | 无 | 有 |
 
-> 日期范围渲染：`{{dateRange .StartDate .EndDate .IsCurrent}}`，返回 `2020.01 - 2023.06` 或 `2020.01 - 至今`。
+### 奖项（`.award-item`）
 
-## Project（项目经历）
+`.award-header`（`.award-title` + `.date`）→ `.award-issuer`（颁发机构）→ `.exp-summary`（说明）。
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID |
-| `{{.Name}}` | `name` | string | 项目名 |
-| `{{.URL}}` | `url` | string | 项目网址 |
-| `{{.Role}}` | `role` | string | 担任角色 |
-| `{{.StartDate}}` | `start_date` | string | 开始日期 |
-| `{{.EndDate}}` | `end_date` | string | 结束日期 |
-| `{{.Summary}}` | `summary` | string | 项目概述 |
-| `{{.Highlights}}` | `highlights` | []string | 亮点列表 |
-| `{{.Keywords}}` | `keywords` | []string | 关键词 |
-| `{{.Extras}}` | `extras` | []ExtraField | 自定义键值对数组 |
+### 技能（`.skills-grid`）
 
-### ExtraField（项目自定义字段）
+`.skills-grid` > `.skill-category`（分组）> `h4`（分组名）+ `.skill-item`（单个技能）。`.skill-item` 内含技能名 + `.skill-dots`（`skillLevel` 输出的等级点 `.skill-dot` / `.skill-dot.filled`）。
 
-| 模板路径（range .Extras 内） | 类型 | 说明 |
-|------------------------------|------|------|
-| `{{.ID}}` | string | 字段 ID |
-| `{{.Label}}` | string | 标签（如"技术栈"） |
-| `{{.Value}}` | string | 值（多行文本，用 `nl2br` 渲染） |
+### 总结（`.summary`）
 
-渲染示例：
-```html
-{{if .Extras}}
-{{range .Extras}}
-<div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span class="extra-value">{{nl2br .Value}}</span></div>
-{{end}}
-{{end}}
-```
+`.section-title`（"个人总结"）+ `.summary`（多行文本，已 `nl2br` 转 `<br>`）。
 
-## Education（教育经历）
+### 自定义区块（`.section-title` + `.custom-item`）
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID |
-| `{{.School}}` | `school` | string | 学校 |
-| `{{.Degree}}` | `degree` | string | 学位 |
-| `{{.Major}}` | `major` | string | 专业 |
-| `{{.Minor}}` | `minor` | string | 辅修 |
-| `{{.StartDate}}` | `start_date` | string | 开始日期 |
-| `{{.EndDate}}` | `end_date` | string | 结束日期 |
-| `{{.GPA}}` | `gpa` | string | GPA |
-| `{{.Courses}}` | `courses` | string | 主修课程 |
-| `{{.Highlights}}` | `highlights` | []string | 亮点列表 |
+每个自定义区块一个 `.section-title`（区块标题），其下多个 `.custom-item`：`h4`（条目标题）+ `.subtitle`（副标题 · 日期）+ `.exp-summary`（描述）+ `.highlights`（亮点）。
 
-> 教育经历的日期范围一般用 `{{.StartDate}} - {{.EndDate}}` 直接拼接，因为教育经历通常没有"至今"语义。若需支持在读，也可用 `{{dateRange .StartDate .EndDate false}}`。
+## 字段清单
 
-## SkillGroup / Skill（技能）
+字段用于理解"什么条件下某元素会出现"，模板 CSS 据此决定显隐样式。
 
-### SkillGroup
+### Personal（个人信息）
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 分组 ID |
-| `{{.Category}}` | `category` | string | 分类名（如"编程语言"） |
-| `{{.Items}}` | `items` | []Skill | 技能项数组 |
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `full_name` | string | 姓名 |
+| `english_name` | string | 英文名 |
+| `email` / `phone` / `wechat` / `qq` | string | 联系方式 |
+| `location` / `website` / `linkedin` / `github` | string | 更多联系方式 |
+| `avatar` | string | 头像（Base64 data URI 或文件路径），决定 `.r-avatar` 是否渲染 |
+| `job_title` | string | 求职意向/职位 |
+| `years_of_exp` | int | 工作年限 |
 
-### Skill（range .Items 内）
+### Job / Internship（工作/实习，字段相同）
 
-| 模板路径 | JSON key | 类型 | 说明 |
-|----------|----------|------|------|
-| `{{.Name}}` | `name` | string | 技能名 |
-| `{{.Level}}` | `level` | int | 等级 0-5（0 表示未评级） |
-| `{{.Icon}}` | `icon` | string | 图标（一般不用） |
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `company` | string | 公司名 |
+| `title` | string | 职位 |
+| `location` | string | 工作地点 |
+| `start_date` / `end_date` | string | 起止日期 |
+| `is_current` | bool | 是否在职（影响日期显示"至今"） |
+| `summary` | string | 概述 |
+| `highlights` | []string | 亮点列表 |
 
-> 等级渲染：`{{skillLevel .Level}}`，返回 5 个 `<span class="skill-dot">` 或 `<span class="skill-dot filled">`。Level 3 会渲染 3 个 filled + 2 个 empty。模板 CSS 必须定义这两个类。
+### Project（项目）
 
-## Language（语言能力）
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 项目名 |
+| `role` | string | 担任角色 |
+| `url` | string | 项目链接 |
+| `start_date` / `end_date` | string | 项目时间 |
+| `summary` | string | 项目描述 |
+| `highlights` | []string | 亮点 |
+| `extras` | []{label, value} | 自定义键值对（`.extra-row`） |
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID |
-| `{{.Name}}` | `name` | string | 语言名（如"英语"） |
-| `{{.Level}}` | `level` | string | 熟练程度（如"流利"） |
-| `{{.Proficiency}}` | `proficiency` | string | 补充说明 |
+### Education（教育）
 
-## Award（奖项）
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `school` | string | 学校 |
+| `degree` | string | 学位 |
+| `major` / `minor` | string | 专业 / 辅修 |
+| `start_date` / `end_date` | string | 起止日期 |
+| `gpa` | string | GPA |
+| `courses` | string | 主修课程 |
+| `highlights` | []string | 亮点 |
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID |
-| `{{.Title}}` | `title` | string | 奖项名 |
-| `{{.Date}}` | `date` | string | 获奖日期 |
-| `{{.Issuer}}` | `issuer` | string | 颁发机构 |
-| `{{.Summary}}` | `summary` | string | 说明 |
+### SkillGroup / Skill（技能）
 
-## CustomSection / CustomItem（自定义区块）
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `category`（分组） | string | 分组名（如"编程语言"） |
+| `items[].name` | string | 技能名 |
+| `items[].level` | int | 等级 0-5（`skillLevel` 输出等级点） |
 
-### CustomSection
+### Language（语言）
 
-| 模板路径（range 内） | JSON key | 类型 | 说明 |
-|----------------------|----------|------|------|
-| `{{.ID}}` | `id` | string | 区块 ID |
-| `{{.Title}}` | `title` | string | 区块标题（如"兴趣爱好"） |
-| `{{.Items}}` | `items` | []CustomItem | 条目数组 |
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 语言名（如"英语"） |
+| `level` / `proficiency` | string | 熟练程度 / 补充说明 |
 
-### CustomItem（range .Items 内）
+### Award（奖项）
 
-| 模板路径 | JSON key | 类型 | 说明 |
-|----------|----------|------|------|
-| `{{.ID}}` | `id` | string | 条目 ID |
-| `{{.Title}}` | `title` | string | 条目标题 |
-| `{{.Subtitle}}` | `subtitle` | string | 副标题 |
-| `{{.Date}}` | `date` | string | 日期 |
-| `{{.Description}}` | `description` | string | 描述（多行，用 `nl2br`） |
-| `{{.Highlights}}` | `highlights` | []string | 亮点列表 |
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `title` | string | 奖项名 |
+| `date` | string | 获奖日期 |
+| `issuer` | string | 颁发机构 |
+| `summary` | string | 说明 |
 
-## 完整区块渲染模板
+### CustomSection / CustomItem（自定义区块）
 
-以下是所有区块的标准渲染骨架，可直接复制到 `template.html` 中按需调整。头像用 `safeURL`，条目 range 内带 `{{if not .Hidden}}` 守卫，总结区块带 `SummaryHidden` 判断（均为标准写法）：
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `title`（区块） | string | 区块标题 |
+| `items[].title` | string | 条目标题 |
+| `items[].subtitle` | string | 副标题 |
+| `items[].date` | string | 日期 |
+| `items[].description` | string | 描述（多行） |
+| `items[].highlights` | []string | 亮点 |
 
-```html
-<!-- 个人信息 -->
-<div class="header">
-    {{if .Personal.Avatar}}<div class="header-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>{{end}}
-    <h1>{{.Personal.FullName}}</h1>
-    {{if .Personal.EnglishName}}<div class="english-name">{{.Personal.EnglishName}}</div>{{end}}
-    {{if .Personal.JobTitle}}<div class="job-title">{{.Personal.JobTitle}}</div>{{end}}
-    <div class="contact-line">
-        {{if .Personal.Email}}<span>{{.Personal.Email}}</span>{{end}}
-        {{if .Personal.Phone}}<span>{{.Personal.Phone}}</span>{{end}}
-        {{if .Personal.Location}}<span>{{.Personal.Location}}</span>{{end}}
-    </div>
-</div>
+## 隐藏（Hidden）字段
 
-<!-- 个人总结 -->
-{{if and .Summary (not .SummaryHidden)}}
-<div class="section-title">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
-<div class="summary">{{nl2br .Summary}}</div>
-{{end}}
+所有条目类型都有可选的 `Hidden` 字段。**统一 HTML 不渲染 Hidden 守卫，隐藏由数据层统一过滤**（前端 `toGoShape` + 后端 `WithoutHidden`）：
 
-<!-- 实习经历（字段与 Jobs 完全相同，按需选用） -->
-{{if .Internships}}
-<div class="section-title">{{i18n .Meta.Language "实习经历" "Internships"}}</div>
-{{range .Internships}}{{if not .Hidden}}
-<div class="experience-item">
-    <div class="exp-header">
-        <div>
-            <span class="company">{{.Company}}</span>
-            {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
-        </div>
-        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
-    </div>
-    {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
-    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-    {{if .Highlights}}
-    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
-    {{end}}
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 工作经历 -->
-{{if .Jobs}}
-<div class="section-title">{{i18n .Meta.Language "工作经历" "Experience"}}</div>
-{{range .Jobs}}{{if not .Hidden}}
-<div class="experience-item">
-    <div class="exp-header">
-        <div>
-            <span class="company">{{.Company}}</span>
-            {{if .Title}}<span class="title"> — {{.Title}}</span>{{end}}
-        </div>
-        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
-    </div>
-    {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
-    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-    {{if .Highlights}}
-    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
-    {{end}}
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 项目经历 -->
-{{if .Projects}}
-<div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
-{{range .Projects}}{{if not .Hidden}}
-<div class="experience-item">
-    <div class="exp-header">
-        <span class="company">{{.Name}}</span>
-        {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
-    </div>
-    {{if .Role}}<div class="exp-role">{{.Role}}</div>{{end}}
-    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-    {{if .Highlights}}
-    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
-    {{end}}
-    {{if .Extras}}
-    {{range .Extras}}
-    <div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span class="extra-value">{{nl2br .Value}}</span></div>
-    {{end}}
-    {{end}}
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 教育经历 -->
-{{if .Education}}
-<div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
-{{range .Education}}{{if not .Hidden}}
-<div class="education-item">
-    <div class="edu-header">
-        <div>
-            <span class="school">{{.School}}</span>
-            {{if .Degree}} · {{.Degree}}{{end}}
-            {{if .Major}} · {{.Major}}{{end}}
-        </div>
-        {{if .StartDate}}<span class="date">{{.StartDate}} - {{.EndDate}}</span>{{end}}
-    </div>
-    {{if .GPA}}<div class="edu-detail">GPA: {{.GPA}}</div>{{end}}
-    {{if .Courses}}<div class="edu-detail">{{i18n .Meta.Language "主修课程" "Courses"}}: {{.Courses}}</div>{{end}}
-    {{if .Highlights}}
-    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
-    {{end}}
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 技能 -->
-{{if .Skills}}
-<div class="section-title">{{i18n .Meta.Language "专业技能" "Skills"}}</div>
-{{range .Skills}}{{if not .Hidden}}
-<div class="skill-category">
-    <h4>{{.Category}}</h4>
-    <div class="skill-list">
-        {{range .Items}}{{if not .Hidden}}<span class="skill-item">{{.Name}}{{if .Level}} <span class="skill-level">{{skillLevel .Level}}</span>{{end}}</span>{{end}}{{end}}
-    </div>
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 语言能力 -->
-{{if .Languages}}
-<div class="section-title">{{i18n .Meta.Language "语言能力" "Languages"}}</div>
-<div class="inline-list">
-    {{range .Languages}}{{if not .Hidden}}<span><span class="label">{{.Name}}</span>{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</span>{{end}}{{end}}
-</div>
-{{end}}
-
-<!-- 奖项荣誉 -->
-{{if .Awards}}
-<div class="section-title">{{i18n .Meta.Language "奖项荣誉" "Awards"}}</div>
-{{range .Awards}}{{if not .Hidden}}
-<div class="award-item">
-    <div class="award-header">
-        <span class="award-title">{{.Title}}</span>
-        {{if .Date}}<span class="date">{{.Date}}</span>{{end}}
-    </div>
-    {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
-    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
-</div>
-{{end}}{{end}}
-{{end}}
-
-<!-- 自定义区块 -->
-{{if .Custom}}
-{{range .Custom}}{{if not .Hidden}}
-<div class="section-title">{{.Title}}</div>
-{{range .Items}}{{if not .Hidden}}
-<div class="custom-item">
-    <h4>{{.Title}}</h4>
-    {{if .Subtitle}}<div class="custom-subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
-    {{if .Description}}<div class="exp-summary">{{nl2br .Description}}</div>{{end}}
-    {{if .Highlights}}
-    <ul class="highlights">{{range .Highlights}}<li>{{.}}</li>{{end}}</ul>
-    {{end}}
-</div>
-{{end}}{{end}}
-{{end}}{{end}}
-{{end}}
-```
+- 被隐藏的条目在渲染前就从数组移除，模板 CSS 完全无感知。
+- 区块内所有条目隐藏时，`{{if .Section}}` 使整个区块（含标题）不渲染。
+- 个人总结的 `summary_hidden` 同样在数据层处理（隐藏时 `summary` 字段被清空）。
+- **模板 CSS 无需、也不应写任何隐藏相关逻辑。**

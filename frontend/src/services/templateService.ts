@@ -166,6 +166,18 @@ export async function importTemplatePackage(): Promise<ImportTemplateResult | nu
   return callService<ImportTemplateResult>('TemplateService', 'ImportTemplatePackage')
 }
 
+/**
+ * Deletes a user-imported template by ID. Built-in templates are protected by
+ * the backend (SoftDelete only affects rows where is_builtin=0) — attempting to
+ * delete one surfaces a user-friendly error.
+ */
+export async function deleteTemplate(templateId: string): Promise<void> {
+  if (!isWails()) {
+    throw new Error('模板删除需要在 Gosume 桌面应用中使用')
+  }
+  await callService('TemplateService', 'DeleteTemplate', templateId)
+}
+
 export async function saveTemplateMetas(templates: TemplateMeta[]): Promise<void> {
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates))
 }

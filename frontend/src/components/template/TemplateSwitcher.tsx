@@ -2,9 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useResumeStore } from '../../stores/resumeStore'
 import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumbnailService'
-import { importTemplatePackage, loadTemplateMetas } from '../../services/templateService'
+import { importTemplatePackage, loadTemplateMetas, deleteTemplate } from '../../services/templateService'
 import { extractErrorMessage } from '../../lib/errorUtils'
-import { Check, ChevronDown, Layout, Loader2, Upload } from 'lucide-react'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { Check, ChevronDown, Layout, Loader2, Upload, Trash2 } from 'lucide-react'
 
 const FALLBACK_COLORS: Record<string, string> = {
   'a406004d-d3b8-4900-969f-8094f8e85cf0': '#2563EB',
@@ -27,6 +28,8 @@ export function TemplateSwitcher() {
   const [visible, setVisible] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const exitTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
@@ -101,6 +104,37 @@ export function TemplateSwitcher() {
     }
   }, [setActiveTemplate, setTemplates, setThumbnails, updateField])
 
+  const handleDeleteClick = useCallback((e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation()
+    setDeleteTarget({ id, name })
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeletingId(id)
+    setImportError('')
+    try {
+      await deleteTemplate(id)
+      const metas = await loadTemplateMetas()
+      setTemplates(metas)
+      // 删除当前激活模板时，切换到列表中的第一个模板
+      if (id === activeTemplateId && metas.length > 0) {
+        const firstId = metas[0].id
+        setActiveTemplate(firstId)
+        updateField('meta.template_id', firstId)
+      }
+      const ids = metas.map((m) => m.id)
+      generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
+    } catch (err) {
+      console.error('Delete template failed:', err)
+      setImportError(extractErrorMessage(err, '模板删除失败'))
+    } finally {
+      setDeletingId(null)
+      setDeleteTarget(null)
+    }
+  }, [deleteTarget, activeTemplateId, setTemplates, setActiveTemplate, updateField, setThumbnails])
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -126,11 +160,14 @@ export function TemplateSwitcher() {
             const thumb = thumbnails[tmpl.id]
             const color = tmpl.colors?.primary || FALLBACK_COLORS[tmpl.id] || '#64748B'
             const isActive = tmpl.id === activeTemplateId
+            const isDeleting = deletingId === tmpl.id
             return (
-              <button
+              <div
                 key={tmpl.id}
                 onClick={() => handleSelect(tmpl.id)}
-                className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${
+                role="button"
+                tabIndex={0}
+                className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer group ${
                   isActive ? 'bg-primary-50' : 'hover:bg-surface-50'
                 }`}
               >
@@ -157,12 +194,22 @@ export function TemplateSwitcher() {
                       {tmpl.name}
                     </span>
                     {isActive && <Check className="w-3 h-3 text-primary-500 flex-shrink-0" />}
+                    {!tmpl.is_builtin && (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, tmpl.id, tmpl.name)}
+                        disabled={isDeleting}
+                        className="ml-auto flex-shrink-0 p-1 rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        title="删除模板"
+                      >
+                        {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                      </button>
+                    )}
                   </div>
                   <p className="text-[11px] text-surface-400 mt-1 line-clamp-2 leading-relaxed">
                     {tmpl.description}
                   </p>
                 </div>
-              </button>
+              </div>
             )
           })}
           </div>
@@ -183,6 +230,17 @@ export function TemplateSwitcher() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="删除模板"
+        description={`确定要删除模板「${deleteTarget?.name}」吗？此操作不可恢复。`}
+        confirmText="删除"
+        danger
+        loading={!!deletingId}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

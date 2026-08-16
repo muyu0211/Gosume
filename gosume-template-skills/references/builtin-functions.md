@@ -1,158 +1,44 @@
-# 内置模板函数
+# 统一 HTML 内置函数（模板作者须知）
 
-导入校验白名单中的 7 个函数。所有函数在模板中通过 `{{funcName args}}` 调用。这些函数与渲染器（`pkg/render/html.go`）注册的函数表完全一致。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/unified.html`）承载，以下函数由统一 HTML**内部使用**。模板作者**不写 HTML、不直接调用这些函数**，但需要了解它们对渲染输出的影响，尤其是对 CSS 类名的依赖。
 
-> 另有 5 个**布尔/比较运算符** `not` / `and` / `or` / `eq` / `ne` 可用于 `{{if}}` 后的条件组合（如 `{{if not .Hidden}}`、`{{if and .Summary (not .SummaryHidden)}}`）。它们不是函数、不接受管道，规则详见 `validation-rules.md` 的"控制表达式的判定"。
+## 与模板 CSS 相关的关键副作用
 
-## dateRange
+### skillLevel → 依赖 `.skill-dot` / `.skill-dot.filled`
 
-格式化日期范围。
+统一 HTML 用 `{{skillLevel .Level}}` 渲染技能等级，输出 5 个 `<span>`：
 
-**签名**：`dateRange(start, end string, isCurrent bool) string`
-
-**行为**：
-- `start` 为空 → 返回空字符串
-- `isCurrent` 为 true 或 `end` 为空 → 返回 `start + " - 至今"`
-- 否则 → 返回 `start + " - " + end`
-
-**用法**：
-```html
-{{dateRange .StartDate .EndDate .IsCurrent}}
-```
-
-**示例输出**：
-- `2020.01 - 2023.06`
-- `2020.01 - 至今`
-
-> 适用于 Jobs、Internships。Projects 一般用 `false` 作为第三参数（项目通常没有"进行中"语义）。
-
-## skillLevel
-
-输出技能等级的 HTML 点点。
-
-**签名**：`skillLevel(level int) template.HTML`
-
-**行为**：
-- 输出 5 个 `<span>`
-- 前 `level` 个是 `<span class="skill-dot filled"></span>`
-- 其余是 `<span class="skill-dot"></span>`
-- `level` 范围 0-5；0 时全部为空点
-
-**用法**：
-```html
-{{skillLevel .Level}}
-```
-
-**输出示例**（level=3）：
 ```html
 <span class="skill-dot filled"></span><span class="skill-dot filled"></span><span class="skill-dot filled"></span><span class="skill-dot"></span><span class="skill-dot"></span>
 ```
 
-**CSS 依赖**：模板必须定义 `.skill-dot` 和 `.skill-dot.filled`。
+- 前 `level` 个是 `.skill-dot.filled`，其余是 `.skill-dot`
+- **模板 CSS 必须定义 `.skill-dot` 和 `.skill-dot.filled`**，否则技能等级点不显示
 
-## i18n
+### i18n → 章节标题双语
 
-根据简历语言输出中文或英文。
+统一 HTML 的章节标题（"教育背景/Education"等）用 `{{i18n .Meta.Language "中文" "English"}}` 渲染，根据简历语言自动切换。模板 CSS 只需给 `.section-title` 写样式，无需处理双语。
 
-**签名**：`i18n(lang, zhKey, enKey string) string`
+### nl2br → 多行文本产生 `<br>`
 
-**行为**：
-- `lang == "zh-CN"` → 返回 `zhKey`
-- 否则 → 返回 `enKey`
+统一 HTML 对多行纯文本字段（`summary`、项目描述、自定义描述、扩展字段值）用 `nl2br` 渲染，输出中含 `<br>` 换行。模板 CSS 无需特殊处理。
 
-**用法**：
-```html
-{{i18n .Meta.Language "工作经历" "Experience"}}
-```
+### safeURL → 头像 `<img src>`
 
-> 用于章节标题等需要双语的文本。简历内容本身（公司名、职位等）由用户填写，不需要 i18n。
+统一 HTML 对头像用 `{{safeURL .Personal.Avatar}}` 渲染（避免 Base64 data URI 被转义）。模板 CSS 用 `.r-avatar img` 控制头像尺寸/圆角即可。
 
-## nl2br
+## 函数清单（了解即可，不必调用）
 
-将换行符转为 `<br>`，自动 HTML 转义。
+| 函数 | 签名 | 作用 |
+|------|------|------|
+| `dateRange` | `dateRange(start, end string, isCurrent bool) string` | 日期范围，`isCurrent` 为 true 或 `end` 为空时显示"至今" |
+| `skillLevel` | `skillLevel(level int) template.HTML` | 输出 5 个技能等级点 |
+| `i18n` | `i18n(lang, zhKey, enKey string) string` | 根据简历语言输出中文/英文 |
+| `nl2br` | `nl2br(s string) template.HTML` | 换行转 `<br>`，自动 HTML 转义 |
+| `safeHTML` | `safeHTML(s string) template.HTML` | 输出原始 HTML（仅限已确保安全内容） |
+| `safeURL` | `safeURL(s string) template.URL` | 标记可信 URL（用于头像 src） |
+| `defaultVal` | `defaultVal(fallback, val string) string` | 值为空时返回默认值 |
 
-**签名**：`nl2br(s string) template.HTML`
+另有 5 个布尔运算符 `not` / `and` / `or` / `eq` / `ne` 用于统一 HTML 的条件组合（如 `{{if .Jobs}}`、`{{if and .Summary ...}}`）。模板作者同样无需关心——统一 HTML 已写好所有条件。
 
-**行为**：
-- 先对输入做 HTML 转义（防 XSS）
-- 再将 `\n` 替换为 `<br>`
-- 返回 `template.HTML` 类型（不在模板中被二次转义）
-
-**用法**：
-```html
-{{nl2br .Summary}}
-{{nl2br .Description}}
-{{nl2br .Value}}
-```
-
-> 适用于所有多行纯文本字段：Summary、Project.Summary、CustomItem.Description、ExtraField.Value。
-
-## safeHTML
-
-输出原始 HTML，不做转义。
-
-**签名**：`safeHTML(s string) template.HTML`
-
-**行为**：直接将字符串作为 HTML 输出，不转义。
-
-**用法**：
-```html
-{{safeHTML .SomeSafeHTML}}
-```
-
-> ⚠️ 仅用于已确保安全的内容。用户输入的数据**不要**用 safeHTML，会导致 XSS。一般模板用不到这个函数。
-
-## safeURL
-
-将字符串标记为可信 URL，跳过 `html/template` 对 URL 属性的默认过滤。
-
-**签名**：`safeURL(s string) template.URL`
-
-**行为**：返回 `template.URL` 类型，用于 `<a href>`、`<img src>` 等属性时不会被二次转义。
-
-**用法**：
-```html
-{{if .Personal.Avatar}}<img src="{{safeURL .Personal.Avatar}}" alt="avatar" />{{end}}
-```
-
-> 主要用于头像字段 `Personal.Avatar`。该字段通常是 Base64 data URI 或本地文件路径，`html/template` 默认的 URL 过滤可能会转义其中的字符（如 `data:image/png;base64,...` 中的特殊字符），导致头像无法显示。`safeURL` 跳过这个过滤。
->
-> 所有内置模板都使用此写法渲染头像，导入模板与内置模板写法完全一致。
-
-## defaultVal
-
-值为空时返回默认值。
-
-**签名**：`defaultVal(defaultVal, val string) string`
-
-**行为**：
-- `val` 为空字符串 → 返回 `defaultVal`
-- 否则 → 返回 `val`
-
-**用法**：
-```html
-{{defaultVal "未填写" .Personal.Phone}}
-```
-
-> 用于可选字段，避免渲染空白。但更推荐用 `{{if .Field}}...{{end}}` 控制显隐，而不是填默认值。
-
-## 函数调用语法注意
-
-**导入校验只接受"函数名 + 空格分隔的参数"形式**，参数必须是简单字段路径。
-
-合法：
-```html
-{{dateRange .StartDate .EndDate .IsCurrent}}
-{{skillLevel .Level}}
-{{i18n .Meta.Language "工作经历" "Experience"}}
-{{nl2br .Summary}}
-```
-
-非法：
-```html
-{{dateRange .StartDate .EndDate .IsCurrent | upper}}  {{! 管道 }}
-{{skillLevel (index .Items 0).Level}}                  {{! 嵌套调用 }}
-{{nl2br .Summary | safeHTML}}                          {{! 管道 }}
-```
-
-> 字符串字面量（如 `"工作经历"`）作为函数参数是允许的——校验器的函数调用判定基于函数名白名单，参数形式相对宽松。
+> 模板作者**不要**尝试在自己的 CSS 中模拟这些函数的输出结构；只需对照 `data-model.md` 的 DOM 契约，为统一 HTML 已固定的类名写样式。

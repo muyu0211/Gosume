@@ -2,7 +2,7 @@
 # 将模板目录打包为 .zip 文件
 # 用法: .\package-template.ps1 -TemplateDir <模板目录> [-OutputDir <输出目录>]
 #
-# 模板目录必须包含: template.json, template.html, styles.css
+# 模板目录必须包含: template.json, styles.css（Gosume 一期改造后无 HTML）
 # 输出文件名取自 template.json 的 name 字段，后缀为 .zip
 
 param(
@@ -24,7 +24,7 @@ if (-not (Test-Path $TemplateDir -PathType Container)) {
 }
 
 # 检查必需文件
-$requiredFiles = @("template.json", "template.html", "styles.css")
+$requiredFiles = @("template.json", "styles.css")
 foreach ($file in $requiredFiles) {
     $path = Join-Path $TemplateDir $file
     if (-not (Test-Path $path -PathType Leaf)) {

@@ -3,7 +3,7 @@
 # 将模板目录打包为 .zip 文件
 # 用法: ./package-template.sh <模板目录> [输出目录]
 #
-# 模板目录必须包含: template.json, template.html, styles.css
+# 模板目录必须包含: template.json, styles.css（Gosume 一期改造后无 HTML）
 # 输出文件名取自 template.json 的 name 字段，后缀为 .zip
 
 set -euo pipefail
@@ -17,7 +17,7 @@ if [ ! -d "$TEMPLATE_DIR" ]; then
 fi
 
 # 检查必需文件
-for file in template.json template.html styles.css; do
+for file in template.json styles.css; do
     if [ ! -f "$TEMPLATE_DIR/$file" ]; then
         echo "错误: 缺少必需文件: $file (在 $TEMPLATE_DIR)" >&2
         exit 1
@@ -61,7 +61,7 @@ mkdir -p "$OUTPUT_DIR"
 OUTPUT_FILE="$OUTPUT_DIR/$TEMPLATE_NAME.zip"
 
 # 进入模板目录打包，确保文件在 zip 根目录
-(cd "$TEMPLATE_DIR" && zip -j -q "$OUTPUT_FILE" template.json template.html styles.css)
+(cd "$TEMPLATE_DIR" && zip -j -q "$OUTPUT_FILE" template.json styles.css)
 
 echo "打包成功: $OUTPUT_FILE"
 echo "模板名称: $TEMPLATE_NAME"
