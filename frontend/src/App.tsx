@@ -5,17 +5,26 @@ import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { useLayoutSettingsStore } from './stores/layoutSettingsStore'
+import { applyPlatformToDocument } from './lib/platform'
 
 export default function App() {
-  // Ensure frameless mode is applied (safeguard for Wails v3 alpha)
+  // 平台标记已由 main.tsx 在渲染前写入；此处再次应用以确保一致，
+  // 并仅在非 macOS 平台强制 frameless（macOS 使用原生红绿灯，见 app.go）
   useEffect(() => {
-    try {
-      const win = window as Record<string, unknown>
-      const wailsWindow = win._wails?.Window as Record<string, unknown> | undefined
-      if (wailsWindow?.SetFrameless) {
-        ;(wailsWindow.SetFrameless as (v: boolean) => void)(true)
-      }
-    } catch { /* non-Wails environment */ }
+    const platform = applyPlatformToDocument()
+
+    // Ensure frameless mode is applied (safeguard for Wails v3 alpha).
+    // macOS 走 TitleBarHiddenInset（保留原生红绿灯），不能强制 frameless，
+    // 否则会移除原生窗口按钮，看起来像 Windows 程序。
+    if (platform !== 'darwin') {
+      try {
+        const win = window as Record<string, unknown>
+        const wailsWindow = win._wails?.Window as Record<string, unknown> | undefined
+        if (wailsWindow?.SetFrameless) {
+          ;(wailsWindow.SetFrameless as (v: boolean) => void)(true)
+        }
+      } catch { /* non-Wails environment */ }
+    }
   }, [])
 
   // Load user-customized layout tiers once so custom presets are available

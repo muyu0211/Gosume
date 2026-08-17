@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gosume/pkg/appconfig"
@@ -227,6 +228,15 @@ func createWailsApp(assets embed.FS, services []application.Service, appCfg *app
 		MinHeight: appCfg.Window.MinHeight,
 		URL:       "/",
 		Frameless: appCfg.Window.Frameless,
+	}
+
+	if runtime.GOOS == "darwin" {
+		// macOS 上放弃自绘标题栏：保留原生红绿灯（关闭/最小化/全屏）按钮，
+		// 使用隐藏内嵌标题栏（透明标题栏 + 隐藏标题 + 内容延伸到标题栏下方），
+		// 让窗口外观与原生 macOS 应用一致，而不是像 Windows 程序那样带自绘按钮。
+		// 注意：Frameless(borderless) 会移除红绿灯，因此必须关闭并改用 TitleBar 配置。
+		winOpts.Frameless = false
+		winOpts.Mac.TitleBar = application.MacTitleBarHiddenInset
 	}
 	win := app.Window.NewWithOptions(winOpts)
 
