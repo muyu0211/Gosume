@@ -1,4 +1,6 @@
-package config
+package user_config
+
+import "gosume/pkg/util"
 
 // ---------------------------------------------------------------------------
 // 布局档位配置（页边距 + 内容间距）
@@ -51,14 +53,11 @@ func DefaultLayoutPresets() LayoutPresetConfig {
 			{Key: "comfortable", Label: "宽松", PaddingY: 16, PaddingX: 18},
 		},
 		Spacings: []SpacingPresetTier{
-			{Key: "compact", Label: "紧凑", SectionGap: ptr(4.0), ItemGap: ptr(3.0), DetailGap: ptr(1.0)},
-			{Key: "narrow", Label: "较窄", SectionGap: ptr(8.0), ItemGap: ptr(4.0), DetailGap: ptr(2.0)},
+			{Key: "compact", Label: "紧凑", SectionGap: util.FloatPtr(4.0), ItemGap: util.FloatPtr(3.0), DetailGap: util.FloatPtr(1.0)},
+			{Key: "narrow", Label: "较窄", SectionGap: util.FloatPtr(8.0), ItemGap: util.FloatPtr(4.0), DetailGap: util.FloatPtr(2.0)},
 			{Key: "normal", Label: "标准", SectionGap: nil, ItemGap: nil, DetailGap: nil},
-			{Key: "wide", Label: "较宽", SectionGap: ptr(14.0), ItemGap: ptr(8.0), DetailGap: ptr(3.0)},
-			{Key: "comfortable", Label: "宽松", SectionGap: ptr(20.0), ItemGap: ptr(11.0), DetailGap: ptr(4.0)},
+			{Key: "wide", Label: "较宽", SectionGap: util.FloatPtr(14.0), ItemGap: util.FloatPtr(8.0), DetailGap: util.FloatPtr(3.0)},
+			{Key: "comfortable", Label: "宽松", SectionGap: util.FloatPtr(20.0), ItemGap: util.FloatPtr(11.0), DetailGap: util.FloatPtr(4.0)},
 		},
 	}
 }
-
-// ptr 返回指针
-func ptr(v float64) *float64 { return &v }

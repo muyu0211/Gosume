@@ -3,6 +3,7 @@ package service
 import (
 	"gosume/pkg/model"
 	"gosume/pkg/store"
+	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -43,7 +44,7 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 
 	resume, err := s.store.Load(filePath)
 	if err != nil {
-		return nil, UserWrap(err, "打开项目失败")
+		return nil, util.UserWrap(err, "打开项目失败")
 	}
 
 	s.resumeService.InitResume(resume)
@@ -59,7 +60,7 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 func (s *FileService) SaveProject(filePath string) (string, error) {
 	resume := s.resumeService.GetResume()
 	if resume == nil {
-		return "", UserMsg("未加载简历，无法保存")
+		return "", util.UserMsg("未加载简历，无法保存")
 	}
 
 	if filePath == "" {
@@ -72,15 +73,15 @@ func (s *FileService) SaveProject(filePath string) (string, error) {
 			},
 		}).PromptForSingleSelection()
 		if err != nil || filePath == "" {
-			if IsCancel(err) {
+			if util.IsCancel(err) {
 				return "", nil
 			}
-			return "", UserWrap(err, "打开保存对话框失败")
+			return "", util.UserWrap(err, "打开保存对话框失败")
 		}
 	}
 
 	if err := s.store.Save(filePath, resume); err != nil {
-		return "", UserWrap(err, "保存项目失败")
+		return "", util.UserWrap(err, "保存项目失败")
 	}
 
 	s.wailsApp.Event.Emit("file:saved", filePath)

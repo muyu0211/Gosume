@@ -7,6 +7,7 @@ import (
 	"gosume/pkg/model"
 	"gosume/pkg/store"
 	"gosume/pkg/template"
+	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -54,7 +55,7 @@ type GetTemplateMeta struct {
 func (s *TemplateService) ListTemplates() ([]GetTemplateMeta, error) {
 	templates, err := s.loader.LoadAll()
 	if err != nil {
-		return nil, UserWrap(err, "加载模板列表失败")
+		return nil, util.UserWrap(err, "加载模板列表失败")
 	}
 
 	var metas []GetTemplateMeta
@@ -121,7 +122,7 @@ type ImportTemplateResult struct {
 // 用户取消选择时返回 (nil, nil)。
 func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error) {
 	if s.wailsApp == nil {
-		return nil, UserMsg("应用未初始化")
+		return nil, util.UserMsg("应用未初始化")
 	}
 
 	filePath, err := s.wailsApp.Dialog.OpenFile().
@@ -131,10 +132,10 @@ func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error)
 		CanChooseFiles(true).
 		PromptForSingleSelection()
 	if err != nil {
-		if IsCancel(err) {
+		if util.IsCancel(err) {
 			return nil, nil
 		}
-		return nil, UserWrap(err, "打开文件对话框失败")
+		return nil, util.UserWrap(err, "打开文件对话框失败")
 	}
 	if filePath == "" {
 		return nil, nil
@@ -146,20 +147,20 @@ func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error)
 // 解析 ZIP → 校验 ID 未被占用 → 写入 SQLite → 返回结果。
 func (s *TemplateService) importTemplatePackageFromPath(filePath string) (*ImportTemplateResult, error) {
 	if strings.TrimSpace(filePath) == "" {
-		return nil, UserMsg("模板包路径不能为空")
+		return nil, util.UserMsg("模板包路径不能为空")
 	}
 
 	pkg, err := template.LoadPackageFromZip(filePath)
 	if err != nil {
-		return nil, UserWrap(err, "无法解析模板包，请检查文件格式")
+		return nil, util.UserWrap(err, "无法解析模板包，请检查文件格式")
 	}
 
 	if existing, _ := s.loader.LoadByID(pkg.Meta.ID); existing != nil {
-		return nil, UserMsg("模板已存在")
+		return nil, util.UserMsg("模板已存在")
 	}
 
 	if err := s.store.Create(pkg.Meta, pkg.CSS); err != nil {
-		return nil, UserWrap(err, "保存模板失败")
+		return nil, util.UserWrap(err, "保存模板失败")
 	}
 
 	meta := toGetTemplateMeta(&template.Template{
@@ -191,31 +192,31 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 // Gosume 一期改造：不再接收 html，模板只由 meta + css 构成。
 func (s *TemplateService) CreateTemplate(meta template.Meta, css string) error {
 	if meta.ID == "" {
-		return UserMsg("模板 ID 不能为空")
+		return util.UserMsg("模板 ID 不能为空")
 	}
-	return UserWrap(s.store.Create(meta, css), "创建模板失败")
+	return util.UserWrap(s.store.Create(meta, css), "创建模板失败")
 }
 
 // UpdateTemplate 更新已存在的用户模板。
 func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, css string) error {
-	return UserWrap(s.store.Update(id, meta, css), "更新模板失败")
+	return util.UserWrap(s.store.Update(id, meta, css), "更新模板失败")
 }
 
 // DeleteTemplate 软删除用户模板。
 func (s *TemplateService) DeleteTemplate(id string) error {
-	return UserWrap(s.store.SoftDelete(id), "删除模板失败")
+	return util.UserWrap(s.store.SoftDelete(id), "删除模板失败")
 }
 
 // CloneTemplate 把模板（内置或用户）复制为一个新的用户模板。
 // 新模板版本号重置为 1.0.0。
 func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 	if newID == "" {
-		return UserMsg("新模板 ID 不能为空")
+		return util.UserMsg("新模板 ID 不能为空")
 	}
 
 	src, err := s.loader.LoadByID(sourceID)
 	if err != nil {
-		return UserWrap(err, "源模板不存在")
+		return util.UserWrap(err, "源模板不存在")
 	}
 
 	meta := src.Meta
@@ -224,10 +225,10 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 
 	// 检查新 ID 是否已被占用
 	if existing, _ := s.loader.LoadByID(newID); existing != nil {
-		return UserMsg("模板 ID 已被占用")
+		return util.UserMsg("模板 ID 已被占用")
 	}
 
-	return UserWrap(s.store.Create(meta, src.CSS), "克隆模板失败")
+	return util.UserWrap(s.store.Create(meta, src.CSS), "克隆模板失败")
 }
 
 // toGetTemplateMeta 把内部模板结构转换为面向前端的元数据视图，

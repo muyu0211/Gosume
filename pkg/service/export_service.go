@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"gosume/pkg/export"
+	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -90,7 +91,7 @@ type exportItem struct {
 func (s *ExportService) ExportBatchHTML(itemsJSON string, format string, scale float64) ([]string, error) {
 	var items []exportItem
 	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
-		return nil, UserMsg("解析导出数据失败")
+		return nil, util.UserMsg("解析导出数据失败")
 	}
 	return s.exportBatch(items, format, scale)
 }
@@ -105,7 +106,7 @@ func parseFormat(format string, scale float64) (export.ExportOptions, error) {
 	case "png":
 		return export.ExportOptions{Format: export.FormatPNG, Scale: scale}, nil
 	default:
-		return export.ExportOptions{}, UserMsg("不支持的导出格式: " + format)
+		return export.ExportOptions{}, util.UserMsg("不支持的导出格式: " + format)
 	}
 }
 
@@ -113,7 +114,7 @@ func parseFormat(format string, scale float64) (export.ExportOptions, error) {
 func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byte, error) {
 	data, err := s.exportManager.ExportHTML(html, opts)
 	if err != nil {
-		return nil, UserWrap(err, "导出失败")
+		return nil, util.UserWrap(err, "导出失败")
 	}
 	return data, nil
 }
@@ -129,10 +130,10 @@ func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOpt
 		},
 	}).PromptForSingleSelection()
 	if err != nil {
-		if IsCancel(err) {
+		if util.IsCancel(err) {
 			return "", nil
 		}
-		return "", UserWrap(err, "打开保存对话框失败")
+		return "", util.UserWrap(err, "打开保存对话框失败")
 	}
 	return filePath, nil
 }
@@ -140,7 +141,7 @@ func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOpt
 // writeFile 写出导出结果文件，失败时包装为用户可读错误。
 func (s *ExportService) writeFile(path string, data []byte) error {
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		return UserWrap(err, "写入文件失败")
+		return util.UserWrap(err, "写入文件失败")
 	}
 	return nil
 }

@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"gosume/pkg/appconfig"
+	"gosume/pkg/app_config"
 	"gosume/pkg/log"
 	"io"
 	"os"
@@ -11,7 +11,8 @@ import (
 	"runtime"
 	"strings"
 
-	"gosume/pkg/config"
+	"gosume/pkg/user_config"
+	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -19,8 +20,8 @@ import (
 // SystemService 提供系统相关的信息与工具方法（窗口控制、路径、配置等）。
 type SystemService struct {
 	wailsApp  *application.App
-	configMgr *config.Manager
-	appCfg    *appconfig.AppConfig
+	configMgr *user_config.Manager
+	appCfg    *app_config.AppConfig
 	win       *application.WebviewWindow
 }
 
@@ -32,7 +33,7 @@ func (s *SystemService) ServiceName() string {
 // Inject 注入依赖。
 //
 // appCfg 为应用级编译期配置，提供版本号、应用名等框架级参数。
-func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, win *application.WebviewWindow, appCfg *appconfig.AppConfig) {
+func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow, appCfg *app_config.AppConfig) {
 	s.wailsApp = app
 	s.configMgr = configMgr
 	s.win = win
@@ -75,21 +76,21 @@ func (s *SystemService) GetDataDir() string {
 
 // GetLayoutPresets 返回生效的布局档位配置：
 // 用户自定义的档位，或内置默认档位。
-func (s *SystemService) GetLayoutPresets() config.LayoutPresetConfig {
+func (s *SystemService) GetLayoutPresets() user_config.LayoutPresetConfig {
 	return s.configMgr.GetLayoutPresets()
 }
 
 // SetLayoutPresets 校验并持久化用户自定义的布局档位配置
 // （档位名称、数值与数量）。
-func (s *SystemService) SetLayoutPresets(cfg config.LayoutPresetConfig) error {
+func (s *SystemService) SetLayoutPresets(cfg user_config.LayoutPresetConfig) error {
 	// 校验参数
 	if err := validateLayoutPresets(cfg); err != nil {
-		return UserWrap(err, err.Error())
+		return util.UserWrap(err, err.Error())
 	}
 
 	// 持久化配置
 	if err := s.configMgr.SetLayoutPresets(cfg); err != nil {
-		return UserWrap(err, err.Error())
+		return util.UserWrap(err, err.Error())
 	}
 	return nil
 }
@@ -97,7 +98,7 @@ func (s *SystemService) SetLayoutPresets(cfg config.LayoutPresetConfig) error {
 // ResetLayoutPresets 恢复内置默认布局档位。
 func (s *SystemService) ResetLayoutPresets() error {
 	if err := s.configMgr.ResetLayoutPresets(); err != nil {
-		return UserWrap(err, "恢复默认布局档位失败")
+		return util.UserWrap(err, "恢复默认布局档位失败")
 	}
 	return nil
 }
@@ -155,28 +156,28 @@ func (s *SystemService) SetDataDir(newDir string) error {
 	// 校验目标路径存在且为目录
 	info, err := os.Stat(newDir)
 	if err != nil {
-		return UserWrap(err, "访问目录失败")
+		return util.UserWrap(err, "访问目录失败")
 	}
 	if !info.IsDir() {
-		return UserMsg("所选路径不是目录")
+		return util.UserMsg("所选路径不是目录")
 	}
 
 	// 在新位置创建所需子目录
 	for _, sub := range []string{"autosave", "templates", "log"} {
 		if err := os.MkdirAll(filepath.Join(newDir, sub), 0755); err != nil {
-			return UserWrap(err, "创建子目录失败")
+			return util.UserWrap(err, "创建子目录失败")
 		}
 	}
 
 	// 把旧目录的数据迁移到新目录，并记录成功迁移的条目
 	migrated, err := migrateDataDir(oldDir, newDir)
 	if err != nil {
-		return UserWrap(err, "迁移数据失败")
+		return util.UserWrap(err, "迁移数据失败")
 	}
 
 	// 持久化配置并触发 OnChange 回调（各 store 切换到新目录）
 	if err := s.configMgr.SetDataDir(newDir); err != nil {
-		return UserWrap(err, "保存配置失败")
+		return util.UserWrap(err, "保存配置失败")
 	}
 
 	// 清理旧目录——只删除已确认迁移成功的条目，避免误删
@@ -311,7 +312,7 @@ const (
 // 校验项：列表非空、key 合法且不重复、名称非空、数值在允许区间内、
 // 必须保留 normal 档，且内容间距的 normal 档不得设置具体数值。
 // 返回的错误消息面向用户，可直接展示。
-func validateLayoutPresets(cfg config.LayoutPresetConfig) error {
+func validateLayoutPresets(cfg user_config.LayoutPresetConfig) error {
 	if len(cfg.Margins) == 0 {
 		return fmt.Errorf("页边距档位至少保留一个")
 	}

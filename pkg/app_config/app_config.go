@@ -1,10 +1,10 @@
-// Package appconfig 负责加载应用级编译期配置。
+// Package app_config 负责加载应用级编译期配置。
 //
 // 与 pkg/config（用户运行时配置 config.json）区分：
 //   - 本包读取 app.yaml，该文件通过 //go:embed 在编译期嵌入二进制
 //   - 内容由开发者维护，跟随版本发布，运行时只读
 //   - 用于集中管理应用版本号、窗口尺寸、日志参数等框架级参数
-package appconfig
+package app_config
 
 import (
 	"bytes"

@@ -2,6 +2,7 @@ package export
 
 import (
 	"fmt"
+	"gosume/pkg/util"
 	"io"
 	"os"
 	"runtime"
@@ -166,9 +167,6 @@ func findBrowser() string {
 	return ""
 }
 
-// floatPtr 返回 float64 的指针，用于填充 CDP 请求中的可选参数。
-func floatPtr(v float64) *float64 { return &v }
-
 // RenderPDF 把已分页的 HTML 渲染为 PDF 字节流。
 //
 // 传入的 HTML 应包含带 page-break-after 规则的 A4 尺寸 .resume-page 容器。
@@ -191,18 +189,18 @@ func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange 
 	paper := PaperFromHTML(htmlContent)
 
 	req := &proto.PagePrintToPDF{
-		PaperWidth:          floatPtr(paper.InchW),
-		PaperHeight:         floatPtr(paper.InchH),
-		MarginTop:           floatPtr(0),
-		MarginBottom:        floatPtr(0),
-		MarginLeft:          floatPtr(0),
-		MarginRight:         floatPtr(0),
+		PaperWidth:          util.FloatPtr(paper.InchW),
+		PaperHeight:         util.FloatPtr(paper.InchH),
+		MarginTop:           util.FloatPtr(0),
+		MarginBottom:        util.FloatPtr(0),
+		MarginLeft:          util.FloatPtr(0),
+		MarginRight:         util.FloatPtr(0),
 		PrintBackground:     true,
 		PreferCSSPageSize:   true,
 		DisplayHeaderFooter: false,
 	}
 	if scale > 0 {
-		req.Scale = floatPtr(scale)
+		req.Scale = util.FloatPtr(scale)
 	}
 	if pageRange != "" {
 		req.PageRanges = pageRange
@@ -225,6 +223,7 @@ func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange 
 // 因此 PNG 导出只需测量文档真实高度后整体截图，后端不再注入任何反向拆分的 CSS。
 // scale 通过 deviceScaleFactor 控制输出图片的像素密度。
 func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, error) {
+	// 创建新页面
 	page, err := m.newPage()
 	if err != nil {
 		return nil, err
