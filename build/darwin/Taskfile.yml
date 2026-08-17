@@ -135,6 +135,35 @@ tasks:
     cmds:
       - task: create:app:bundle
 
+  package:dmg:
+    summary: Packages the application into a `.dmg` installer (current arch)
+    deps:
+      - task: package
+    cmds:
+      - task: create:dmg
+
+  package:dmg:universal:
+    summary: Packages the application into a `.dmg` installer (universal)
+    deps:
+      - task: package:universal
+    cmds:
+      - task: create:dmg
+
+  create:dmg:
+    summary: Creates a `.dmg` installer from the built `.app` bundle
+    internal: true
+    cmds:
+      - |
+        set -euo pipefail
+        APP="{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        DMG="{{.BIN_DIR}}/{{.APP_NAME}}.dmg"
+        STAGE="$(mktemp -d "${TMPDIR:-/tmp}/gosume-dmg.XXXXXX")"
+        trap 'rm -rf "$STAGE"' EXIT
+        cp -R "$APP" "$STAGE/{{.APP_NAME}}.app"
+        ln -s /Applications "$STAGE/Applications"
+        hdiutil create -volname "{{.APP_NAME}}" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+        echo "Created $DMG"
+
 
   create:app:bundle:
     summary: Creates an `.app` bundle

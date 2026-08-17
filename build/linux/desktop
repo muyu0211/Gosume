@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A Gosume application
+Name=Gosume
+Comment=桌面级简历制作工具
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/gosume.exe %u
+Exec=/usr/local/bin/Gosume %u
 Terminal=false
 Type=Application
-Icon=gosume.exe
+Icon=Gosume
 Categories=Utility;
-StartupWMClass=gosume.exe
+StartupWMClass=Gosume
 
  
