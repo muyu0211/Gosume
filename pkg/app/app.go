@@ -6,12 +6,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"gosume/pkg/app_config"
+	"gosume/pkg/config"
 	"gosume/pkg/log"
-	"gosume/pkg/render"
 	"gosume/pkg/service"
 	"gosume/pkg/store"
 	"gosume/pkg/template"
+	"gosume/pkg/template_render"
+	"gosume/pkg/user_config"
+	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -26,21 +28,20 @@ type App struct {
 //
 // 装配顺序：配置 → 日志 → 存储层 → 模板加载器 → 渲染与导出 → 服务 →
 // Wails 应用与窗口 → 依赖注入 → 事件与数据目录变更回调。
-//
-// appCfg 为应用级编译期配置（来自 app.yaml），用于驱动窗口尺寸、版本号等
-// 框架级参数；与 pkg/config 用户运行时配置 config.json 区分。
-func New(assets, builtinTemplates embed.FS, appCfg *app_config.AppConfig) *App {
-	// 配置
-	configMgr := initConfig()
+func New(assets, builtinTemplates embed.FS) *App {
+	rootPath := util.GetRootPath()
 
-	// 日志
-	dataDir := configMgr.DataDir()
+	// 用户配置管理器
+	userCfgMgr := user_config.InitConfigManager(rootPath)
+
+	// 获取数据目录
+	dataDir := userCfgMgr.DataDir()
+
+	// 创建必要文件
 	os.MkdirAll(filepath.Join(dataDir, "autosave"), 0755)
-	log.Init(dataDir, appCfg.App.Name, log.INFO, true)
-	log.Info("[main] data dir: %s", dataDir)
-	log.Info("[main] app version: %s", appCfg.App.Version)
 
 	// 数据存储
+	log.Init(dataDir, config.GlobalConfig.App.Name, log.INFO, true)
 	resumeStore := initResumeStore(dataDir)
 	templateStore := initTemplateStore(resumeStore, builtinTemplates)
 	initLegacyMigration(templateStore, dataDir)
@@ -57,7 +58,7 @@ func New(assets, builtinTemplates embed.FS, appCfg *app_config.AppConfig) *App {
 	}
 
 	// 渲染与导出
-	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(unifiedHTML)})
+	htmlRenderer := template_render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(unifiedHTML)})
 	exportManager := initExportManager()
 
 	// 项目文件存储
@@ -80,28 +81,28 @@ func New(assets, builtinTemplates embed.FS, appCfg *app_config.AppConfig) *App {
 	}
 
 	// Wails 应用与窗口
-	app, window := createApp(assets, svcs, appCfg)
+	app, window := createApp(assets, svcs, config.GlobalConfig)
 
 	// 依赖注入
 	resumeSvc.Inject(resumeStore, htmlRenderer)
 	templateSvc.Inject(app, templateLoader, templateStore, string(unifiedHTML))
 	exportSvc.Inject(app, exportManager)
 	fileSvc.Inject(app, projectStore, resumeSvc)
-	systemSvc.Inject(app, configMgr, window, appCfg)
+	systemSvc.Inject(app, userCfgMgr, window, config.GlobalConfig)
 
 	// 事件注册
 	registerEvents()
 
 	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。
 	// 存储重开失败时回滚到旧目录，避免应用进入不可用状态。
-	configMgr.OnChange(func(oldDir, newDir string) {
+	userCfgMgr.OnChange(func(oldDir, newDir string) {
 		log.Info("[main] data dir change: %s -> %s", oldDir, newDir)
 
 		log.Close()
 
 		if err := resumeStore.Reopen(newDir); err != nil {
 			log.Error("[main] failed to reopen resume store at %s: %v", newDir, err)
-			configMgr.SetDataDir(oldDir)
+			userCfgMgr.SetDataDir(oldDir)
 			return
 		}
 
@@ -122,6 +123,9 @@ func New(assets, builtinTemplates embed.FS, appCfg *app_config.AppConfig) *App {
 		log.Info("[main] hot-reload complete, new data dir: %s", newDir)
 	})
 
+	log.Info(" ============ [main] data dir: %s ============ ", dataDir)
+	log.Info(" ============ [main] app version: %s ============ ", config.GlobalConfig.App.Version)
+
 	return &App{wailsApp: app, stopWatch: stopWatch}
 }
 
@@ -136,8 +140,8 @@ func (a *App) Run() {
 	}
 }
 
-// createApp 创建应用与主窗口，窗口参数来自 app.yaml。
-func createApp(assets embed.FS, services []application.Service, appCfg *app_config.AppConfig) (*application.App, *application.WebviewWindow) {
+// createApp 创建应用与主窗口，窗口参数来自 config.yaml。
+func createApp(assets embed.FS, services []application.Service, appCfg *config.Config) (*application.App, *application.WebviewWindow) {
 	app := application.New(application.Options{
 		Name:        appCfg.App.Name,
 		Description: appCfg.App.Description,

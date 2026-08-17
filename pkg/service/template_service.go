@@ -14,10 +14,10 @@ import (
 
 // TemplateService 管理模板的查询、增删改与导入。
 type TemplateService struct {
-	wailsApp    *application.App
-	loader      *template.Loader
-	store       *store.TemplateStore
-	unifiedHTML string
+	App    *application.App
+	loader *template.Loader
+	store  *store.TemplateStore
+	HTML   string
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
@@ -27,10 +27,10 @@ func (s *TemplateService) ServiceName() string {
 
 // Inject 注入依赖。unifiedHTML 为应用内置的统一简历 HTML 骨架。
 func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *store.TemplateStore, unifiedHTML string) {
-	s.wailsApp = app
+	s.App = app
 	s.loader = loader
 	s.store = store
-	s.unifiedHTML = unifiedHTML
+	s.HTML = unifiedHTML
 }
 
 // GetTemplateMeta 是面向前端裁剪后的模板元数据视图。
@@ -86,8 +86,8 @@ type TemplateContent struct {
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
 // 或模板无自带 HTML 时使用应用内置的 template.html（Gosume 一期改造）。
 func (s *TemplateService) effectiveHTML(t *template.Template) string {
-	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
-		return s.unifiedHTML
+	if t.Meta.UseUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
+		return s.HTML
 	}
 	return t.HTML
 }
@@ -121,11 +121,11 @@ type ImportTemplateResult struct {
 // ImportTemplatePackage 弹出原生文件对话框，导入本地 .zip 模板包。
 // 用户取消选择时返回 (nil, nil)。
 func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error) {
-	if s.wailsApp == nil {
+	if s.App == nil {
 		return nil, util.UserMsg("应用未初始化")
 	}
 
-	filePath, err := s.wailsApp.Dialog.OpenFile().
+	filePath, err := s.App.Dialog.OpenFile().
 		SetTitle("导入模板包").
 		AddFilter("ZIP 文件 (*.zip)", "*.zip").
 		AddFilter("所有文件 (*.*)", "*.*").
@@ -247,7 +247,7 @@ func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
 		PaperSize:       t.Meta.PaperSize,
 		Colors:          t.Meta.Colors,
 		Features:        t.Meta.Features,
-		UsesUnifiedHTML: t.Meta.UsesUnifiedHTML,
+		UsesUnifiedHTML: t.Meta.UseUnifiedHTML,
 		IsBuiltin:       t.IsBuiltin,
 	}
 }

@@ -3,13 +3,11 @@ package app
 import (
 	"embed"
 	"fmt"
-	"gosume/pkg/export"
 	"gosume/pkg/log"
-	"gosume/pkg/render"
-	"gosume/pkg/service"
 	"gosume/pkg/store"
 	"gosume/pkg/template"
-	"gosume/pkg/user_config"
+	"gosume/pkg/template_export"
+	"gosume/pkg/template_render"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,35 +16,6 @@ import (
 )
 
 // --- 初始化辅助函数 ---
-
-// initConfig 初始化配置管理器，并完成历史数据目录的一次性迁移。
-// 配置初始化失败属于不可恢复错误，直接 panic。
-func initConfig() *user_config.Manager {
-	configRoot := service.GetConfigRoot()
-	os.MkdirAll(configRoot, 0755)
-
-	configMgr, err := user_config.NewManager(configRoot)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to init config manager: %v", err))
-	}
-
-	defaultDataDir := configMgr.DefaultDir()
-	if _, err := os.Stat(filepath.Join(defaultDataDir, "gosume.db")); os.IsNotExist(err) {
-		if _, err := os.Stat(filepath.Join(configRoot, "gosume.db")); err == nil {
-			fmt.Printf("[main] migrating data from %s to %s\n", configRoot, defaultDataDir)
-			os.MkdirAll(defaultDataDir, 0755)
-			for _, name := range []string{"gosume.db", "gosume.db-wal", "gosume.db-shm", "recent.json"} {
-				os.Rename(filepath.Join(configRoot, name), filepath.Join(defaultDataDir, name))
-			}
-			for _, sub := range []string{"autosave", "templates", "log"} {
-				os.Rename(filepath.Join(configRoot, sub), filepath.Join(defaultDataDir, sub))
-			}
-		}
-	}
-
-	return configMgr
-}
-
 // initResumeStore 打开简历存储；失败属于不可恢复错误，直接 panic。
 func initResumeStore(dataDir string) *store.ResumeStore {
 	s, err := store.NewResumeStore(dataDir)
@@ -91,9 +60,9 @@ func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
 }
 
 // initExportManager 创建导出管理器及其依赖的无头浏览器管理器。
-func initExportManager() *export.ExportManager {
-	browser := export.NewBrowserManager()
-	return export.NewExportManager(browser)
+func initExportManager() *template_export.ExportManager {
+	browser := template_export.NewBrowserManager()
+	return template_export.NewExportManager(browser)
 }
 
 // registerEvents 注册后端向前端发送的 Wails 事件及其数据类型。
@@ -117,20 +86,20 @@ type templateAdapter struct {
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
 // 或模板无自带 HTML 时使用应用内置的 template.html。
 func (a *templateAdapter) effectiveHTML(t *template.Template) string {
-	if t.Meta.UsesUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
+	if t.Meta.UseUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
 		return a.unifiedHTML
 	}
 	return t.HTML
 }
 
 // LoadByID 按 ID 加载模板并转换为渲染层所需的结构。
-func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
+func (a *templateAdapter) LoadByID(id string) (*template_render.Template, error) {
 	t, err := a.loader.LoadByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return &render.Template{
-		Meta:    render.TemplateMeta{ID: t.Meta.ID},
+	return &template_render.Template{
+		Meta:    template_render.TemplateMeta{ID: t.Meta.ID},
 		HTML:    a.effectiveHTML(t),
 		CSS:     t.CSS,
 		DirPath: t.DirPath,
@@ -138,15 +107,15 @@ func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
 }
 
 // LoadAll 加载全部模板并转换为渲染层所需的结构。
-func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
+func (a *templateAdapter) LoadAll() ([]*template_render.Template, error) {
 	templates, err := a.loader.LoadAll()
 	if err != nil {
 		return nil, err
 	}
-	var result []*render.Template
+	var result []*template_render.Template
 	for _, t := range templates {
-		result = append(result, &render.Template{
-			Meta:    render.TemplateMeta{ID: t.Meta.ID},
+		result = append(result, &template_render.Template{
+			Meta:    template_render.TemplateMeta{ID: t.Meta.ID},
 			HTML:    a.effectiveHTML(t),
 			CSS:     t.CSS,
 			DirPath: t.DirPath,

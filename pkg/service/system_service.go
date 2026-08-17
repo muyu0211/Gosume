@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"gosume/pkg/app_config"
+	"gosume/pkg/config"
 	"gosume/pkg/log"
 	"io"
 	"os"
@@ -19,9 +19,9 @@ import (
 
 // SystemService 提供系统相关的信息与工具方法（窗口控制、路径、配置等）。
 type SystemService struct {
-	wailsApp  *application.App
+	App       *application.App
 	configMgr *user_config.Manager
-	appCfg    *app_config.AppConfig
+	appCfg    *config.Config
 	win       *application.WebviewWindow
 }
 
@@ -33,8 +33,8 @@ func (s *SystemService) ServiceName() string {
 // Inject 注入依赖。
 //
 // appCfg 为应用级编译期配置，提供版本号、应用名等框架级参数。
-func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow, appCfg *app_config.AppConfig) {
-	s.wailsApp = app
+func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow, appCfg *config.Config) {
+	s.App = app
 	s.configMgr = configMgr
 	s.win = win
 	s.appCfg = appCfg
@@ -76,13 +76,13 @@ func (s *SystemService) GetDataDir() string {
 
 // GetLayoutPresets 返回生效的布局档位配置：
 // 用户自定义的档位，或内置默认档位。
-func (s *SystemService) GetLayoutPresets() user_config.LayoutPresetConfig {
+func (s *SystemService) GetLayoutPresets() user_config.LayoutPreset {
 	return s.configMgr.GetLayoutPresets()
 }
 
 // SetLayoutPresets 校验并持久化用户自定义的布局档位配置
 // （档位名称、数值与数量）。
-func (s *SystemService) SetLayoutPresets(cfg user_config.LayoutPresetConfig) error {
+func (s *SystemService) SetLayoutPresets(cfg user_config.LayoutPreset) error {
 	// 校验参数
 	if err := validateLayoutPresets(cfg); err != nil {
 		return util.UserWrap(err, err.Error())
@@ -110,7 +110,7 @@ func (s *SystemService) GetOS() string {
 
 // OpenExternalURL 在系统默认浏览器中打开链接。
 func (s *SystemService) OpenExternalURL(url string) error {
-	return s.wailsApp.Browser.OpenURL(url)
+	return s.App.Browser.OpenURL(url)
 }
 
 // ShowInFolder 打开系统文件管理器并选中指定路径。
@@ -136,7 +136,7 @@ func (s *SystemService) GetAppDataDir() string {
 
 // PickDataDir 弹出原生文件夹选择对话框，返回用户选择的目录。
 func (s *SystemService) PickDataDir() (string, error) {
-	return s.wailsApp.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
+	return s.App.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
 		CanChooseDirectories: true,
 		CanChooseFiles:       false,
 		Title:                "选择数据存储目录",
@@ -184,24 +184,6 @@ func (s *SystemService) SetDataDir(newDir string) error {
 	cleanMigrated(oldDir, migrated)
 
 	return nil
-}
-
-// GetConfigRoot 返回配置的锚点目录。
-//
-// 若可执行文件同级目录存在 config.json，则视为便携模式，返回该目录；
-// 否则回退到操作系统的用户配置目录。
-func GetConfigRoot() string {
-	if exePath, err := os.Executable(); err == nil {
-		exeDir := filepath.Dir(exePath)
-		if _, err := os.Stat(filepath.Join(exeDir, "config.json")); err == nil {
-			return exeDir
-		}
-	}
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		configDir = filepath.Join(os.Getenv("HOME"), ".config")
-	}
-	return filepath.Join(configDir, "ResumeCraft")
 }
 
 // --- 数据迁移辅助函数 ---
@@ -312,7 +294,7 @@ const (
 // 校验项：列表非空、key 合法且不重复、名称非空、数值在允许区间内、
 // 必须保留 normal 档，且内容间距的 normal 档不得设置具体数值。
 // 返回的错误消息面向用户，可直接展示。
-func validateLayoutPresets(cfg user_config.LayoutPresetConfig) error {
+func validateLayoutPresets(cfg user_config.LayoutPreset) error {
 	if len(cfg.Margins) == 0 {
 		return fmt.Errorf("页边距档位至少保留一个")
 	}

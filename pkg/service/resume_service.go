@@ -3,13 +3,14 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"gosume/pkg/config"
 	"gosume/pkg/log"
 	"sync"
 	"time"
 
 	"gosume/pkg/model"
-	"gosume/pkg/render"
 	"gosume/pkg/store"
+	"gosume/pkg/template_render"
 	"gosume/pkg/util"
 )
 
@@ -19,7 +20,7 @@ import (
 // 只有用户显式保存过的简历才允许自动保存，避免意外落库。
 type ResumeService struct {
 	store     *store.ResumeStore
-	renderer  *render.HTMLRenderer
+	renderer  *template_render.HTMLRenderer
 	current   *model.Resume
 	currentID string
 	persisted bool // 当前简历是否至少成功持久化过一次
@@ -32,7 +33,7 @@ func (s *ResumeService) ServiceName() string {
 }
 
 // Inject 注入依赖。
-func (s *ResumeService) Inject(resumeStore *store.ResumeStore, renderer *render.HTMLRenderer) {
+func (s *ResumeService) Inject(resumeStore *store.ResumeStore, renderer *template_render.HTMLRenderer) {
 	s.store = resumeStore
 	s.renderer = renderer
 }
@@ -44,7 +45,7 @@ func (s *ResumeService) Inject(resumeStore *store.ResumeStore, renderer *render.
 func (s *ResumeService) NewResume(templateID string, language string) (*model.Resume, error) {
 	now := time.Now()
 	resume := &model.Resume{
-		Version: "1.0",
+		Version: config.GlobalConfig.App.Version,
 		Meta: model.ResumeMeta{
 			TemplateID:     templateID,
 			Language:       language,

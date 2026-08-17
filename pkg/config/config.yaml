@@ -1,0 +1,25 @@
+server:
+ env: "dev"
+ 
+app:
+  name: Gosume
+  version: 1.0.0
+  description: 桌面级简历制作工具
+  copyright: "© 2026, Muyu"
+  identifier: com.muyu.gosume
+
+# 主窗口配置
+window:
+  title: Gosume
+  width: 1280              # 初始宽度（像素）
+  height: 800              # 初始高度（像素）
+  min_width: 960           # 最小宽度（像素）
+  min_height: 600          # 最小高度（像素）
+  frameless: true          # 是否使用无边框窗口
+
+# 日志配置
+log:
+  level: info              # debug | info | warn | error
+  max_size_mb: 10          # 单个日志文件最大体积（MB），超出后轮转
+  max_backups: 5           # 保留的历史日志文件数量
+  max_age_days: 30         # 历史日志最大保留天数

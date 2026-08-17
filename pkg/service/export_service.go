@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gosume/pkg/export"
+	"gosume/pkg/template_export"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -19,7 +19,7 @@ import (
 // 完成，后端只负责用无头 Chromium 把已分页的 HTML 转换为目标格式。
 type ExportService struct {
 	wailsApp      *application.App
-	exportManager *export.ExportManager
+	exportManager *template_export.ExportManager
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
@@ -28,7 +28,7 @@ func (s *ExportService) ServiceName() string {
 }
 
 // Inject 注入依赖。
-func (s *ExportService) Inject(app *application.App, manager *export.ExportManager) {
+func (s *ExportService) Inject(app *application.App, manager *template_export.ExportManager) {
 	s.wailsApp = app
 	s.exportManager = manager
 }
@@ -99,19 +99,19 @@ func (s *ExportService) ExportBatchHTML(itemsJSON string, format string, scale f
 // ── 内部辅助 ──────────────────────────────────────────────────────────────────
 
 // parseFormat 把前端传入的格式字符串解析为导出选项，格式不支持时报错。
-func parseFormat(format string, scale float64) (export.ExportOptions, error) {
+func parseFormat(format string, scale float64) (template_export.ExportOptions, error) {
 	switch format {
 	case "pdf":
-		return export.ExportOptions{Format: export.FormatPDF, Scale: scale}, nil
+		return template_export.ExportOptions{Format: template_export.FormatPDF, Scale: scale}, nil
 	case "png":
-		return export.ExportOptions{Format: export.FormatPNG, Scale: scale}, nil
+		return template_export.ExportOptions{Format: template_export.FormatPNG, Scale: scale}, nil
 	default:
-		return export.ExportOptions{}, util.UserMsg("不支持的导出格式: " + format)
+		return template_export.ExportOptions{}, util.UserMsg("不支持的导出格式: " + format)
 	}
 }
 
 // renderOne 把一份已分页的 HTML 转换为目标格式的字节流。
-func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byte, error) {
+func (s *ExportService) renderOne(html string, opts template_export.ExportOptions) ([]byte, error) {
 	data, err := s.exportManager.ExportHTML(html, opts)
 	if err != nil {
 		return nil, util.UserWrap(err, "导出失败")
@@ -121,7 +121,7 @@ func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byt
 
 // showSaveDialog 弹出保存对话框让用户选择保存位置。
 // 用户取消时返回空路径且不报错。
-func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOptions, title string) (string, error) {
+func (s *ExportService) showSaveDialog(defaultName string, opts template_export.ExportOptions, title string) (string, error) {
 	filePath, err := s.wailsApp.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
 		Title:    title,
 		Filename: defaultName,
@@ -220,11 +220,11 @@ func dedupName(name string, used map[string]int) string {
 }
 
 // getFilterName 返回保存对话框中该格式的显示名称。
-func getFilterName(f export.ExportFormat) string {
+func getFilterName(f template_export.ExportFormat) string {
 	switch f {
-	case export.FormatPDF:
+	case template_export.FormatPDF:
 		return "PDF 文件 (*.pdf)"
-	case export.FormatPNG:
+	case template_export.FormatPNG:
 		return "PNG 图片 (*.png)"
 	default:
 		return "所有文件 (*.*)"
@@ -232,11 +232,11 @@ func getFilterName(f export.ExportFormat) string {
 }
 
 // getFilterPattern 返回保存对话框中该格式的通配符模式。
-func getFilterPattern(f export.ExportFormat) string {
+func getFilterPattern(f template_export.ExportFormat) string {
 	switch f {
-	case export.FormatPDF:
+	case template_export.FormatPDF:
 		return "*.pdf"
-	case export.FormatPNG:
+	case template_export.FormatPNG:
 		return "*.png"
 	default:
 		return "*.*"
@@ -244,11 +244,11 @@ func getFilterPattern(f export.ExportFormat) string {
 }
 
 // formatSuffix 返回该格式对应的文件扩展名（不含点号）。
-func formatSuffix(f export.ExportFormat) string {
+func formatSuffix(f template_export.ExportFormat) string {
 	switch f {
-	case export.FormatPDF:
+	case template_export.FormatPDF:
 		return "pdf"
-	case export.FormatPNG:
+	case template_export.FormatPNG:
 		return "png"
 	default:
 		return ""

@@ -8,6 +8,20 @@ import (
 	"sync"
 )
 
+// Manager 管理持久化的用户配置，并在数据目录变更时通知监听者。
+//
+// 完整配置存放在数据目录内部（dataDir/config.json），因此切换数据目录时配置
+// 随数据一起迁移；锚点目录（anchorDir：便携模式为可执行文件所在目录，否则为
+// 系统配置目录）只保留轻量指针，用于下次启动时定位数据目录。
+type Manager struct {
+	mu        sync.RWMutex
+	config    UserConfig
+	anchorDir string
+	dataDir   string
+	listeners map[int]ChangeFunc
+	nextID    int
+}
+
 // configFileName 是配置文件名。它出现在两个位置，语义不同：
 //   - 数据目录内：完整配置（布局档位等），随数据目录一起迁移
 //   - 锚点目录内：仅含 data_dir 的定位指针，供下次启动找到数据目录
@@ -16,27 +30,43 @@ const configFileName = "config.json"
 // ChangeFunc 是数据目录变更回调。
 type ChangeFunc = func(oldDir, newDir string)
 
-// Config 保存用户配置。
-//
-// 该结构同时承担两种用途：数据目录内的完整配置，以及锚点目录内的定位指针
+// UserConfig 用户配置。
+// 数据目录内的完整配置，以及锚点目录内的定位指针
 // （此时仅 DataDir 有值）。旧版把两者合并存放在锚点目录，字段因此保持兼容。
-type Config struct {
-	DataDir       string              `json:"data_dir,omitempty"`
-	LayoutPresets *LayoutPresetConfig `json:"layout_presets,omitempty"`
+type UserConfig struct {
+	DataDir       string        `json:"data_dir,omitempty"`
+	LayoutPresets *LayoutPreset `json:"layout_presets,omitempty"`
 }
 
-// Manager 管理持久化的用户配置，并在数据目录变更时通知监听者。
-//
-// 完整配置存放在数据目录内部（dataDir/config.json），因此切换数据目录时配置
-// 随数据一起迁移；锚点目录（anchorDir：便携模式为可执行文件所在目录，否则为
-// 系统配置目录）只保留轻量指针，用于下次启动时定位数据目录。
-type Manager struct {
-	mu        sync.RWMutex
-	config    Config
-	anchorDir string
-	dataDir   string
-	listeners map[int]ChangeFunc
-	nextID    int
+// InitConfigManager 初始化配置管理器
+func InitConfigManager(configPath string) *Manager {
+	// // 创建配置根目录
+	// configRoot := service.GetConfigRoot()
+	os.MkdirAll(configPath, 0755)
+
+	// 初始化配置管理器
+	configMgr, err := NewManager(configPath)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init config manager: %v", err))
+	}
+
+	// 迁移历史数据
+	defaultDataDir := configMgr.DefaultDir()
+
+	if _, err := os.Stat(filepath.Join(defaultDataDir, "gosume.db")); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(configPath, "gosume.db")); err == nil {
+			fmt.Printf("[main] migrating data from %s to %s\n", configPath, defaultDataDir)
+			os.MkdirAll(defaultDataDir, 0755)
+			for _, name := range []string{"gosume.db", "gosume.db-wal", "gosume.db-shm", "recent.json"} {
+				os.Rename(filepath.Join(configPath, name), filepath.Join(defaultDataDir, name))
+			}
+			for _, sub := range []string{"autosave", "templates", "log"} {
+				os.Rename(filepath.Join(configPath, sub), filepath.Join(defaultDataDir, sub))
+			}
+		}
+	}
+
+	return configMgr
 }
 
 // NewManager 以 anchorDir 为锚点目录创建 Manager，并完成配置定位与加载。
@@ -57,7 +87,7 @@ func (m *Manager) init() error {
 
 	// 锚点文件既可能是新版指针，也可能是旧版完整配置，故只解析一次，同时用于
 	// 定位数据目录与迁移旧版配置；读取或解析失败按"无锚点"处理（回退默认目录）。
-	var anchor Config
+	var anchor UserConfig
 	hasAnchor := false
 	if raw, err := os.ReadFile(configFile(m.anchorDir)); err == nil {
 		hasAnchor = json.Unmarshal(raw, &anchor) == nil
@@ -149,7 +179,7 @@ func (m *Manager) RemoveOnChange(id int) {
 }
 
 // GetLayoutPresets 返回生效的布局档位配置；用户未自定义时回退到内置默认值。
-func (m *Manager) GetLayoutPresets() LayoutPresetConfig {
+func (m *Manager) GetLayoutPresets() LayoutPreset {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.config.LayoutPresets != nil {
@@ -161,7 +191,7 @@ func (m *Manager) GetLayoutPresets() LayoutPresetConfig {
 // SetLayoutPresets 持久化布局档位配置（参数校验由服务层完成）。
 //
 // 落盘失败时把内存中的档位置空，使下次启动重新从文件加载已持久化的状态。
-func (m *Manager) SetLayoutPresets(cfg LayoutPresetConfig) error {
+func (m *Manager) SetLayoutPresets(cfg LayoutPreset) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.config.LayoutPresets = &cfg
@@ -212,7 +242,7 @@ func (m *Manager) persistLocked() error {
 	if err := m.saveConfigLocked(); err != nil {
 		return err
 	}
-	return writeConfig(m.anchorDir, Config{DataDir: m.dataDir})
+	return writeConfig(m.anchorDir, UserConfig{DataDir: m.dataDir})
 }
 
 // --- 辅助函数 ---
@@ -228,7 +258,7 @@ func isDir(path string) bool {
 
 // writeConfig 原子写入 dir/config.json：先写同目录 .tmp 再 rename，
 // 避免写入中断产生半截文件。
-func writeConfig(dir string, cfg Config) error {
+func writeConfig(dir string, cfg UserConfig) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
