@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestInitAndLog 验证初始化后各级别日志均写入文件，且级别标签与内容正确。
 func TestInitAndLog(t *testing.T) {
 	dir := t.TempDir()
 
@@ -43,6 +44,7 @@ func TestInitAndLog(t *testing.T) {
 	}
 }
 
+// TestStdoutOnly 验证 dir 为空时只输出到标准输出，不产生日志文件。
 func TestStdoutOnly(t *testing.T) {
 	if err := Init("", "", INFO, true); err != nil {
 		t.Fatalf("Init: %v", err)
@@ -51,6 +53,7 @@ func TestStdoutOnly(t *testing.T) {
 	Info("stdout test")
 }
 
+// TestMinLevel 验证低于 minLevel 的日志被过滤，不写入文件。
 func TestMinLevel(t *testing.T) {
 	dir := t.TempDir()
 
@@ -77,6 +80,7 @@ func TestMinLevel(t *testing.T) {
 	}
 }
 
+// TestSetLevel 验证运行时调整级别后，此前被过滤的级别开始生效。
 func TestSetLevel(t *testing.T) {
 	dir := t.TempDir()
 

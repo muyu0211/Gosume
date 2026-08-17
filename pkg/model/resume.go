@@ -8,9 +8,10 @@ import (
 	"time"
 )
 
-// Resume is the root structure for a resume.
-// SummaryHidden toggles visibility of the "个人总结" section. Pointer + omitempty
-// keeps backward compatibility with legacy resumes (treated as visible).
+// Resume 是简历的根结构。
+//
+// SummaryHidden 控制「个人总结」区块是否显示。使用指针 + omitempty 是为了兼容
+// 历史数据：字段缺失时视为显示。
 type Resume struct {
 	Version       string          `json:"version"`
 	Meta          ResumeMeta      `json:"meta"`
@@ -27,12 +28,11 @@ type Resume struct {
 	Custom        []CustomSection `json:"custom,omitempty"`
 }
 
-// PageMargin is the page-margin level of a resume. The enum keys are the
-// wire format shared with the frontend (resume.meta.page_margin); the
-// frontend maps each level to concrete CSS values per template component.
+// PageMargin 是简历的页边距档位。枚举 key 即与前端约定的传输格式
+// resume.meta.page_margin，由前端按模板组件映射为具体 CSS 值。
 type PageMargin string
 
-// Page margin levels.
+// 页边距档位取值。
 const (
 	PageMarginCompact     PageMargin = "compact"
 	PageMarginNarrow      PageMargin = "narrow"
@@ -41,12 +41,11 @@ const (
 	PageMarginComfortable PageMargin = "comfortable"
 )
 
-// SectionSpacing is the content-block spacing level of a resume. The enum
-// keys are the wire format shared with the frontend
-// (resume.meta.section_spacing).
+// SectionSpacing 是简历的内容区块间距档位。枚举 key 即与前端约定的传输格式
+// resume.meta.section_spacing。
 type SectionSpacing string
 
-// Section spacing levels.
+// 内容间距档位取值。
 const (
 	SectionSpacingCompact     SectionSpacing = "compact"
 	SectionSpacingNarrow      SectionSpacing = "narrow"
@@ -55,18 +54,18 @@ const (
 	SectionSpacingComfortable SectionSpacing = "comfortable"
 )
 
-// FontSize is the base font size of a resume in pt. The wire format stays
-// numeric so resumes persisted before this enum was introduced remain valid.
+// FontSize 是简历的基准字号，单位 pt。传输格式保持数字，以便该枚举引入前
+// 已持久化的简历仍然有效。
 type FontSize int
 
-// Font size levels.
+// 字号档位取值。
 const (
 	FontSizeSmall  FontSize = 9
 	FontSizeMedium FontSize = 10
 	FontSizeLarge  FontSize = 11
 )
 
-// ResumeMeta holds metadata about the resume document.
+// ResumeMeta 保存简历文档的元数据。
 type ResumeMeta struct {
 	TemplateID     string         `json:"template_id"`
 	Name           string         `json:"name"`
@@ -79,8 +78,10 @@ type ResumeMeta struct {
 	ExportCount    int            `json:"export_count"`
 }
 
-// SetFieldByPath sets a field on the resume by dot-separated path.
-// Path examples: "personal.full_name", "jobs[0].company"
+// SetFieldByPath 按点号分隔的路径设置简历上的字段值。
+//
+// 路径示例："personal.full_name"、"jobs[0].company"。
+// value 为该字段对应的 JSON 原文，由反射定位字段后反序列化写入。
 func SetFieldByPath(obj any, path string, value json.RawMessage) error {
 	parts := parsePath(path)
 	if len(parts) == 0 {
@@ -131,6 +132,8 @@ func SetFieldByPath(obj any, path string, value json.RawMessage) error {
 	return nil
 }
 
+// parsePath 把字段路径切分为片段序列，数组下标保留方括号形式。
+// 例如 "jobs[0].company" → ["jobs", "[0]", "company"]。
 func parsePath(path string) []string {
 	var parts []string
 	current := strings.Builder{}
@@ -162,6 +165,7 @@ func parsePath(path string) []string {
 	return parts
 }
 
+// parseArrayIndex 解析 "[N]" 形式的片段，返回下标及其是否为数组下标。
 func parseArrayIndex(part string) (int, bool) {
 	if strings.HasPrefix(part, "[") && strings.HasSuffix(part, "]") {
 		var idx int
@@ -171,6 +175,8 @@ func parseArrayIndex(part string) (int, bool) {
 	return 0, false
 }
 
+// toFieldName 把 JSON 字段名（snake_case）转换为结构体字段名（PascalCase）。
+// 例如 "full_name" → "FullName"。
 func toFieldName(jsonField string) string {
 	parts := strings.Split(jsonField, "_")
 	for i, p := range parts {

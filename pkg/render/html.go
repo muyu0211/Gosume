@@ -9,19 +9,19 @@ import (
 	"gosume/pkg/model"
 )
 
-// HTMLRenderer renders resume data into an HTML string using Go templates.
+// HTMLRenderer 使用 Go html/template 把简历数据渲染为 HTML 字符串。
 type HTMLRenderer struct {
 	templateLoader TemplateLoader
 	funcMap        template.FuncMap
 }
 
-// TemplateLoader is the interface for loading templates.
+// TemplateLoader 是模板加载能力的抽象接口。
 type TemplateLoader interface {
 	LoadByID(id string) (*Template, error)
 	LoadAll() ([]*Template, error)
 }
 
-// Template wraps the template system's Template type for the render package.
+// Template 是 render 包内使用的模板结构，对模板系统的类型做了适配封装。
 type Template struct {
 	Meta    TemplateMeta
 	HTML    string
@@ -29,17 +29,17 @@ type Template struct {
 	DirPath string
 }
 
-// TemplateMeta is the minimal metadata needed by the renderer.
+// TemplateMeta 是渲染器所需的最小模板元数据。
 type TemplateMeta struct {
 	ID string
 }
 
-// TemplateMetaMinimal is used to satisfy the TemplateLoader interface.
+// TemplateMetaMinimal 用于满足 TemplateLoader 接口对元数据的最小要求。
 type TemplateMetaMinimal interface {
 	GetID() string
 }
 
-// NewHTMLRenderer creates a new HTML renderer.
+// NewHTMLRenderer 创建 HTML 渲染器，并注册模板可用的自定义函数。
 func NewHTMLRenderer(loader TemplateLoader) *HTMLRenderer {
 	r := &HTMLRenderer{
 		templateLoader: loader,
@@ -56,7 +56,8 @@ func NewHTMLRenderer(loader TemplateLoader) *HTMLRenderer {
 	return r
 }
 
-// Render renders a resume with the template specified in resume.Meta.TemplateID.
+// Render 使用 resume.Meta.TemplateID 指定的模板渲染简历。
+// TemplateID 为空时回退到默认模板。
 func (r *HTMLRenderer) Render(resume *model.Resume) (string, error) {
 	tmplID := resume.Meta.TemplateID
 	if tmplID == "" {
@@ -71,7 +72,10 @@ func (r *HTMLRenderer) Render(resume *model.Resume) (string, error) {
 	return r.RenderWithTemplate(resume, tmpl)
 }
 
-// RenderWithTemplate renders a resume with a specific template.
+// RenderWithTemplate 使用指定模板渲染简历。
+//
+// 渲染前先过滤隐藏条目；若模板 HTML 引用了 {{template "styles.css"}}，
+// 会把 CSS 注册为同名子模板后再解析。
 func (r *HTMLRenderer) RenderWithTemplate(resume *model.Resume, tmpl *Template) (string, error) {
 	if tmpl.HTML == "" {
 		return "", fmt.Errorf("template %s has no HTML content", tmpl.Meta.ID)
@@ -83,7 +87,7 @@ func (r *HTMLRenderer) RenderWithTemplate(resume *model.Resume, tmpl *Template) 
 
 	t := template.New("resume").Funcs(r.funcMap)
 
-	// If the HTML references {{template "styles.css"}}, define it as a sub-template first
+	// 模板 HTML 若引用 {{template "styles.css"}}，需先注册同名子模板
 	if strings.Contains(tmpl.HTML, `{{template "styles.css"`) {
 		if tmpl.CSS != "" {
 			if _, err := t.New("styles.css").Parse(tmpl.CSS); err != nil {
@@ -105,8 +109,9 @@ func (r *HTMLRenderer) RenderWithTemplate(resume *model.Resume, tmpl *Template) 
 	return buf.String(), nil
 }
 
-// Custom template functions
+// --- 模板自定义函数 ---
 
+// dateRange 拼接起止日期；在职或无结束日期时显示为「至今」。
 func dateRange(start, end string, isCurrent bool) string {
 	if start == "" {
 		return ""
@@ -117,6 +122,7 @@ func dateRange(start, end string, isCurrent bool) string {
 	return start + " - " + end
 }
 
+// skillLevel 把 0–5 的技能等级渲染为 5 个圆点，前 level 个为实心。
 func skillLevel(level int) template.HTML {
 	var buf strings.Builder
 	for i := 0; i < 5; i++ {
@@ -129,6 +135,7 @@ func skillLevel(level int) template.HTML {
 	return template.HTML(buf.String())
 }
 
+// i18n 按语言选择文案：lang 为 zh-CN 时返回中文，否则返回英文。
 func i18n(lang, zhKey, enKey string) string {
 	if lang == "zh-CN" {
 		return zhKey
@@ -136,19 +143,31 @@ func i18n(lang, zhKey, enKey string) string {
 	return enKey
 }
 
+// nl2br 先做 HTML 转义，再把换行替换为 <br>。
+// 因为转义在替换之前完成，用户输入不会被当作标签解析。
 func nl2br(s string) template.HTML {
 	escaped := template.HTMLEscapeString(s)
 	return template.HTML(strings.ReplaceAll(escaped, "\n", "<br>"))
 }
 
+// safeHTML 把字符串标记为可信 HTML，跳过自动转义。
+//
+// 安全提示：该函数会绕过 html/template 的 XSS 防护，仅可用于模板自身提供的
+// 可信片段，切勿传入用户输入的简历内容。
 func safeHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
+// safeURL 把字符串标记为可信 URL，跳过 URL 过滤。
+//
+// 安全提示：会绕过 html/template 对 javascript: 等危险协议的拦截，
+// 仅可用于可信来源的链接。
 func safeURL(s string) template.URL {
 	return template.URL(s)
 }
 
+// defaultVal 在 val 为空时返回 defaultVal，否则返回 val。
+// 参数顺序为 (默认值, 实际值)，便于在模板中以管道方式调用。
 func defaultVal(defaultVal, val string) string {
 	if val == "" {
 		return defaultVal

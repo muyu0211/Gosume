@@ -10,9 +10,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Level re-exports zapcore.Level.
+// Level 是 zapcore.Level 的再导出别名，调用方无需直接依赖 zap。
 type Level = zapcore.Level
 
+// 日志级别，由低到高。
 const (
 	DEBUG  = zapcore.DebugLevel
 	INFO   = zapcore.InfoLevel
@@ -23,13 +24,21 @@ const (
 )
 
 var (
+	// atom 保存可动态调整的日志级别，供 SetLevel 运行时修改。
 	atom zap.AtomicLevel
+	// file 是当前打开的日志文件句柄，Close 时释放。
 	file *os.File
 )
 
-// Init initializes the global logger. Logs are written to dir/log/appName-YYYY-MM-DD.log.
-// If dir is empty, logs are only written to stdout.
-// Call Close() before the program exits to flush and close the log file.
+// Init 初始化全局 logger，日志写入 dir/log/appName-YYYY-MM-DD.log。
+//
+// 参数：
+//   - dir：数据目录；为空时只输出到标准输出
+//   - appName：日志文件名前缀；为空时文件名仅含日期
+//   - minLevel：最低输出级别，低于该级别的日志被丢弃
+//   - stdout：是否同时输出到标准输出
+//
+// 程序退出前需调用 Close 刷盘并关闭文件。
 func Init(dir, appName string, minLevel Level, stdout bool) error {
 	atom = zap.NewAtomicLevelAt(minLevel)
 
@@ -83,30 +92,30 @@ func Init(dir, appName string, minLevel Level, stdout bool) error {
 	}
 
 	core := zapcore.NewTee(cores...)
-	// AddCallerSkip(1) to skip our package-level wrapper functions (Info, Debug, etc.)
-	// so the caller field points to user code, not log.go.
+	// AddCallerSkip(1)：跳过本包的包级包装函数（Info、Debug 等），
+	// 使 caller 字段指向真正的调用方代码，而不是 logger.go。
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	zap.ReplaceGlobals(logger)
 	return nil
 }
 
-// SetLevel dynamically changes the log level at runtime.
+// SetLevel 运行时动态调整日志级别。
 func SetLevel(lvl Level) {
 	atom.SetLevel(lvl)
 }
 
-// CurrentLevel returns the current log level.
+// CurrentLevel 返回当前日志级别。
 func CurrentLevel() Level {
 	return atom.Level()
 }
 
-// Sync flushes buffered logs to disk.
+// Sync 将缓冲中的日志刷写到磁盘。
 func Sync() {
 	_ = zap.L().Sync()
 }
 
-// Close flushes and closes the log file. Must be called before exit.
+// Close 刷盘并关闭日志文件，程序退出前必须调用。
 func Close() {
 	Sync()
 	if file != nil {
@@ -115,36 +124,37 @@ func Close() {
 	}
 }
 
-// Debug logs a debug message.
+// Debug 输出 DEBUG 级别日志，format/v 语义同 fmt.Printf。
 func Debug(format string, v ...any) {
 	zap.S().Debugf(format, v...)
 }
 
-// Info logs an info message.
+// Info 输出 INFO 级别日志，format/v 语义同 fmt.Printf。
 func Info(format string, v ...any) {
 	zap.S().Infof(format, v...)
 }
 
-// Warn logs a warning message.
+// Warn 输出 WARN 级别日志，format/v 语义同 fmt.Printf。
 func Warn(format string, v ...any) {
 	zap.S().Warnf(format, v...)
 }
 
-// Error logs an error message.
+// Error 输出 ERROR 级别日志，format/v 语义同 fmt.Printf。
 func Error(format string, v ...any) {
 	zap.S().Errorf(format, v...)
 }
 
-// DPanic logs at DPanic level — panics in development, errors in production.
+// DPanic 输出 DPANIC 级别日志：开发模式下 panic，生产模式下仅记录为错误。
 func DPanic(format string, v ...any) {
 	zap.S().DPanicf(format, v...)
 }
 
-// Fatal logs a fatal message, syncs, and calls os.Exit(1).
+// Fatal 输出 FATAL 级别日志，刷盘后调用 os.Exit(1)。
 func Fatal(format string, v ...any) {
 	zap.S().Fatalf(format, v...)
 }
 
+// bracketedLevelEncoder 把级别编码为带方括号的大写形式，如 [INFO]。
 func bracketedLevelEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString("[" + l.CapitalString() + "]")
 }

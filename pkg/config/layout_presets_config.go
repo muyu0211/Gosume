@@ -1,61 +1,46 @@
 package config
 
-import (
-	"fmt"
-	"strings"
-)
-
 // ---------------------------------------------------------------------------
-// Layout preset configuration (page margin + section spacing tiers)
+// 布局档位配置（页边距 + 内容间距）
 //
-// Users can customize the layout tiers in the settings page: values, labels,
-// and the number of tiers (add/remove). The full tier list is persisted in
-// config.json alongside data_dir and consumed by the frontend layout engine
-// (frontend/src/lib/layoutPresets.ts) — the backend never computes CSS.
+// 用户可在设置页自定义档位的数值、名称和数量，档位列表持久化到数据目录内的
+// config.json，由前端布局引擎（frontend/src/lib/layoutPresets.ts）消费——
+// 后端不计算 CSS。
 //
-// resume.meta.page_margin / section_spacing still store tier KEYS; a resume
-// referencing a deleted key falls back to the "normal" tier on the frontend.
+// resume.meta.page_margin / section_spacing 存的是档位 key；引用已删除的 key
+// 时，前端回退到 normal 档。
 // ---------------------------------------------------------------------------
 
-// MarginPresetTier is one page-margin tier. Values are in millimeters and
-// apply to both single-column (.resume-page) and split-column inner
-// containers (injected as --resume-padding / --resume-padding-y/-x).
+// MarginPresetTier 是一个页边距档位。
+//
+// 数值单位为毫米，同时作用于单栏（.resume-page）与分栏模板的内层容器
+// （注入为 --resume-padding / --resume-padding-y/-x）。
 type MarginPresetTier struct {
 	Key      string  `json:"key"`
 	Label    string  `json:"label"`
-	PaddingY float64 `json:"padding_y"` // mm, vertical
-	PaddingX float64 `json:"padding_x"` // mm, horizontal
+	PaddingY float64 `json:"padding_y"` // 毫米，纵向
+	PaddingX float64 `json:"padding_x"` // 毫米，横向
 }
 
-// SpacingPresetTier is one section-spacing tier. Values are in points;
-// nil gaps mean "template default" (only allowed for the normal tier,
-// which injects no CSS and preserves each template's native rhythm).
+// SpacingPresetTier 是一个内容间距档位。
+//
+// 数值单位为磅（pt）；为 nil 表示「沿用模板默认节奏」——该取值只允许出现在
+// normal 档，此时不注入任何 CSS，保留各模板自身的间距设计。
 type SpacingPresetTier struct {
 	Key        string   `json:"key"`
 	Label      string   `json:"label"`
-	SectionGap *float64 `json:"section_gap"` // pt, module ↔ module; nil = template default
-	ItemGap    *float64 `json:"item_gap"`    // pt, entry ↔ entry; nil = template default
-	DetailGap  *float64 `json:"detail_gap"`  // pt, detail ↔ detail; nil = template default
+	SectionGap *float64 `json:"section_gap"` // 磅，模块 ↔ 模块；nil 表示模板默认
+	ItemGap    *float64 `json:"item_gap"`    // 磅，条目 ↔ 条目；nil 表示模板默认
+	DetailGap  *float64 `json:"detail_gap"`  // 磅，细节 ↔ 细节；nil 表示模板默认
 }
 
-// LayoutPresetConfig is the persisted layout tier configuration.
+// LayoutPresetConfig 是持久化的布局档位配置。
 type LayoutPresetConfig struct {
 	Margins  []MarginPresetTier  `json:"margins"`
 	Spacings []SpacingPresetTier `json:"spacings"`
 }
 
-// Tier keys reserved for the built-in default tiers. The "normal" tier is
-// the mandatory fallback for both lists and cannot be removed; for spacings
-// it must keep nil gaps (template default).
-const (
-	MarginTierNormalKey            = "normal"
-	SpacingTierNormalKey           = "normal"
-	marginValueMin, marginValueMax = 5.0, 30.0 // mm
-	gapValueMin, gapValueMax       = 0.0, 40.0 // pt
-)
-
-// DefaultLayoutPresets returns the built-in default tiers (mirrors the
-// constants in frontend/src/lib/layoutPresets.ts).
+// DefaultLayoutPresets 返回默认的布局档位配置。
 func DefaultLayoutPresets() LayoutPresetConfig {
 	return LayoutPresetConfig{
 		Margins: []MarginPresetTier{
@@ -75,83 +60,5 @@ func DefaultLayoutPresets() LayoutPresetConfig {
 	}
 }
 
-// ptr is a small helper for building default float pointers.
+// ptr 返回指针
 func ptr(v float64) *float64 { return &v }
-
-// ValidateLayoutPresets checks a candidate layout preset configuration.
-func ValidateLayoutPresets(cfg LayoutPresetConfig) error {
-	if len(cfg.Margins) == 0 {
-		return fmt.Errorf("页边距档位至少保留一个")
-	}
-	if len(cfg.Spacings) == 0 {
-		return fmt.Errorf("内容间距档位至少保留一个")
-	}
-
-	marginKeys := map[string]bool{}
-	for _, t := range cfg.Margins {
-		if err := validTierKey(t.Key); err != nil {
-			return fmt.Errorf("页边距档位 %s", err)
-		}
-		if marginKeys[t.Key] {
-			return fmt.Errorf("页边距档位 key 重复: %s", t.Key)
-		}
-		marginKeys[t.Key] = true
-		if strings.TrimSpace(t.Label) == "" {
-			return fmt.Errorf("页边距档位 %s 的名称为空", t.Key)
-		}
-		if t.PaddingY < marginValueMin || t.PaddingY > marginValueMax ||
-			t.PaddingX < marginValueMin || t.PaddingX > marginValueMax {
-			return fmt.Errorf("页边距档位“%s”的数值需在 %.0f–%.0fmm 之间", t.Label, marginValueMin, marginValueMax)
-		}
-	}
-	if !marginKeys[MarginTierNormalKey] {
-		return fmt.Errorf("页边距必须保留“标准”档位（未选中档位时的回退值）")
-	}
-
-	spacingKeys := map[string]bool{}
-	for _, t := range cfg.Spacings {
-		if err := validTierKey(t.Key); err != nil {
-			return fmt.Errorf("内容间距档位 %s", err)
-		}
-		if spacingKeys[t.Key] {
-			return fmt.Errorf("内容间距档位 key 重复: %s", t.Key)
-		}
-		spacingKeys[t.Key] = true
-		if strings.TrimSpace(t.Label) == "" {
-			return fmt.Errorf("内容间距档位 %s 的名称为空", t.Key)
-		}
-		for name, v := range map[string]*float64{
-			"模块间距": t.SectionGap, "条目间距": t.ItemGap, "细节间距": t.DetailGap,
-		} {
-			if v != nil && (*v < gapValueMin || *v > gapValueMax) {
-				return fmt.Errorf("内容间距档位“%s”的%s需在 %.0f–%.0fpt 之间", t.Label, name, gapValueMin, gapValueMax)
-			}
-		}
-	}
-	if !spacingKeys[SpacingTierNormalKey] {
-		return fmt.Errorf("内容间距必须保留“标准”档位（模板默认 + 回退值）")
-	}
-	// The normal spacing tier must stay "template default" (nil gaps).
-	for _, t := range cfg.Spacings {
-		if t.Key == SpacingTierNormalKey &&
-			(t.SectionGap != nil || t.ItemGap != nil || t.DetailGap != nil) {
-			return fmt.Errorf("内容间距“标准”档位为模板内置节奏，不允许修改其数值")
-		}
-	}
-	return nil
-}
-
-func validTierKey(key string) error {
-	if key == "" {
-		return fmt.Errorf("key 不能为空")
-	}
-	for _, r := range key {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
-			return fmt.Errorf("key %q 含非法字符（仅限字母、数字、-、_）", key)
-		}
-	}
-	if len(key) > 64 {
-		return fmt.Errorf("key %q 超过 64 字符", key)
-	}
-	return nil
-}

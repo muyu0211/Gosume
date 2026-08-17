@@ -6,18 +6,20 @@ import (
 	"gosume/pkg/log"
 )
 
-// PNGExporter converts pre-paginated HTML to PNG via headless Chromium screenshot.
+// PNGExporter 通过无头 Chromium 截图把已分页的 HTML 转换为 PNG。
 type PNGExporter struct {
 	browser Browser
 }
 
-// NewPNGExporter creates a new PNG exporter.
+// NewPNGExporter 创建 PNG 导出器。
 func NewPNGExporter(browser Browser) *PNGExporter {
 	return &PNGExporter{browser: browser}
 }
 
-// ExportHTML wraps the HTML in a standalone document and captures it as a PNG.
-// The HTML should already be paginated into .resume-page divs by the frontend.
+// ExportHTML 把 HTML 包装为完整文档后截图为 PNG。
+//
+// 传入的 HTML 应已由前端切分为 .resume-page 容器；
+// opts.Scale 非正数时回退为 1.0。
 func (e *PNGExporter) ExportHTML(htmlContent string, opts ExportOptions) ([]byte, error) {
 	fullHTML := wrapStandaloneHTML(htmlContent)
 

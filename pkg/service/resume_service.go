@@ -12,29 +12,34 @@ import (
 	"gosume/pkg/store"
 )
 
-// ResumeService manages the current resume data and preview rendering.
+// ResumeService 管理当前编辑中的简历数据与预览渲染。
+//
+// 采用两层保存模型：内存态（current）与持久态（DB 记录）分离，
+// 只有用户显式保存过的简历才允许自动保存，避免意外落库。
 type ResumeService struct {
 	store     *store.ResumeStore
 	renderer  *render.HTMLRenderer
 	current   *model.Resume
 	currentID string
-	persisted bool // true when current resume has been persisted to DB at least once
+	persisted bool // 当前简历是否至少成功持久化过一次
 	mu        sync.RWMutex
 }
 
-// ServiceName returns the service name for Wails logging.
+// ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
 func (s *ResumeService) ServiceName() string {
 	return "ResumeService"
 }
 
-// Inject sets up dependencies.
+// Inject 注入依赖。
 func (s *ResumeService) Inject(resumeStore *store.ResumeStore, renderer *render.HTMLRenderer) {
 	s.store = resumeStore
 	s.renderer = renderer
 }
 
-// NewResume creates a new blank resume in memory only.
-// It does NOT persist to SQLite — persistence is deferred until ExplicitSave is called.
+// NewResume 仅在内存中创建一份空白简历。
+//
+// 该方法不会写入 SQLite——持久化被推迟到用户调用 ExplicitSave 时才发生。
+// 参数 templateID 指定初始模板，language 指定简历语言。
 func (s *ResumeService) NewResume(templateID string, language string) (*model.Resume, error) {
 	now := time.Now()
 	resume := &model.Resume{
@@ -61,22 +66,24 @@ func (s *ResumeService) NewResume(templateID string, language string) (*model.Re
 	return resume, nil
 }
 
-// GetResume returns the current resume data.
+// GetResume 返回当前简历数据。
 func (s *ResumeService) GetResume() *model.Resume {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.current
 }
 
-// GetCurrentID returns the UUID of the currently loaded resume.
+// GetCurrentID 返回当前已加载简历的 UUID；尚未持久化时为空串。
 func (s *ResumeService) GetCurrentID() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.currentID
 }
 
-// SetResume replaces the current resume in memory without persisting.
-// It preserves currentID — use InitResume for new/separate resumes that need a fresh identity.
+// SetResume 替换内存中的当前简历，但不写库。
+//
+// 该方法保留 currentID，即后续保存仍会更新同一条记录；
+// 若需要把简历视为全新记录，请使用 InitResume。
 func (s *ResumeService) SetResume(resume *model.Resume) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -84,10 +91,10 @@ func (s *ResumeService) SetResume(resume *model.Resume) {
 	s.current = resume
 }
 
-// InitResume sets the current resume and resets identity so the next ExplicitSave
-// creates a new DB row instead of overwriting an existing one.
-// Use this when loading a resume from an external source (file, sample data, etc.)
-// that should be treated as a brand-new resume in the database.
+// InitResume 设置当前简历并重置其身份，使下次 ExplicitSave 创建新记录
+// 而不是覆盖已有记录。
+//
+// 适用于从外部来源（项目文件、示例数据等）载入、应被当作全新简历的场景。
 func (s *ResumeService) InitResume(resume *model.Resume) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,7 +105,10 @@ func (s *ResumeService) InitResume(resume *model.Resume) {
 	log.Info("[resume_service] InitResume: identity reset (will create new row on save)")
 }
 
-// UpdateField updates a field in the current resume by path.
+// UpdateField 按点号路径更新当前简历中的某个字段。
+//
+// path 支持数组下标，如 "personal.full_name"、"jobs[0].company"；
+// value 为该字段对应的 JSON 原文。
 func (s *ResumeService) UpdateField(path string, value json.RawMessage) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -117,7 +127,7 @@ func (s *ResumeService) UpdateField(path string, value json.RawMessage) error {
 	return nil
 }
 
-// RenderPreview renders the current resume to HTML for preview.
+// RenderPreview 把当前简历渲染为预览用的 HTML。
 func (s *ResumeService) RenderPreview() (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -129,7 +139,10 @@ func (s *ResumeService) RenderPreview() (string, error) {
 	return s.renderer.Render(s.current)
 }
 
-// AutoSave saves the current state to SQLite.
+// AutoSave 把当前状态写回 SQLite。
+//
+// 仅在简历此前已被显式保存过（存在记录）时才生效，否则直接跳过——
+// 以此防止用户未主动保存的草稿被意外持久化。
 func (s *ResumeService) AutoSave() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -147,7 +160,7 @@ func (s *ResumeService) AutoSave() error {
 	return nil
 }
 
-// UpdateResumeMeta updates template-related metadata and re-renders.
+// UpdateResumeMeta 更新简历所用的模板 ID（仅改内存态，不写库）。
 func (s *ResumeService) UpdateResumeMeta(templateID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -162,12 +175,12 @@ func (s *ResumeService) UpdateResumeMeta(templateID string) error {
 	return nil
 }
 
-// ListResumes returns all non-deleted resumes ordered by updated_at descending.
+// ListResumes 返回未删除的简历列表，按 updated_at 倒序。
 func (s *ResumeService) ListResumes() ([]store.ResumeListItem, error) {
 	return s.store.List()
 }
 
-// LoadResume loads a resume by ID and sets it as the current resume.
+// LoadResume 按 ID 加载简历，并将其设为当前简历（视为已持久化）。
 func (s *ResumeService) LoadResume(id string) (*model.Resume, error) {
 	resume, err := s.store.GetByID(id)
 	if err != nil {
@@ -183,17 +196,19 @@ func (s *ResumeService) LoadResume(id string) (*model.Resume, error) {
 	return resume, nil
 }
 
-// ExplicitSave is the ONLY exported method that persists to SQLite.
-// It is called exclusively from the frontend when the user explicitly saves (Ctrl+S or save button).
-// The unexported saveResume is not reachable from the Wails frontend binding.
+// ExplicitSave 是唯一对外暴露的持久化入口。
+//
+// 仅由前端在用户显式保存（Ctrl+S 或保存按钮）时调用；真正的写库逻辑位于
+// 未导出的 saveResume，前端无法通过 Wails 绑定直接触达。
 func (s *ResumeService) ExplicitSave() error {
 	log.Info("[resume_service] ExplicitSave: user-initiated save")
 	return s.saveResume()
 }
 
-// saveResume persists the current resume to SQLite.
-// On first save it creates a new row; on subsequent saves it updates the existing row.
-// This method is UNEXPORTED — it cannot be called from the Wails frontend.
+// saveResume 把当前简历持久化到 SQLite。
+//
+// 首次保存创建新记录，后续保存更新已有记录。
+// 该方法为未导出方法，前端无法直接调用。
 func (s *ResumeService) saveResume() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -221,13 +236,14 @@ func (s *ResumeService) saveResume() error {
 	return s.store.Update(s.currentID, s.current)
 }
 
-// GetResumeByID loads a resume by ID without affecting the current resume state.
-// Returns the raw resume data for frontend rendering.
+// GetResumeByID 按 ID 读取简历，不影响当前简历状态。
+// 返回原始简历数据，供前端自行渲染。
 func (s *ResumeService) GetResumeByID(id string) (*model.Resume, error) {
 	return s.store.GetByID(id)
 }
 
-// DeleteResume soft-deletes a resume by ID.
+// DeleteResume 按 ID 软删除简历。
+// 若删除的正是当前简历，则同时清空内存态与身份信息。
 func (s *ResumeService) DeleteResume(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

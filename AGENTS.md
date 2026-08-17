@@ -30,7 +30,7 @@ Taskfile.yml         # 任务运行器入口（dev、build、package、docker �
 - **模板系统**：模板为 HTML+CSS 组合，附带元数据。内置模板存放在 `templates/` 目录；用户模板存储在 SQLite 中。支持导入模板包（`.zip`文件）。
 - **布局档位**：简历布局设置（页边距 `page_margin`、内容间距 `section_spacing`、字号 `font_size`）以**档位 key**存储在 `resume.meta` 中。档位列表（数量、名称、数值）由用户在设置页自定义，持久化到 `config.json` 的 `layout_presets` 字段（模型与校验见 `pkg/config/layout_presets.go`，经 `SystemService.Get/Set/ResetLayoutPresets` 读写；前端镜像定义在 `frontend/src/lib/layoutPresets.ts`，运行时经 `stores/layoutSettingsStore.ts` 加载）。两侧均须保留 `normal` 档作为回退：内容间距的 `normal` 档 gap 为 null（模板内置节奏，不可改值）；`resume.meta` 引用已删除的 key 时前端回退到 `normal` 档。key → 具体 CSS 值的映射与注入由前端完成；后端与模板只消费 key 或 CSS 变量，不得持久化像素值（详见 `templates/AGENTS.md` 布局档位小节）。
 - **导出**使用无头浏览器（rod）将 HTML 渲染为 PDF/PNG。
-- **配置**：用户设置以 JSON 格式存储在 `{configRoot}/config.json`。数据目录支持热切换，切换时自动重新打开存储。
+- **配置**：完整配置 `config.json` 存放在数据目录内部（`{data_dir}/config.json`），随数据目录一起迁移；锚点目录（便携模式=可执行文件所在目录，否则=系统配置目录）仅保留一个只含 `data_dir` 字段的指针 `config.json`，用于下次启动时定位当前数据目录。数据目录支持热切换，切换时自动重新打开存储。
 
 
 ## 技术栈

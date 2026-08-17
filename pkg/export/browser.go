@@ -13,22 +13,21 @@ import (
 	"github.com/go-rod/rod/lib/proto"
 )
 
-// BrowserManager manages a shared headless Chromium instance for PDF and PNG rendering.
-// The browser is launched lazily on first use and reused across exports.
+// BrowserManager 管理共享的无头 Chromium 实例，用于 PDF 与 PNG 渲染。
+// 浏览器在首次使用时惰性启动，并在多次导出之间复用。
 type BrowserManager struct {
 	mu       sync.Mutex
 	browser  *rod.Browser
 	launcher *launcher.Launcher // 保存引用，避免 GC 触发清理导致 browser 进程被杀
 }
 
-// NewBrowserManager creates a new browser manager. The browser is not launched
-// until the first Acquire() call.
+// NewBrowserManager 创建浏览器管理器；浏览器直到首次 Acquire 才真正启动。
 func NewBrowserManager() *BrowserManager {
 	return &BrowserManager{}
 }
 
-// Acquire returns a connected rod.Browser, launching one if necessary.
-// The browser is shared across all exports in a session.
+// Acquire 返回一个已连接的 rod.Browser，必要时启动新实例。
+// 同一会话内的所有导出共享该实例。
 //
 // 若缓存的 browser 连接已断（进程崩溃、被外部关闭等），会自动重启。
 // 健康检查通过 browser.Version() 实现——它是轻量的 CDP 调用，
@@ -70,7 +69,7 @@ func (m *BrowserManager) Acquire() (*rod.Browser, error) {
 	return browser, nil
 }
 
-// Close shuts down the browser.
+// Close 关闭浏览器并释放相关资源。
 func (m *BrowserManager) Close() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -119,8 +118,8 @@ func (m *BrowserManager) newPage() (*rod.Page, error) {
 	return page, nil
 }
 
-// findBrowser locates a Chromium-based browser on the system.
-// Checks GOSUME_CHROMIUM_PATH env var first, then PATH, then well-known install locations.
+// findBrowser 在系统中定位基于 Chromium 的浏览器。
+// 查找顺序：GOSUME_CHROMIUM_PATH 环境变量 → PATH → 各平台常见安装路径。
 func findBrowser() string {
 	if p := os.Getenv("GOSUME_CHROMIUM_PATH"); p != "" {
 		if _, err := os.Stat(p); err == nil {
@@ -167,12 +166,15 @@ func findBrowser() string {
 	return ""
 }
 
+// floatPtr 返回 float64 的指针，用于填充 CDP 请求中的可选参数。
 func floatPtr(v float64) *float64 { return &v }
 
-// RenderPDF renders pre-paginated HTML to PDF bytes.
-// The HTML should contain A4-sized .resume-page divs with page-break-after rules.
-// scale must be 1.0 for correct pagination — larger values cause each page div
-// to overflow A4, producing blank pages after each content page.
+// RenderPDF 把已分页的 HTML 渲染为 PDF 字节流。
+//
+// 传入的 HTML 应包含带 page-break-after 规则的 A4 尺寸 .resume-page 容器。
+// scale 必须为 1.0 才能保证分页正确——更大的值会使每个页容器溢出 A4，
+// 导致每张内容页后面多出一张空白页。
+// pageRange 为空时导出全部页面。
 func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange string) ([]byte, error) {
 	page, err := m.newPage()
 	if err != nil {
@@ -217,12 +219,11 @@ func (m *BrowserManager) RenderPDF(htmlContent string, scale float64, pageRange 
 	return pdf, nil
 }
 
-// RenderPNG captures pre-paginated HTML as a continuous PNG screenshot.
+// RenderPNG 把已分页的 HTML 截取为一张连续的 PNG 图片。
 //
-// The frontend paginator emits a single seamless `.resume-page` (continuous
-// mode) whose height fits its content, so PNG export only has to measure the
-// document height and screenshot it — no reverse-splitting CSS is injected on
-// the backend. scale drives the output pixel density via deviceScaleFactor.
+// 前端分页器在连续模式下只输出一个高度自适应内容的 `.resume-page`，
+// 因此 PNG 导出只需测量文档真实高度后整体截图，后端不再注入任何反向拆分的 CSS。
+// scale 通过 deviceScaleFactor 控制输出图片的像素密度。
 func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, error) {
 	page, err := m.newPage()
 	if err != nil {
@@ -236,13 +237,12 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 
 	paper := PaperFromHTML(htmlContent)
 
-	// Initialize the viewport with the paper size so text wraps at the correct
-	// width before we measure the document height.
+	// 先以纸张尺寸初始化视口，确保文字按正确宽度折行后再测量文档高度
 	page.MustSetViewport(paper.PxW, paper.PxH, 1.0, false)
 	page.MustWaitStable()
 
-	// Measure the document's real CSS height (independent of scale), then size
-	// the viewport to it so CaptureBeyondViewport does not add trailing space.
+	// 测量文档真实的 CSS 高度（与 scale 无关），再把视口调整为该高度，
+	// 避免 CaptureBeyondViewport 在图片底部留下多余空白。
 	result, err := page.Eval(`() => Math.ceil(document.documentElement.scrollHeight)`)
 	if err != nil {
 		return nil, fmt.Errorf("测量文档高度失败: %w", err)
@@ -252,8 +252,8 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 		cssHeight = paper.PxH
 	}
 
-	// viewport CSS size is paper width × real height; scale controls the output
-	// pixel density via deviceScaleFactor.
+	// 视口 CSS 尺寸为纸张宽度 × 真实高度；scale 通过 deviceScaleFactor
+	// 控制输出像素密度。
 	page.MustSetViewport(paper.PxW, cssHeight, scale, false)
 	page.MustWaitStable()
 
@@ -269,10 +269,11 @@ func (m *BrowserManager) RenderPNG(htmlContent string, scale float64) ([]byte, e
 	return screenshot, nil
 }
 
-// wrapStandaloneHTML ensures the HTML is a complete document with @page and body
-// print rules for headless Chromium. If the input is already a full HTML document
-// (has <!DOCTYPE), it injects the CSS into the existing <head>; otherwise it
-// wraps the content in a minimal document.
+// wrapStandaloneHTML 确保 HTML 是包含 @page 与 body 打印规则的完整文档，
+// 以便无头 Chromium 正确排版。
+//
+// 若输入已是完整文档（含 <!DOCTYPE），则把 CSS 注入已有的 <head>；
+// 否则用一个最小文档骨架包裹内容。
 func wrapStandaloneHTML(bodyHTML string) string {
 	paper := PaperFromHTML(bodyHTML)
 	size := paper.Name

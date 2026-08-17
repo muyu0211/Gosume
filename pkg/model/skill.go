@@ -1,7 +1,7 @@
 package model
 
-// SkillGroup groups skills by category.
-// Hidden is an optional flag that, when true, omits the entire group from the rendered resume.
+// SkillGroup 按类别对技能分组。
+// Hidden 置为 true 时整个分组不参与简历渲染。
 type SkillGroup struct {
 	ID       string  `json:"id"`
 	Category string  `json:"category"`
@@ -9,8 +9,8 @@ type SkillGroup struct {
 	Hidden   *bool   `json:"hidden,omitempty"`
 }
 
-// Skill represents a single skill entry.
-// Hidden is an optional flag that, when true, omits the skill from the rendered resume.
+// Skill 表示一项技能。
+// Hidden 置为 true 时该技能不参与简历渲染。
 type Skill struct {
 	Name   string `json:"name"`
 	Level  int    `json:"level,omitempty"`
@@ -18,8 +18,8 @@ type Skill struct {
 	Hidden *bool  `json:"hidden,omitempty"`
 }
 
-// Language represents a language proficiency entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume.
+// Language 表示一条语言能力。
+// Hidden 置为 true 时该条目不参与简历渲染。
 type Language struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -28,8 +28,8 @@ type Language struct {
 	Hidden      *bool  `json:"hidden,omitempty"`
 }
 
-// Award represents an award or honor entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume.
+// Award 表示一条获奖或荣誉。
+// Hidden 置为 true 时该条目不参与简历渲染。
 type Award struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
@@ -39,8 +39,8 @@ type Award struct {
 	Hidden  *bool  `json:"hidden,omitempty"`
 }
 
-// CustomSection represents a user-defined custom module.
-// Hidden is an optional flag that, when true, omits the entire section from the rendered resume.
+// CustomSection 表示用户自定义模块。
+// Hidden 置为 true 时整个模块不参与简历渲染。
 type CustomSection struct {
 	ID     string       `json:"id"`
 	Title  string       `json:"title"`
@@ -48,8 +48,8 @@ type CustomSection struct {
 	Hidden *bool        `json:"hidden,omitempty"`
 }
 
-// CustomItem is an entry within a custom section.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume.
+// CustomItem 是自定义模块中的一个条目。
+// Hidden 置为 true 时该条目不参与简历渲染。
 type CustomItem struct {
 	ID          string   `json:"id"`
 	Title       string   `json:"title"`

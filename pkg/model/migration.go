@@ -5,7 +5,9 @@ import (
 	"fmt"
 )
 
-// Migrate deserializes raw JSON into a Resume, handling version differences.
+// Migrate 把原始 JSON 反序列化为 Resume，并处理版本差异。
+//
+// 先只解析 version 字段，再按版本选择对应的解析逻辑；缺失或不支持的版本返回错误。
 func Migrate(rawJSON []byte) (*Resume, error) {
 	var versionInfo struct {
 		Version string `json:"version"`

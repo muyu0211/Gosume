@@ -7,26 +7,29 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// FileService handles project file operations (open, save, recent files).
+// FileService 处理项目文件相关操作（打开、保存、最近打开列表）。
 type FileService struct {
 	wailsApp      *application.App
 	store         *store.ProjectStore
 	resumeService *ResumeService
 }
 
-// ServiceName returns the service name.
+// ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
 func (s *FileService) ServiceName() string {
 	return "FileService"
 }
 
-// Inject sets up dependencies.
+// Inject 注入依赖。
 func (s *FileService) Inject(app *application.App, projectStore *store.ProjectStore, resumeSvc *ResumeService) {
 	s.wailsApp = app
 	s.store = projectStore
 	s.resumeService = resumeSvc
 }
 
-// OpenProject opens a file dialog to select and load a .resume.json file.
+// OpenProject 弹出文件选择对话框，加载 .resume.json 项目文件。
+//
+// 加载成功后会把简历设为当前简历（身份重置）并发出 file:opened 事件。
+// 用户取消选择时返回 (nil, nil)。
 func (s *FileService) OpenProject() (*model.Resume, error) {
 	filePath, err := s.wailsApp.Dialog.OpenFile().
 		SetTitle("打开简历项目").
@@ -49,7 +52,10 @@ func (s *FileService) OpenProject() (*model.Resume, error) {
 	return resume, nil
 }
 
-// SaveProject saves the current resume to a file and returns the resolved path.
+// SaveProject 把当前简历保存到文件，并返回最终写入的路径。
+//
+// filePath 为空时弹出保存对话框让用户选择路径；用户取消时返回空路径且不报错。
+// 保存成功后发出 file:saved 事件。
 func (s *FileService) SaveProject(filePath string) (string, error) {
 	resume := s.resumeService.GetResume()
 	if resume == nil {
@@ -81,7 +87,7 @@ func (s *FileService) SaveProject(filePath string) (string, error) {
 	return filePath, nil
 }
 
-// GetRecentFiles returns the list of recently opened files.
+// GetRecentFiles 返回最近打开的文件列表。
 func (s *FileService) GetRecentFiles() ([]store.RecentFile, error) {
 	return s.store.GetRecentFiles()
 }

@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// TestStarterSkillPackagePassesValidation verifies the gosume-template-skills
-// starter assets satisfy the real import validation.
+// TestStarterSkillPackagePassesValidation 验证 gosume-template-skills 提供的
+// starter 素材能通过真实的模板导入校验。
 //
 // Gosume 一期改造：模板包不再校验/携带 HTML（统一 HTML 由应用内置），
 // 这里只校验 starter 的 template.json + styles.css 可通过导入。
@@ -36,8 +36,8 @@ func TestStarterSkillPackagePassesValidation(t *testing.T) {
 		t.Fatalf("starter package failed validation: %v", err)
 	}
 
-	// Also verify round-trip through the ZIP loader path, including a legacy
-	// template.html that must be ignored leniently.
+	// 同时验证经由 ZIP 加载路径的往返：其中包含一个必须被宽松忽略的
+	// 历史 template.html。
 	path := filepath.Join(t.TempDir(), "starter.zip")
 	f, _ := os.Create(path)
 	defer f.Close()

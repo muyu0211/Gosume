@@ -18,12 +18,13 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// TemplateStore manages template persistence via SQLite.
+// TemplateStore 基于 SQLite 管理模板的持久化（内置模板 + 用户模板）。
 type TemplateStore struct {
 	db *sql.DB
 }
 
-// NewTemplateStore creates the templates table and syncs built-in templates from embedFS.
+// NewTemplateStore 创建 templates 表，并把 builtinFS 中的内置模板同步入库。
+// builtinFS 为 nil 时跳过同步。
 func NewTemplateStore(db *sql.DB, builtinFS fs.FS) (*TemplateStore, error) {
 	s := &TemplateStore{db: db}
 	if err := s.initSchema(); err != nil {
@@ -40,7 +41,7 @@ func NewTemplateStore(db *sql.DB, builtinFS fs.FS) (*TemplateStore, error) {
 	return s, nil
 }
 
-// Reopen re-syncs built-in templates against a new DB connection (used on data-dir change).
+// Reopen 切换到新的数据库连接并重新同步内置模板，用于数据目录热切换。
 func (s *TemplateStore) Reopen(db *sql.DB, builtinFS fs.FS) error {
 	s.db = db
 	if err := s.initSchema(); err != nil {
@@ -55,6 +56,7 @@ func (s *TemplateStore) Reopen(db *sql.DB, builtinFS fs.FS) error {
 	return nil
 }
 
+// initSchema 在表不存在时创建 templates 表及其索引。
 func (s *TemplateStore) initSchema() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS templates (
@@ -73,7 +75,10 @@ func (s *TemplateStore) initSchema() error {
 	return err
 }
 
-// syncBuiltins syncs built-in templates from embedFS.
+// syncBuiltins 把 builtinFS 中的内置模板同步入库。
+//
+// 以内容哈希（css + meta）判断是否有变更：库中无记录时插入；哈希变化或此前
+// 被软删除时更新并恢复。单个模板解析失败仅告警跳过，不中断整体同步。
 func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 	entries, err := fs.ReadDir(builtinFS, "templates")
 	if err != nil {
@@ -155,7 +160,7 @@ func (s *TemplateStore) syncBuiltins(builtinFS fs.FS) error {
 	return nil
 }
 
-// TemplateRow is the raw database representation.
+// TemplateRow 是模板在数据库中的原始行表示。
 type TemplateRow struct {
 	ID             string
 	Meta           string
@@ -167,7 +172,8 @@ type TemplateRow struct {
 	UpdatedAt      string
 }
 
-// ListAll returns all non-deleted templates.
+// ListAll 返回所有未删除的模板，内置模板优先、其后按 ID 升序。
+// 单条 meta 解析失败仅告警跳过，不影响其余模板。
 func (s *TemplateStore) ListAll() ([]*template.Template, error) {
 	rows, err := s.db.Query(
 		`SELECT id, meta, html, css, is_builtin FROM templates WHERE is_deleted=0 ORDER BY is_builtin DESC, id ASC`,
@@ -202,7 +208,7 @@ func (s *TemplateStore) ListAll() ([]*template.Template, error) {
 	return templates, rows.Err()
 }
 
-// GetByID returns a single template by ID.
+// GetByID 按 ID 查询单个模板；不存在时返回 TEMPLATE_NOT_FOUND 错误。
 func (s *TemplateStore) GetByID(id string) (*template.Template, error) {
 	var metaJSON, html, css string
 	var isBuiltin int
@@ -230,7 +236,7 @@ func (s *TemplateStore) GetByID(id string) (*template.Template, error) {
 	}, nil
 }
 
-// Create inserts a new user template.
+// Create 插入一个用户模板。
 // Gosume 一期改造：不再接收 HTML，模板只保存 meta + css。
 func (s *TemplateStore) Create(meta template.Meta, css string) error {
 	metaJSON, err := json.Marshal(meta)
@@ -251,7 +257,7 @@ func (s *TemplateStore) Create(meta template.Meta, css string) error {
 	return nil
 }
 
-// Update modifies a user template (built-in templates are immutable).
+// Update 修改用户模板；内置模板不可修改，命中 0 行时返回 TEMPLATE_NOT_FOUND。
 func (s *TemplateStore) Update(id string, meta template.Meta, css string) error {
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
@@ -274,7 +280,7 @@ func (s *TemplateStore) Update(id string, meta template.Meta, css string) error 
 	return nil
 }
 
-// SoftDelete marks a user template as deleted.
+// SoftDelete 软删除用户模板；内置模板不可删除，命中 0 行时返回 TEMPLATE_NOT_FOUND。
 func (s *TemplateStore) SoftDelete(id string) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 	result, err := s.db.Exec(
@@ -292,8 +298,8 @@ func (s *TemplateStore) SoftDelete(id string) error {
 	return nil
 }
 
-// ImportFromFilesystem imports legacy file-based templates from a directory.
-// Returns the number of imported templates. Skips IDs that already exist.
+// ImportFromFilesystem 从目录导入历史的文件式模板，返回成功导入的数量。
+// 已存在于库中的 ID 会被跳过；目录不存在时返回 (0, nil)。
 func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -320,7 +326,7 @@ func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 			continue
 		}
 
-		// Skip if already exists in DB
+		// 库中已存在则跳过
 		existing, _ := s.GetByID(meta.ID)
 		if existing != nil {
 			continue
@@ -338,8 +344,8 @@ func (s *TemplateStore) ImportFromFilesystem(dir string) (int, error) {
 	return imported, nil
 }
 
-// ReloadFromDir reads templates from a filesystem directory and upserts them into the DB.
-// This overwrites existing templates regardless of is_builtin — intended for dev hot-reload.
+// ReloadFromDir 从文件系统目录读取模板并 upsert 入库。
+// 不区分 is_builtin 一律覆盖，仅用于开发期热重载。
 func (s *TemplateStore) ReloadFromDir(dir string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -400,15 +406,17 @@ func (s *TemplateStore) ReloadFromDir(dir string) error {
 	return nil
 }
 
-// WatchDir watches a templates directory for file changes and reloads on change.
-// Runs in a goroutine. Returns a stop channel — close it to stop watching.
+// WatchDir 监听模板目录的文件变化并自动热重载。
+//
+// 监听在独立 goroutine 中运行；返回的 stop 通道被 close 时停止监听。
+// 仅 .html/.css/.json 的写入与创建事件会触发重载，并做 300ms 防抖。
 func (s *TemplateStore) WatchDir(dir string) (chan struct{}, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("create watcher: %w", err)
 	}
 
-	// Watch root and all subdirectories
+	// 同时监听根目录与各子目录
 	if err := watcher.Add(dir); err != nil {
 		watcher.Close()
 		return nil, fmt.Errorf("watch %s: %w", dir, err)
@@ -436,7 +444,7 @@ func (s *TemplateStore) WatchDir(dir string) (chan struct{}, error) {
 				if !ok {
 					return
 				}
-				// Only trigger on template file changes
+				// 仅模板相关文件的变更才触发
 				name := filepath.Base(event.Name)
 				if !strings.HasSuffix(name, ".html") && !strings.HasSuffix(name, ".css") && !strings.HasSuffix(name, ".json") {
 					continue
@@ -444,7 +452,7 @@ func (s *TemplateStore) WatchDir(dir string) (chan struct{}, error) {
 				if event.Op&(fsnotify.Write|fsnotify.Create) == 0 {
 					continue
 				}
-				// Debounce: reset timer on each event, reload after 300ms of inactivity
+				// 防抖：每次事件重置定时器，静默 300ms 后才真正重载
 				timer.Reset(300 * time.Millisecond)
 			case <-timer.C:
 				if err := s.ReloadFromDir(dir); err != nil {

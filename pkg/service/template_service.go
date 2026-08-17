@@ -11,7 +11,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// TemplateService manages template listing and operations.
+// TemplateService 管理模板的查询、增删改与导入。
 type TemplateService struct {
 	wailsApp    *application.App
 	loader      *template.Loader
@@ -19,12 +19,12 @@ type TemplateService struct {
 	unifiedHTML string
 }
 
-// ServiceName returns the service name.
+// ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
 func (s *TemplateService) ServiceName() string {
 	return "TemplateService"
 }
 
-// Inject sets up dependencies.
+// Inject 注入依赖。unifiedHTML 为应用内置的统一简历 HTML 骨架。
 func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *store.TemplateStore, unifiedHTML string) {
 	s.wailsApp = app
 	s.loader = loader
@@ -32,7 +32,7 @@ func (s *TemplateService) Inject(app *application.App, loader *template.Loader, 
 	s.unifiedHTML = unifiedHTML
 }
 
-// GetTemplateMeta is a trimmed version of template.Meta for the frontend.
+// GetTemplateMeta 是面向前端裁剪后的模板元数据视图。
 type GetTemplateMeta struct {
 	ID              string                     `json:"id"`
 	Name            string                     `json:"name"`
@@ -50,7 +50,7 @@ type GetTemplateMeta struct {
 	IsBuiltin       bool                       `json:"is_builtin"`
 }
 
-// ListTemplates returns all available templates' metadata.
+// ListTemplates 返回所有可用模板的元数据（内置 + 用户模板）。
 func (s *TemplateService) ListTemplates() ([]GetTemplateMeta, error) {
 	templates, err := s.loader.LoadAll()
 	if err != nil {
@@ -64,7 +64,7 @@ func (s *TemplateService) ListTemplates() ([]GetTemplateMeta, error) {
 	return metas, nil
 }
 
-// GetTemplate returns a single template's metadata.
+// GetTemplate 返回单个模板的元数据。
 func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 	t, err := s.loader.LoadByID(id)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *TemplateService) GetTemplate(id string) (*GetTemplateMeta, error) {
 	return &meta, nil
 }
 
-// TemplateContent is the HTML+CSS content for a template, plus its paper spec.
+// TemplateContent 是模板的 HTML + CSS 内容及其纸张规格，供前端分页与导出使用。
 type TemplateContent struct {
 	HTML        string `json:"html"`
 	CSS         string `json:"css"`
@@ -91,7 +91,7 @@ func (s *TemplateService) effectiveHTML(t *template.Template) string {
 	return t.HTML
 }
 
-// GetTemplateContent returns a template's HTML and CSS content.
+// GetTemplateContent 返回模板的 HTML、CSS 及纸张规格。
 func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error) {
 	t, err := s.loader.LoadByID(id)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *TemplateService) GetTemplateContent(id string) (*TemplateContent, error
 	}, nil
 }
 
-// ImportTemplateResult is returned after a user template package is installed.
+// ImportTemplateResult 是用户模板包安装成功后返回给前端的结果。
 type ImportTemplateResult struct {
 	ID      string          `json:"id"`
 	Name    string          `json:"name"`
@@ -117,7 +117,8 @@ type ImportTemplateResult struct {
 	Meta    GetTemplateMeta `json:"meta"`
 }
 
-// ImportTemplatePackage opens a native file dialog and imports a local template package.
+// ImportTemplatePackage 弹出原生文件对话框，导入本地 .zip 模板包。
+// 用户取消选择时返回 (nil, nil)。
 func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error) {
 	if s.wailsApp == nil {
 		return nil, UserMsg("应用未初始化")
@@ -141,6 +142,8 @@ func (s *TemplateService) ImportTemplatePackage() (*ImportTemplateResult, error)
 	return s.importTemplatePackageFromPath(filePath)
 }
 
+// importTemplatePackageFromPath 从指定路径解析并安装模板包。
+// 解析 ZIP → 校验 ID 未被占用 → 写入 SQLite → 返回结果。
 func (s *TemplateService) importTemplatePackageFromPath(filePath string) (*ImportTemplateResult, error) {
 	if strings.TrimSpace(filePath) == "" {
 		return nil, UserMsg("模板包路径不能为空")
@@ -172,7 +175,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath string) (*Impor
 	}, nil
 }
 
-// ValidateForTemplate checks if the current resume data satisfies template requirements.
+// ValidateForTemplate 校验简历数据是否满足指定模板的要求。
 func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.Resume) *template.ValidationResult {
 	t, err := s.loader.LoadByID(templateID)
 	if err != nil {
@@ -184,7 +187,7 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 	return template.ValidateDataForTemplate(t, resume)
 }
 
-// CreateTemplate creates a new user template.
+// CreateTemplate 创建一个用户模板。
 // Gosume 一期改造：不再接收 html，模板只由 meta + css 构成。
 func (s *TemplateService) CreateTemplate(meta template.Meta, css string) error {
 	if meta.ID == "" {
@@ -193,17 +196,18 @@ func (s *TemplateService) CreateTemplate(meta template.Meta, css string) error {
 	return UserWrap(s.store.Create(meta, css), "创建模板失败")
 }
 
-// UpdateTemplate updates an existing user template.
+// UpdateTemplate 更新已存在的用户模板。
 func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, css string) error {
 	return UserWrap(s.store.Update(id, meta, css), "更新模板失败")
 }
 
-// DeleteTemplate soft-deletes a user template.
+// DeleteTemplate 软删除用户模板。
 func (s *TemplateService) DeleteTemplate(id string) error {
 	return UserWrap(s.store.SoftDelete(id), "删除模板失败")
 }
 
-// CloneTemplate duplicates a template (built-in or user) as a new user template.
+// CloneTemplate 把模板（内置或用户）复制为一个新的用户模板。
+// 新模板版本号重置为 1.0.0。
 func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 	if newID == "" {
 		return UserMsg("新模板 ID 不能为空")
@@ -218,7 +222,7 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 	meta.ID = newID
 	meta.Version = "1.0.0"
 
-	// Check for ID conflict
+	// 检查新 ID 是否已被占用
 	if existing, _ := s.loader.LoadByID(newID); existing != nil {
 		return UserMsg("模板 ID 已被占用")
 	}
@@ -226,6 +230,8 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) error {
 	return UserWrap(s.store.Create(meta, src.CSS), "克隆模板失败")
 }
 
+// toGetTemplateMeta 把内部模板结构转换为面向前端的元数据视图，
+// 集中处理字段映射，避免各处重复转换代码。
 func toGetTemplateMeta(t *template.Template) GetTemplateMeta {
 	return GetTemplateMeta{
 		ID:              t.Meta.ID,

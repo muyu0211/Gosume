@@ -20,33 +20,36 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// App holds all initialized components and manages the application lifecycle.
+// App 持有已初始化的各组件，并负责应用的生命周期管理。
 type App struct {
 	wailsApp  *application.App
 	stopWatch chan struct{}
 }
 
-// New initializes all components and returns an App ready to run.
+// New 初始化全部组件并返回可运行的 App。
+//
+// 装配顺序：配置 → 日志 → 存储层 → 模板加载器 → 渲染与导出 → 服务 →
+// Wails 应用与窗口 → 依赖注入 → 事件与数据目录变更回调。
 //
 // appCfg 为应用级编译期配置（来自 app.yaml），用于驱动窗口尺寸、版本号等
 // 框架级参数；与 pkg/config 用户运行时配置 config.json 区分。
 func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
-	// Config
+	// 配置
 	configMgr := initConfig()
 
-	// Logger
+	// 日志
 	dataDir := configMgr.DataDir()
 	os.MkdirAll(filepath.Join(dataDir, "autosave"), 0755)
 	log.Init(dataDir, appCfg.App.Name, log.INFO, true)
 	log.Info("[main] data dir: %s", dataDir)
 	log.Info("[main] app version: %s", appCfg.App.Version)
 
-	// Data stores
+	// 数据存储
 	resumeStore := initResumeStore(dataDir)
 	templateStore := initTemplateStore(resumeStore, builtinTemplates)
 	initLegacyMigration(templateStore, dataDir)
 
-	// Template loader
+	// 模板加载器
 	templateLoader := template.NewLoader(templateStore)
 	stopWatch := initDevWatcher(templateStore)
 
@@ -57,14 +60,14 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 		unifiedHTML = []byte{}
 	}
 
-	// Render & export
+	// 渲染与导出
 	htmlRenderer := render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(unifiedHTML)})
 	exportManager := initExportManager()
 
-	// Project store
+	// 项目文件存储
 	projectStore := store.NewProjectStore(dataDir)
 
-	// Services
+	// 服务
 	resumeSvc := &service.ResumeService{}
 	templateSvc := &service.TemplateService{}
 	exportSvc := &service.ExportService{}
@@ -79,20 +82,21 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 		application.NewService(systemSvc),
 	}
 
-	// Wails app & window
+	// Wails 应用与窗口
 	wailsApp, win := createWailsApp(assets, svcs, appCfg)
 
-	// Dependency injection
+	// 依赖注入
 	resumeSvc.Inject(resumeStore, htmlRenderer)
 	templateSvc.Inject(wailsApp, templateLoader, templateStore, string(unifiedHTML))
 	exportSvc.Inject(wailsApp, exportManager)
 	fileSvc.Inject(wailsApp, projectStore, resumeSvc)
 	systemSvc.Inject(wailsApp, configMgr, win, appCfg)
 
-	// Events
+	// 事件注册
 	registerEvents()
 
-	// Data directory change callback
+	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。
+	// 存储重开失败时回滚到旧目录，避免应用进入不可用状态。
 	configMgr.OnChange(func(oldDir, newDir string) {
 		log.Info("[main] data dir change: %s -> %s", oldDir, newDir)
 
@@ -124,7 +128,7 @@ func New(assets, builtinTemplates embed.FS, appCfg *appconfig.AppConfig) *App {
 	return &App{wailsApp: wailsApp, stopWatch: stopWatch}
 }
 
-// Run starts the application event loop.
+// Run 启动应用事件循环，并在退出时停止模板监听与关闭日志。
 func (a *App) Run() {
 	if a.stopWatch != nil {
 		defer close(a.stopWatch)
@@ -135,19 +139,20 @@ func (a *App) Run() {
 	}
 }
 
-// --- init helpers ---
+// --- 初始化辅助函数 ---
 
+// initConfig 初始化配置管理器，并完成历史数据目录的一次性迁移。
+// 配置初始化失败属于不可恢复错误，直接 panic。
 func initConfig() *config.Manager {
 	configRoot := service.GetConfigRoot()
 	os.MkdirAll(configRoot, 0755)
-	configPath := filepath.Join(configRoot, "config.json")
 
-	configMgr, err := config.NewManager(configPath)
+	configMgr, err := config.NewManager(configRoot)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to init config manager: %v", err))
 	}
 
-	// One-time migration: move old data from configRoot to configRoot/data/
+	// 一次性迁移：把早期直接存放在 configRoot 的数据移入 configRoot/data/
 	defaultDataDir := configMgr.DefaultDir()
 	if _, err := os.Stat(filepath.Join(defaultDataDir, "gosume.db")); os.IsNotExist(err) {
 		if _, err := os.Stat(filepath.Join(configRoot, "gosume.db")); err == nil {
@@ -165,6 +170,7 @@ func initConfig() *config.Manager {
 	return configMgr
 }
 
+// initResumeStore 打开简历存储；失败属于不可恢复错误，直接 panic。
 func initResumeStore(dataDir string) *store.ResumeStore {
 	s, err := store.NewResumeStore(dataDir)
 	if err != nil {
@@ -173,6 +179,8 @@ func initResumeStore(dataDir string) *store.ResumeStore {
 	return s
 }
 
+// initTemplateStore 初始化模板存储，复用简历存储的数据库连接。
+// 失败属于不可恢复错误，直接 panic。
 func initTemplateStore(resumeStore *store.ResumeStore, builtinTemplates embed.FS) *store.TemplateStore {
 	s, err := store.NewTemplateStore(resumeStore.DB(), builtinTemplates)
 	if err != nil {
@@ -181,6 +189,8 @@ func initTemplateStore(resumeStore *store.ResumeStore, builtinTemplates embed.FS
 	return s
 }
 
+// initLegacyMigration 把历史的文件式用户模板导入数据库，
+// 导入成功后将原目录改名备份，避免重复导入。
 func initLegacyMigration(templateStore *store.TemplateStore, dataDir string) {
 	legacyDir := filepath.Join(dataDir, "templates")
 	if imported, _ := templateStore.ImportFromFilesystem(legacyDir); imported > 0 {
@@ -189,6 +199,8 @@ func initLegacyMigration(templateStore *store.TemplateStore, dataDir string) {
 	}
 }
 
+// initDevWatcher 在工作目录存在 ./templates 时启动模板热重载监听。
+// 该目录仅在开发环境存在，因此生产构建下返回 nil。
 func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
 	if _, err := os.Stat("./templates"); err == nil {
 		stopWatch, err := templateStore.WatchDir("./templates")
@@ -201,11 +213,13 @@ func initDevWatcher(templateStore *store.TemplateStore) chan struct{} {
 	return nil
 }
 
+// initExportManager 创建导出管理器及其依赖的无头浏览器管理器。
 func initExportManager() *export.ExportManager {
 	browser := export.NewBrowserManager()
 	return export.NewExportManager(browser)
 }
 
+// createWailsApp 创建 Wails 应用与主窗口，窗口参数来自 app.yaml。
 func createWailsApp(assets embed.FS, services []application.Service, appCfg *appconfig.AppConfig) (*application.App, *application.WebviewWindow) {
 	app := application.New(application.Options{
 		Name:        appCfg.App.Name,
@@ -243,6 +257,7 @@ func createWailsApp(assets embed.FS, services []application.Service, appCfg *app
 	return app, win
 }
 
+// registerEvents 注册后端向前端发送的 Wails 事件及其数据类型。
 func registerEvents() {
 	application.RegisterEvent[int]("export:progress")
 	application.RegisterEvent[string]("export:completed")
@@ -251,8 +266,10 @@ func registerEvents() {
 	application.RegisterEvent[string]("config:datadir-changed")
 }
 
-// --- adapters ---
+// --- 适配器 ---
 
+// templateAdapter 把 template.Loader 适配为 render.TemplateLoader 接口，
+// 并在加载时统一决定模板实际使用的 HTML。
 type templateAdapter struct {
 	loader      *template.Loader
 	unifiedHTML string
@@ -267,6 +284,7 @@ func (a *templateAdapter) effectiveHTML(t *template.Template) string {
 	return t.HTML
 }
 
+// LoadByID 按 ID 加载模板并转换为渲染层所需的结构。
 func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
 	t, err := a.loader.LoadByID(id)
 	if err != nil {
@@ -280,6 +298,7 @@ func (a *templateAdapter) LoadByID(id string) (*render.Template, error) {
 	}, nil
 }
 
+// LoadAll 加载全部模板并转换为渲染层所需的结构。
 func (a *templateAdapter) LoadAll() ([]*render.Template, error) {
 	templates, err := a.loader.LoadAll()
 	if err != nil {

@@ -11,14 +11,19 @@ import (
 	"strings"
 )
 
+// 模板包体积上限，用于防御压缩炸弹（zip bomb）。
 const (
+	// MaxTemplatePackageSize 是解压后所有文件的总大小上限（10 MiB）。
 	MaxTemplatePackageSize = 10 << 20
-	MaxTemplateFileSize    = 2 << 20
+	// MaxTemplateFileSize 是单个文件解压后的大小上限（2 MiB）。
+	MaxTemplateFileSize = 2 << 20
 )
 
+// templateIDPattern 限定模板 ID：2–64 位，首字符为字母或数字，
+// 其余可含字母、数字、连字符与下划线。
 var templateIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{1,63}$`)
 
-// Package is the validated content of a local .zip package.
+// Package 是本地 .zip 模板包经校验后的内容。
 //
 // Gosume 一期改造：模板包不再携带 HTML——统一 HTML（templates/template.html）
 // 由应用内置，模板制作者只需提供 template.json（元数据）+ styles.css（样式）。
@@ -27,10 +32,12 @@ type Package struct {
 	CSS  string
 }
 
-// LoadPackageFromZip reads and validates a .zip package.
+// LoadPackageFromZip 读取并校验 .zip 模板包。
 //
 // 必须包含 template.json 与 styles.css；若压缩包内仍带 template.html
 // （历史模板包），宽松处理：忽略该文件，只取 css+json。
+//
+// 安全措施：校验条目路径防止目录穿越，并对单文件与总解压体积设上限。
 func LoadPackageFromZip(filePath string) (*Package, error) {
 	reader, err := zip.OpenReader(filePath)
 	if err != nil {
@@ -95,7 +102,7 @@ func LoadPackageFromZip(filePath string) (*Package, error) {
 	return pkg, nil
 }
 
-// ValidatePackage ensures imported templates work with Gosume.
+// ValidatePackage 校验模板包能否被 Gosume 正常使用。
 //
 // Gosume 一期改造：HTML 已统一由应用提供，用户无法再提交 HTML，因此
 // 不再校验 HTML 语法/执行；只校验元数据与 CSS 基础合法性。
@@ -112,6 +119,8 @@ func ValidatePackage(pkg *Package) error {
 	return nil
 }
 
+// validatePackagePath 校验压缩包内条目路径的安全性，
+// 拒绝绝对路径与包含 .. 的路径，防止解压时目录穿越。
 func validatePackagePath(name string) error {
 	clean := filepath.ToSlash(filepath.Clean(name))
 	if strings.HasPrefix(clean, "../") || clean == ".." || strings.HasPrefix(clean, "/") || filepath.IsAbs(name) {
@@ -120,6 +129,10 @@ func validatePackagePath(name string) error {
 	return nil
 }
 
+// readZipFile 读取压缩包内单个文件的内容。
+//
+// 使用 CopyN 限定最多读取 MaxTemplateFileSize+1 字节，据此判定超限，
+// 避免声明体积造假的压缩包耗尽内存。
 func readZipFile(f *zip.File) ([]byte, error) {
 	rc, err := f.Open()
 	if err != nil {
@@ -137,6 +150,7 @@ func readZipFile(f *zip.File) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// normalizeMeta 清理元数据首尾空白，并为缺省字段填充默认值。
 func normalizeMeta(meta *Meta) {
 	meta.ID = strings.TrimSpace(meta.ID)
 	meta.Name = strings.TrimSpace(meta.Name)
@@ -169,6 +183,8 @@ func normalizeMeta(meta *Meta) {
 	}
 }
 
+// validateMeta 校验模板元数据的必填项：ID 格式、名称、版本、作者名，
+// 且纸张规格目前仅支持 A4。
 func validateMeta(meta Meta) error {
 	if !templateIDPattern.MatchString(meta.ID) {
 		return fmt.Errorf("template id must be 2-64 characters and contain only letters, numbers, hyphens, or underscores")

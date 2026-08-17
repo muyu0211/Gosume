@@ -10,22 +10,22 @@ import (
 	"gosume/pkg/model"
 )
 
-// ProjectStore handles reading and writing .resume.json project files.
+// ProjectStore 负责 .resume.json 项目文件的读写，以及最近打开文件的维护。
 type ProjectStore struct {
 	dataDir string
 }
 
-// NewProjectStore creates a new project store.
+// NewProjectStore 创建项目文件存储。
 func NewProjectStore(dataDir string) *ProjectStore {
 	return &ProjectStore{dataDir: dataDir}
 }
 
-// SetDataDir updates the data directory used for autosave and recent files.
+// SetDataDir 更新自动保存与最近文件所使用的数据目录，用于数据目录热切换。
 func (s *ProjectStore) SetDataDir(dir string) {
 	s.dataDir = dir
 }
 
-// Load reads a .resume.json file and returns the parsed Resume.
+// Load 读取 .resume.json 文件并解析为 Resume，同时记入最近打开列表。
 func (s *ProjectStore) Load(filePath string) (*model.Resume, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -41,7 +41,8 @@ func (s *ProjectStore) Load(filePath string) (*model.Resume, error) {
 	return resume, nil
 }
 
-// Save writes a Resume to a .resume.json file atomically.
+// Save 以原子方式把 Resume 写入 .resume.json 文件（先写 .tmp 再 rename），
+// 并刷新 meta.updated_at 与最近打开列表。
 func (s *ProjectStore) Save(filePath string, resume *model.Resume) error {
 	resume.Meta.UpdatedAt = time.Now()
 
@@ -62,7 +63,7 @@ func (s *ProjectStore) Save(filePath string, resume *model.Resume) error {
 	return nil
 }
 
-// SaveAutoSave saves to the autosave directory.
+// SaveAutoSave 把简历保存到数据目录下的 autosave 子目录。
 func (s *ProjectStore) SaveAutoSave(resume *model.Resume) error {
 	autosaveDir := filepath.Join(s.dataDir, "autosave")
 	os.MkdirAll(autosaveDir, 0755)
@@ -71,7 +72,7 @@ func (s *ProjectStore) SaveAutoSave(resume *model.Resume) error {
 	return s.Save(path, resume)
 }
 
-// LoadAutoSave attempts to load the autosave file.
+// LoadAutoSave 尝试加载自动保存文件；文件不存在时返回 (nil, nil)。
 func (s *ProjectStore) LoadAutoSave() (*model.Resume, error) {
 	path := filepath.Join(s.dataDir, "autosave", "autosave.resume.json")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -80,14 +81,14 @@ func (s *ProjectStore) LoadAutoSave() (*model.Resume, error) {
 	return s.Load(path)
 }
 
-// RecentFile is an entry in the recent files list.
+// RecentFile 是最近打开文件列表中的一项。
 type RecentFile struct {
 	Path      string    `json:"path"`
 	Name      string    `json:"name"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// GetRecentFiles returns the list of recently opened files.
+// GetRecentFiles 返回最近打开的文件列表；列表文件不存在时返回空切片。
 func (s *ProjectStore) GetRecentFiles() ([]RecentFile, error) {
 	recentPath := filepath.Join(s.dataDir, "recent.json")
 	data, err := os.ReadFile(recentPath)
@@ -103,12 +104,14 @@ func (s *ProjectStore) GetRecentFiles() ([]RecentFile, error) {
 	return files, nil
 }
 
+// addRecentFile 把文件置顶到最近打开列表：去重后前插，并截断至 20 条。
+// 该操作属于辅助记录，失败不影响主流程，故忽略错误。
 func (s *ProjectStore) addRecentFile(path string, resume *model.Resume) {
 	recentPath := filepath.Join(s.dataDir, "recent.json")
 
 	files, _ := s.GetRecentFiles()
 
-	// Remove existing entry for the same path
+	// 移除同路径的旧条目，避免重复
 	for i, f := range files {
 		if f.Path == path {
 			files = append(files[:i], files[i+1:]...)
@@ -116,7 +119,7 @@ func (s *ProjectStore) addRecentFile(path string, resume *model.Resume) {
 		}
 	}
 
-	// Prepend new entry
+	// 前插新条目；无姓名时用文件名兜底
 	name := resume.Personal.FullName
 	if name == "" {
 		name = filepath.Base(path)
@@ -127,7 +130,7 @@ func (s *ProjectStore) addRecentFile(path string, resume *model.Resume) {
 		UpdatedAt: time.Now(),
 	}}, files...)
 
-	// Trim to 20 entries
+	// 最多保留 20 条
 	if len(files) > 20 {
 		files = files[:20]
 	}

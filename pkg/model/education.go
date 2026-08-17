@@ -1,9 +1,9 @@
 package model
 
-// Education represents an education background entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume
-// (without deleting the underlying data). Pointer + omitempty so legacy data stays
-// backward-compatible.
+// Education 表示一条教育经历。
+//
+// Hidden 为可选标记，置为 true 时该条目不参与简历渲染（但不删除底层数据）。
+// 使用指针 + omitempty 以兼容历史数据。
 type Education struct {
 	ID         string   `json:"id"`
 	School     string   `json:"school"`

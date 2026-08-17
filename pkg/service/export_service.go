@@ -12,34 +12,37 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// ExportService handles exporting resumes to PDF and PNG formats.
+// ExportService 负责把简历导出为 PDF 与 PNG。
 //
-// Architecture: the frontend handles template rendering and pagination
-// (splitting content into A4 .resume-page divs). The backend only converts
-// the pre-paginated HTML to the target format via headless Chromium.
+// 架构约定：模板渲染与分页（把内容切分为 A4 尺寸的 .resume-page 容器）由前端
+// 完成，后端只负责用无头 Chromium 把已分页的 HTML 转换为目标格式。
 type ExportService struct {
 	wailsApp      *application.App
 	exportManager *export.ExportManager
 }
 
-// ServiceName returns the service name.
+// ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
 func (s *ExportService) ServiceName() string {
 	return "ExportService"
 }
 
-// Inject sets up dependencies.
+// Inject 注入依赖。
 func (s *ExportService) Inject(app *application.App, manager *export.ExportManager) {
 	s.wailsApp = app
 	s.exportManager = manager
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// ── 对外接口 ──────────────────────────────────────────────────────────────────
 
-// ExportHTML exports pre-paginated HTML to the target format.
-// The frontend calls this for individual resume export.
-// resumeName is used as the default save filename; if empty it falls back to "简历".
-// format must be "pdf" or "png". For PDF, scale should be 1.0 to avoid
-// content overflow that produces blank pages.
+// ExportHTML 把已分页的 HTML 导出为目标格式，用于单份简历导出。
+//
+// 参数：
+//   - htmlContent：前端已完成分页的 HTML
+//   - format：目标格式，必须为 "pdf" 或 "png"
+//   - scale：缩放比例；PDF 应传 1.0，否则内容溢出会产生空白页
+//   - resumeName：保存对话框的默认文件名，为空时回退为「简历」
+//
+// 返回最终保存路径；用户取消保存时返回空路径且不报错。
 func (s *ExportService) ExportHTML(htmlContent string, format string, scale float64, resumeName string) (string, error) {
 	opts, err := parseFormat(format, scale)
 	if err != nil {
@@ -74,15 +77,16 @@ func (s *ExportService) ExportHTML(htmlContent string, format string, scale floa
 	return filePath, nil
 }
 
-// exportItem is a single pre-paginated HTML item for batch export.
+// exportItem 是批量导出中的一份已分页 HTML 文档。
 type exportItem struct {
 	Name string `json:"name"`
 	HTML string `json:"html"`
 }
 
-// ExportBatchHTML exports multiple pre-paginated HTML documents.
-// The first file prompts a save dialog; all subsequent files are saved to the
-// same directory automatically.
+// ExportBatchHTML 批量导出多份已分页的 HTML 文档。
+//
+// itemsJSON 为 exportItem 数组的 JSON 文本；第一份文件会弹出保存对话框，
+// 其余文件自动保存到同一目录。
 func (s *ExportService) ExportBatchHTML(itemsJSON string, format string, scale float64) ([]string, error) {
 	var items []exportItem
 	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
@@ -91,8 +95,9 @@ func (s *ExportService) ExportBatchHTML(itemsJSON string, format string, scale f
 	return s.exportBatch(items, format, scale)
 }
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
+// ── 内部辅助 ──────────────────────────────────────────────────────────────────
 
+// parseFormat 把前端传入的格式字符串解析为导出选项，格式不支持时报错。
 func parseFormat(format string, scale float64) (export.ExportOptions, error) {
 	switch format {
 	case "pdf":
@@ -104,7 +109,7 @@ func parseFormat(format string, scale float64) (export.ExportOptions, error) {
 	}
 }
 
-// renderOne converts pre-paginated HTML to the target format bytes.
+// renderOne 把一份已分页的 HTML 转换为目标格式的字节流。
 func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byte, error) {
 	data, err := s.exportManager.ExportHTML(html, opts)
 	if err != nil {
@@ -113,7 +118,8 @@ func (s *ExportService) renderOne(html string, opts export.ExportOptions) ([]byt
 	return data, nil
 }
 
-// showSaveDialog prompts the user for a save location.
+// showSaveDialog 弹出保存对话框让用户选择保存位置。
+// 用户取消时返回空路径且不报错。
 func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOptions, title string) (string, error) {
 	filePath, err := s.wailsApp.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
 		Title:    title,
@@ -131,6 +137,7 @@ func (s *ExportService) showSaveDialog(defaultName string, opts export.ExportOpt
 	return filePath, nil
 }
 
+// writeFile 写出导出结果文件，失败时包装为用户可读错误。
 func (s *ExportService) writeFile(path string, data []byte) error {
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		return UserWrap(err, "写入文件失败")
@@ -138,9 +145,10 @@ func (s *ExportService) writeFile(path string, data []byte) error {
 	return nil
 }
 
-// exportBatch runs the shared batch export loop.
-// The first item triggers a save dialog to pick the output directory;
-// subsequent items are saved to the same directory automatically.
+// exportBatch 执行批量导出循环。
+//
+// 第一份文件通过保存对话框确定输出目录，其余文件自动写入该目录；
+// 单份渲染或写入失败时跳过该份，继续导出其余文件。
 func (s *ExportService) exportBatch(items []exportItem, format string, scale float64) ([]string, error) {
 	opts, err := parseFormat(format, scale)
 	if err != nil {
@@ -188,8 +196,9 @@ func (s *ExportService) exportBatch(items []exportItem, format string, scale flo
 	return saved, nil
 }
 
-// ── Filename helpers ──────────────────────────────────────────────────────────
+// ── 文件名辅助 ────────────────────────────────────────────────────────────────
 
+// sanitizeFilename 把文件名中不被文件系统允许的字符替换为下划线。
 func sanitizeFilename(name string) string {
 	replacer := strings.NewReplacer(
 		"/", "_", "\\", "_", ":", "_", "*", "_",
@@ -198,6 +207,8 @@ func sanitizeFilename(name string) string {
 	return replacer.Replace(name)
 }
 
+// dedupName 对重名文件追加序号后缀，避免批量导出时相互覆盖。
+// used 记录各名称已出现的次数，由调用方在一次批量导出内复用。
 func dedupName(name string, used map[string]int) string {
 	if cnt, exists := used[name]; exists {
 		used[name] = cnt + 1
@@ -207,6 +218,7 @@ func dedupName(name string, used map[string]int) string {
 	return name
 }
 
+// getFilterName 返回保存对话框中该格式的显示名称。
 func getFilterName(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:
@@ -218,6 +230,7 @@ func getFilterName(f export.ExportFormat) string {
 	}
 }
 
+// getFilterPattern 返回保存对话框中该格式的通配符模式。
 func getFilterPattern(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:
@@ -229,6 +242,7 @@ func getFilterPattern(f export.ExportFormat) string {
 	}
 }
 
+// formatSuffix 返回该格式对应的文件扩展名（不含点号）。
 func formatSuffix(f export.ExportFormat) string {
 	switch f {
 	case export.FormatPDF:

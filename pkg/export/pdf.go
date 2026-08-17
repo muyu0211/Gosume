@@ -6,18 +6,20 @@ import (
 	"gosume/pkg/log"
 )
 
-// PDFExporter converts pre-paginated HTML to PDF via headless Chromium.
+// PDFExporter 通过无头 Chromium 把已分页的 HTML 转换为 PDF。
 type PDFExporter struct {
 	browser Browser
 }
 
-// NewPDFExporter creates a new PDF exporter.
+// NewPDFExporter 创建 PDF 导出器。
 func NewPDFExporter(browser Browser) *PDFExporter {
 	return &PDFExporter{browser: browser}
 }
 
-// ExportHTML wraps the HTML in a standalone document and renders it to PDF.
-// The HTML should already be paginated into .resume-page divs by the frontend.
+// ExportHTML 把 HTML 包装为完整文档后渲染为 PDF。
+//
+// 传入的 HTML 应已由前端切分为 .resume-page 容器；
+// opts.Scale 非正数时回退为 1.0。
 func (e *PDFExporter) ExportHTML(htmlContent string, opts ExportOptions) ([]byte, error) {
 	fullHTML := wrapStandaloneHTML(htmlContent)
 

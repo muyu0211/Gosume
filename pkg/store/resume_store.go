@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// ResumeListItem is a lightweight summary of a resume row.
+// ResumeListItem 是简历列表项，仅含列表展示所需的摘要字段。
 type ResumeListItem struct {
 	ID         string    `json:"id"`
 	Name       string    `json:"name"`
@@ -22,12 +22,12 @@ type ResumeListItem struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-// ResumeStore manages resume persistence via SQLite.
+// ResumeStore 基于 SQLite 管理简历的持久化。
 type ResumeStore struct {
 	db *sql.DB
 }
 
-// NewResumeStore opens or creates the SQLite database at {dataDir}/gosume.db.
+// NewResumeStore 打开或创建 {dataDir}/gosume.db，并初始化表结构。
 func NewResumeStore(dataDir string) (*ResumeStore, error) {
 	dbPath := filepath.Join(dataDir, "gosume.db")
 	db, err := sql.Open("sqlite", dbPath)
@@ -60,17 +60,17 @@ func NewResumeStore(dataDir string) (*ResumeStore, error) {
 	return store, nil
 }
 
-// DB returns the underlying database connection for shared use by other stores.
+// DB 返回底层数据库连接，供其他 store 共用同一个连接。
 func (s *ResumeStore) DB() *sql.DB {
 	return s.db
 }
 
-// Close closes the database.
+// Close 关闭数据库连接。
 func (s *ResumeStore) Close() error {
 	return s.db.Close()
 }
 
-// initSchema creates the resumes table if it doesn't exist.
+// initSchema 在表不存在时创建 resumes 表及其索引。
 func (s *ResumeStore) initSchema() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS resumes (
@@ -87,7 +87,8 @@ func (s *ResumeStore) initSchema() error {
 	return err
 }
 
-// nameFromResume returns the name to use for a resume.
+// nameFromResume 推导简历的展示名称：优先取 meta.name，其次取姓名，
+// 两者均为空时回退为「未命名简历」。
 func (s *ResumeStore) nameFromResume(resume *model.Resume) string {
 	if resume.Meta.Name != "" {
 		return resume.Meta.Name
@@ -98,7 +99,7 @@ func (s *ResumeStore) nameFromResume(resume *model.Resume) string {
 	return "未命名简历"
 }
 
-// Create inserts a new resume row and returns the generated UUID.
+// Create 插入一条新简历记录，返回自动生成的 UUID。
 func (s *ResumeStore) Create(resume *model.Resume) (string, error) {
 	id := uuid.New().String()
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -122,7 +123,8 @@ func (s *ResumeStore) Create(resume *model.Resume) (string, error) {
 	return id, nil
 }
 
-// Update overwrites the data, name, template_id, and updated_at for an existing resume.
+// Update 覆盖已存在简历的 data、name、template_id 与 updated_at。
+// 记录不存在（或已软删除）时返回错误。
 func (s *ResumeStore) Update(id string, resume *model.Resume) error {
 	data, err := json.Marshal(resume)
 	if err != nil {
@@ -148,7 +150,7 @@ func (s *ResumeStore) Update(id string, resume *model.Resume) error {
 	return nil
 }
 
-// GetByID loads the full resume from the data column.
+// GetByID 从 data 列读取完整简历，并经 model.Migrate 处理版本差异。
 func (s *ResumeStore) GetByID(id string) (*model.Resume, error) {
 	var raw string
 	err := s.db.QueryRow(
@@ -164,7 +166,7 @@ func (s *ResumeStore) GetByID(id string) (*model.Resume, error) {
 	return model.Migrate([]byte(raw))
 }
 
-// List returns all non-deleted resumes ordered by updated_at descending.
+// List 返回未删除的简历列表，按 updated_at 倒序，最多 100 条。
 func (s *ResumeStore) List() ([]ResumeListItem, error) {
 	rows, err := s.db.Query(
 		`SELECT id, name, template_id, updated_at FROM resumes WHERE is_deleted=0 ORDER BY updated_at DESC LIMIT 100`,
@@ -188,7 +190,7 @@ func (s *ResumeStore) List() ([]ResumeListItem, error) {
 	return items, rows.Err()
 }
 
-// SoftDelete marks a resume as deleted.
+// SoftDelete 将简历标记为已删除（软删除，数据仍保留在库中）。
 func (s *ResumeStore) SoftDelete(id string) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 	result, err := s.db.Exec(
@@ -205,7 +207,7 @@ func (s *ResumeStore) SoftDelete(id string) error {
 	return nil
 }
 
-// Reopen closes the current database and opens a new one at the given data directory.
+// Reopen 关闭当前数据库，并在新的数据目录下重新打开，用于数据目录热切换。
 func (s *ResumeStore) Reopen(dataDir string) error {
 	if s.db != nil {
 		if err := s.db.Close(); err != nil {

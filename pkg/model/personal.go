@@ -1,6 +1,6 @@
 package model
 
-// Personal holds the user's personal and contact information.
+// Personal 保存用户的个人信息与联系方式。
 type Personal struct {
 	FullName     string `json:"full_name"`
 	EnglishName  string `json:"english_name,omitempty"`

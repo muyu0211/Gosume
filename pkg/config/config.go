@@ -8,83 +8,131 @@ import (
 	"sync"
 )
 
-// Config holds user configuration.
+// configFileName 是配置文件名。它出现在两个位置，语义不同：
+//   - 数据目录内：完整配置（布局档位等），随数据目录一起迁移
+//   - 锚点目录内：仅含 data_dir 的定位指针，供下次启动找到数据目录
+const configFileName = "config.json"
+
+// ChangeFunc 是数据目录变更回调。
+type ChangeFunc = func(oldDir, newDir string)
+
+// Config 保存用户配置。
+//
+// 该结构同时承担两种用途：数据目录内的完整配置，以及锚点目录内的定位指针
+// （此时仅 DataDir 有值）。旧版把两者合并存放在锚点目录，字段因此保持兼容。
 type Config struct {
-	DataDir       string              `json:"data_dir"`
+	DataDir       string              `json:"data_dir,omitempty"`
 	LayoutPresets *LayoutPresetConfig `json:"layout_presets,omitempty"`
 }
 
-// Manager manages persisted user configuration with change callbacks.
+// Manager 管理持久化的用户配置，并在数据目录变更时通知监听者。
+//
+// 完整配置存放在数据目录内部（dataDir/config.json），因此切换数据目录时配置
+// 随数据一起迁移；锚点目录（anchorDir：便携模式为可执行文件所在目录，否则为
+// 系统配置目录）只保留轻量指针，用于下次启动时定位数据目录。
 type Manager struct {
-	mu         sync.RWMutex
-	config     Config
-	configPath string
-	defaultDir string
-	listeners  map[int]func(oldDir, newDir string)
-	nextID     int
+	mu        sync.RWMutex
+	config    Config
+	anchorDir string
+	dataDir   string
+	listeners map[int]ChangeFunc
+	nextID    int
 }
 
-// NewManager creates a Manager. configPath is the JSON config file location.
-// The default data directory is a "data" subdirectory under the config's parent,
-// keeping config.json separate from user data.
-func NewManager(configPath string) (*Manager, error) {
+// NewManager 以 anchorDir 为锚点目录创建 Manager，并完成配置定位与加载。
+func NewManager(anchorDir string) (*Manager, error) {
 	m := &Manager{
-		configPath: configPath,
-		defaultDir: filepath.Join(filepath.Dir(configPath), "data"),
-		listeners:  make(map[int]func(oldDir, newDir string)),
+		anchorDir: anchorDir,
+		listeners: make(map[int]ChangeFunc),
 	}
-	if err := m.load(); err != nil {
+	if err := m.init(); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-// DataDir returns the current effective data directory.
+// init 定位数据目录（锚点指针 → 默认目录）、加载配置并完成旧版迁移。
+func (m *Manager) init() error {
+	m.dataDir = m.DefaultDir()
+
+	// 锚点文件既可能是新版指针，也可能是旧版完整配置，故只解析一次，同时用于
+	// 定位数据目录与迁移旧版配置；读取或解析失败按"无锚点"处理（回退默认目录）。
+	var anchor Config
+	hasAnchor := false
+	if raw, err := os.ReadFile(configFile(m.anchorDir)); err == nil {
+		hasAnchor = json.Unmarshal(raw, &anchor) == nil
+	}
+	if hasAnchor && anchor.DataDir != "" && isDir(anchor.DataDir) {
+		m.dataDir = anchor.DataDir
+	}
+
+	// 数据目录内的配置是权威来源，解析失败视为错误，避免静默丢配置。
+	loaded, err := m.loadLocked()
+	if err != nil {
+		return err
+	}
+	// 一次性迁移：数据目录内尚无配置时，沿用锚点中的旧版配置。
+	if !loaded && hasAnchor {
+		m.config.LayoutPresets = anchor.LayoutPresets
+	}
+
+	return m.persistLocked()
+}
+
+// DataDir 返回当前生效的数据目录。
 func (m *Manager) DataDir() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	if m.config.DataDir != "" {
-		return m.config.DataDir
-	}
-	return m.defaultDir
+	return m.dataDir
 }
 
-// DefaultDir returns the immutable default directory.
+// DefaultDir 返回固定的默认数据目录（锚点目录下的 data 子目录）。
 func (m *Manager) DefaultDir() string {
-	return m.defaultDir
+	return filepath.Join(m.anchorDir, "data")
 }
 
-// SetDataDir persists the new data directory and fires OnChange listeners.
+// SetDataDir 持久化新的数据目录（把 config.json 迁入其中并更新锚点指针），
+// 随后触发 OnChange 监听回调。
 func (m *Manager) SetDataDir(dir string) error {
-	m.mu.Lock()
-	oldDir := m.effectiveDir()
-	if dir == oldDir {
-		m.mu.Unlock()
-		return nil
-	}
-
-	m.config.DataDir = dir
-	if err := m.saveLocked(); err != nil {
-		m.config.DataDir = oldDir // rollback
-		m.mu.Unlock()
+	oldDir, callbacks, err := m.commitDataDir(dir)
+	if err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
-
-	// Snapshot listeners before releasing lock to avoid races.
-	callbacks := make([]func(oldDir, newDir string), 0, len(m.listeners))
-	for _, fn := range m.listeners {
-		callbacks = append(callbacks, fn)
-	}
-	m.mu.Unlock()
-
+	// 回调必须在释放锁后触发：监听方可能在回调中反向调用 SetDataDir 回滚。
 	for _, fn := range callbacks {
 		fn(oldDir, dir)
 	}
 	return nil
 }
 
-// OnChange registers a callback invoked when the data directory changes.
-func (m *Manager) OnChange(fn func(oldDir, newDir string)) int {
+// commitDataDir 在持锁状态下切换并落盘数据目录，返回旧目录与监听者快照。
+// 目录未变化或落盘失败时快照为空，调用方无需额外判断。
+func (m *Manager) commitDataDir(dir string) (string, []ChangeFunc, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	oldDir := m.dataDir
+	if dir == oldDir {
+		return oldDir, nil, nil
+	}
+
+	m.dataDir = dir
+	if err := m.persistLocked(); err != nil {
+		m.dataDir = oldDir
+		return oldDir, nil, err
+	}
+	// 移除旧数据目录中的 config.json，便于旧目录整体清理。
+	_ = os.Remove(configFile(oldDir))
+
+	callbacks := make([]ChangeFunc, 0, len(m.listeners))
+	for _, fn := range m.listeners {
+		callbacks = append(callbacks, fn)
+	}
+	return oldDir, callbacks, nil
+}
+
+// OnChange 注册数据目录变更回调，返回可用于注销的监听 ID。
+func (m *Manager) OnChange(fn ChangeFunc) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	id := m.nextID
@@ -93,15 +141,14 @@ func (m *Manager) OnChange(fn func(oldDir, newDir string)) int {
 	return id
 }
 
-// RemoveOnChange removes a previously registered callback.
+// RemoveOnChange 按 ID 注销此前注册的回调。
 func (m *Manager) RemoveOnChange(id int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.listeners, id)
 }
 
-// GetLayoutPresets returns the effective layout preset configuration,
-// falling back to built-in defaults when nothing has been customized.
+// GetLayoutPresets 返回生效的布局档位配置；用户未自定义时回退到内置默认值。
 func (m *Manager) GetLayoutPresets() LayoutPresetConfig {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -111,22 +158,21 @@ func (m *Manager) GetLayoutPresets() LayoutPresetConfig {
 	return DefaultLayoutPresets()
 }
 
-// SetLayoutPresets validates and persists a layout preset configuration.
+// SetLayoutPresets 持久化布局档位配置（参数校验由服务层完成）。
+//
+// 落盘失败时把内存中的档位置空，使下次启动重新从文件加载已持久化的状态。
 func (m *Manager) SetLayoutPresets(cfg LayoutPresetConfig) error {
-	if err := ValidateLayoutPresets(cfg); err != nil {
-		return err
-	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.config.LayoutPresets = &cfg
-	if err := m.saveLocked(); err != nil {
-		m.config.LayoutPresets = nil // rollback to previous persisted state on next load
+	if err := m.saveConfigLocked(); err != nil {
+		m.config.LayoutPresets = nil
 		return fmt.Errorf("save config: %w", err)
 	}
 	return nil
 }
 
-// ResetLayoutPresets removes any customization, restoring built-in defaults.
+// ResetLayoutPresets 清除自定义档位，恢复内置默认值。
 func (m *Manager) ResetLayoutPresets() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -134,49 +180,66 @@ func (m *Manager) ResetLayoutPresets() error {
 		return nil
 	}
 	m.config.LayoutPresets = nil
-	if err := m.saveLocked(); err != nil {
+	if err := m.saveConfigLocked(); err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
 	return nil
 }
 
-func (m *Manager) effectiveDir() string {
-	if m.config.DataDir != "" {
-		return m.config.DataDir
-	}
-	return m.defaultDir
-}
-
-func (m *Manager) load() error {
-	data, err := os.ReadFile(m.configPath)
+// loadLocked 读取数据目录内的完整配置，并返回配置文件是否存在。
+func (m *Manager) loadLocked() (bool, error) {
+	data, err := os.ReadFile(configFile(m.dataDir))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return false, nil
 		}
-		return fmt.Errorf("read config: %w", err)
+		return false, fmt.Errorf("read config: %w", err)
 	}
-	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("parse config: %w", err)
+	if err := json.Unmarshal(data, &m.config); err != nil {
+		return false, fmt.Errorf("parse config: %w", err)
 	}
-	m.config = cfg
-	return nil
+	return true, nil
 }
 
-func (m *Manager) saveLocked() error {
-	dir := filepath.Dir(m.configPath)
+// saveConfigLocked 只写数据目录内的完整配置（锚点未变时无需重写）。
+func (m *Manager) saveConfigLocked() error {
+	return writeConfig(m.dataDir, m.config)
+}
+
+// persistLocked 落盘完整配置与锚点指针。锚点是"提交点"，放在最后写入，
+// 可避免中途失败留下指向缺少配置的目录的指针。
+func (m *Manager) persistLocked() error {
+	if err := m.saveConfigLocked(); err != nil {
+		return err
+	}
+	return writeConfig(m.anchorDir, Config{DataDir: m.dataDir})
+}
+
+// --- 辅助函数 ---
+
+// configFile 拼接指定目录下的配置文件路径。
+func configFile(dir string) string { return filepath.Join(dir, configFileName) }
+
+// isDir 判断路径是否为已存在的目录。
+func isDir(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
+}
+
+// writeConfig 原子写入 dir/config.json：先写同目录 .tmp 再 rename，
+// 避免写入中断产生半截文件。
+func writeConfig(dir string, cfg Config) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-
-	data, err := json.MarshalIndent(m.config, "", "  ")
+	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return err
 	}
-
-	tmpPath := m.configPath + ".tmp"
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+	path := configFile(dir)
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0644); err != nil {
 		return err
 	}
-	return os.Rename(tmpPath, m.configPath)
+	return os.Rename(tmp, path)
 }

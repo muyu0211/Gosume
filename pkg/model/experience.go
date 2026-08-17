@@ -1,9 +1,9 @@
 package model
 
-// Job represents a work experience entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume
-// (without deleting the underlying data). Pointer + omitempty so legacy data stays
-// backward-compatible.
+// Job 表示一条工作经历。
+//
+// Hidden 为可选标记，置为 true 时该条目不参与简历渲染（但不删除底层数据）。
+// 使用指针 + omitempty 以兼容历史数据。
 type Job struct {
 	ID         string   `json:"id"`
 	Company    string   `json:"company"`
@@ -19,8 +19,8 @@ type Job struct {
 	Hidden     *bool    `json:"hidden,omitempty"`
 }
 
-// Internship represents an internship experience entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume.
+// Internship 表示一条实习经历。
+// Hidden 置为 true 时该条目不参与简历渲染。
 type Internship struct {
 	ID         string   `json:"id"`
 	Company    string   `json:"company"`
@@ -36,8 +36,8 @@ type Internship struct {
 	Hidden     *bool    `json:"hidden,omitempty"`
 }
 
-// Project represents a project experience entry.
-// Hidden is an optional flag that, when true, omits the entry from the rendered resume.
+// Project 表示一条项目经历。
+// Hidden 置为 true 时该条目不参与简历渲染。
 type Project struct {
 	ID         string       `json:"id"`
 	Name       string       `json:"name"`
@@ -52,9 +52,10 @@ type Project struct {
 	Hidden     *bool        `json:"hidden,omitempty"`
 }
 
-// ExtraField is a user-defined key/value pair attached to a Project.
-// Renders as a labeled line (Label: Value) in templates that opt in via
-// {{range .Extras}}. Value is plain text; newlines render as <br> via nl2br.
+// ExtraField 是挂在 Project 上的用户自定义键值对。
+//
+// 在通过 {{range .Extras}} 主动接入的模板中渲染为「标签: 值」一行。
+// Value 为纯文本，其中的换行由 nl2br 渲染为 <br>。
 type ExtraField struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
