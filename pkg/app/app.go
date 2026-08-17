@@ -8,10 +8,10 @@ import (
 
 	"gosume/pkg/config"
 	"gosume/pkg/log"
-	"gosume/pkg/service"
-	"gosume/pkg/store"
-	"gosume/pkg/template"
-	"gosume/pkg/template_render"
+	"gosume/pkg/resume/repo"
+	"gosume/pkg/resume/service"
+	"gosume/pkg/resume/template"
+	"gosume/pkg/resume/template_render"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
@@ -62,7 +62,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	exportManager := initExportManager()
 
 	// 项目文件存储
-	projectStore := store.NewProjectStore(dataDir)
+	projectStore := repo.NewProjectRepo(dataDir)
 
 	// 服务
 	resumeSvc := &service.ResumeService{}

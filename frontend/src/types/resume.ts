@@ -14,13 +14,12 @@ export interface Resume {
   version: string
   meta: ResumeMeta
   personal: Personal
-  summary?: string
   /**
-   * Optional visibility toggle for the standalone "个人总结" entry. When true the
-   * summary is omitted from the rendered resume while keeping the text on disk.
-   * Pointer + optional keeps legacy data backward-compatible (treated as visible).
+   * Standalone "个人总结" (personal summary) block. Wrapped in its own struct so a
+   * single Hidden flag can toggle the whole block while keeping the text on disk.
+   * Mirrors the Go `PersonalSummary` struct (json: personal_summary).
    */
-  summary_hidden?: boolean
+  personal_summary?: PersonalSummary
   internships?: Internship[]
   jobs?: Job[]
   projects?: Project[]
@@ -81,6 +80,16 @@ export interface Personal {
   gender?: 'male' | 'female' | 'other'
   job_title?: string
   years_of_exp?: number
+}
+
+export interface PersonalSummary {
+  summary?: string
+  /**
+   * Optional visibility toggle for the "个人总结" block. When true the summary
+   * text is dropped from the rendered resume while kept on disk. Mirrors the Go
+   * struct's `Hidden *bool` (nil = visible, for legacy-data compatibility).
+   */
+  hidden?: boolean
 }
 
 export interface Internship {
@@ -217,7 +226,7 @@ export function createEmptyResume(templateId: string): Resume {
     personal: {
       full_name: '',
     },
-    summary: '',
+    personal_summary: { summary: '' },
     internships: [],
     jobs: [],
     projects: [],
@@ -231,4 +240,27 @@ export function createEmptyResume(templateId: string): Resume {
 
 export function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 10)
+}
+
+/**
+ * Migrates legacy resume data where the standalone summary lived as top-level
+ * `summary` / `summary_hidden` fields onto the `personal_summary` struct.
+ * Newer data already using `personal_summary` is returned unchanged. Call this
+ * right after loading a resume so the rest of the app can assume the new shape.
+ */
+export function migratePersonalSummary(resume: Resume): Resume {
+  if (resume.personal_summary || (resume as Record<string, unknown>).summary === undefined) {
+    return resume
+  }
+  const legacy = resume as unknown as { summary?: string; summary_hidden?: boolean }
+  return {
+    ...resume,
+    personal_summary: {
+      summary: legacy.summary ?? '',
+      hidden: legacy.summary_hidden,
+    },
+    // strip the deprecated top-level fields
+    summary: undefined,
+    summary_hidden: undefined,
+  } as Resume
 }

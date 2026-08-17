@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField } from '../types/resume'
-import { createEmptyResume, generateId } from '../types/resume'
+import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
 import { callService } from '../services/backend'
 
 interface ResumeState {
@@ -110,8 +110,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     try {
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
-        set({ resume, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null })
-        return resume
+        const migrated = migratePersonalSummary(resume)
+        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null })
+        return migrated
       }
     } catch (err) {
       console.error('Failed to load resume:', err)

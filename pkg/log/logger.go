@@ -30,15 +30,13 @@ var (
 	file *os.File
 )
 
-// Init 初始化全局 logger，日志写入 dir/log/appName-YYYY-MM-DD.log。
+// Init 初始化全局 logger，日志写入 dir/log/appName-YYYY-MM-DD.log。程序退出前需调用 Close 刷盘并关闭文件。
 //
 // 参数：
 //   - dir：数据目录；为空时只输出到标准输出
 //   - appName：日志文件名前缀；为空时文件名仅含日期
 //   - minLevel：最低输出级别，低于该级别的日志被丢弃
 //   - stdout：是否同时输出到标准输出
-//
-// 程序退出前需调用 Close 刷盘并关闭文件。
 func Init(dir, appName string, minLevel Level, stdout bool) error {
 	atom = zap.NewAtomicLevelAt(minLevel)
 
@@ -91,10 +89,7 @@ func Init(dir, appName string, minLevel Level, stdout bool) error {
 		))
 	}
 
-	core := zapcore.NewTee(cores...)
-	// AddCallerSkip(1)：跳过本包的包级包装函数（Info、Debug 等），
-	// 使 caller 字段指向真正的调用方代码，而不是 logger.go。
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddCallerSkip(1))
 
 	zap.ReplaceGlobals(logger)
 	return nil

@@ -466,13 +466,13 @@ function pascalToSnake(s: string): string {
 }
 
 function toGoShape(resume: Resume): Record<string, unknown> {
-  // Legacy-compatible summary hiding: when summary_hidden is set, drop the
-  // Summary field at the data layer so templates written as {{if .Summary}}
-  // (without the SummaryHidden guard) also respect the toggle — the same
-  // strategy as the Hidden entry filtering below.
-  if (resume.summary_hidden === true) {
-    const { summary: _omit, summary_hidden: _flag, ...rest } = resume
-    return convert(rest) as Record<string, unknown>
+  // Personal-summary hiding: when personal_summary.hidden is set, drop the
+  // summary TEXT (not the whole block) so templates written as
+  // {{if .PersonalSummary.Summary}} respect the toggle. Mirrors the Go-side
+  // WithoutHidden behavior (nil/false = visible, true = clear Summary).
+  const shaped: Resume = { ...resume }
+  if (shaped.personal_summary?.hidden) {
+    shaped.personal_summary = { ...shaped.personal_summary, summary: '' }
   }
   // Convert the snake_case frontend data to PascalCase for Go template compatibility.
   // Arrays of entries with a Hidden flag are filtered here so that:

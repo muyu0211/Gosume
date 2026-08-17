@@ -200,10 +200,10 @@
                 </div>
                 {{end}}
 
-                <!-- 个人总结（SummaryHidden 由数据层处理） -->
-                {{if .Summary}}
+                <!-- 个人总结（hidden 由数据层处理：summary 文本被清空则不渲染） -->
+                {{if .PersonalSummary.Summary}}
                 <div class="section-title">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
-                <div class="summary">{{nl2br .Summary}}</div>
+                <div class="summary">{{nl2br .PersonalSummary.Summary}}</div>
                 {{end}}
 
                 <!-- 自定义区块 -->

@@ -29,8 +29,10 @@ export function createSampleResume(templateId: string): Resume {
       job_title: '高级前端工程师',
       years_of_exp: 6,
     },
-    summary:
-      '拥有6年前端开发经验，精通React、Vue等主流框架，具备良好的工程化思维和团队协作能力。主导过多个大型中后台管理系统的架构设计与性能优化，关注代码质量、用户体验与技术演进。善于跨团队沟通，能够推动复杂项目从0到1落地。',
+    personal_summary: {
+      summary:
+        '拥有6年前端开发经验，精通React、Vue等主流框架，具备良好的工程化思维和团队协作能力。主导过多个大型中后台管理系统的架构设计与性能优化，关注代码质量、用户体验与技术演进。善于跨团队沟通，能够推动复杂项目从0到1落地。',
+    },
     internships: [
       {
         id: generateId(),

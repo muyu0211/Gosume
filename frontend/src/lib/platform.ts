@@ -29,9 +29,15 @@ export function isMacOS(): boolean {
   return detectPlatform() === 'darwin'
 }
 
-// 将平台标记写入 <html data-platform="...">，供 CSS 做平台差异化适配。
+// 将平台标记写入 <html data-platform="..."> 并添加 platform-{os} class，
+// 供 CSS 做平台差异化适配（globals.css 使用 .platform-darwin 类选择器）。
 export function applyPlatformToDocument(): Platform {
   const platform = detectPlatform()
-  document.documentElement.dataset.platform = platform
+  const el = document.documentElement
+  el.dataset.platform = platform
+  el.classList.remove('platform-windows', 'platform-darwin', 'platform-linux')
+  if (platform !== 'unknown') {
+    el.classList.add(`platform-${platform}`)
+  }
   return platform
 }

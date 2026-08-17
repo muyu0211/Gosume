@@ -325,11 +325,13 @@ body {
 
 /* macOS：窗口管理交给原生红绿灯（TitleBarHiddenInset，见 pkg/app/app.go）。
    隐藏自绘的 Windows 风格按钮，并在左侧预留交通灯空间，避免标题文字与其重叠。 */
-.platform-darwin .titlebar-controls {
+.platform-darwin .titlebar-controls,
+[data-platform='darwin'] .titlebar-controls {
   display: none;
 }
 
-.platform-darwin .titlebar-drag {
+.platform-darwin .titlebar-drag,
+[data-platform='darwin'] .titlebar-drag {
   padding-left: 84px;
 }
 

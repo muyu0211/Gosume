@@ -31,7 +31,9 @@ const SAMPLE_DATA: Resume = {
     job_title: '高级前端工程师',
     years_of_exp: 6,
   },
-  summary: '拥有6年前端开发经验===========================，擅长React生态系统与TypeScript，主导过多个大型中后台项目的架构设计与落地。注重代码质量与团队协作，持续关注前端工程化与性能优化。',
+  personal_summary: {
+    summary: '拥有6年前端开发经验===========================，擅长React生态系统与TypeScript，主导过多个大型中后台项目的架构设计与落地。注重代码质量与团队协作，持续关注前端工程化与性能优化。',
+  },
   jobs: [
     {
       id: 'sample-job-1',

@@ -36,7 +36,7 @@ export async function callService<T>(
 
   if (isWails()) {
     try {
-      const fullName = `gosume/pkg/service.${serviceName}.${methodName}`
+      const fullName = `gosume/pkg/resume/service.${serviceName}.${methodName}`
       return await Call.ByName(fullName, ...args) as T
     } catch (err) {
       console.error(`[Backend] ${serviceName}.${methodName} failed:`, err)
