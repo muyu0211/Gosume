@@ -21,7 +21,6 @@ import (
 type SystemService struct {
 	App       *application.App
 	configMgr *user_config.Manager
-	appCfg    *config.Config
 	win       *application.WebviewWindow
 }
 
@@ -30,14 +29,11 @@ func (s *SystemService) ServiceName() string {
 	return "SystemService"
 }
 
-// Inject 注入依赖。
-//
-// appCfg 为应用级编译期配置，提供版本号、应用名等框架级参数。
-func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow, appCfg *config.Config) {
+// Inject 依赖注入
+func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow) {
 	s.App = app
 	s.configMgr = configMgr
 	s.win = win
-	s.appCfg = appCfg
 }
 
 // MinimizeWindow 最小化应用窗口。
@@ -66,7 +62,7 @@ func (s *SystemService) CloseWindow() {
 
 // GetAppVersion 返回应用版本号（来自编译期嵌入的 app.yaml）。
 func (s *SystemService) GetAppVersion() string {
-	return s.appCfg.App.Version
+	return config.GlobalConfig.App.Version
 }
 
 // GetDataDir 返回当前的应用数据目录。

@@ -12,6 +12,7 @@ import (
 // 路径示例："personal.full_name"、"jobs[0].company"。
 // value 为该字段对应的 JSON 原文，由反射定位字段后反序列化写入。
 func SetFieldByPath(obj any, path string, value json.RawMessage) error {
+	// 解析路径
 	parts := parsePath(path)
 	if len(parts) == 0 {
 		return fmt.Errorf("empty path")

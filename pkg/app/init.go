@@ -6,13 +6,10 @@ import (
 	"gosume/pkg/log"
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/template"
-	"gosume/pkg/resume/template_export"
 	"gosume/pkg/resume/template_render"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // --- 初始化辅助函数 ---
@@ -57,21 +54,6 @@ func initDevWatcher(templateStore *repo.TemplateRepo) chan struct{} {
 		return stopWatch
 	}
 	return nil
-}
-
-// initExportManager 创建导出管理器及其依赖的无头浏览器管理器。
-func initExportManager() *template_export.ExportManager {
-	browser := template_export.NewBrowserManager()
-	return template_export.NewExportManager(browser)
-}
-
-// registerEvents 注册后端向前端发送的 Wails 事件及其数据类型。
-func registerEvents() {
-	application.RegisterEvent[int]("export:progress")
-	application.RegisterEvent[string]("export:completed")
-	application.RegisterEvent[string]("file:opened")
-	application.RegisterEvent[string]("file:saved")
-	application.RegisterEvent[string]("config:datadir-changed")
 }
 
 // --- 适配器 ---

@@ -249,7 +249,7 @@ export function generateId(): string {
  * right after loading a resume so the rest of the app can assume the new shape.
  */
 export function migratePersonalSummary(resume: Resume): Resume {
-  if (resume.personal_summary || (resume as Record<string, unknown>).summary === undefined) {
+  if (resume.personal_summary || (resume as unknown as Record<string, unknown>).summary === undefined) {
     return resume
   }
   const legacy = resume as unknown as { summary?: string; summary_hidden?: boolean }

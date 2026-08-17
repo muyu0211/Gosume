@@ -7,10 +7,12 @@ import (
 	"runtime"
 
 	"gosume/pkg/config"
+	"gosume/pkg/event"
 	"gosume/pkg/log"
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/service"
 	"gosume/pkg/resume/template"
+	"gosume/pkg/resume/template_export"
 	"gosume/pkg/resume/template_render"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
@@ -50,16 +52,16 @@ func New(assets, builtinTemplates embed.FS) *App {
 	templateLoader := template.NewLoader(templateStore)
 	stopWatch := initDevWatcher(templateStore)
 
-	// 统一 HTML（Gosume 一期改造）：全应用共享一份，模板包不再携带 HTML。
-	unifiedHTML, err := builtinTemplates.ReadFile("templates/template.html")
+	// 统一 HTML：全应用共享一份，模板包不携带 HTML。
+	tempHTML, err := builtinTemplates.ReadFile("templates/template.html")
 	if err != nil {
 		log.Error("[main] read template.html: %v", err)
-		unifiedHTML = []byte{}
+		tempHTML = []byte{}
 	}
 
 	// 渲染与导出
-	htmlRenderer := template_render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(unifiedHTML)})
-	exportManager := initExportManager()
+	htmlRenderer := template_render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(tempHTML)})
+	exportManager := template_export.NewExportManager(template_export.NewBrowserManager())
 
 	// 项目文件存储
 	projectStore := repo.NewProjectRepo(dataDir)
@@ -81,17 +83,22 @@ func New(assets, builtinTemplates embed.FS) *App {
 	}
 
 	// Wails 应用与窗口
-	app, window := createApp(assets, svcs, config.GlobalConfig)
+	app, window := createApp(assets, svcs)
 
 	// 依赖注入
-	resumeSvc.Inject(resumeStore, htmlRenderer)
-	templateSvc.Inject(app, templateLoader, templateStore, string(unifiedHTML))
+	resumeSvc.Inject(app, resumeStore, htmlRenderer)
+	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 	exportSvc.Inject(app, exportManager)
 	fileSvc.Inject(app, projectStore, resumeSvc)
-	systemSvc.Inject(app, userCfgMgr, window, config.GlobalConfig)
+	systemSvc.Inject(app, userCfgMgr, window)
 
 	// 事件注册
-	registerEvents()
+	event.AddEvent(event.EXPORT_PROGRESS, 1)
+	event.AddEvent(event.EXPORT_COMPLETED, "1")
+	event.AddEvent(event.FILE_OPENED, "1")
+	event.AddEvent(event.FILE_SAVED, "1")
+	event.AddEvent(event.CONFIG_DATADIR_CHANGED, "1")
+	event.RegisterEvents()
 
 	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。
 	// 存储重开失败时回滚到旧目录，避免应用进入不可用状态。
@@ -114,8 +121,9 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 		log.Init(newDir, "Gosume", log.INFO, true)
 
-		resumeSvc.Inject(resumeStore, htmlRenderer)
-		templateSvc.Inject(app, templateLoader, templateStore, string(unifiedHTML))
+		// 重新注入依赖
+		resumeSvc.Inject(app, resumeStore, htmlRenderer)
+		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 		fileSvc.Inject(app, projectStore, resumeSvc)
 
 		app.Event.Emit("config:datadir-changed", newDir)
@@ -141,10 +149,10 @@ func (a *App) Run() {
 }
 
 // createApp 创建应用与主窗口，窗口参数来自 config.yaml。
-func createApp(assets embed.FS, services []application.Service, appCfg *config.Config) (*application.App, *application.WebviewWindow) {
+func createApp(assets embed.FS, services []application.Service) (*application.App, *application.WebviewWindow) {
 	app := application.New(application.Options{
-		Name:        appCfg.App.Name,
-		Description: appCfg.App.Description,
+		Name:        config.GlobalConfig.App.Name,
+		Description: config.GlobalConfig.App.Description,
 		Services:    services,
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -156,13 +164,13 @@ func createApp(assets embed.FS, services []application.Service, appCfg *config.C
 
 	winOpts := application.WebviewWindowOptions{
 		Name:      "main",
-		Title:     appCfg.Window.Title,
-		Width:     appCfg.Window.Width,
-		Height:    appCfg.Window.Height,
-		MinWidth:  appCfg.Window.MinWidth,
-		MinHeight: appCfg.Window.MinHeight,
+		Title:     config.GlobalConfig.Window.Title,
+		Width:     config.GlobalConfig.Window.Width,
+		Height:    config.GlobalConfig.Window.Height,
+		MinWidth:  config.GlobalConfig.Window.MinWidth,
+		MinHeight: config.GlobalConfig.Window.MinHeight,
 		URL:       "/",
-		Frameless: appCfg.Window.Frameless,
+		Frameless: config.GlobalConfig.Window.Frameless,
 	}
 
 	switch runtime.GOOS {

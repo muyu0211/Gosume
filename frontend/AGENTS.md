@@ -30,7 +30,7 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 | 服务 | 可调用方法 |
 |------|-----------|
-| `ResumeService` | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, UpdateField, RenderPreview, ListResumes, UpdateResumeMeta |
+| `ResumeService` | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, RenderPreview, ListResumes, UpdateResumeMeta |
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ValidateForTemplate |
 | `ExportService` | ExportHTML, ExportBatchHTML |
 | `FileService` | OpenFile, SaveFile, GetRecentFiles |

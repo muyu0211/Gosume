@@ -96,10 +96,6 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 | `file:saved` | string | 保存的文件路径 |
 | `config:datadir-changed` | string | 新的数据目录路径 |
 
-### 字段更新
-
-前端通过 `ResumeService.UpdateField(path, value)` 发送字段更新。路径使用点号表示法，支持数组索引（如 `personal.full_name`、`jobs[0].company`）。Go 端通过反射（`model.SetFieldByPath`）将 JSON 字段名（snake_case）映射为结构体字段名（PascalCase）。
-
 ### 日志
 
 使用 zap 结构化日志。日志文件写入 `{dataDir}/log/` 目录。日志级别通过 `log.INFO`、`log.DEBUG` 等设置。辅助函数：`log.Info`、`log.Error`、`log.Warn`、`log.Debug`、`log.Fatal`。

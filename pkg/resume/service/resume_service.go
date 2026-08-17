@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"gosume/pkg/log"
 	"sync"
@@ -11,6 +10,8 @@ import (
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/template_render"
 	"gosume/pkg/util"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // ResumeService 管理当前编辑中的简历数据与预览渲染。
@@ -18,6 +19,7 @@ import (
 // 采用两层保存模型：内存态（current）与持久态（DB 记录）分离，
 // 只有用户显式保存过的简历才允许自动保存，避免意外落库。
 type ResumeService struct {
+	app        *application.App
 	resumeRepo *repo.ResumeRepo
 	renderer   *template_render.HTMLRenderer
 	current    *model.Resume
@@ -32,7 +34,8 @@ func (s *ResumeService) ServiceName() string {
 }
 
 // Inject 注入依赖。
-func (s *ResumeService) Inject(resumeStore *repo.ResumeRepo, renderer *template_render.HTMLRenderer) {
+func (s *ResumeService) Inject(app *application.App, resumeStore *repo.ResumeRepo, renderer *template_render.HTMLRenderer) {
+	s.app = app
 	s.resumeRepo = resumeStore
 	s.renderer = renderer
 }
@@ -104,28 +107,6 @@ func (s *ResumeService) InitResume(resume *model.Resume) {
 	s.currentID = ""
 	s.persisted = false
 	log.Info("[resume_service] InitResume: identity reset (will create new row on save)")
-}
-
-// UpdateField 按点号路径更新当前简历中的某个字段。
-//
-// path 支持数组下标，如 "personal.full_name"、"jobs[0].company"；
-// value 为该字段对应的 JSON 原文。
-func (s *ResumeService) UpdateField(path string, value json.RawMessage) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.current == nil {
-		log.Error("[resume_service] no resume loaded")
-		return util.UserMsg("未加载简历")
-	}
-
-	if err := util.SetFieldByPath(s.current, path, value); err != nil {
-		log.Error("[resume_service] update field %s: %v", path, err)
-		return util.UserWrap(err, "更新字段失败")
-	}
-
-	s.current.Meta.UpdatedAt = time.Now()
-	return nil
 }
 
 // RenderPreview 把当前简历渲染为预览用的 HTML。
