@@ -1,5 +1,6 @@
 # --- Task runner ---
 .task
+.workbuddy
 
 # --- Build output ---
 build/linux/appimage/build
