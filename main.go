@@ -14,7 +14,6 @@ var assets embed.FS
 var builtinTemplates embed.FS
 
 func main() {
-	// 加载应用级配置
 	config.Load()
 	app.New(assets, builtinTemplates).Run()
 }

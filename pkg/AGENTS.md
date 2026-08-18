@@ -14,8 +14,17 @@
 
 ## 开发规范
 
+### 命名规范
+
+- **变量命名**：变量全部遵循小驼峰命名法，首字母小写；常用命名字母全部大写，字母之间下划线分隔，例如```const EXPORT_PROGRES = "export:progress"```，
+- **函数命名**：函数名称全部遵循驼峰命名法，首字母小写。
+- **文件/文件夹命名**：文件名称全部遵循下划线命名法，字母全部小写，单词之间以下划线“_”分隔。
+
+### 
+
 ### 代码注释
-- 代码应有详细规范的注释；
+
+- 代码应有详细规范的中文注释；
 - 注释应符合社区主流注释风格：方法名，方法作用，方法参数等
 
 ## 架构模式
@@ -34,7 +43,7 @@ Go:   ResumeService.NewResume(templateID string, language string)
 
 ### 错误处理
 
-所有服务方法使用 `service/errors.go` 中的统一错误类型，向前端返回中文用户友好消息：
+所有服务方法使用 `util/error.go` 中的统一错误类型，向前端返回中文用户友好消息：
 
 ```go
 // 创建用户友好的错误
@@ -100,9 +109,9 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 使用 zap 结构化日志。日志文件写入 `{dataDir}/log/` 目录。日志级别通过 `log.INFO`、`log.DEBUG` 等设置。辅助函数：`log.Info`、`log.Error`、`log.Warn`、`log.Debug`、`log.Fatal`。
 
-### 模板系统（一期改造后）
+### 模板系统
 
-Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式），模板包不再携带 HTML。
+Gosume简历部分中，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式），模板包不再携带 HTML。
 
 - `templates/template.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），渲染顺序固定。它输出稳定的 DOM 契约（`.resume-page > .resume-container > .r-header + .r-main`），与前端分页子系统 `paginationCore.ts` 对齐。
 - 模板加载：`template.Loader` 从 `TemplateStore`（内置 `templates/` 目录 + SQLite 用户模板）加载；`GetTemplateContent` 返回模板的 HTML（`effectiveHTML`：`uses_unified_html` 或空 HTML 时用统一 HTML）+ CSS + 纸张规格（`paper_size`/`orientation`，供前端分页与导出使用）。
@@ -112,11 +121,3 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 ### 模板导入
 
 `TemplateService.ImportTemplatePackage()` 支持从本地文件导入 `.zip` 模板包：
-
-1. 前端调用 → Go 弹出原生文件选择对话框（filter: `*.zip`）
-2. `template.LoadPackageFromZip()` 解析 ZIP：提取 `template.json`（元数据）+ `styles.css`（样式）；若仍含 `template.html`（历史包）则宽松忽略
-3. 校验：元数据（id/name/version/author.name/paper_size=A4）+ CSS 非空（`ValidatePackage`）
-4. 通过 `TemplateStore.Create()` 将模板存入 SQLite
-5. 返回 `ImportTemplateResult{ID, Name, Version, Meta}` 给前端
-
-`TemplateService` 新增 `wailsApp` 依赖（用于弹出文件对话框），`Inject()` 签名相应更新。内部辅助函数 `toGetTemplateMeta()` 消除模板元数据转换的重复代码。

@@ -59,6 +59,6 @@ var configYAML []byte
 func Load() {
 	GlobalConfig = &Config{}
 	if err := yaml.Unmarshal(configYAML, GlobalConfig); err != nil {
-		panic(fmt.Sprintf("app_config: 解析嵌入的 config.yaml 失败: %v", err))
+		panic(fmt.Sprintf("config: 解析嵌入的 config.yaml 失败: %v", err))
 	}
 }
