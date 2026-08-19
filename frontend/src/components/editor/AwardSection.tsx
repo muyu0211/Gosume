@@ -8,7 +8,7 @@ export function AwardSection() {
   const items = useResumeStore((s) => s.resume?.awards) || []
   const addItem = useResumeStore((s) => s.addAward)
   const updateItem = useResumeStore((s) => s.updateAward)
-  const removeItem = useResumeStore((s) => s.removeAward)
+  const requestDelete = useResumeStore((s) => s.requestItemDelete)
   const moveItem = useResumeStore((s) => s.moveAward)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
@@ -80,7 +80,7 @@ export function AwardSection() {
                   />
                   <span className="hidden sm:inline">在简历中显示</span>
                 </label>
-                <button onClick={(e) => { e.stopPropagation(); removeItem(idx) }} className="p-1 text-surface-400 hover:text-red-500">
+                <button onClick={(e) => { e.stopPropagation(); requestDelete('award', idx) }} className="p-1 text-surface-400 hover:text-red-500">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

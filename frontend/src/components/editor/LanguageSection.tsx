@@ -6,7 +6,7 @@ export function LanguageSection() {
   const items = useResumeStore((s) => s.resume?.languages) || []
   const addItem = useResumeStore((s) => s.addLanguage)
   const updateItem = useResumeStore((s) => s.updateLanguage)
-  const removeItem = useResumeStore((s) => s.removeLanguage)
+  const requestDelete = useResumeStore((s) => s.requestItemDelete)
   const moveItem = useResumeStore((s) => s.moveLanguage)
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
@@ -91,7 +91,7 @@ export function LanguageSection() {
                 />
                 <span className="hidden sm:inline">显示</span>
               </label>
-              <button onClick={() => removeItem(idx)} className="p-1.5 text-surface-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
+              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-surface-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

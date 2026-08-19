@@ -5,13 +5,15 @@ import type { ExtraField } from '../../types/resume'
 interface Props {
   extras: ExtraField[]
   onChange: (extras: ExtraField[]) => void
+  /** 删除子项时改为走二次确认（由父组件统一处理）；缺省则直接删除。 */
+  onRequestRemove?: (extraIndex: number) => void
 }
 
 /**
  * Editor for user-defined key/value pairs on a Project (e.g. "技术栈": "React, Go").
  * Each extra has a label (the key) and a multi-line value. Supports drag-to-reorder.
  */
-export function ExtrasEditor({ extras, onChange }: Props) {
+export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
 
   function moveItem(from: number, to: number) {
@@ -32,6 +34,10 @@ export function ExtrasEditor({ extras, onChange }: Props) {
   }
 
   function removeExtra(idx: number) {
+    if (onRequestRemove) {
+      onRequestRemove(idx)
+      return
+    }
     onChange(extras.filter((_, i) => i !== idx))
   }
 

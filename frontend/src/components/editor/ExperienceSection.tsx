@@ -29,11 +29,9 @@ export function ExperienceSection({ type, title }: Props) {
     if (type === 'internships') return s.updateInternship
     return s.updateProject
   })
-  const removeItem = useResumeStore((s) => {
-    if (type === 'jobs') return s.removeJob
-    if (type === 'internships') return s.removeInternship
-    return s.removeProject
-  })
+  const requestDelete = useResumeStore((s) => s.requestItemDelete)
+  const requestHighlightDelete = useResumeStore((s) => s.requestHighlightDelete)
+  const requestExtraDelete = useResumeStore((s) => s.requestExtraDelete)
   const moveItem = useResumeStore((s) => {
     if (type === 'jobs') return s.moveJob
     if (type === 'internships') return s.moveInternship
@@ -41,6 +39,7 @@ export function ExperienceSection({ type, title }: Props) {
   })
   const updateProjectExtras = useResumeStore((s) => s.updateProjectExtras)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
+  const sectionKind: 'job' | 'internship' | 'project' = type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project'
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
 
@@ -123,7 +122,7 @@ export function ExperienceSection({ type, title }: Props) {
                   <span className="hidden sm:inline">在简历中显示</span>
                 </label>
                 <button
-                  onClick={(e) => { e.stopPropagation(); removeItem(idx) }}
+                  onClick={(e) => { e.stopPropagation(); requestDelete(type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project', idx) }}
                   className="p-1 text-surface-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -233,6 +232,7 @@ export function ExperienceSection({ type, title }: Props) {
                     <HighlightsEditor
                       highlights={(item as { highlights?: string[] }).highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights } as Partial<Entry>)}
+                      onRequestRemove={(subIdx) => requestHighlightDelete(sectionKind, idx, subIdx)}
                     />
                   </div>
 
@@ -244,6 +244,7 @@ export function ExperienceSection({ type, title }: Props) {
                       <ExtrasEditor
                         extras={(item as Project).extras || []}
                         onChange={(extras) => updateProjectExtras(idx, extras)}
+                        onRequestRemove={(subIdx) => requestExtraDelete(idx, subIdx)}
                       />
                     </div>
                   )}
@@ -263,14 +264,20 @@ export function ExperienceSection({ type, title }: Props) {
   )
 }
 
-function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onChange: (h: string[]) => void }) {
+function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void }) {
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
     const updated = [...highlights]
     updated[idx] = value
     onChange(updated)
   }
-  const removeHighlight = (idx: number) => onChange(highlights.filter((_, i) => i !== idx))
+  const removeHighlight = (idx: number) => {
+    if (onRequestRemove) {
+      onRequestRemove(idx)
+      return
+    }
+    onChange(highlights.filter((_, i) => i !== idx))
+  }
 
   return (
     <div className="space-y-1.5">

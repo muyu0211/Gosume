@@ -28,6 +28,7 @@ frontend/bindings/
 *.swp
 *.swo
 *~
+docs
 
 # --- OS ---
 .DS_Store

@@ -1,7 +1,26 @@
-import { create } from 'zustand'
+import { create, type StoreApi } from 'zustand'
 import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField } from '../types/resume'
 import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
 import { callService } from '../services/backend'
+
+/** 简历内容条目的种类，用于删除二次确认的文案与分发。 */
+export type ItemDeleteKind = 'internship' | 'job' | 'education' | 'skill' | 'project' | 'language' | 'award'
+
+/** 含「关键亮点」子项的顶层条目类型。 */
+export type HighlightSection = 'job' | 'internship' | 'project' | 'education'
+
+/**
+ * 待确认的删除目标（顶层条目或二级子项）。
+ * - item: 顶层条目（实习/工作/项目/教育/技能分组/语言/奖项）
+ * - skillItem: 技能分组内的单个技能
+ * - highlight: 经历/项目/教育内的「关键亮点」
+ * - extra: 项目内的「扩展字段」
+ */
+export type PendingItemDelete =
+  | { type: 'item'; kind: ItemDeleteKind; index: number }
+  | { type: 'skillItem'; groupIndex: number; skillIndex: number }
+  | { type: 'highlight'; section: HighlightSection; itemIndex: number; highlightIndex: number }
+  | { type: 'extra'; projectIndex: number; extraIndex: number }
 
 interface ResumeState {
   resume: Resume | null
@@ -59,6 +78,17 @@ interface ResumeState {
   addAward: () => void
   updateAward: (index: number, award: Partial<Award>) => void
   removeAward: (index: number) => void
+
+  // 条目删除二次确认（会话级，仅内存态，不持久化到后端）
+  skipItemDeleteConfirm: boolean
+  pendingItemDelete: PendingItemDelete | null
+  setSkipItemDeleteConfirm: (v: boolean) => void
+  requestItemDelete: (kind: ItemDeleteKind, index: number) => void
+  requestSkillItemDelete: (groupIndex: number, skillIndex: number) => void
+  requestHighlightDelete: (section: HighlightSection, itemIndex: number, highlightIndex: number) => void
+  requestExtraDelete: (projectIndex: number, extraIndex: number) => void
+  confirmItemDelete: () => void
+  cancelItemDelete: () => void
 }
 
 export const useResumeStore = create<ResumeState>((set, get) => ({
@@ -396,7 +426,153 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     if (!resume?.awards) return
     set({ resume: { ...resume, awards: resume.awards.filter((_, i) => i !== index) }, isDirty: true })
   },
+
+  // 条目删除二次确认（会话级）
+  skipItemDeleteConfirm: false,
+  pendingItemDelete: null,
+
+  setSkipItemDeleteConfirm: (v) => set({ skipItemDeleteConfirm: v }),
+
+  requestItemDelete: (kind, index) => {
+    requestPending(get, set, { type: 'item', kind, index })
+  },
+
+  requestSkillItemDelete: (groupIndex, skillIndex) => {
+    requestPending(get, set, { type: 'skillItem', groupIndex, skillIndex })
+  },
+
+  requestHighlightDelete: (section, itemIndex, highlightIndex) => {
+    requestPending(get, set, { type: 'highlight', section, itemIndex, highlightIndex })
+  },
+
+  requestExtraDelete: (projectIndex, extraIndex) => {
+    requestPending(get, set, { type: 'extra', projectIndex, extraIndex })
+  },
+
+  confirmItemDelete: () => {
+    const pending = get().pendingItemDelete
+    if (!pending) return
+    applyPendingDelete(get(), pending)
+    set({ pendingItemDelete: null })
+  },
+
+  cancelItemDelete: () => set({ pendingItemDelete: null }),
 }))
+
+// requestPending 统一处理删除请求：已勾选「本次不再提示」则直接执行，否则进入待确认。
+function requestPending(
+  get: StoreApi<ResumeState>['getState'],
+  set: StoreApi<ResumeState>['setState'],
+  target: PendingItemDelete,
+): void {
+  if (get().skipItemDeleteConfirm) {
+    applyPendingDelete(get(), target)
+    return
+  }
+  set({ pendingItemDelete: target })
+}
+
+// applyPendingDelete 按目标类型分发执行删除。
+function applyPendingDelete(state: ResumeState, target: PendingItemDelete): void {
+  switch (target.type) {
+    case 'item':
+      removeItemByKind(state, target.kind, target.index)
+      break
+    case 'skillItem':
+      removeSkillItem(state, target.groupIndex, target.skillIndex)
+      break
+    case 'highlight':
+      removeHighlight(state, target.section, target.itemIndex, target.highlightIndex)
+      break
+    case 'extra':
+      removeExtra(state, target.projectIndex, target.extraIndex)
+      break
+  }
+}
+
+// removeItemByKind 按条目类型分发到对应的 remove 方法，供删除确认流程复用。
+function removeItemByKind(state: ResumeState, kind: ItemDeleteKind, index: number): void {
+  switch (kind) {
+    case 'internship':
+      state.removeInternship(index)
+      break
+    case 'job':
+      state.removeJob(index)
+      break
+    case 'education':
+      state.removeEducation(index)
+      break
+    case 'skill':
+      state.removeSkillGroup(index)
+      break
+    case 'project':
+      state.removeProject(index)
+      break
+    case 'language':
+      state.removeLanguage(index)
+      break
+    case 'award':
+      state.removeAward(index)
+      break
+  }
+}
+
+// removeSkillItem 删除技能分组内的单个技能。
+function removeSkillItem(state: ResumeState, groupIndex: number, skillIndex: number): void {
+  const resume = state.resume
+  const group = resume?.skills?.[groupIndex]
+  if (!group) return
+  state.updateSkillGroup(groupIndex, { items: group.items.filter((_, i) => i !== skillIndex) })
+}
+
+// removeHighlight 删除经历/项目/教育内的关键亮点。
+function removeHighlight(
+  state: ResumeState,
+  section: HighlightSection,
+  itemIndex: number,
+  highlightIndex: number,
+): void {
+  const resume = state.resume
+  if (!resume) return
+  let highlights: string[] | undefined
+  switch (section) {
+    case 'job':
+      highlights = resume.jobs?.[itemIndex]?.highlights
+      break
+    case 'internship':
+      highlights = resume.internships?.[itemIndex]?.highlights
+      break
+    case 'project':
+      highlights = resume.projects?.[itemIndex]?.highlights
+      break
+    case 'education':
+      highlights = resume.education?.[itemIndex]?.highlights
+      break
+  }
+  if (!highlights) return
+  const next = highlights.filter((_, i) => i !== highlightIndex)
+  switch (section) {
+    case 'job':
+      state.updateJob(itemIndex, { highlights: next })
+      break
+    case 'internship':
+      state.updateInternship(itemIndex, { highlights: next })
+      break
+    case 'project':
+      state.updateProject(itemIndex, { highlights: next })
+      break
+    case 'education':
+      state.updateEducation(itemIndex, { highlights: next })
+      break
+  }
+}
+
+// removeExtra 删除项目内的扩展字段。
+function removeExtra(state: ResumeState, projectIndex: number, extraIndex: number): void {
+  const project = state.resume?.projects?.[projectIndex]
+  if (!project?.extras) return
+  state.updateProjectExtras(projectIndex, project.extras.filter((_, i) => i !== extraIndex))
+}
 
 function setByPath(obj: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.')

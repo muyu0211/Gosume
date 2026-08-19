@@ -6,7 +6,8 @@ export function SkillSection() {
   const items = useResumeStore((s) => s.resume?.skills) || []
   const addGroup = useResumeStore((s) => s.addSkillGroup)
   const updateGroup = useResumeStore((s) => s.updateSkillGroup)
-  const removeGroup = useResumeStore((s) => s.removeSkillGroup)
+  const requestDelete = useResumeStore((s) => s.requestItemDelete)
+  const requestSkillItemDelete = useResumeStore((s) => s.requestSkillItemDelete)
   const moveGroup = useResumeStore((s) => s.moveSkillGroup)
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveGroup)
@@ -21,12 +22,6 @@ export function SkillSection() {
     const group = items[groupIdx]
     const newItems = [...group.items]
     newItems[skillIdx] = { ...newItems[skillIdx], name, level }
-    updateGroup(groupIdx, { items: newItems })
-  }
-
-  const removeSkill = (groupIdx: number, skillIdx: number) => {
-    const group = items[groupIdx]
-    const newItems = group.items.filter((_, i) => i !== skillIdx)
     updateGroup(groupIdx, { items: newItems })
   }
 
@@ -90,7 +85,7 @@ export function SkillSection() {
                 />
                 <span className="hidden sm:inline">显示</span>
               </label>
-              <button onClick={() => removeGroup(gIdx)} className="p-1.5 text-surface-400 hover:text-red-500">
+              <button onClick={() => requestDelete('skill', gIdx)} className="p-1.5 text-surface-400 hover:text-red-500">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -136,7 +131,7 @@ export function SkillSection() {
                       }}
                     />
                   </label>
-                  <button onClick={() => removeSkill(gIdx, sIdx)} className="p-1 text-surface-400 hover:text-red-500">
+                  <button onClick={() => requestSkillItemDelete(gIdx, sIdx)} className="p-1 text-surface-400 hover:text-red-500">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

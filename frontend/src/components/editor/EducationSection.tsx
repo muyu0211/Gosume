@@ -9,7 +9,8 @@ export function EducationSection() {
   const items = useResumeStore((s) => s.resume?.education) || []
   const addItem = useResumeStore((s) => s.addEducation)
   const updateItem = useResumeStore((s) => s.updateEducation)
-  const removeItem = useResumeStore((s) => s.removeEducation)
+  const requestDelete = useResumeStore((s) => s.requestItemDelete)
+  const requestHighlightDelete = useResumeStore((s) => s.requestHighlightDelete)
   const moveItem = useResumeStore((s) => s.moveEducation)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
@@ -81,7 +82,7 @@ export function EducationSection() {
                   />
                   <span className="hidden sm:inline">在简历中显示</span>
                 </label>
-                <button onClick={(e) => { e.stopPropagation(); removeItem(idx) }} className="p-1 text-surface-400 hover:text-red-500">
+                <button onClick={(e) => { e.stopPropagation(); requestDelete('education', idx) }} className="p-1 text-surface-400 hover:text-red-500">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -134,6 +135,7 @@ export function EducationSection() {
                     <HighlightsEditor
                       highlights={edu.highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights })}
+                      onRequestRemove={(subIdx) => requestHighlightDelete('education', idx, subIdx)}
                     />
                   </div>
                 </div>
@@ -152,14 +154,20 @@ export function EducationSection() {
   )
 }
 
-function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onChange: (h: string[]) => void }) {
+function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void }) {
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
     const updated = [...highlights]
     updated[idx] = value
     onChange(updated)
   }
-  const removeHighlight = (idx: number) => onChange(highlights.filter((_, i) => i !== idx))
+  const removeHighlight = (idx: number) => {
+    if (onRequestRemove) {
+      onRequestRemove(idx)
+      return
+    }
+    onChange(highlights.filter((_, i) => i !== idx))
+  }
 
   return (
     <div className="space-y-1.5">

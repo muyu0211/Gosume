@@ -14,6 +14,14 @@ export interface ConfirmDialogProps {
   loading?: boolean
   /** Custom icon (defaults to AlertTriangle when `danger`). */
   icon?: ReactNode
+  /** 是否展示「本次不再提示」勾选框。 */
+  showDontAskAgain?: boolean
+  /** 勾选框的受控状态。 */
+  dontAskAgain?: boolean
+  /** 勾选框文案。 */
+  dontAskAgainText?: string
+  /** 勾选框状态变更回调。 */
+  onDontAskAgainChange?: (checked: boolean) => void
   onConfirm: () => void
   onCancel: () => void
 }
@@ -32,6 +40,10 @@ export function ConfirmDialog({
   danger = false,
   loading = false,
   icon,
+  showDontAskAgain = false,
+  dontAskAgain = false,
+  dontAskAgainText = '本次不再提示',
+  onDontAskAgainChange,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -65,24 +77,39 @@ export function ConfirmDialog({
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-2.5 mt-6">
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
-              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
-            }`}
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {confirmText}
-          </button>
+        <div className="flex items-center justify-between gap-3 mt-6">
+          {showDontAskAgain ? (
+            <label className="flex items-center gap-2 text-xs text-surface-500 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                checked={dontAskAgain}
+                onChange={(e) => onDontAskAgainChange?.(e.target.checked)}
+              />
+              <span>{dontAskAgainText}</span>
+            </label>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2.5">
+            <button
+              onClick={onCancel}
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
+                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+              }`}
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
     </div>

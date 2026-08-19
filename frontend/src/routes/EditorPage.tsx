@@ -6,6 +6,7 @@ import { Sidebar } from '../components/layout/Sidebar'
 import { Toolbar } from '../components/layout/Toolbar'
 import { StatusBar } from '../components/layout/StatusBar'
 import { EditorPanel } from '../components/editor/EditorPanel'
+import { ItemDeleteConfirmDialog } from '../components/editor/ItemDeleteConfirmDialog'
 import { PreviewPanel } from '../components/preview/PreviewPanel'
 import { ExportDialog } from '../components/export/ExportDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
@@ -136,6 +137,9 @@ export function EditorPage() {
       {showExportDialog && (
         <ExportDialog onClose={() => setShowExportDialog(false)} />
       )}
+
+      {/* 条目删除二次确认 */}
+      <ItemDeleteConfirmDialog />
     </AnimatedPage>
   )
 }
