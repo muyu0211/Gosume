@@ -100,9 +100,16 @@ export function WelcomePage() {
     clearResume()
     setActiveTemplate(templateId)
     const sampleResume = createSampleResume(templateId)
-    await callService('ResumeService', 'InitResume', sampleResume)
-    setResume(sampleResume)
-    navigate('/editor')
+    try {
+      await callService('ResumeService', 'InitResume', sampleResume)
+      setResume(sampleResume)
+      navigate('/editor')
+    } catch (err) {
+      console.error('InitResume failed:', err)
+      // 失败时仍进入编辑器（内存态可用），后续保存会重新创建记录
+      setResume(sampleResume)
+      navigate('/editor')
+    }
   }
 
   const handleOpenRecent = async (id: string) => {

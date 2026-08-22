@@ -145,9 +145,11 @@ export function SettingsPage() {
   const [pendingDir, setPendingDir] = useState<string | null>(null)
 
   useEffect(() => {
-    callService<string>('SystemService', 'GetDataDir').then((dir) => {
-      if (dir) setDataDir(dir)
-    })
+    callService<string>('SystemService', 'GetDataDir')
+      .then((dir) => {
+        if (dir) setDataDir(dir)
+      })
+      .catch(() => { /* 加载失败保持「加载中...」占位 */ })
   }, [])
 
   const handleLanguageChange = (lang: string) => {
@@ -164,11 +166,16 @@ export function SettingsPage() {
     setDirErrorMsg('')
 
     // Step 1: Open native folder picker
-    const dir = await callService<string>('SystemService', 'PickDataDir')
-    if (!dir) return // user cancelled
+    try {
+      const dir = await callService<string>('SystemService', 'PickDataDir')
+      if (!dir) return // user cancelled
 
-    // Step 2: 弹出确认模态（复用 ConfirmDialog，替代 window.confirm）
-    setPendingDir(dir)
+      // Step 2: 弹出确认模态（复用 ConfirmDialog，替代 window.confirm）
+      setPendingDir(dir)
+    } catch (err: any) {
+      setDirStatus('error')
+      setDirErrorMsg(err?.message || String(err))
+    }
   }
 
   const confirmChangeDataDir = async () => {

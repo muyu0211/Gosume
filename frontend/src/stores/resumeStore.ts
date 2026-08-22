@@ -1,7 +1,16 @@
 import { create, type StoreApi } from 'zustand'
 import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField } from '../types/resume'
 import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
-import { callService } from '../services/backend'
+import { callService, isWails } from '../services/backend'
+import { paginateHTMLString } from '../lib/exportHtml'
+import { renderTemplate } from '../lib/templateEngine'
+import { loadTemplateContent } from '../services/templateService'
+import { injectLayoutCss, injectAvatarSizeCss } from '../lib/layoutPresets'
+import { useTemplateStore } from './templateStore'
+import { useLayoutSettingsStore } from './layoutSettingsStore'
+
+/** 回退模板 ID（与 usePreview / templateStore 默认值一致）。 */
+const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
 
 /** 简历内容条目的种类，用于删除二次确认的文案与分发。 */
 export type ItemDeleteKind = 'internship' | 'job' | 'education' | 'skill' | 'project' | 'language' | 'award'
@@ -31,6 +40,8 @@ interface ResumeState {
   resumeList: ResumeListItem[]
   currentId: string | null
   avatarRenderedSize: { width: number; height: number } | null
+  /** 最近一次保存后测量的内容真实高度（CSS px）；null 表示尚未测量。 */
+  contentHeight: number | null
 
   clearResume: () => void
   newResume: (templateId: string) => Promise<void>
@@ -42,8 +53,19 @@ interface ResumeState {
   setAvatarRenderedSize: (size: { width: number; height: number } | null) => void
   setResumeList: (list: ResumeListItem[]) => void
   loadResume: (id: string) => Promise<Resume | null>
-  saveCurrent: () => Promise<void>
+  saveCurrent: () => Promise<boolean>
   deleteResume: (id: string) => Promise<void>
+  /** 请求后端测量当前内容真实高度并缓存到 contentHeight；失败返回 null。 */
+  measureContentHeight: () => Promise<number | null>
+
+  // 未保存更改守卫（离开编辑页 / 关闭窗口前的二确）
+  // pendingLeave 挂起待执行的离开动作；savingOnLeave 表示「保存并继续」进行中。
+  pendingLeave: (() => void) | null
+  savingOnLeave: boolean
+  requestLeave: (handler: () => void) => void
+  cancelLeave: () => void
+  confirmLeaveSave: () => Promise<void>
+  discardLeave: () => void
 
   // Array operations
   addInternship: () => void
@@ -100,25 +122,28 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   resumeList: [],
   currentId: null,
   avatarRenderedSize: null,
+  contentHeight: null,
+  pendingLeave: null,
+  savingOnLeave: false,
 
-  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null, avatarRenderedSize: null }),
+  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null, avatarRenderedSize: null, contentHeight: null }),
 
   newResume: async (templateId) => {
     try {
       const resume = await callService<Resume>('ResumeService', 'NewResume', templateId, 'zh-CN')
       if (resume) {
-        const id = await callService<string>('ResumeService', 'GetCurrentID')
+        const id = await callService<string>('ResumeService', 'GetTemplateID')
         console.log('[resumeStore] newResume: backend OK, currentId =', id || '(empty)')
-        set({ resume, isDirty: false, filePath: null, currentId: id || null })
+        set({ resume, isDirty: false, filePath: null, currentId: id || null, contentHeight: null })
         return
       }
     } catch (err) {
       console.error('[resumeStore] newResume: backend failed, using local fallback:', err)
     }
-    set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null })
+    set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null, contentHeight: null })
   },
 
-  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null }),
+  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null, contentHeight: null }),
 
   updateField: (path, value) => {
     const resume = get().resume
@@ -141,7 +166,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
         const migrated = migratePersonalSummary(resume)
-        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null })
+        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null, contentHeight: null })
         return migrated
       }
     } catch (err) {
@@ -151,14 +176,76 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
 
   saveCurrent: async () => {
+    // 无内容修改且已持久化：后端数据已是最新，直接视为保存成功，不发起任何
+    // 后端请求（防频繁点击；后端保存还会触发内容高度测量，开销较大）。
+    // 新建简历（currentId 为空）不受影响——首次保存必须真实落库。
+    if (!get().isDirty && get().currentId) {
+      return true
+    }
     try {
       console.trace('[resumeStore] saveCurrent: CALL STACK - who called saveCurrent?')
+      // 先把前端最新的简历数据同步到后端内存态，再持久化。
+      // 后端 ExplicitSave 写入的是内存态 current，缺少此步会落库为过期数据。
+      const resume = get().resume
+      if (resume) {
+        await callService('ResumeService', 'SetResume', resume)
+      }
       await callService('ResumeService', 'ExplicitSave')
-      const id = await callService<string>('ResumeService', 'GetCurrentID')
+      const id = await callService<string>('ResumeService', 'GetTemplateID')
       console.log('[resumeStore] saveCurrent: done, new currentId =', id || '(empty)')
       set({ isDirty: false, currentId: id || null })
+      // 保存成功后异步测量内容真实高度（用于一页导出可行性提示），不阻塞保存流程
+      get().measureContentHeight()
+      return true
     } catch (err) {
       console.error('SaveCurrent failed:', err)
+      return false
+    }
+  },
+
+  measureContentHeight: async () => {
+    // 非桌面环境（无 Wails 后端）直接跳过，避免无意义的分页渲染
+    if (!isWails()) return null
+    try {
+      const resume = get().resume
+      if (!resume) return null
+
+      // 测量前确保布局档位已加载（页边距/内容间距影响内容高度），
+      // 保证首次进入编辑页的测量与保存后的测量口径一致。
+      await useLayoutSettingsStore.getState().ensureLoaded()
+
+      // 关键：不能用滞后的 previewHtml——预览渲染是 300ms 防抖异步
+      // （usePreview.debouncedRefresh），快速编辑后立即保存时 previewHtml
+      // 可能还是旧内容，导致测量结果与当前 resume 不一致（如取消隐藏后
+      // 仍测出隐藏前的高度）。这里用当前 resume 现场渲染（与预览同一渲染
+      // 链路：renderTemplate → 布局 CSS → 头像尺寸 CSS），保证测量内容
+      // 与保存内容严格一致。
+      const templateId = useTemplateStore.getState().activeTemplateId || DEFAULT_TEMPLATE_ID
+      const tmpl = await loadTemplateContent(templateId)
+      const rendered = renderTemplate(tmpl, resume)
+      const html = injectLayoutCss(
+        rendered,
+        resume.meta?.page_margin,
+        resume.meta?.section_spacing,
+        useLayoutSettingsStore.getState(),
+      )
+      const htmlWithAvatar = injectAvatarSizeCss(html, resume.personal)
+      const paginated = await paginateHTMLString(htmlWithAvatar, 'continuous')
+      const h = await callService<number>(
+        'ExportService',
+        'GetResumeContentHeight',
+        paginated,
+        1.0,
+      )
+      if (typeof h === 'number' && h > 0) {
+        set({ contentHeight: h })
+        return h
+      }
+      return null
+    } catch (err) {
+      // 测量失败不影响主流程（后端未加载简历 / 浏览器不可用时静默跳过）
+      console.warn('[resumeStore] measure content height failed:', err)
+      return null
     }
   },
 
@@ -457,6 +544,41 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
 
   cancelItemDelete: () => set({ pendingItemDelete: null }),
+
+  // ── 未保存更改守卫 ────────────────────────────────────────────────────────
+  // 有未保存更改时挂起离开动作并弹出二确；无未保存更改时立即执行。
+  requestLeave: (handler) => {
+    if (!get().isDirty) {
+      handler()
+      return
+    }
+    set({ pendingLeave: handler, savingOnLeave: false })
+  },
+
+  // 关闭二确弹窗（不执行挂起的离开动作）。
+  cancelLeave: () => set({ pendingLeave: null, savingOnLeave: false }),
+
+  // 「保存并继续」：先保存，成功后再执行挂起的离开动作；保存失败保持弹窗。
+  confirmLeaveSave: async () => {
+    const handler = get().pendingLeave
+    if (!handler) return
+    set({ savingOnLeave: true })
+    const ok = await get().saveCurrent()
+    if (!ok) {
+      // 保存失败：保持弹窗，用户可改选「不保存并继续」
+      set({ savingOnLeave: false })
+      return
+    }
+    set({ pendingLeave: null, savingOnLeave: false })
+    handler()
+  },
+
+  // 「不保存并继续」：直接执行挂起的离开动作。
+  discardLeave: () => {
+    const handler = get().pendingLeave
+    set({ pendingLeave: null, savingOnLeave: false })
+    if (handler) handler()
+  },
 }))
 
 // requestPending 统一处理删除请求：已勾选「本次不再提示」则直接执行，否则进入待确认。

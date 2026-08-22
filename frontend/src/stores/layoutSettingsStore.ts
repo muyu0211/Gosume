@@ -38,13 +38,19 @@ export const useLayoutSettingsStore = create<LayoutSettingsState>((set, get) => 
   },
 
   reload: async () => {
-    const cfg = await callService<LayoutPresetSettings>(
-      'SystemService',
-      'GetLayoutPresets',
-    )
-    if (cfg?.margins?.length && cfg?.spacings?.length) {
-      set({ margins: cfg.margins, spacings: cfg.spacings, loaded: true })
-    } else {
+    try {
+      const cfg = await callService<LayoutPresetSettings>(
+        'SystemService',
+        'GetLayoutPresets',
+      )
+      if (cfg?.margins?.length && cfg?.spacings?.length) {
+        set({ margins: cfg.margins, spacings: cfg.spacings, loaded: true })
+      } else {
+        set({ loaded: true })
+      }
+    } catch (err) {
+      // 加载失败时保留内置默认档位并标记已尝试，避免重复拉取
+      console.error('[layoutSettingsStore] reload failed, using defaults:', err)
       set({ loaded: true })
     }
   },

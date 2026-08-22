@@ -1,9 +1,19 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useTemplateStore } from '../../stores/templateStore'
 import { FileText, Image, X, Download, Loader2, Check, AlertCircle } from 'lucide-react'
 import { callService } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
 import { paginateHTMLString } from '../../lib/exportHtml'
+import { renderTemplate } from '../../lib/templateEngine'
+import { loadTemplateContent } from '../../services/templateService'
+import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
+import { useLayoutSettingsStore } from '../../stores/layoutSettingsStore'
+import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
+
+const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
+/** 一页 PDF 的 PNG 渲染像素密度（固定，不向用户暴露清晰度选项）。 */
+const ONE_PAGE_PNG_SCALE = 2.0
 
 interface Props {
   onClose: () => void
@@ -12,20 +22,32 @@ interface Props {
 const formats = [
   { id: 'pdf' as const, label: 'PDF 文档', desc: '适合打印和投递，保留完整排版和超链接', icon: FileText },
   { id: 'png' as const, label: 'PNG 图片', desc: '高清截图，用于在线预览和分享', icon: Image },
+  { id: '单页pdf' as const, label: '单页 PDF', desc: '将全部内容压缩为单页，内容超高时字体会缩小', icon: FileText },
 ]
+
+type ExportFormat = (typeof formats)[number]['id']
 
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
 type Phase = 'entering' | 'open' | 'exiting'
 
 export function ExportDialog({ onClose }: Props) {
   const resume = useResumeStore((s) => s.resume)
-  const previewHtml = useResumeStore((s) => s.previewHtml)
-  const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'png'>('pdf')
+  const contentHeight = useResumeStore((s) => s.contentHeight)
+  const templates = useTemplateStore((s) => s.templates)
+  const activeTemplateId = useTemplateStore((s) => s.activeTemplateId)
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf')
   const [scale, setScale] = useState(1.5)
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [phase, setPhase] = useState<Phase>('entering')
   const closingTimeout = useRef<ReturnType<typeof setTimeout>>()
+
+  const activeTemplate = templates.find((t) => t.id === activeTemplateId)
+  // 一页 PDF 的内容高度提示：复用保存后测量的 contentHeight
+  const paper = getTemplatePaper(activeTemplate?.paper_size, activeTemplate?.orientations?.[0])
+  const heightRatio = contentHeightRatio(contentHeight, paper)
+  const heightLevel = heightRatio == null ? null : ratioLevel(heightRatio)
+  const heightPercent = heightRatio == null ? null : Math.round(heightRatio * 100)
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -51,24 +73,38 @@ export function ExportDialog({ onClose }: Props) {
     setStatus('exporting')
     setErrorMsg('')
 
-    if (!previewHtml) {
-      setErrorMsg('预览尚未就绪，请稍候再试')
-      setStatus('error')
-      return
-    }
-
     try {
-      const paginatedHtml = await paginateHTMLString(previewHtml, selectedFormat === 'png' ? 'continuous' : 'paged')
+      // 现场渲染当前 resume（与批量导出、内容高度测量同一渲染链路：
+      // renderTemplate → 布局 CSS → 头像尺寸 CSS → 分页），不依赖可能滞后的
+      // previewHtml（预览是 300ms 防抖异步），保证导出内容与当前状态严格一致。
+      const templateId = resume.meta.template_id || DEFAULT_TEMPLATE_ID
+      const tmpl = await loadTemplateContent(templateId)
+      const rendered = renderTemplate(tmpl, resume)
+      const htmlWithLayout = injectLayoutCss(
+        rendered,
+        resume.meta?.page_margin,
+        resume.meta?.section_spacing,
+        useLayoutSettingsStore.getState(),
+      )
+      const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
+
+      const pageMode = selectedFormat === 'png' || selectedFormat === '单页pdf' ? 'continuous' : 'paged'
+      const paginatedHtml = await paginateHTMLString(htmlWithAvatar,pageMode)
       let filePath: string | null = null
 
       const resumeName = resume.meta.name || ''
 
       switch (selectedFormat) {
         case 'pdf':
-          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'pdf', 1.0, resumeName)
+          filePath = await callService<string>('ExportService', 'Export', paginatedHtml, 'pdf', 1.0, resumeName)
           break
         case 'png':
-          filePath = await callService<string>('ExportService', 'ExportHTML', paginatedHtml, 'png', scale, resumeName)
+          filePath = await callService<string>('ExportService', 'Export', paginatedHtml, 'png', scale, resumeName)
+          break
+        case '单页pdf':
+          // 高度已由导出入口的保存动作（EditorPage.handleExport → saveCurrent）
+          // 更新到 contentHeight 缓存，此处直接使用，不再重复测量。
+          filePath = await callService<string>('ExportService', 'Export', paginatedHtml, 'single_pdf', ONE_PAGE_PNG_SCALE, resumeName)
           break
       }
 
@@ -85,7 +121,7 @@ export function ExportDialog({ onClose }: Props) {
       setErrorMsg(extractErrorMessage(err, '导出失败，请重试'))
       setStatus('error')
     }
-  }, [resume, previewHtml, selectedFormat, scale, handleClose])
+  }, [resume, selectedFormat, scale, handleClose])
 
   const isActive = phase === 'open' || phase === 'entering'
 
@@ -177,6 +213,37 @@ export function ExportDialog({ onClose }: Props) {
             </div>
           )}
 
+          {/* 一页 PDF：内容高度提示（由导出入口的保存动作更新 contentHeight，130% 仅为建议阈值不阻止导出） */}
+          {selectedFormat === '单页pdf' && (
+            <div>
+              <label className="text-sm font-medium text-surface-600 mb-2 block">内容高度参考</label>
+              {heightLevel == null ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-100 text-surface-500 text-sm">
+                  保存简历后自动计算内容高度，用于判断一页导出的观感
+                </div>
+              ) : (
+                <div
+                  className={`flex items-start gap-2 p-3 rounded-lg border text-sm ${
+                    heightLevel === 'over'
+                      ? 'bg-red-50 border-red-100 text-red-700'
+                      : heightLevel === 'ok'
+                      ? 'bg-amber-50 border-amber-100 text-amber-700'
+                      : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                  }`}
+                >
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    {heightLevel === 'over'
+                      ? `当前内容约为一页的 ${heightPercent}%，超出较多。单页导出会按比例缩小宽度，字体/内容明显变小，建议使用普通 PDF 导出。`
+                      : heightLevel === 'ok'
+                      ? `当前内容约为一页的 ${heightPercent}%，仅轻微超出，一页导出观感良好，推荐使用。`
+                      : `当前内容约为一页的 ${heightPercent}%，一页内完整放下，一页导出不会压缩。`}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {status === 'exporting' && (
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
               <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
@@ -216,7 +283,7 @@ export function ExportDialog({ onClose }: Props) {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            {status === 'exporting' ? '导出中...' : status === 'done' ? '已完成' : `导出 ${selectedFormat.toUpperCase()}`}
+            {status === 'exporting' ? '导出中...' : status === 'done' ? '已完成' : `导出${selectedFormat.toUpperCase()}`}
           </button>
         </div>
       </div>

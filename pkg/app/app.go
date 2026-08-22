@@ -55,13 +55,13 @@ func New(assets, builtinTemplates embed.FS) *App {
 	// 统一 HTML：全应用共享一份，模板包不携带 HTML。
 	tempHTML, err := builtinTemplates.ReadFile("templates/template.html")
 	if err != nil {
-		log.Error("[main] read template.html: %v", err)
+		log.Errorf("[main] read template.html: %v", err)
 		tempHTML = []byte{}
 	}
 
 	// 渲染与导出
 	htmlRenderer := template_render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(tempHTML)})
-	exportManager := template_export.NewExportManager(template_export.NewBrowserManager())
+	browserManager := template_export.NewBrowserManager()
 
 	// 项目文件存储
 	projectStore := repo.NewProjectRepo(dataDir)
@@ -86,9 +86,9 @@ func New(assets, builtinTemplates embed.FS) *App {
 	app, window := createApp(assets, svcs)
 
 	// 依赖注入
-	resumeSvc.Inject(app, resumeStore, htmlRenderer)
+	resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
 	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
-	exportSvc.Inject(app, exportManager)
+	exportSvc.Inject(app, browserManager)
 	fileSvc.Inject(app, projectStore, resumeSvc)
 	systemSvc.Inject(app, userCfgMgr, window)
 
@@ -98,17 +98,18 @@ func New(assets, builtinTemplates embed.FS) *App {
 	event.AddEvent(event.FILE_OPENED, "1")
 	event.AddEvent(event.FILE_SAVED, "1")
 	event.AddEvent(event.CONFIG_DATADIR_CHANGED, "1")
+	event.AddEvent(event.WINDOW_CLOSE_REQUESTED, "")
 	event.RegisterEvents()
 
 	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。
 	// 存储重开失败时回滚到旧目录，避免应用进入不可用状态。
 	userCfgMgr.OnChange(func(oldDir, newDir string) {
-		log.Info("[main] data dir change: %s -> %s", oldDir, newDir)
+		log.Infof("[main] data dir change: %s -> %s", oldDir, newDir)
 
 		log.Close()
 
 		if err := resumeStore.Reopen(newDir); err != nil {
-			log.Error("[main] failed to reopen resume store at %s: %v", newDir, err)
+			log.Errorf("[main] failed to reopen resume store at %s: %v", newDir, err)
 			userCfgMgr.SetDataDir(oldDir)
 			return
 		}
@@ -116,23 +117,23 @@ func New(assets, builtinTemplates embed.FS) *App {
 		projectStore.SetDataDir(newDir)
 
 		if err := templateStore.Reopen(resumeStore.DB(), builtinTemplates); err != nil {
-			log.Error("[main] failed to reopen template store: %v", err)
+			log.Errorf("[main] failed to reopen template store: %v", err)
 		}
 
 		log.Init(newDir, "Gosume", log.INFO, true)
 
 		// 重新注入依赖
-		resumeSvc.Inject(app, resumeStore, htmlRenderer)
+		resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
 		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 		fileSvc.Inject(app, projectStore, resumeSvc)
 
 		app.Event.Emit("config:datadir-changed", newDir)
 
-		log.Info("[main] hot-reload complete, new data dir: %s", newDir)
+		log.Infof("[main] hot-reload complete, new data dir: %s", newDir)
 	})
 
-	log.Info(" ============ [main] data dir: %s ============ ", dataDir)
-	log.Info(" ============ [main] app version: %s ============ ", config.GlobalConfig.App.Version)
+	log.Infof(" ============ [main] data dir: %s ============ ", dataDir)
+	log.Infof(" ============ [main] app version: %s ============ ", config.GlobalConfig.App.Version)
 
 	return &App{wailsApp: app, stopWatch: stopWatch}
 }
@@ -144,7 +145,7 @@ func (a *App) Run() {
 	}
 	defer log.Close()
 	if err := a.wailsApp.Run(); err != nil {
-		log.Fatal("%v", err)
+		log.Fatalf("%v", err)
 	}
 }
 

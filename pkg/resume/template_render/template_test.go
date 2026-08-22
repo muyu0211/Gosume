@@ -18,7 +18,7 @@ func (l staticLoader) LoadAll() ([]*Template, error)         { return []*Templat
 
 func unifiedTemplateForTest(t *testing.T) *Template {
 	t.Helper()
-	html, err := os.ReadFile("../../templates/template.html")
+	html, err := os.ReadFile("../../../templates/template.html")
 	if err != nil {
 		t.Fatalf("read template.html: %v", err)
 	}
@@ -157,12 +157,12 @@ func TestUnifiedTemplateHiddenFiltered(t *testing.T) {
 // TestAllBuiltinTemplatesRenderWithUnified 验证 16 套内置模板的 styles.css
 // 都能与统一 HTML（templates/template.html）配对渲染（Gosume 一期改造 M3 验收）。
 func TestAllBuiltinTemplatesRenderWithUnified(t *testing.T) {
-	unifiedHTML, err := os.ReadFile("../../templates/template.html")
+	unifiedHTML, err := os.ReadFile("../../../templates/template.html")
 	if err != nil {
 		t.Fatalf("read template.html: %v", err)
 	}
 
-	dirs, err := os.ReadDir("../../templates")
+	dirs, err := os.ReadDir("../../../templates")
 	if err != nil {
 		t.Fatalf("read templates dir: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestAllBuiltinTemplatesRenderWithUnified(t *testing.T) {
 		if !d.IsDir() {
 			continue
 		}
-		css, err := os.ReadFile("../../templates/" + d.Name() + "/styles.css")
+		css, err := os.ReadFile("../../../templates/" + d.Name() + "/styles.css")
 		if err != nil {
 			t.Fatalf("read styles.css of %s: %v", d.Name(), err)
 		}
@@ -250,6 +250,8 @@ func sampleResumeForUnified() *model.Resume {
 			School:    "示例大学",
 			Degree:    "本科",
 			Major:     "计算机",
+			Minor:     "心理学", // 非空触发 {{i18n $.Meta.Language "辅修：" ...}} 分支（历史回归点）
+			Courses:   "数据结构、操作系统",
 			StartDate: "2016.09",
 			EndDate:   "2020.06",
 		}},

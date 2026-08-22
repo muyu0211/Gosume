@@ -1,31 +1,40 @@
 import { useState, useEffect, useCallback } from 'react'
 import { callService } from '../../services/backend'
+import { useResumeStore } from '../../stores/resumeStore'
 import { isMacOS } from '../../lib/platform'
 
 export function TitleBar() {
   const [isMaximised, setIsMaximised] = useState(false)
+  const requestLeave = useResumeStore((s) => s.requestLeave)
   // macOS 使用原生红绿灯（关闭/最小化/全屏），不渲染自绘的 Windows 风格按钮
   const isMac = isMacOS()
 
   useEffect(() => {
     if (isMac) return
-    callService<boolean>('SystemService', 'IsWindowMaximised').then((v) => {
-      if (v) setIsMaximised(v)
-    })
+    // 窗口控制为火发即忘调用，失败静默（如窗口已关闭），避免 unhandled rejection
+    callService<boolean>('SystemService', 'IsWindowMaximised')
+      .then((v) => {
+        if (v) setIsMaximised(v)
+      })
+      .catch(() => { /* 忽略：非关键路径 */ })
   }, [isMac])
 
   const handleMinimize = useCallback(() => {
-    callService('SystemService', 'MinimizeWindow')
+    callService('SystemService', 'MinimizeWindow').catch(() => { /* 忽略 */ })
   }, [])
 
   const handleMaximize = useCallback(() => {
-    callService('SystemService', 'MaximizeWindow')
+    callService('SystemService', 'MaximizeWindow').catch(() => { /* 忽略 */ })
     setIsMaximised(!isMaximised)
   }, [isMaximised])
 
   const handleClose = useCallback(() => {
-    callService('SystemService', 'CloseWindow')
-  }, [])
+    // 未保存守卫：有未保存更改时先弹二确（保存并继续 / 不保存并继续 / 取消），
+    // 确认后调用 ConfirmWindowClose 真正关闭窗口；无未保存更改则直接关闭。
+    requestLeave(() => {
+      callService('SystemService', 'ConfirmWindowClose').catch(() => { /* 忽略 */ })
+    })
+  }, [requestLeave])
 
   return (
     <div className="titlebar">

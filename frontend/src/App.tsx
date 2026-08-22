@@ -1,11 +1,14 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
+import { Events } from '@wailsio/runtime'
 import { TitleBar } from './components/layout/TitleBar'
 import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { useLayoutSettingsStore } from './stores/layoutSettingsStore'
+import { useResumeStore } from './stores/resumeStore'
 import { applyPlatformToDocument } from './lib/platform'
+import { isWails, callService } from './services/backend'
 
 export default function App() {
   // 平台标记已由 main.tsx 在渲染前写入；此处再次应用以确保一致，
@@ -18,8 +21,8 @@ export default function App() {
     // 否则会移除原生窗口按钮，看起来像 Windows 程序。
     if (platform !== 'darwin') {
       try {
-        const win = window as Record<string, unknown>
-        const wailsWindow = win._wails?.Window as Record<string, unknown> | undefined
+        const win = window as unknown as Record<string, unknown>
+        const wailsWindow = (win._wails as Record<string, unknown> | undefined)?.Window as Record<string, unknown> | undefined
         if (wailsWindow?.SetFrameless) {
           ;(wailsWindow.SetFrameless as (v: boolean) => void)(true)
         }
@@ -31,6 +34,19 @@ export default function App() {
   // to the preview, exports and the layout popover from the start.
   useEffect(() => {
     useLayoutSettingsStore.getState().ensureLoaded().catch(() => { /* defaults apply */ })
+  }, [])
+
+  // 监听系统关闭请求（标题栏原生 X / Alt+F4 / macOS 红绿灯）：后端在
+  // Common.WindowClosing 钩子中拦截并广播此事件，前端据此做未保存二确，
+  // 确认后调用 ConfirmWindowClose 真正关闭窗口。
+  useEffect(() => {
+    if (!isWails()) return
+    const off = Events.On('window:close-requested', () => {
+      useResumeStore.getState().requestLeave(() => {
+        callService('SystemService', 'ConfirmWindowClose').catch(() => { /* 忽略 */ })
+      })
+    })
+    return off
   }, [])
 
   return (

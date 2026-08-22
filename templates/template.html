@@ -92,8 +92,8 @@
                         <div class="edu-school">{{.School}}{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
                     </div>
-                    {{if .Minor}}<div class="edu-detail">{{i18n .Meta.Language "辅修：" "Minor: "}}{{.Minor}}</div>{{end}}
-                    {{if .Courses}}<div class="edu-courses">{{i18n .Meta.Language "主修课程：" "Courses: "}}{{.Courses}}</div>{{end}}
+                    {{if .Minor}}<div class="edu-detail">{{i18n $.Meta.Language "辅修：" "Minor: "}}{{.Minor}}</div>{{end}}
+                    {{if .Courses}}<div class="edu-courses">{{i18n $.Meta.Language "主修课程：" "Courses: "}}{{.Courses}}</div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
                         {{range .Highlights}}<li>{{.}}</li>{{end}}

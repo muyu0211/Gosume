@@ -417,6 +417,11 @@ function paginateContinuous(
   ctx.wrapper.style.background = ctx.pageBg
   ctx.wrapper.style.paddingTop = `${ctx.padTop}px`
   ctx.wrapper.style.paddingBottom = `${ctx.padBottom}px`
+  // 标注上下页边距（元数据，不改布局）：后端 PNG 导出注入「撑满一页」样式时
+  // 用它计算 .resume-page 的 min-height（视口高 - 上下边距），使内容不足一页时
+  // 页面背景/侧栏延伸到底，避免截图底部出现割裂的空白块。
+  ctx.wrapper.setAttribute('data-pad-top', String(ctx.padTop))
+  ctx.wrapper.setAttribute('data-pad-bottom', String(ctx.padBottom))
 
   const page = ctx.doc.createElement('div')
   page.className = 'resume-page'

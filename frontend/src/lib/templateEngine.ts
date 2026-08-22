@@ -299,8 +299,10 @@ function evalExpr(
   if (funcMatch && funcs[funcMatch[1]]) {
     const rawArgs = parseArgs(funcMatch[2])
     const resolved = rawArgs.map((arg) => {
-      if (arg.startsWith('.')) {
-        const val = resolvePath(data, arg.slice(1))
+      if (arg.startsWith('.') || arg.startsWith('$')) {
+        // .Field 剥点后按当前作用域解析；$.Field 保留 $ 前缀交给 resolvePath
+        // （其内部剥掉 "$." 后按根引用解析）。
+        const val = resolvePath(data, arg.startsWith('$') ? arg : arg.slice(1))
         return val == null ? '' : String(val)
       }
       return arg
@@ -308,9 +310,9 @@ function evalExpr(
     return funcs[funcMatch[1]](...resolved)
   }
 
-  // Simple value: .Field.Nested or .Field
-  if (expr.startsWith('.')) {
-    return resolvePath(data, expr.slice(1))
+  // Simple value: .Field.Nested or .Field / $.Field
+  if (expr.startsWith('.') || expr.startsWith('$')) {
+    return resolvePath(data, expr.startsWith('$') ? expr : expr.slice(1))
   }
 
   // String literal
@@ -417,6 +419,12 @@ function resolvePath(data: Record<string, unknown>, path: string): unknown {
   if (path === '') {
     return '$' in data ? data.$ : data
   }
+  // $.Field — Go template 的显式根引用。range 内作用域为浅合并
+  // （{...data, ...item, $: item}），根字段已在其中，剥掉 "$." 后按常规解析；
+  // 即使条目恰好有同名根字段，也以合并对象中的根字段为准（条目字段不覆盖根）。
+  if (path.startsWith('$.')) {
+    path = path.slice(2)
+  }
   const parts = path.split('.')
   let current: unknown = data
   for (const part of parts) {
@@ -509,5 +517,8 @@ function toGoShape(resume: Resume): Record<string, unknown> {
     }
     return obj
   }
-  return convert(resume) as Record<string, unknown>
+  // 必须转换 shaped（含 hidden 处理后的副本），而不是原始 resume——
+  // 否则个人总结的隐藏（清空 summary）会被丢弃，{{if .PersonalSummary.Summary}}
+  // 永远渲染。
+  return convert(shaped) as Record<string, unknown>
 }

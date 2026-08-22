@@ -43,7 +43,7 @@ func NewResumeStore(dataDir string) (*ResumeRepo, error) {
 	}
 	for _, p := range pragmas {
 		if _, err := db.Exec(p); err != nil {
-			log.Error("[resume_repo] pragma %s error: %v", p, err)
+			log.Errorf("[resume_repo] pragma %s error: %v", p, err)
 			return nil, fmt.Errorf("pragma %s: %w", p, err)
 		}
 	}
@@ -52,11 +52,11 @@ func NewResumeStore(dataDir string) (*ResumeRepo, error) {
 	store := &ResumeRepo{db: db}
 	if err := store.initSchema(); err != nil {
 		db.Close()
-		log.Error("[resume_repo] init schema error: %v", err)
+		log.Errorf("[resume_repo] init schema error: %v", err)
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
 
-	log.Info("[resume_repo] init resume store success")
+	log.Infof("[resume_repo] init resume store success")
 	return store, nil
 }
 
@@ -119,7 +119,7 @@ func (s *ResumeRepo) Create(resume *model.Resume) (string, error) {
 		return "", fmt.Errorf("insert resume: %w", err)
 	}
 
-	log.Info("[resume_repo] DB INSERT: id=%s name=%q template=%s", id, name, resume.Meta.TemplateID)
+	log.Infof("[resume_repo] DB INSERT: id=%s name=%q template=%s", id, name, resume.Meta.TemplateID)
 	return id, nil
 }
 
@@ -146,7 +146,7 @@ func (s *ResumeRepo) Update(id string, resume *model.Resume) error {
 	if n == 0 {
 		return fmt.Errorf("resume %s not found", id)
 	}
-	log.Info("[resume_repo] update resume success, id: %s", id)
+	log.Infof("[resume_repo] update resume success, id: %s", id)
 	return nil
 }
 
@@ -211,7 +211,7 @@ func (s *ResumeRepo) SoftDelete(id string) error {
 func (s *ResumeRepo) Reopen(dataDir string) error {
 	if s.db != nil {
 		if err := s.db.Close(); err != nil {
-			log.Error("[resume_repo] close old db: %v", err)
+			log.Errorf("[resume_repo] close old db: %v", err)
 		}
 	}
 
@@ -239,6 +239,6 @@ func (s *ResumeRepo) Reopen(dataDir string) error {
 		return fmt.Errorf("init schema: %w", err)
 	}
 
-	log.Info("[resume_repo] reopened at %s", dataDir)
+	log.Infof("[resume_repo] reopened at %s", dataDir)
 	return nil
 }

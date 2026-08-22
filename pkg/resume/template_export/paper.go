@@ -1,6 +1,7 @@
 package template_export
 
 import (
+	"gosume/pkg/util"
 	"math"
 	"regexp"
 	"strings"
@@ -22,10 +23,14 @@ type PaperSpec struct {
 }
 
 var (
-	// PaperA4 是 A4 纵向规格（210 × 297 mm）。
-	PaperA4 = makePaper("A4", 210, 297)
-	// PaperLetter 是 Letter 纵向规格（8.5 × 11 in）。
-	PaperLetter = makePaper("Letter", 215.9, 279.4)
+	PaperA4     = makePaper("A4", 210, 297)         // PaperA4 是 A4 纵向规格（210 × 297 mm）。
+	PaperLetter = makePaper("Letter", 215.9, 279.4) // PaperLetter 是 Letter 纵向规格（8.5 × 11 in）。
+)
+
+// 用于从 HTML 中提取前端标注的纸张规格属性。
+var (
+	paperSizeRe   = regexp.MustCompile(`data-paper-size="([^"]*)"`)
+	orientationRe = regexp.MustCompile(`data-orientation="([^"]*)"`)
 )
 
 // mmToPx 是毫米到 CSS 参考像素的换算系数（96dpi）。
@@ -39,14 +44,9 @@ func makePaper(name string, mmW, mmH float64) PaperSpec {
 		MmH:   mmH,
 		PxW:   int(math.Round(mmW * mmToPx)),
 		PxH:   int(math.Round(mmH * mmToPx)),
-		InchW: round2(mmW / 25.4),
-		InchH: round2(mmH / 25.4),
+		InchW: util.Round2(mmW / 25.4),
+		InchH: util.Round2(mmH / 25.4),
 	}
-}
-
-// round2 保留两位小数，用于英寸尺寸取整。
-func round2(v float64) float64 {
-	return math.Round(v*100) / 100
 }
 
 // ResolvePaper 按纸张名称与横向标记返回对应规格。
@@ -56,6 +56,8 @@ func ResolvePaper(name string, landscape bool) PaperSpec {
 	switch strings.ToLower(name) {
 	case "letter":
 		base = PaperLetter
+	case "a4":
+		base = PaperA4
 	default:
 		base = PaperA4
 	}
@@ -73,15 +75,9 @@ func ResolvePaper(name string, landscape bool) PaperSpec {
 	}
 }
 
-// 用于从 HTML 中提取前端标注的纸张规格属性。
-var (
-	paperSizeRe   = regexp.MustCompile(`data-paper-size="([^"]*)"`)
-	orientationRe = regexp.MustCompile(`data-orientation="([^"]*)"`)
-)
-
-// PaperFromHTML 读取前端渲染器标注在 .resume-page 元素上的纸张规格。
+// GetPaperSizeFromHTML 读取前端渲染器标注在 .resume-page 元素上的纸张规格。
 // 未找到相应属性时回退到 A4 纵向。
-func PaperFromHTML(html string) PaperSpec {
+func GetPaperSizeFromHTML(html string) PaperSpec {
 	name := ""
 	orientation := ""
 	if m := paperSizeRe.FindStringSubmatch(html); m != nil {

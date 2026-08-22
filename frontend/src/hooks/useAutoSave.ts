@@ -15,7 +15,9 @@ export function useAutoSave(intervalMs: number = 30000) {
     // currentId is null for new resumes that haven't been saved yet.
     if (!isDirty || !resume || !currentId) return
     try {
-      // Try Go backend
+      // 先把前端最新数据同步到后端内存态（后端 AutoSave 写入的是内存态 current，
+      // 缺少此步会落库为过期数据），再触发后端自动保存
+      await callService('ResumeService', 'SetResume', resume)
       await callService('ResumeService', 'AutoSave')
       // Also save to localStorage as fallback (strip avatar to avoid QuotaExceededError)
       const slimResume = { ...resume, personal: { ...resume.personal, avatar: undefined } }

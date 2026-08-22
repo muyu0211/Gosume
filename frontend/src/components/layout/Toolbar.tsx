@@ -9,17 +9,18 @@ import { LayoutPopover } from './LayoutPopover'
 interface ToolbarProps {
   onSave: () => void
   onExport: () => void
+  /** 返回首页；由调用方负责未保存守卫（无则直接返回）。 */
+  onHome?: () => void
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error'
 }
 
-export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps) {
+export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: ToolbarProps) {
   const navigate = useNavigate()
   const zoom = useEditorStore((s) => s.zoom)
   const setZoom = useEditorStore((s) => s.setZoom)
   const isDirty = useResumeStore((s) => s.isDirty)
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
-  const clearResume = useResumeStore((s) => s.clearResume)
 
   const projectName = resume?.meta?.name || ''
   const [editingName, setEditingName] = useState(false)
@@ -58,7 +59,11 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
     <div className="h-12 flex items-center gap-1 px-3 bg-white/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
       {/* Left */}
       <div className="flex items-center gap-1">
-        <button onClick={() => { clearResume(); navigate('/') }} className="btn-ghost btn-sm" title="返回首页">
+        <button
+          onClick={() => (onHome ?? (() => navigate('/')))()}
+          className="btn-ghost btn-sm"
+          title="返回首页"
+        >
           <Home className="w-4 h-4" />
         </button>
         <div className="w-px h-5 bg-surface-200 mx-1" />
@@ -112,8 +117,10 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
         )}
       </div>
 
-      {/* Center - Zoom Controls */}
-      <div className="flex items-center gap-1 mx-auto">
+      {/* Center - Zoom Controls
+          绝对居中脱离 flex 流，不受左侧（保存/导出/项目名）与右侧组宽度变化影响，
+          始终稳定在 toolbar 水平正中央。toolbar 容器已设 relative。 */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
         <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs" title="缩小">
           <ZoomOut className="w-3.5 h-3.5" />
         </button>
@@ -128,8 +135,8 @@ export function Toolbar({ onSave, onExport, saveStatus = 'idle' }: ToolbarProps)
         </button>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-1">
+      {/* Right — ml-auto 让它独立推到右端（缩放组已脱离 flex 流不再推它） */}
+      <div className="flex items-center gap-1 ml-auto">
         <LayoutPopover />
         <TemplateSwitcher />
       </div>

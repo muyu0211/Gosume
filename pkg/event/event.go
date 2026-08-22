@@ -12,6 +12,7 @@ const (
 	FILE_OPENED            = "file:opened"
 	FILE_SAVED             = "file:saved"
 	CONFIG_DATADIR_CHANGED = "config:datadir-changed"
+	WINDOW_CLOSE_REQUESTED = "window:close-requested"
 )
 
 // application.RegisterEvent[int]("export:progress")

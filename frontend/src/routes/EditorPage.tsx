@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResumeStore } from '../stores/resumeStore'
 import { useEditorStore } from '../stores/editorStore'
@@ -9,6 +9,7 @@ import { EditorPanel } from '../components/editor/EditorPanel'
 import { ItemDeleteConfirmDialog } from '../components/editor/ItemDeleteConfirmDialog'
 import { PreviewPanel } from '../components/preview/PreviewPanel'
 import { ExportDialog } from '../components/export/ExportDialog'
+import { UnsavedChangesDialog } from '../components/ui/UnsavedChangesDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { usePreview } from '../hooks/usePreview'
@@ -22,7 +23,16 @@ const SAVE_KEY = 'resume-craft-project'
 export function EditorPage() {
   const navigate = useNavigate()
   const resume = useResumeStore((s) => s.resume)
+  const isDirty = useResumeStore((s) => s.isDirty)
+  const currentId = useResumeStore((s) => s.currentId)
   const markSaved = useResumeStore((s) => s.markSaved)
+  const clearResume = useResumeStore((s) => s.clearResume)
+  const requestLeave = useResumeStore((s) => s.requestLeave)
+  const cancelLeave = useResumeStore((s) => s.cancelLeave)
+  const confirmLeaveSave = useResumeStore((s) => s.confirmLeaveSave)
+  const discardLeave = useResumeStore((s) => s.discardLeave)
+  const pendingLeave = useResumeStore((s) => s.pendingLeave)
+  const savingOnLeave = useResumeStore((s) => s.savingOnLeave)
   const splitRatio = useEditorStore((s) => s.splitRatio)
   const setSplitRatio = useEditorStore((s) => s.setSplitRatio)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -40,8 +50,37 @@ export function EditorPage() {
     }
   }, [navigate])
 
+  // 首次进入编辑页即测量一次内容高度，让 StatusBar 在保存前也有参考值；
+  // 保存后 saveCurrent 会再次测量并覆盖。无简历时 measureContentHeight 内部跳过。
+  // 注：React.StrictMode 开发模式下挂载 effect 会执行两次，用 ref 保证只测量一次。
+  const mountedMeasureRef = useRef(false)
+  useEffect(() => {
+    if (mountedMeasureRef.current) return
+    mountedMeasureRef.current = true
+    useResumeStore.getState().measureContentHeight()
+  }, [])
+
+  // 返回首页：有未保存更改时先弹二确（保存并继续 / 不保存并继续 / 取消）。
+  const handleHome = useCallback(() => {
+    requestLeave(() => {
+      clearResume()
+      navigate('/')
+    })
+  }, [clearResume, navigate, requestLeave])
+
   const handleSave = useCallback(async () => {
     if (!resume) return
+
+    // 无内容修改且已持久化：后端数据已是最新，跳过真实保存请求
+    // （含 SetResume / localStorage / ExplicitSave / 内容高度测量），
+    // 防止用户频繁点击保存导致后端重复计算。新建简历（currentId 为空）
+    // 不受影响——首次保存必须真实落库。
+    if (!isDirty && currentId) {
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      return
+    }
+
     setSaveStatus('saving')
 
     try {
@@ -68,11 +107,15 @@ export function EditorPage() {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
     }
-  }, [resume, markSaved])
+  }, [resume, isDirty, currentId, markSaved])
 
-  const handleExport = useCallback(() => {
+  // 导出入口：先走一次保存（与保存按钮同一入口，含未修改守卫与「保存中/已保存」
+  // 状态反馈，用户可感知），保存成功后 saveCurrent 会异步更新内容高度缓存，
+  // 导出对话框（含单页导出的高度提示）展示的即是最新持久化数据与最新高度。
+  const handleExport = useCallback(async () => {
+    await handleSave()
     setShowExportDialog(true)
-  }, [])
+  }, [handleSave])
 
   useKeyboardShortcuts(handleSave, handleExport)
 
@@ -86,6 +129,7 @@ export function EditorPage() {
       <Toolbar
         onSave={handleSave}
         onExport={handleExport}
+        onHome={handleHome}
         saveStatus={saveStatus}
       />
 
@@ -140,6 +184,15 @@ export function EditorPage() {
 
       {/* 条目删除二次确认 */}
       <ItemDeleteConfirmDialog />
+
+      {/* 未保存更改二确（离开编辑页 / 关闭窗口） */}
+      <UnsavedChangesDialog
+        open={!!pendingLeave}
+        saving={savingOnLeave}
+        onSaveAndContinue={confirmLeaveSave}
+        onDiscardAndContinue={discardLeave}
+        onClose={cancelLeave}
+      />
     </AnimatedPage>
   )
 }

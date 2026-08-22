@@ -37,7 +37,7 @@ func NewTemplateStore(db *sql.DB, builtinFS fs.FS) (*TemplateRepo, error) {
 		}
 	}
 
-	log.Info("[template_store] init template store success")
+	log.Infof("[template_store] init template store success")
 	return s, nil
 }
 
@@ -52,7 +52,7 @@ func (s *TemplateRepo) Reopen(db *sql.DB, builtinFS fs.FS) error {
 			return fmt.Errorf("sync builtins: %w", err)
 		}
 	}
-	log.Info("[template_store] reopened template store")
+	log.Infof("[template_store] reopened template store")
 	return nil
 }
 
@@ -95,19 +95,19 @@ func (s *TemplateRepo) syncBuiltins(builtinFS fs.FS) error {
 
 		metaData, err := fs.ReadFile(builtinFS, path.Join(prefix, "template.json"))
 		if err != nil {
-			log.Warn("[template_store] skip %s: read template.json: %v", dirName, err)
+			log.Warnf("[template_store] skip %s: read template.json: %v", dirName, err)
 			continue
 		}
 
 		var meta template.Meta
 		if err := json.Unmarshal(metaData, &meta); err != nil {
-			log.Warn("[template_store] skip %s: parse template.json: %v", dirName, err)
+			log.Warnf("[template_store] skip %s: parse template.json: %v", dirName, err)
 			continue
 		}
 
 		tmplID := meta.ID
 		if tmplID == "" {
-			log.Warn("[template_store] skip %s: empty id in template.json", dirName)
+			log.Warnf("[template_store] skip %s: empty id in template.json", dirName)
 			continue
 		}
 
@@ -136,12 +136,12 @@ func (s *TemplateRepo) syncBuiltins(builtinFS fs.FS) error {
 				tmplID, string(metaJSON), string(cssData), contentHash, now, now,
 			)
 			if err != nil {
-				log.Error("[template_store] insert builtin %s: %v", tmplID, err)
+				log.Errorf("[template_store] insert builtin %s: %v", tmplID, err)
 			} else {
-				log.Info("[template_store] inserted builtin template: %s (hash: %s)", tmplID, contentHash[:8])
+				log.Infof("[template_store] inserted builtin template: %s (hash: %s)", tmplID, contentHash[:8])
 			}
 		} else if err != nil {
-			log.Error("[template_store] query builtin %s: %v", tmplID, err)
+			log.Errorf("[template_store] query builtin %s: %v", tmplID, err)
 		} else if storedHash != contentHash || isDeleted == 1 {
 			now := time.Now().UTC().Format(time.RFC3339)
 			_, err = s.db.Exec(
@@ -150,9 +150,9 @@ func (s *TemplateRepo) syncBuiltins(builtinFS fs.FS) error {
 				string(metaJSON), string(cssData), contentHash, now, tmplID,
 			)
 			if err != nil {
-				log.Error("[template_store] update builtin %s: %v", tmplID, err)
+				log.Errorf("[template_store] update builtin %s: %v", tmplID, err)
 			} else {
-				log.Info("[template_store] updated builtin template: %s (hash: %s)", tmplID, contentHash[:8])
+				log.Infof("[template_store] updated builtin template: %s (hash: %s)", tmplID, contentHash[:8])
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func (s *TemplateRepo) ListAll() ([]*template.Template, error) {
 
 		var meta template.Meta
 		if err := json.Unmarshal([]byte(metaJSON), &meta); err != nil {
-			log.Warn("[template_store] unmarshal meta for %s: %v", id, err)
+			log.Warnf("[template_store] unmarshal meta for %s: %v", id, err)
 			continue
 		}
 
@@ -253,7 +253,7 @@ func (s *TemplateRepo) Create(meta template.Meta, css string) error {
 	if err != nil {
 		return fmt.Errorf("insert template: %w", err)
 	}
-	log.Info("[template_store] created user template: %s", meta.ID)
+	log.Infof("[template_store] created user template: %s", meta.ID)
 	return nil
 }
 
@@ -276,7 +276,7 @@ func (s *TemplateRepo) Update(id string, meta template.Meta, css string) error {
 	if n == 0 {
 		return &template.Error{Code: "TEMPLATE_NOT_FOUND", Message: "template not found or is built-in: " + id}
 	}
-	log.Info("[template_store] updated user template: %s", id)
+	log.Infof("[template_store] updated user template: %s", id)
 	return nil
 }
 
@@ -294,7 +294,7 @@ func (s *TemplateRepo) SoftDelete(id string) error {
 	if n == 0 {
 		return &template.Error{Code: "TEMPLATE_NOT_FOUND", Message: "template not found or is built-in: " + id}
 	}
-	log.Info("[template_store] deleted user template: %s", id)
+	log.Infof("[template_store] deleted user template: %s", id)
 	return nil
 }
 
@@ -335,7 +335,7 @@ func (s *TemplateRepo) ImportFromFilesystem(dir string) (int, error) {
 		cssData, _ := os.ReadFile(cssPath)
 
 		if err := s.Create(meta, string(cssData)); err != nil {
-			log.Warn("[template_store] import %s: %v", meta.ID, err)
+			log.Warnf("[template_store] import %s: %v", meta.ID, err)
 			continue
 		}
 		imported++
@@ -385,7 +385,7 @@ func (s *TemplateRepo) ReloadFromDir(dir string) error {
 			string(metaJSON), string(cssData), now, meta.ID,
 		)
 		if err != nil {
-			log.Warn("[template_store] reload update %s: %v", meta.ID, err)
+			log.Warnf("[template_store] reload update %s: %v", meta.ID, err)
 			continue
 		}
 
@@ -397,12 +397,12 @@ func (s *TemplateRepo) ReloadFromDir(dir string) error {
 				meta.ID, string(metaJSON), string(cssData), now, now,
 			)
 			if err != nil {
-				log.Warn("[template_store] reload insert %s: %v", meta.ID, err)
+				log.Warnf("[template_store] reload insert %s: %v", meta.ID, err)
 			}
 		}
 	}
 
-	log.Info("[template_store] hot-reload complete from %s", dir)
+	log.Infof("[template_store] hot-reload complete from %s", dir)
 	return nil
 }
 
@@ -456,18 +456,18 @@ func (s *TemplateRepo) WatchDir(dir string) (chan struct{}, error) {
 				timer.Reset(300 * time.Millisecond)
 			case <-timer.C:
 				if err := s.ReloadFromDir(dir); err != nil {
-					log.Warn("[template_store] watch reload: %v", err)
+					log.Warnf("[template_store] watch reload: %v", err)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Warn("[template_store] watcher error: %v", err)
+				log.Warnf("[template_store] watcher error: %v", err)
 			}
 		}
 	}()
 
-	log.Info("[template_store] watching %s for template changes", dir)
+	log.Infof("[template_store] watching %s for template changes", dir)
 	return stop, nil
 }
 

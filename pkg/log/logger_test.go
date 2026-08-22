@@ -16,10 +16,10 @@ func TestInitAndLog(t *testing.T) {
 	}
 	defer Close()
 
-	Info("hello %s", "world")
-	Debug("debug message")
-	Warn("warning %d", 42)
-	Error("something went wrong: %v", os.ErrNotExist)
+	Infof("hello %s", "world")
+	Debugf("debug message")
+	Warnf("warning %d", 42)
+	Errorf("something went wrong: %v", os.ErrNotExist)
 
 	Sync()
 
@@ -50,7 +50,7 @@ func TestStdoutOnly(t *testing.T) {
 		t.Fatalf("Init: %v", err)
 	}
 	defer Close()
-	Info("stdout test")
+	Infof("stdout test")
 }
 
 // TestMinLevel 验证低于 minLevel 的日志被过滤，不写入文件。
@@ -62,9 +62,9 @@ func TestMinLevel(t *testing.T) {
 	}
 	defer Close()
 
-	Debug("should be filtered")
-	Info("should be filtered")
-	Warn("should appear")
+	Debugf("should be filtered")
+	Infof("should be filtered")
+	Warnf("should appear")
 
 	Sync()
 
@@ -89,13 +89,13 @@ func TestSetLevel(t *testing.T) {
 	}
 	defer Close()
 
-	Info("should be filtered")
+	Infof("should be filtered")
 	if CurrentLevel() != WARN {
 		t.Errorf("expected WARN level, got %v", CurrentLevel())
 	}
 
 	SetLevel(DEBUG)
-	Info("should now appear")
+	Infof("should now appear")
 	if CurrentLevel() != DEBUG {
 		t.Errorf("expected DEBUG level, got %v", CurrentLevel())
 	}

@@ -15,7 +15,7 @@ import (
 // Gosume 一期改造：模板包不再校验/携带 HTML（统一 HTML 由应用内置），
 // 这里只校验 starter 的 template.json + styles.css 可通过导入。
 func TestStarterSkillPackagePassesValidation(t *testing.T) {
-	starterDir := filepath.Join("..", "..", "gosume-template-skills", "assets", "starter")
+	starterDir := filepath.Join("..", "..", "..", "gosume-template-skills", "assets", "starter")
 	css, err := os.ReadFile(filepath.Join(starterDir, "styles.css"))
 	if err != nil {
 		t.Fatalf("read starter styles.css: %v", err)

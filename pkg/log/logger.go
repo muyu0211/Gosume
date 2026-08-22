@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -110,6 +111,55 @@ func Sync() {
 	_ = zap.L().Sync()
 }
 
+// ctxKey 是日志上下文字段的 key 类型，使用私有空结构体避免与其它包
+// 的字符串 key 冲突。
+type ctxKey struct{}
+
+// 从 context.Context 中提取的约定字段 key。调用方通过 ctx.WithValue 写入，
+// 再经 WithCtx 自动绑定到日志字段。
+var (
+	// ctxTraceID 对应链路追踪 ID。
+	ctxTraceID = ctxKey{}
+	// ctxUserID 对应用户 ID。
+	ctxUserID = ctxKey{}
+)
+
+// withCtx 返回一个携带了 ctx 中约定字段的 logger。
+//
+// 从 ctx 提取 trace_id / user_id 等字段，通过 zap.L().With(...) 绑定，
+// 之后每次调用都会自动附带这些字段，无需重复传入。ctx 为 nil 或无字段时
+// 返回全局 logger 本身（零开销）。
+//
+// 用法：
+//
+//	log.withCtx(ctx).Info("处理请求", zap.String("step", "render"))
+//
+// 字段写入约定（调用方）：
+//
+//	ctx = context.WithValue(ctx, log.TraceIDKey(), "abc123")
+func withCtx(ctx context.Context) *zap.Logger {
+	if ctx == nil {
+		return zap.L()
+	}
+	var fields []zap.Field
+	if v, ok := ctx.Value(ctxTraceID).(string); ok && v != "" {
+		fields = append(fields, zap.String("trace_id", v))
+	}
+	if v, ok := ctx.Value(ctxUserID).(string); ok && v != "" {
+		fields = append(fields, zap.String("user_id", v))
+	}
+	if len(fields) == 0 {
+		return zap.L()
+	}
+	return zap.L().With(fields...)
+}
+
+// TraceIDKey 返回 trace_id 字段的 context key，供调用方写入 ctx。
+func TraceIDKey() any { return ctxTraceID }
+
+// UserIDKey 返回 user_id 字段的 context key，供调用方写入 ctx。
+func UserIDKey() any { return ctxUserID }
+
 // Close 刷盘并关闭日志文件，程序退出前必须调用。
 func Close() {
 	Sync()
@@ -119,34 +169,70 @@ func Close() {
 	}
 }
 
-// Debug 输出 DEBUG 级别日志，format/v 语义同 fmt.Printf。
-func Debug(format string, v ...any) {
+// Debugf 输出 DEBUG 级别日志，format/v 语义同 fmt.Printf。
+func Debugf(format string, v ...any) {
 	zap.S().Debugf(format, v...)
 }
 
-// Info 输出 INFO 级别日志，format/v 语义同 fmt.Printf。
-func Info(format string, v ...any) {
+// Infof 输出 INFO 级别日志，format/v 语义同 fmt.Printf。
+func Infof(format string, v ...any) {
 	zap.S().Infof(format, v...)
 }
 
-// Warn 输出 WARN 级别日志，format/v 语义同 fmt.Printf。
-func Warn(format string, v ...any) {
+// Warnf 输出 WARN 级别日志，format/v 语义同 fmt.Printf。
+func Warnf(format string, v ...any) {
 	zap.S().Warnf(format, v...)
 }
 
-// Error 输出 ERROR 级别日志，format/v 语义同 fmt.Printf。
-func Error(format string, v ...any) {
+// Errorf 输出 ERROR 级别日志，format/v 语义同 fmt.Printf。
+func Errorf(format string, v ...any) {
 	zap.S().Errorf(format, v...)
 }
 
-// DPanic 输出 DPANIC 级别日志：开发模式下 panic，生产模式下仅记录为错误。
-func DPanic(format string, v ...any) {
+// DPanicf 输出 DPANIC 级别日志：开发模式下 panic，生产模式下仅记录为错误。
+func DPanicf(format string, v ...any) {
 	zap.S().DPanicf(format, v...)
 }
 
-// Fatal 输出 FATAL 级别日志，刷盘后调用 os.Exit(1)。
-func Fatal(format string, v ...any) {
+// Fatalf 输出 FATAL 级别日志，刷盘后调用 os.Exit(1)。
+func Fatalf(format string, v ...any) {
 	zap.S().Fatalf(format, v...)
+}
+
+// DebugContextf 输出 DEBUG 级别日志，并携带 ctx 中约定的字段。
+// format/v 语义同 fmt.Printf。
+func DebugContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().Debugf(format, v...)
+}
+
+// InfoContextf 输出 INFO 级别日志，并携带 ctx 中约定的字段。
+// format/v 语义同 fmt.Printf。
+func InfoContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().Infof(format, v...)
+}
+
+// WarnContextf 输出 WARN 级别日志，并携带 ctx 中约定的字段。
+// format/v 语义同 fmt.Printf。
+func WarnContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().Warnf(format, v...)
+}
+
+// ErrorContextf 输出 ERROR 级别日志，并携带 ctx 中约定的字段。
+// format/v 语义同 fmt.Printf。
+func ErrorContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().Errorf(format, v...)
+}
+
+// DPanicContextf 输出 DPANIC 级别日志（开发模式 panic，生产模式仅记录），
+// 并携带 ctx 中约定的字段。format/v 语义同 fmt.Printf。
+func DPanicContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().DPanicf(format, v...)
+}
+
+// FatalContextf 输出 FATAL 级别日志（刷盘后 os.Exit(1)），并携带 ctx 中
+// 约定的字段。format/v 语义同 fmt.Printf。
+func FatalContextf(ctx context.Context, format string, v ...any) {
+	withCtx(ctx).Sugar().Fatalf(format, v...)
 }
 
 // bracketedLevelEncoder 把级别编码为带方括号的大写形式，如 [INFO]。

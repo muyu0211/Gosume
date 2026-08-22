@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { X, FileText, Clock, ChevronRight, Inbox, Trash2, AlertTriangle, CheckSquare, Square, Download, Loader2, Image } from 'lucide-react'
+import { X, FileText, Clock, ChevronRight, Inbox, Trash2, AlertTriangle, CheckSquare, Square, Download, Loader2, Image, Check } from 'lucide-react'
+import { Events } from '@wailsio/runtime'
 import { useResumeStore } from '../../stores/resumeStore'
-import { callService } from '../../services/backend'
+import { callService, isWails } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
@@ -37,6 +38,20 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   const [batchExportScale, setBatchExportScale] = useState(1.5)
   const [batchExporting, setBatchExporting] = useState(false)
   const [batchExportDone, setBatchExportDone] = useState(false)
+  /** 批量导出进度 0-100；null 表示尚未开始。由后端 export:progress 事件驱动。 */
+  const [exportProgress, setExportProgress] = useState<number | null>(null)
+
+  // 监听后端导出进度事件（单份导出也会发该事件，但只在批量导出模态中展示）。
+  useEffect(() => {
+    if (!isWails()) return
+    const off = Events.On('export:progress', (ev) => {
+      const p = typeof ev.data === 'number' ? ev.data : Number(ev.data)
+      if (Number.isFinite(p)) {
+        setExportProgress(Math.max(0, Math.min(100, Math.round(p))))
+      }
+    })
+    return off
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -139,6 +154,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   // --- Batch export ---
   const handleBatchExportClick = useCallback(() => {
     setBatchExportDone(false)
+    setExportProgress(null)
     setShowBatchExport(true)
   }, [])
 
@@ -149,6 +165,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       return
     }
     setBatchExporting(true)
+    setExportProgress(0)
     try {
       // Layout tiers are user-customizable (config.json); make sure they
       // are loaded before resolving resume.meta keys during export.
@@ -187,7 +204,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
 
       // PDF must use scale=1.0 — larger scales make each .resume-page overflow A4, producing blank pages after every content page.
       const exportScale = batchExportFormat === 'pdf' ? 1.0 : batchExportScale
-      await callService<string[]>('ExportService', 'ExportBatchHTML', JSON.stringify(items), batchExportFormat, exportScale)
+      await callService<string[]>('ExportService', 'ExportBatch', JSON.stringify(items), batchExportFormat, exportScale)
     } catch { /* user cancelled or error */ }
     setBatchExporting(false)
     setBatchExportDone(true)
@@ -196,6 +213,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   const handleCancelBatchExport = useCallback(() => {
     if (!batchExporting) {
       setShowBatchExport(false)
+      setExportProgress(null)
     }
   }, [batchExporting])
 
@@ -542,6 +560,31 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 </div>
               )}
             </div>
+
+            {/* 导出进度条：由后端 export:progress 事件驱动，每完成一份更新一次；
+                导出完成后保持显示（不随 batchExporting 消失） */}
+            {exportProgress != null && (
+              <div className="mt-5">
+                <div className="flex items-center justify-between text-xs text-surface-500 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    {batchExporting ? (
+                      <Loader2 className="w-3.5 h-3.5 text-primary-500 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    )}
+                    {batchExporting ? '正在导出' : '导出完成'}{' '}
+                    {Math.min(Math.round((exportProgress / 100) * batchCount), batchCount)}/{batchCount} 份
+                  </span>
+                  <span className="tabular-nums font-medium text-surface-600">{exportProgress}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-surface-100 overflow-hidden">
+                  <div
+                    className="h-full bg-primary-500 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${exportProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2.5 mt-6">
               <button

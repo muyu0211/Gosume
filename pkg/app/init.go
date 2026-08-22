@@ -37,7 +37,7 @@ func initTemplateStore(resumeStore *repo.ResumeRepo, builtinTemplates embed.FS) 
 func initLegacyMigration(templateStore *repo.TemplateRepo, dataDir string) {
 	legacyDir := filepath.Join(dataDir, "templates")
 	if imported, _ := templateStore.ImportFromFilesystem(legacyDir); imported > 0 {
-		log.Info("[main] migrated %d user templates from %s", imported, legacyDir)
+		log.Infof("[main] migrated %d user templates from %s", imported, legacyDir)
 		os.Rename(legacyDir, legacyDir+"_migrated_backup")
 	}
 }
@@ -48,7 +48,7 @@ func initDevWatcher(templateStore *repo.TemplateRepo) chan struct{} {
 	if _, err := os.Stat("./templates"); err == nil {
 		stopWatch, err := templateStore.WatchDir("./templates")
 		if err != nil {
-			log.Warn("[main] failed to start template watcher: %v", err)
+			log.Warnf("[main] failed to start template watcher: %v", err)
 			return nil
 		}
 		return stopWatch
