@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gosume/pkg/log"
 	"gosume/pkg/resume/model"
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/template"
@@ -38,6 +39,7 @@ func (s *TemplateService) Inject(app *application.App, loader *template.Loader, 
 func (s *TemplateService) ListTemplates() *util.Response {
 	templates, err := s.loader.LoadAll()
 	if err != nil {
+		log.Errorf("[template_service] ListTemplates: 加载模板列表失败: %v", err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("加载模板列表失败: %s", err.Error()), nil)
 	}
 
@@ -45,6 +47,7 @@ func (s *TemplateService) ListTemplates() *util.Response {
 	for _, t := range templates {
 		metas = append(metas, getTemplateMeta(t))
 	}
+	log.Infof("[template_service] ListTemplates: 共 %d 个模板", len(metas))
 	return util.DoRsp(util.SuccCode, "成功", metas)
 }
 
@@ -52,6 +55,7 @@ func (s *TemplateService) ListTemplates() *util.Response {
 func (s *TemplateService) GetTemplate(id string) *util.Response {
 	t, err := s.loader.LoadByID(id)
 	if err != nil {
+		log.Errorf("[template_service] GetTemplate: 模板不存在 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "模板不存在", nil)
 	}
 	meta := getTemplateMeta(t)
@@ -71,6 +75,7 @@ func (s *TemplateService) effectiveHTML(t *template.Template) string {
 func (s *TemplateService) GetTemplateContent(id string) *util.Response {
 	t, err := s.loader.LoadByID(id)
 	if err != nil {
+		log.Errorf("[template_service] GetTemplateContent: 模板不存在 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "模板不存在", nil)
 	}
 	orientation := ""
@@ -127,19 +132,23 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath string) *util.R
 
 	pkg, err := template.LoadPackageFromZip(filePath)
 	if err != nil {
+		log.Errorf("[template_service] importTemplatePackageFromPath: 解析模板包失败 %s: %v", filePath, err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("解析模板包失败: %v", err), nil)
 	}
 
 	// 检查模板 ID 是否已经存在，存在则判断version
 	if existing, _ := s.loader.LoadByID(pkg.Meta.ID); existing != nil {
+		log.Warnf("[template_service] importTemplatePackageFromPath: 模板已存在 id=%s", pkg.Meta.ID)
 		// 如果版本号相同，则提示用户模板已经存在，提示用户是否需要覆盖/不覆盖
 		return util.DoRsp(util.ErrCode, "模板已存在", nil)
 	}
 
 	if err := s.tempRepo.Create(pkg.Meta, pkg.CSS); err != nil {
+		log.Errorf("[template_service] importTemplatePackageFromPath: 保存模板失败 id=%s: %v", pkg.Meta.ID, err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("保存模板失败: %v", err), nil)
 	}
 
+	log.Infof("[template_service] importTemplatePackageFromPath: 已导入模板 id=%s name=%s", pkg.Meta.ID, pkg.Meta.Name)
 	meta := getTemplateMeta(&template.Template{
 		Meta:      pkg.Meta,
 		CSS:       pkg.CSS,
@@ -168,33 +177,42 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 // CreateTemplate 创建一个用户模板。
 func (s *TemplateService) CreateTemplate(meta template.Meta, css string) *util.Response {
 	if meta.ID == "" {
+		log.Errorf("[template_service] CreateTemplate: 模板 ID 不能为空")
 		return util.DoRsp(util.ErrCode, "模板 ID 不能为空", nil)
 	}
 	if err := s.tempRepo.Create(meta, css); err != nil {
+		log.Errorf("[template_service] CreateTemplate: 创建模板失败 id=%s: %v", meta.ID, err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
+	log.Infof("[template_service] CreateTemplate: 已创建模板 id=%s", meta.ID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
 // UpdateTemplate 更新已存在的用户模板。
 func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, css string) *util.Response {
 	if meta.ID == "" {
+		log.Errorf("[template_service] UpdateTemplate: 模板 ID 不能为空")
 		return util.DoRsp(util.ErrCode, "模板 ID 不能为空", nil)
 	}
 	if err := s.tempRepo.Update(id, meta, css); err != nil {
+		log.Errorf("[template_service] UpdateTemplate: 更新模板失败 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("更新模板失败: %v", err), nil)
 	}
+	log.Infof("[template_service] UpdateTemplate: 已更新模板 id=%s", id)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
 // DeleteTemplate 软删除用户模板。
 func (s *TemplateService) DeleteTemplate(id string) *util.Response {
 	if id == "" {
+		log.Errorf("[template_service] DeleteTemplate: 模板 ID 不能为空")
 		return util.DoRsp(util.ErrCode, "模板 ID 不能为空", nil)
 	}
 	if err := s.tempRepo.SoftDelete(id); err != nil {
+		log.Errorf("[template_service] DeleteTemplate: 删除模板失败 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
+	log.Infof("[template_service] DeleteTemplate: 已删除模板 id=%s", id)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -207,6 +225,7 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) *util.Response {
 
 	src, err := s.loader.LoadByID(sourceID)
 	if err != nil {
+		log.Errorf("[template_service] CloneTemplate: 源模板不存在 id=%s: %v", sourceID, err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("模板不存在: %v", err), nil)
 	}
 
@@ -216,13 +235,16 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) *util.Response {
 
 	// 检查新 ID 是否已被占用
 	if existing, _ := s.loader.LoadByID(newID); existing != nil {
+		log.Warnf("[template_service] CloneTemplate: 新模板 ID 已被占用 id=%s", newID)
 		return util.DoRsp(util.ErrCode, "模板 ID 已被占用", nil)
 	}
 
 	if err := s.tempRepo.Create(meta, src.CSS); err != nil {
+		log.Errorf("[template_service] CloneTemplate: 克隆模板失败 source=%s new=%s: %v", sourceID, newID, err)
 		return util.DoRsp(util.ErrCode, fmt.Sprintf("克隆模板失败: %v", err), nil)
 	}
 
+	log.Infof("[template_service] CloneTemplate: 已克隆模板 %s -> %s", sourceID, newID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 

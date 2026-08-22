@@ -85,12 +85,14 @@ func (s *ResumeService) GetResume() *util.Response {
 // 若需要把简历视为全新记录，请使用 InitResume。
 func (s *ResumeService) SetResume(resume *model.Resume) *util.Response {
 	if resume == nil {
+		log.Errorf("[resume_service] SetResume: 简历数据为空")
 		return util.DoRsp(util.ErrCode, "简历数据为空", nil)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	resume.Meta.UpdatedAt = time.Now()
 	s.currentContent = resume
+	log.Infof("[resume_service] SetResume: 已替换当前简历，模板=%s", resume.Meta.TemplateID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -130,6 +132,7 @@ func (s *ResumeService) RenderPreview() *util.Response {
 	}
 	html, err := s.renderer.Render(s.currentContent)
 	if err != nil {
+		log.Errorf("[resume_service] RenderPreview: 渲染预览失败: %v", err)
 		return util.DoRsp(util.ErrCode, "渲染预览失败", nil)
 	}
 	return util.DoRsp(util.SuccCode, "成功", html)
@@ -161,12 +164,13 @@ func (s *ResumeService) UpdateResumeMeta(templateID string) *util.Response {
 	defer s.mu.Unlock()
 
 	if s.currentContent == nil {
-		log.Errorf("[resume_service] 未加载简历")
+		log.Errorf("[resume_service] UpdateResumeMeta 未加载简历")
 		return util.DoRsp(util.ErrCode, "未加载简历", nil)
 	}
 
 	s.currentContent.Meta.TemplateID = templateID
 	s.currentContent.Meta.UpdatedAt = time.Now()
+	log.Infof("[resume_service] UpdateResumeMeta: 切换模板为 %s", templateID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -174,9 +178,10 @@ func (s *ResumeService) UpdateResumeMeta(templateID string) *util.Response {
 func (s *ResumeService) ListResumes() *util.Response {
 	items, err := s.resumeRepo.List()
 	if err != nil {
-		log.Errorf("[resume_service] list resumes: %v", err)
+		log.Errorf("[resume_service] ListResumes: 获取简历列表失败: %v", err)
 		return util.DoRsp(util.ErrCode, "获取简历列表失败", nil)
 	}
+	log.Infof("[resume_service] ListResumes: 共 %d 份简历", len(items))
 	return util.DoRsp(util.SuccCode, "成功", items)
 }
 
@@ -184,6 +189,7 @@ func (s *ResumeService) ListResumes() *util.Response {
 func (s *ResumeService) LoadResume(id string) *util.Response {
 	resume, err := s.resumeRepo.GetByID(id)
 	if err != nil {
+		log.Errorf("[resume_service] LoadResume: 加载简历失败 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "加载简历失败", nil)
 	}
 
@@ -193,6 +199,7 @@ func (s *ResumeService) LoadResume(id string) *util.Response {
 	s.persisted = true
 	s.mu.Unlock()
 
+	log.Infof("[resume_service] LoadResume: 已加载简历 id=%s", id)
 	return util.DoRsp(util.SuccCode, "成功", resume)
 }
 
@@ -203,8 +210,10 @@ func (s *ResumeService) LoadResume(id string) *util.Response {
 func (s *ResumeService) ExplicitSave() *util.Response {
 	log.Infof("[resume_service] ExplicitSave: user-initiated save")
 	if err := s.saveResume(); err != nil {
+		log.Errorf("[resume_service] ExplicitSave 保存失败: %v", err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
+	log.Infof("[resume_service] ExplicitSave: 已保存简历 id=%s", s.currentID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -223,20 +232,24 @@ func (s *ResumeService) saveResume() error {
 	s.currentContent.Meta.UpdatedAt = time.Now()
 
 	if s.currentID == "" {
-		log.Infof("[resume_service] saveResume: CREATING new resume (first persist)")
 		id, err := s.resumeRepo.Create(s.currentContent)
 		if err != nil {
+			log.Errorf("[resume_service] saveResume: 创建简历失败: %v", err)
 			return fmt.Errorf("创建简历失败")
 		}
 		s.currentID = id
 		s.persisted = true
-		log.Infof("[resume_service] saveResume: created id=%s", id)
+		log.Infof("[resume_service] saveResume: 已创建简历 id=%s", id)
 		return nil
 	}
 
-	log.Infof("[resume_service] saveResume: UPDATING existing id=%s", s.currentID)
+	log.Infof("[resume_service] saveResume: 更新简历 id=%s", s.currentID)
 	s.persisted = true
-	return s.resumeRepo.Update(s.currentID, s.currentContent)
+	if err := s.resumeRepo.Update(s.currentID, s.currentContent); err != nil {
+		log.Errorf("[resume_service] saveResume: 更新简历失败 id=%s: %v", s.currentID, err)
+		return err
+	}
+	return nil
 }
 
 // GetResumeByID 按 ID 读取简历，不影响当前简历状态。
@@ -244,6 +257,7 @@ func (s *ResumeService) saveResume() error {
 func (s *ResumeService) GetResumeByID(id string) *util.Response {
 	resume, err := s.resumeRepo.GetByID(id)
 	if err != nil {
+		log.Errorf("[resume_service] GetResumeByID: 加载简历失败 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "加载简历失败", nil)
 	}
 	return util.DoRsp(util.SuccCode, "成功", resume)
@@ -262,7 +276,9 @@ func (s *ResumeService) DeleteResume(id string) *util.Response {
 	}
 
 	if err := s.resumeRepo.SoftDelete(id); err != nil {
+		log.Errorf("[resume_service] DeleteResume: 删除简历失败 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "删除简历失败", nil)
 	}
+	log.Infof("[resume_service] DeleteResume: 已删除简历 id=%s", id)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }

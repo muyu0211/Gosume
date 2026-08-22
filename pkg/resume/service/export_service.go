@@ -50,14 +50,17 @@ func (s *ExportService) Inject(app *application.App, browser *template_export.Br
 //
 // 返回最终保存路径；用户取消保存时返回空路径且不报错。
 func (s *ExportService) Export(htmlContent string, exportType string, scale float64, resumeName string) (string, error) {
+	log.Infof("[export_service] Export: 开始导出 format=%s scale=%.2f name=%s", exportType, scale, resumeName)
 	opts, err := parseFormat(exportType, scale)
 	if err != nil {
+		log.Errorf("[export_service] Export: 解析导出格式失败: %v", err)
 		return "", err
 	}
 
 	s.app.Event.Emit(event.EXPORT_PROGRESS, 10)
 	data, err := s.renderOne(htmlContent, opts)
 	if err != nil {
+		log.Errorf("[export_service] Export: 渲染导出失败: %v", err)
 		return "", err
 	}
 	s.app.Event.Emit(event.EXPORT_PROGRESS, 70)
@@ -78,6 +81,7 @@ func (s *ExportService) Export(htmlContent string, exportType string, scale floa
 		return "", err
 	}
 
+	log.Infof("[export_service] Export: 导出完成 file=%s", filePath)
 	s.app.Event.Emit(event.EXPORT_PROGRESS, 100)
 	s.app.Event.Emit(event.EXPORT_COMPLETED, filePath)
 	return filePath, nil
@@ -90,8 +94,10 @@ func (s *ExportService) Export(htmlContent string, exportType string, scale floa
 func (s *ExportService) ExportBatch(itemsJSON string, exportType string, scale float64) ([]string, error) {
 	var items []exportItem
 	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
+		log.Errorf("[export_service] ExportBatch: 解析导出数据失败: %v", err)
 		return nil, util.DoRsp(util.ErrCode, "解析导出数据失败", nil)
 	}
+	log.Infof("[export_service] ExportBatch: 批量导出 %d 份 format=%s", len(items), exportType)
 	return s.exportBatch(items, exportType, scale)
 }
 
@@ -102,8 +108,10 @@ func (s *ExportService) ExportBatch(itemsJSON string, exportType string, scale f
 func (s *ExportService) GetResumeContentHeight(htmlContent string, scale float64) *util.Response {
 	h, err := s.browserManager.MeasureContentHeight(htmlContent, scale)
 	if err != nil {
+		log.Errorf("[export_service] GetResumeContentHeight: 测量内容高度失败: %v", err)
 		return util.DoRsp(util.ErrCode, "测量内容高度失败", err)
 	}
+	log.Infof("[export_service] GetResumeContentHeight: 内容高度=%d", h)
 	return util.DoRsp(util.SuccCode, "测量内容高度成功", h)
 }
 
@@ -198,6 +206,7 @@ func (s *ExportService) exportBatch(items []exportItem, exportType string, scale
 	for i, item := range items {
 		data, err := s.renderOne(item.HTML, opts)
 		if err != nil {
+			log.Errorf("[export_service] exportBatch: 渲染跳过 name=%s: %v", item.Name, err)
 			continue
 		}
 
@@ -228,6 +237,7 @@ func (s *ExportService) exportBatch(items []exportItem, exportType string, scale
 		}
 	}
 
+	log.Infof("[export_service] exportBatch: 批量导出完成，成功 %d/%d", len(saved), total)
 	return saved, nil
 }
 

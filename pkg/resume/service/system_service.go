@@ -112,21 +112,26 @@ func (s *SystemService) GetLayoutPresets() *util.Response {
 func (s *SystemService) SetLayoutPresets(cfg user_config.LayoutPreset) *util.Response {
 	// 校验参数
 	if err := validateLayoutPresets(cfg); err != nil {
+		log.Errorf("[system_service] SetLayoutPresets: 参数校验失败: %v", err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
 
 	// 持久化配置
 	if err := s.configMgr.SetLayoutPresets(cfg); err != nil {
+		log.Errorf("[system_service] SetLayoutPresets: 持久化失败: %v", err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
+	log.Infof("[system_service] SetLayoutPresets: 已保存布局档位，页边距 %d 档、间距 %d 档", len(cfg.Margins), len(cfg.Spacings))
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
 // ResetLayoutPresets 恢复内置默认布局档位。
 func (s *SystemService) ResetLayoutPresets() *util.Response {
 	if err := s.configMgr.ResetLayoutPresets(); err != nil {
+		log.Errorf("[system_service] ResetLayoutPresets: 恢复默认失败: %v", err)
 		return util.DoRsp(util.ErrCode, "恢复默认布局档位失败", nil)
 	}
+	log.Infof("[system_service] ResetLayoutPresets: 已恢复默认布局档位")
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -138,8 +143,10 @@ func (s *SystemService) GetOS() *util.Response {
 // OpenExternalURL 在系统默认浏览器中打开链接。
 func (s *SystemService) OpenExternalURL(url string) *util.Response {
 	if err := s.App.Browser.OpenURL(url); err != nil {
+		log.Errorf("[system_service] OpenExternalURL: 打开链接失败 %s: %v", url, err)
 		return util.DoRsp(util.ErrCode, "打开链接失败", nil)
 	}
+	log.Infof("[system_service] OpenExternalURL: 已打开链接 %s", url)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -156,6 +163,7 @@ func (s *SystemService) ShowInFolder(path string) *util.Response {
 		err = exec.Command("xdg-open", filepath.Dir(path)).Start()
 	}
 	if err != nil {
+		log.Errorf("[system_service] ShowInFolder: 打开文件位置失败 %s: %v", path, err)
 		return util.DoRsp(util.ErrCode, "打开文件位置失败", nil)
 	}
 	return util.DoRsp(util.SuccCode, "成功", nil)
@@ -199,15 +207,18 @@ func (s *SystemService) SetDataDir(newDir string) *util.Response {
 	// 校验目标路径存在且为目录
 	info, err := os.Stat(newDir)
 	if err != nil {
+		log.Errorf("[system_service] SetDataDir: 访问目录失败 %s: %v", newDir, err)
 		return util.DoRsp(util.ErrCode, "访问目录失败", nil)
 	}
 	if !info.IsDir() {
+		log.Errorf("[system_service] SetDataDir: 所选路径不是目录 %s", newDir)
 		return util.DoRsp(util.ErrCode, "所选路径不是目录", nil)
 	}
 
 	// 在新位置创建所需子目录
 	for _, sub := range []string{"autosave", "templates", "log"} {
 		if err := os.MkdirAll(filepath.Join(newDir, sub), 0755); err != nil {
+			log.Errorf("[system_service] SetDataDir: 创建子目录失败 %s/%s: %v", newDir, sub, err)
 			return util.DoRsp(util.ErrCode, "创建子目录失败", nil)
 		}
 	}
@@ -215,17 +226,20 @@ func (s *SystemService) SetDataDir(newDir string) *util.Response {
 	// 把旧目录的数据迁移到新目录，并记录成功迁移的条目
 	migrated, err := migrateDataDir(oldDir, newDir)
 	if err != nil {
+		log.Errorf("[system_service] SetDataDir: 迁移数据失败 %s -> %s: %v", oldDir, newDir, err)
 		return util.DoRsp(util.ErrCode, "迁移数据失败", nil)
 	}
 
 	// 持久化配置并触发 OnChange 回调（各 store 切换到新目录）
 	if err := s.configMgr.SetDataDir(newDir); err != nil {
+		log.Errorf("[system_service] SetDataDir: 保存配置失败: %v", err)
 		return util.DoRsp(util.ErrCode, "保存配置失败", nil)
 	}
 
 	// 清理旧目录——只删除已确认迁移成功的条目，避免误删
 	cleanMigrated(oldDir, migrated)
 
+	log.Infof("[system_service] SetDataDir: 数据目录已切换 %s -> %s", oldDir, newDir)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 

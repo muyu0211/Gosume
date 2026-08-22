@@ -51,11 +51,13 @@ func (s *FileService) OpenProject() *util.Response {
 
 	resume, err := s.projRepo.Load(filePath)
 	if err != nil {
+		log.Errorf("[file_service] OpenProject: 打开项目失败 %s: %v", filePath, err)
 		return util.DoRsp(util.ErrCode, "打开项目失败", nil)
 	}
 
 	s.resumeService.InitResume(resume)
 	s.app.Event.Emit("file:opened", filePath)
+	log.Infof("[file_service] OpenProject: 已打开项目 %s", filePath)
 
 	return util.DoRsp(util.SuccCode, "成功", resume)
 }
@@ -93,9 +95,11 @@ func (s *FileService) SaveProject(filePath string) *util.Response {
 	}
 
 	if err := s.projRepo.Save(filePath, resume); err != nil {
+		log.Errorf("[file_service] SaveProject: 保存项目失败 %s: %v", filePath, err)
 		return util.DoRsp(util.ErrCode, "保存项目失败", nil)
 	}
 
+	log.Infof("[file_service] SaveProject: 已保存项目 %s", filePath)
 	s.app.Event.Emit("file:saved", filePath)
 	return util.DoRsp(util.SuccCode, "成功", filePath)
 }
@@ -104,6 +108,7 @@ func (s *FileService) SaveProject(filePath string) *util.Response {
 func (s *FileService) GetRecentFiles() *util.Response {
 	files, err := s.projRepo.GetRecentFiles()
 	if err != nil {
+		log.Errorf("[file_service] GetRecentFiles: 获取最近文件失败: %v", err)
 		return util.DoRsp(util.ErrCode, "获取最近文件失败", nil)
 	}
 	return util.DoRsp(util.SuccCode, "成功", files)
