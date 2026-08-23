@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"gosume/pkg/log"
+	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_render"
@@ -67,7 +68,7 @@ type templateAdapter struct {
 
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
 // 或模板无自带 HTML 时使用应用内置的 template.html。
-func (a *templateAdapter) effectiveHTML(t *template.Template) string {
+func (a *templateAdapter) effectiveHTML(t *dto.Template) string {
 	if t.Meta.UseUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
 		return a.unifiedHTML
 	}

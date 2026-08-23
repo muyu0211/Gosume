@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"gosume/pkg/log"
+	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/template"
+	"gosume/pkg/util"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -99,7 +101,7 @@ func (s *TemplateRepo) syncBuiltins(builtinFS fs.FS) error {
 			continue
 		}
 
-		var meta template.Meta
+		var meta dto.TemplateMeta
 		if err := json.Unmarshal(metaData, &meta); err != nil {
 			log.Warnf("[template_store] skip %s: parse template.json: %v", dirName, err)
 			continue
@@ -174,7 +176,7 @@ type TemplateRow struct {
 
 // ListAll 返回所有未删除的模板，内置模板优先、其后按 ID 升序。
 // 单条 meta 解析失败仅告警跳过，不影响其余模板。
-func (s *TemplateRepo) ListAll() ([]*template.Template, error) {
+func (s *TemplateRepo) ListAll() ([]*dto.Template, error) {
 	rows, err := s.db.Query(
 		`SELECT id, meta, html, css, is_builtin FROM templates WHERE is_deleted=0 ORDER BY is_builtin DESC, id ASC`,
 	)
@@ -183,7 +185,7 @@ func (s *TemplateRepo) ListAll() ([]*template.Template, error) {
 	}
 	defer rows.Close()
 
-	var templates []*template.Template
+	var templates []*dto.Template
 	for rows.Next() {
 		var id, metaJSON, html, css string
 		var isBuiltin int
@@ -191,13 +193,13 @@ func (s *TemplateRepo) ListAll() ([]*template.Template, error) {
 			return nil, fmt.Errorf("scan template row: %w", err)
 		}
 
-		var meta template.Meta
+		var meta dto.TemplateMeta
 		if err := json.Unmarshal([]byte(metaJSON), &meta); err != nil {
 			log.Warnf("[template_store] unmarshal meta for %s: %v", id, err)
 			continue
 		}
 
-		templates = append(templates, &template.Template{
+		templates = append(templates, &dto.Template{
 			Meta:      meta,
 			HTML:      html,
 			CSS:       css,
@@ -209,7 +211,7 @@ func (s *TemplateRepo) ListAll() ([]*template.Template, error) {
 }
 
 // GetByID 按 ID 查询单个模板；不存在时返回 TEMPLATE_NOT_FOUND 错误。
-func (s *TemplateRepo) GetByID(id string) (*template.Template, error) {
+func (s *TemplateRepo) GetByID(id string) (*dto.Template, error) {
 	var metaJSON, html, css string
 	var isBuiltin int
 	err := s.db.QueryRow(
@@ -223,12 +225,12 @@ func (s *TemplateRepo) GetByID(id string) (*template.Template, error) {
 		return nil, fmt.Errorf("query template: %w", err)
 	}
 
-	var meta template.Meta
+	var meta dto.TemplateMeta
 	if err := json.Unmarshal([]byte(metaJSON), &meta); err != nil {
 		return nil, fmt.Errorf("unmarshal meta: %w", err)
 	}
 
-	return &template.Template{
+	return &dto.Template{
 		Meta:      meta,
 		HTML:      html,
 		CSS:       css,
@@ -238,7 +240,7 @@ func (s *TemplateRepo) GetByID(id string) (*template.Template, error) {
 
 // Create 插入一个用户模板。
 // Gosume 一期改造：不再接收 HTML，模板只保存 meta + css。
-func (s *TemplateRepo) Create(meta template.Meta, css string) error {
+func (s *TemplateRepo) Create(meta dto.TemplateMeta, css string) error {
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("marshal meta: %w", err)
@@ -258,7 +260,7 @@ func (s *TemplateRepo) Create(meta template.Meta, css string) error {
 }
 
 // Update 修改用户模板；内置模板不可修改，命中 0 行时返回 TEMPLATE_NOT_FOUND。
-func (s *TemplateRepo) Update(id string, meta template.Meta, css string) error {
+func (s *TemplateRepo) Update(id string, meta dto.TemplateMeta, css string) error {
 	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("marshal meta: %w", err)
@@ -321,7 +323,7 @@ func (s *TemplateRepo) ImportFromFilesystem(dir string) (int, error) {
 			continue
 		}
 
-		var meta template.Meta
+		var meta dto.TemplateMeta
 		if err := json.Unmarshal(metaData, &meta); err != nil {
 			continue
 		}
@@ -366,7 +368,7 @@ func (s *TemplateRepo) ReloadFromDir(dir string) error {
 			continue
 		}
 
-		var meta template.Meta
+		var meta dto.TemplateMeta
 		if err := json.Unmarshal(metaData, &meta); err != nil {
 			continue
 		}
@@ -429,7 +431,7 @@ func (s *TemplateRepo) WatchDir(dir string) (chan struct{}, error) {
 	}
 
 	stop := make(chan struct{})
-	go func() {
+	util.Go(func() {
 		defer watcher.Close()
 		timer := time.NewTimer(0)
 		if !timer.Stop() {
@@ -465,7 +467,7 @@ func (s *TemplateRepo) WatchDir(dir string) (chan struct{}, error) {
 				log.Warnf("[template_store] watcher error: %v", err)
 			}
 		}
-	}()
+	})
 
 	log.Infof("[template_store] watching %s for template changes", dir)
 	return stop, nil

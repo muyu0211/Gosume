@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { FolderOpen, Clock, ArrowRight, Sparkles, Settings, List, Upload, Loader2, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react'
+import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2 } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
+import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate } from '../services/templateService'
@@ -15,6 +16,8 @@ import { callService } from '../services/backend'
 import { generateAllThumbnails } from '../services/thumbnailService'
 import type { TemplateMeta } from '../types/template'
 import type { ResumeListItem } from '../types/resume'
+import type { FileParseResult, FileImportResponse } from '../types/gosume_file'
+import { migratePersonalSummary } from '../types/resume'
 
 export function WelcomePage() {
   const navigate = useNavigate()
@@ -26,6 +29,10 @@ export function WelcomePage() {
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  // 中间态导入（.gosume）
+  const [importingGosume, setImportingGosume] = useState(false)
+  const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
+  const [importSuccess, setImportSuccess] = useState('')
   const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
@@ -121,21 +128,6 @@ export function WelcomePage() {
     navigate('/editor')
   }
 
-  const handleOpenFile = async () => {
-    clearResume()
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data: any = await callService('FileService', 'OpenProject')
-      if (data?.meta) {
-        setResume(data)
-        setActiveTemplate(data.meta.template_id || '')
-        navigate('/editor')
-      }
-    } catch (err) {
-      console.error('Open file failed:', err)
-    }
-  }
-
   const handleOpenFromDrawer = async (id: string) => {
     setShowDrawer(false)
     clearResume()
@@ -161,6 +153,56 @@ export function WelcomePage() {
     } finally {
       setImportingTemplate(false)
     }
+  }
+
+  // 中间态导入第一步：选择文件 → 后端解析校验 → 返回预览数据（未落库）
+  const handleImportGosume = async () => {
+    setImportingGosume(true)
+    setImportSuccess('')
+    try {
+      const result = await callService<FileParseResult>('FileService', 'ParseFile')
+      if (!result?.resume) return // 用户取消，静默关闭
+      setImportPreview(result)
+    } catch (err) {
+      console.error('Parse gosume file failed:', err)
+      setImportError(extractErrorMessage(err, '导入失败，请检查文件'))
+    } finally {
+      setImportingGosume(false)
+    }
+  }
+
+  // 中间态导入第二步：预览确认后执行导入（新建/覆盖均进入编辑器）
+  const handleImported = async (result: FileImportResponse, finalTemplateId: string) => {
+    const resume = importPreview?.resume
+    setImportPreview(null)
+
+    if (result.mode === 'overwrite') {
+      setImportSuccess('已覆盖导入')
+      // 刷新简历列表（覆盖改变了 name/updated_at）
+      try {
+        const list = await callService<ResumeListItem[]>('ResumeService', 'ListResumes')
+        if (list) {
+          setResumeList(list)
+          setRecentFiles(list)
+        }
+      } catch { /* 忽略，列表随下次加载刷新 */ }
+      // 覆盖后直接进入编辑页继续编辑（与打开简历一致的加载流程）
+      clearResume()
+      const loaded = await loadResume(result.id)
+      if (loaded && loaded.meta?.template_id) {
+        setActiveTemplate(loaded.meta.template_id)
+      }
+      navigate('/editor')
+      return
+    }
+
+    // 新建：用导入数据进入编辑器
+    if (!resume) return
+    clearResume()
+    setActiveTemplate(finalTemplateId)
+    // 兼容历史数据：早期顶层 summary 字段迁移到 personal_summary 结构
+    setResume(migratePersonalSummary(resume))
+    navigate('/editor')
   }
 
   const handleDeleteTemplate = (id: string, name: string) => {
@@ -208,18 +250,20 @@ export function WelcomePage() {
             导入模板
           </button>
           <button
+            onClick={handleImportGosume}
+            disabled={importingGosume}
+            className="btn-secondary btn-sm"
+            title="导入可编辑简历文件 (.gosume)"
+          >
+            {importingGosume ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
+            导入简历
+          </button>
+          <button
             onClick={() => setShowDrawer(true)}
             className="btn-secondary btn-sm"
           >
             <List className="w-4 h-4" />
             全部简历
-          </button>
-          <button
-            onClick={handleOpenFile}
-            className="btn-secondary btn-sm"
-          >
-            <FolderOpen className="w-4 h-4" />
-            打开文件
           </button>
           <button
             onClick={() => navigate('/settings')}
@@ -235,6 +279,18 @@ export function WelcomePage() {
         <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between gap-3">
           <span>{importError}</span>
           <button onClick={() => setImportError('')} className="text-red-500 hover:text-red-700 text-xs font-medium">
+            关闭
+          </button>
+        </div>
+      )}
+
+      {importSuccess && (
+        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-700 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            {importSuccess}
+          </span>
+          <button onClick={() => setImportSuccess('')} className="text-emerald-500 hover:text-emerald-700 text-xs font-medium">
             关闭
           </button>
         </div>
@@ -318,6 +374,14 @@ export function WelcomePage() {
         onClose={() => setShowDrawer(false)}
         onOpenResume={handleOpenFromDrawer}
       />
+
+      {importPreview && (
+        <ImportPreviewDialog
+          preview={importPreview}
+          onClose={() => setImportPreview(null)}
+          onImported={handleImported}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deleteTarget}

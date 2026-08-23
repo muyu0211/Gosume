@@ -140,6 +140,50 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 
 ## 开发规范
 
+### 模态窗口规范（Modal）
+
+所有模态窗口**必须**基于 `components/ui/Modal.tsx` 通用外壳，禁止手写 `fixed inset-0` overlay 或自造动画：
+
+```tsx
+import { useRef } from 'react'
+import { Modal, type ModalHandle } from '../ui/Modal'
+
+export function XxxDialog({ onClose }: Props) {
+  const modalRef = useRef<ModalHandle>(null)
+
+  return (
+    <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="...">
+      {/* Header / Content / Footer */}
+    </Modal>
+  )
+}
+```
+
+统一行为（Modal 内置，无需重复实现）：
+
+- 三阶段过渡动画：entering → open → exiting（overlay 淡入淡出 + 卡片 opacity/scale/translate-y，200ms）；
+- overlay 点击关闭、Escape 关闭；
+- 卡片 `max-h-[90vh]` 居中，随窗口大小自适应；
+- 业务完成后主动关闭：`modalRef.current?.close()`（触发退场动画后再调 `onClose`）；父组件在 `onClose` 中卸载。
+
+尺寸与布局：
+
+- `width` 控制卡片宽度（默认 `w-[520px]`）；内容少用 `w-[480px]`，确认框用 `w-[380px]`；
+- 内容可能超高需要滚动时，二选一：
+  - **整体滚动**：`cardClassName="overflow-auto"`（如 ExportDialog）；
+  - **固定 Header/Footer**：`cardClassName="flex flex-col overflow-hidden"`，Header/Footer 加 `flex-shrink-0`、内容区加 `flex-1 overflow-auto`（如 ImportPreviewDialog）；
+- Header 行高默认 `px-6 py-3`，图标盒 `w-8 h-8 rounded-lg`、图标 `w-4 h-4`、标题 `text-base`（紧凑风格，新增对话框遵循）。
+
+次级确认框（覆盖在模态之上）：
+
+- 用 `ConfirmDialog`，勿自绘；其 overlay 统一 `bg-black/25 backdrop-blur-sm`（ConfirmDialog / UnsavedChangesDialog 已内置）；
+- 嵌套时靠 DOM 顺序自然叠层（同为 z-50），勿再叠加更高 z-index。
+
+自定义浮层（下拉等）：
+
+- 浮层面板用 Portal 渲染到 `document.body` + `fixed` 定位 + `z-[9999]`，脱离模态 overflow 裁剪（参考 `components/ui/CustomSelect.tsx`）；
+- 面板内部滚动不应触发关闭；外部滚动时重算定位跟随触发元素。
+
 ### 通用规则
 - 代码格式化工具：Prettier + ESLint
 - 禁止使用：any 类型、var 声明、硬编码魔法值（如直接写 100 代替 MAX_PAGE_SIZE）

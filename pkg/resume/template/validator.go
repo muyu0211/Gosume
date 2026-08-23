@@ -2,9 +2,9 @@ package template
 
 import (
 	"fmt"
-	"reflect"
-
+	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/model"
+	"reflect"
 )
 
 // ValidationResult 是简历数据针对模板要求的校验结果。
@@ -18,7 +18,7 @@ type ValidationResult struct {
 //
 // 模板未声明 data_schema 时视为无约束，直接返回校验通过。
 // 列表型区块（jobs/education/skills）会逐条校验并在错误信息中标注下标。
-func ValidateDataForTemplate(tmpl *Template, resume *model.Resume) *ValidationResult {
+func ValidateDataForTemplate(tmpl *dto.Template, resume *model.Resume) *ValidationResult {
 	result := &ValidationResult{Valid: true}
 	if tmpl.Meta.DataSchema == nil {
 		return result

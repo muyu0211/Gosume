@@ -117,7 +117,7 @@ func (s *ResumeService) InitResume(resume *model.Resume) *util.Response {
 	s.currentContent = resume
 	s.currentID = ""
 	s.persisted = false
-	log.Infof("[resume_service] InitResume: identity reset (will create new row on save)")
+	log.Infof("[resume_service] InitResume 成功加载简历 (仅在保存时创建)")
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 

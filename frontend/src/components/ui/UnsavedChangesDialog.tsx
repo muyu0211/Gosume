@@ -25,7 +25,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
 
   return (
     <div
-      className="fixed inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter z-50"
+      className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
       onClick={onClose}
     >
       <div

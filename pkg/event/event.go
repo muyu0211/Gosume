@@ -11,6 +11,7 @@ const (
 	EXPORT_COMPLETED       = "export:completed"
 	FILE_OPENED            = "file:opened"
 	FILE_SAVED             = "file:saved"
+	FILE_IMPORTED          = "file:imported"
 	CONFIG_DATADIR_CHANGED = "config:datadir-changed"
 	WINDOW_CLOSE_REQUESTED = "window:close-requested"
 )

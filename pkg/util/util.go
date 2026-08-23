@@ -1,9 +1,12 @@
 package util
 
 import (
+	"gosume/pkg/config"
+	"gosume/pkg/log"
 	"math"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 )
 
@@ -46,4 +49,26 @@ func Round2(v float64) float64 {
 // 口径与前端排版一致：1in = 96px、1in = 25.4mm，即 1px = 25.4/96 mm。
 func PxToMm(px int) float64 {
 	return float64(px) * 25.4 / 96
+}
+
+// AppVersion 返回应用版本号（config.yaml 的 app.version）；配置未加载时回退空串。
+func AppVersion() string {
+	if config.GlobalConfig == nil {
+		return ""
+	}
+	return config.GlobalConfig.App.Version
+}
+
+// Go 在独立 goroutine 中安全执行 fn：fn 内发生的 panic 会被捕获并记录
+//
+//	util.Go(func() { s.flush() })
+func Go(fn func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Errorf("[util] goroutine panicked: %v\n%s", r, debug.Stack())
+			}
+		}()
+		fn()
+	}()
 }

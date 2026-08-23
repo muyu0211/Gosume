@@ -70,16 +70,16 @@ func New(assets, builtinTemplates embed.FS) *App {
 	resumeSvc := &service.ResumeService{}
 	templateSvc := &service.TemplateService{}
 	exportSvc := &service.ExportService{}
-	fileSvc := &service.FileService{}
 	systemSvc := &service.SystemService{}
+	fileSvc := &service.FileService{}
 
 	// 服务列表
 	svcs := []application.Service{
 		application.NewService(resumeSvc),
 		application.NewService(templateSvc),
 		application.NewService(exportSvc),
-		application.NewService(fileSvc),
 		application.NewService(systemSvc),
+		application.NewService(fileSvc),
 	}
 
 	// Wails 应用与窗口
@@ -89,14 +89,15 @@ func New(assets, builtinTemplates embed.FS) *App {
 	resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
 	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 	exportSvc.Inject(app, browserManager)
-	fileSvc.Inject(app, projectStore, resumeSvc)
 	systemSvc.Inject(app, userCfgMgr, window)
+	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
 	event.AddEvent(event.EXPORT_COMPLETED, "1")
 	event.AddEvent(event.FILE_OPENED, "1")
 	event.AddEvent(event.FILE_SAVED, "1")
+	event.AddEvent(event.FILE_IMPORTED, "1")
 	event.AddEvent(event.CONFIG_DATADIR_CHANGED, "1")
 	event.AddEvent(event.WINDOW_CLOSE_REQUESTED, "")
 	event.RegisterEvents()
@@ -125,7 +126,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		// 重新注入依赖
 		resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
 		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
-		fileSvc.Inject(app, projectStore, resumeSvc)
+		fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 
 		app.Event.Emit("config:datadir-changed", newDir)
 

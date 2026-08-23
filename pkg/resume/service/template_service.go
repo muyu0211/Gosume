@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"gosume/pkg/log"
+	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/model"
 	"gosume/pkg/resume/repo"
 	"gosume/pkg/resume/template"
@@ -64,7 +65,7 @@ func (s *TemplateService) GetTemplate(id string) *util.Response {
 
 // effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
 // 或模板无自带 HTML 时使用应用内置的 template.html（Gosume 一期改造）。
-func (s *TemplateService) effectiveHTML(t *template.Template) string {
+func (s *TemplateService) effectiveHTML(t *dto.Template) string {
 	if t.Meta.UseUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
 		return s.HTML
 	}
@@ -90,8 +91,8 @@ func (s *TemplateService) GetTemplateContent(id string) *util.Response {
 	})
 }
 
-// ImportTemplateResult 是用户模板包安装成功后返回给前端的结果。
-type ImportTemplateResult struct {
+// ImportTemplateResponse 是用户模板包安装成功后返回给前端的结果。
+type ImportTemplateResponse struct {
 	ID      string          `json:"id"`
 	Name    string          `json:"name"`
 	Version string          `json:"version"`
@@ -149,12 +150,12 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath string) *util.R
 	}
 
 	log.Infof("[template_service] importTemplatePackageFromPath: 已导入模板 id=%s name=%s", pkg.Meta.ID, pkg.Meta.Name)
-	meta := getTemplateMeta(&template.Template{
+	meta := getTemplateMeta(&dto.Template{
 		Meta:      pkg.Meta,
 		CSS:       pkg.CSS,
 		IsBuiltin: false,
 	})
-	return util.DoRsp(util.SuccCode, "成功", &ImportTemplateResult{
+	return util.DoRsp(util.SuccCode, "成功", &ImportTemplateResponse{
 		ID:      pkg.Meta.ID,
 		Name:    pkg.Meta.Name,
 		Version: pkg.Meta.Version,
@@ -175,7 +176,7 @@ func (s *TemplateService) ValidateForTemplate(templateID string, resume *model.R
 }
 
 // CreateTemplate 创建一个用户模板。
-func (s *TemplateService) CreateTemplate(meta template.Meta, css string) *util.Response {
+func (s *TemplateService) CreateTemplate(meta dto.TemplateMeta, css string) *util.Response {
 	if meta.ID == "" {
 		log.Errorf("[template_service] CreateTemplate: 模板 ID 不能为空")
 		return util.DoRsp(util.ErrCode, "模板 ID 不能为空", nil)
@@ -189,7 +190,7 @@ func (s *TemplateService) CreateTemplate(meta template.Meta, css string) *util.R
 }
 
 // UpdateTemplate 更新已存在的用户模板。
-func (s *TemplateService) UpdateTemplate(id string, meta template.Meta, css string) *util.Response {
+func (s *TemplateService) UpdateTemplate(id string, meta dto.TemplateMeta, css string) *util.Response {
 	if meta.ID == "" {
 		log.Errorf("[template_service] UpdateTemplate: 模板 ID 不能为空")
 		return util.DoRsp(util.ErrCode, "模板 ID 不能为空", nil)
@@ -250,7 +251,7 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) *util.Response {
 
 // getTemplateMeta 把内部模板结构转换为面向前端的元数据视图，
 // 集中处理字段映射，避免各处重复转换代码。
-func getTemplateMeta(t *template.Template) vo.TemplateMeta {
+func getTemplateMeta(t *dto.Template) vo.TemplateMeta {
 	return vo.TemplateMeta{
 		ID:              t.Meta.ID,
 		Name:            t.Meta.Name,
