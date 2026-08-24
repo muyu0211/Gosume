@@ -25,6 +25,7 @@
 - 代码复用应遵循开放封闭原则，避免过度修改。
 - 代码复用应遵循迪米特法则，避免过度依赖。
 - 工具类的代码，如果不与当前文件中代码强相关，即也可以被其他文件中使用，应当抽取到util包下（例如Round2方法，虽然目前仅被使用在纸张规格的计算中，但是显然也可以用在其他需要保留两位小数的场景，所以应当抽取到util包下）
+- 对于一些简单的方法（只有一两行），例如仅仅是字符串拼接或者判空等逻辑，只在当前文件中使用，不建议单独写成一个方法，因为这样会增加代码的复杂度。
 
 ### 代码注释
 
@@ -33,9 +34,9 @@
 
 ## 架构模式
 
-### Wails 服务层
+## Wails 服务层
 
-`pkg/service/` 中的服务实现 Wails 的 `application.Service` 接口（通过 `ServiceName()` 方法）。它们在 `pkg/app/app.go` 中注册，前端通过以下方式调用：
+`pkg/xxx/service/` 中的服务实现 Wails 的 `application.Service` 接口（通过 `ServiceName()` 方法）。它们在 `pkg/app/app.go` 中注册，前端通过以下方式调用：
 
 ```
 前端: callService("ResumeService", "NewResume", templateId, "zh-CN")
@@ -44,6 +45,14 @@ Go:   ResumeService.NewResume(templateID string, language string)
 ```
 
 只有服务结构体上的**导出方法（大写开头）**才能被前端调用。未导出方法（如 `saveResume`）仅限内部使用。
+
+例如简历相关的服务层位于：`pkg\resume\service`
+
+### 服务层代码规范
+
+- 给前端回包的结构体要以Response结尾，增强可读性，例如更新逻辑的回包结构：UpdateInfoResponse；
+- 所有结构体/变量/常量的定义放在文件的最前面；
+- 可导出的方法放在不可导出（内部方法）的前面；
 
 ### 错误处理
 
@@ -65,6 +74,7 @@ return UserWrap(err, "保存项目失败")
 
 `UserError` 实现 `error` 接口，其 `Error()` 输出直接成为前端 JS `Error.message`。前端通过 `extractErrorMessage()` 统一提取（见 `frontend/AGENTS.md`）。用户取消操作（如关闭对话框）应返回 `nil`，避免前端弹错误提示。
 
+
 ### 依赖注入
 
 所有组装在 `pkg/app/app.go` 的 `New()` 中完成：
@@ -83,23 +93,10 @@ return UserWrap(err, "保存项目失败")
 
 SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
-### 保存语义
-
-`ResumeService` 采用两层保存模型：
-
-| 方法 | 可见性 | 行为 |
-|------|--------|------|
-| `NewResume` | 导出 | 仅在内存中创建，不写入数据库 |
-| `AutoSave` | 导出 | 仅在已持久化过的情况下更新数据库 |
-| `ExplicitSave` | 导出 | 首次创建或更新数据库记录 |
-| `saveResume` | 未导出 | 实际执行数据库写入——前端无法直接调用 |
-
-防止意外持久化：简历必须先手动保存一次，之后自动保存才会生效。
-
 
 ### 事件系统
 
-后端发送的 Wails 事件（事件定义在`event.go`中, 在 `app.go` 中注册），事件名先采用常量在`event.go`中进行定义，再到`app.go`中注册，避免在直接使用硬编码的方式，避免影响后续的可拓展性/架构调整，目前已有事件：
+后端发送的 Wails 事件（事件定义在`event.go`中, 在 `app.go` 中注册），事件名先采用常量在`event.go`中进行定义，再到`app.go`中注册，避免在直接使用硬编码的方式，避免影响后续的可拓展性/架构调整，例如：
 | 事件名 | 数据类型 | 说明 |
 |--------|----------|------|
 | `export:progress` | int | 导出进度百分比 |
@@ -108,9 +105,17 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 | `file:saved` | string | 保存的文件路径 |
 | `config:datadir-changed` | string | 新的数据目录路径 |
 
-### 日志
+## 日志
 
 使用 zap 结构化日志。日志文件写入 `{dataDir}/log/` 目录。日志级别通过 `log.INFO`、`log.DEBUG` 等设置。辅助函数：`log.Info`、`log.Error`、`log.Warn`、`log.Debug`、`log.Fatal`。
+
+### 日志打印
+
+- 遵循三段式：`[当前模块（包）] 当前方法：当前日志内容`，例如：
+```
+log.Errorf("[update_service] DownloadUpdate: 设置执行权限失败: %v", err)
+log.Infof("[update_service] DownloadUpdate: 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
+```
 
 ### 模板系统
 

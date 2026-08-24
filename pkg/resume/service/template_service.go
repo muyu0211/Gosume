@@ -46,7 +46,7 @@ func (s *TemplateService) ListTemplates() *util.Response {
 
 	var metas []vo.TemplateMeta
 	for _, t := range templates {
-		metas = append(metas, getTemplateMeta(t))
+		metas = append(metas, util.GetTemplateMeta(t))
 	}
 	log.Infof("[template_service] ListTemplates: 共 %d 个模板", len(metas))
 	return util.DoRsp(util.SuccCode, "成功", metas)
@@ -59,7 +59,7 @@ func (s *TemplateService) GetTemplate(id string) *util.Response {
 		log.Errorf("[template_service] GetTemplate: 模板不存在 id=%s: %v", id, err)
 		return util.DoRsp(util.ErrCode, "模板不存在", nil)
 	}
-	meta := getTemplateMeta(t)
+	meta := util.GetTemplateMeta(t)
 	return util.DoRsp(util.SuccCode, "成功", &meta)
 }
 
@@ -150,7 +150,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath string) *util.R
 	}
 
 	log.Infof("[template_service] importTemplatePackageFromPath: 已导入模板 id=%s name=%s", pkg.Meta.ID, pkg.Meta.Name)
-	meta := getTemplateMeta(&dto.Template{
+	meta := util.GetTemplateMeta(&dto.Template{
 		Meta:      pkg.Meta,
 		CSS:       pkg.CSS,
 		IsBuiltin: false,
@@ -247,25 +247,4 @@ func (s *TemplateService) CloneTemplate(sourceID, newID string) *util.Response {
 
 	log.Infof("[template_service] CloneTemplate: 已克隆模板 %s -> %s", sourceID, newID)
 	return util.DoRsp(util.SuccCode, "成功", nil)
-}
-
-// getTemplateMeta 把内部模板结构转换为面向前端的元数据视图，
-// 集中处理字段映射，避免各处重复转换代码。
-func getTemplateMeta(t *dto.Template) vo.TemplateMeta {
-	return vo.TemplateMeta{
-		ID:              t.Meta.ID,
-		Name:            t.Meta.Name,
-		Version:         t.Meta.Version,
-		Author:          t.Meta.Author,
-		Description:     t.Meta.Description,
-		Category:        t.Meta.Category,
-		Tags:            t.Meta.Tags,
-		TargetLanguage:  t.Meta.TargetLanguage,
-		PageCount:       t.Meta.PageCount,
-		PaperSize:       t.Meta.PaperSize,
-		Colors:          t.Meta.Colors,
-		Features:        t.Meta.Features,
-		UsesUnifiedHTML: t.Meta.UseUnifiedHTML,
-		IsBuiltin:       t.IsBuiltin,
-	}
 }

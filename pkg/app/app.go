@@ -72,6 +72,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	exportSvc := &service.ExportService{}
 	systemSvc := &service.SystemService{}
 	fileSvc := &service.FileService{}
+	updateSvc := &service.UpdateService{}
 
 	// 服务列表
 	svcs := []application.Service{
@@ -80,6 +81,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(exportSvc),
 		application.NewService(systemSvc),
 		application.NewService(fileSvc),
+		application.NewService(updateSvc),
 	}
 
 	// Wails 应用与窗口
@@ -91,6 +93,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	exportSvc.Inject(app, browserManager)
 	systemSvc.Inject(app, userCfgMgr, window)
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
+	updateSvc.Inject(app, userCfgMgr)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
@@ -100,6 +103,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	event.AddEvent(event.FILE_IMPORTED, "1")
 	event.AddEvent(event.CONFIG_DATADIR_CHANGED, "1")
 	event.AddEvent(event.WINDOW_CLOSE_REQUESTED, "")
+	event.AddEvent(event.UPDATE_PROGRESS, 1)
 	event.RegisterEvents()
 
 	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。

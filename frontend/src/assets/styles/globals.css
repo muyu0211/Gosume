@@ -130,6 +130,17 @@ body {
   animation: page-enter 0.25s ease-out both;
 }
 
+/* Update badge pop animation（新版本角标弹性入场） */
+@keyframes badge-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.animate-badge-pop {
+  animation: badge-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Dialog animation */
 @keyframes dialog-enter {
   from {

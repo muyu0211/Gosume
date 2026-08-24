@@ -1,8 +1,6 @@
 package vo
 
-import (
-	"gosume/pkg/resume/dto"
-)
+import "gosume/pkg/resume/dto"
 
 // TemplateMeta 面向前端裁剪后的模板元数据视图。
 type TemplateMeta struct {

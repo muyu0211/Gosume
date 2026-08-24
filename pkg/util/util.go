@@ -3,12 +3,19 @@ package util
 import (
 	"gosume/pkg/config"
 	"gosume/pkg/log"
+	"gosume/pkg/resume/dto"
+	"gosume/pkg/resume/vo"
 	"math"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 )
+
+// isDev 判断当前是否为发布状态
+func IsProd() bool {
+	return strings.EqualFold(strings.TrimSpace(config.GlobalConfig.Server.Env), "prod")
+}
 
 // GetRootPath 返回配置的锚点目录。
 // 若可执行文件同级目录存在 config.json，则视为便携模式，返回该目录；
@@ -45,6 +52,11 @@ func Round2(v float64) float64 {
 	return math.Round(v*100) / 100
 }
 
+// ShQuote 把字符串包装为 POSIX shell 单引号字面量。
+func ShQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
 // PxToMm 把 CSS 参考像素（96dpi）换算为毫米。
 // 口径与前端排版一致：1in = 96px、1in = 25.4mm，即 1px = 25.4/96 mm。
 func PxToMm(px int) float64 {
@@ -60,8 +72,6 @@ func AppVersion() string {
 }
 
 // Go 在独立 goroutine 中安全执行 fn：fn 内发生的 panic 会被捕获并记录
-//
-//	util.Go(func() { s.flush() })
 func Go(fn func()) {
 	go func() {
 		defer func() {
@@ -71,4 +81,24 @@ func Go(fn func()) {
 		}()
 		fn()
 	}()
+}
+
+// GetTemplateMeta 把内部模板结构转换为面向前端的元数据视图，
+func GetTemplateMeta(t *dto.Template) vo.TemplateMeta {
+	return vo.TemplateMeta{
+		ID:              t.Meta.ID,
+		Name:            t.Meta.Name,
+		Version:         t.Meta.Version,
+		Author:          t.Meta.Author,
+		Description:     t.Meta.Description,
+		Category:        t.Meta.Category,
+		Tags:            t.Meta.Tags,
+		TargetLanguage:  t.Meta.TargetLanguage,
+		PageCount:       t.Meta.PageCount,
+		PaperSize:       t.Meta.PaperSize,
+		Colors:          t.Meta.Colors,
+		Features:        t.Meta.Features,
+		UsesUnifiedHTML: t.Meta.UseUnifiedHTML,
+		IsBuiltin:       t.IsBuiltin,
+	}
 }

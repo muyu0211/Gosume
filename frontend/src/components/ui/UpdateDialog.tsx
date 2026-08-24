@@ -1,0 +1,294 @@
+import { useEffect, useRef, useState } from 'react'
+import { Events } from '@wailsio/runtime'
+import { AlertCircle, ArrowRight, ArrowUpCircle, CheckCircle2, Download, RotateCw } from 'lucide-react'
+import { Modal, type ModalHandle } from './Modal'
+import { callService, isWails } from '../../services/backend'
+import { extractErrorMessage } from '../../lib/errorUtils'
+
+/**
+ * 检查更新返回的版本信息（与后端 UpdateInfo 对齐，见《在线更新开发方案》§5/§6.3）。
+ */
+export interface UpdateInfo {
+  /** 是否存在新版本 */
+  has_update: boolean
+  /** 当前版本号 */
+  current_version?: string
+  /** 最新版本号 */
+  latest_version?: string
+  /** 发布日期（如 2026-09-01） */
+  release_date?: string
+  /** 更新说明（\n 分隔的多行文本） */
+  release_notes?: string
+  /** 更新包下载地址 */
+  download_url?: string
+  /** 更新包 SHA-256 */
+  sha256?: string
+  /** 更新包形态（nsis-installer / app-zip / appimage，替换阶段按此分派） */
+  artifact_type?: string
+  /** has_update=false 时的说明（如 Linux 包管理器安装形态的提示） */
+  reason?: string
+}
+
+/** 对话框阶段状态机：available → downloading → ready（失败 → error 可重试）。 */
+type Stage = 'available' | 'downloading' | 'ready' | 'error'
+
+interface UpdateDialogProps {
+  /** 检查更新返回的版本信息（has_update 为 true 时才应渲染本组件）。 */
+  info: UpdateInfo
+  /** 退场动画结束后的关闭回调（由父组件卸载本组件）。 */
+  onClose: () => void
+}
+
+/**
+ * 在线更新对话框（在线更新 P1）。
+ *
+ * 检查到新版本时弹出，内部完成整个更新流程：
+ * 1. available：版本对比 + 更新日志，「立即下载」；
+ * 2. downloading：进度条（监听 update:progress 事件），「取消」；
+ * 3. ready：「安装并重启」——调 ApplyUpdate 启动 Helper 后触发窗口关闭，
+ *    走既有未保存确认流程退出，Helper 接管完成静默替换并重启新版本；
+ * 4. error：错误信息 + 「重试下载」。
+ */
+export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
+  const modalRef = useRef<ModalHandle>(null)
+  const [stage, setStage] = useState<Stage>('available')
+  const [progress, setProgress] = useState<number | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [applying, setApplying] = useState(false)
+
+  // 更新说明按行拆分为列表（appcast 的 notes 以 \n 分隔）
+  const notes = (info.release_notes ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  // 动态内容区：各 stage 的内容并排叠放为 grid 行，active 行展开为 1fr、
+  // 其余折叠为 0fr，从而让卡片高度随 stage 切换平滑过渡（200ms，与设置页
+  // 关于组件的展开/收起动画一致）。节点始终挂载，仅行高控制可见性，否则
+  // 卸载瞬间会跳过过渡。
+  const rows: { key: string; show: boolean; node: React.ReactNode }[] = [
+    {
+      key: 'notes',
+      // 更新说明全阶段常驻（与原版行为一致），不随 stage 切换折叠
+      show: notes.length > 0,
+      node: (
+        <div>
+          <p className="text-xs font-medium text-surface-500 mb-1.5">更新内容</p>
+          <ul className="space-y-1">
+            {notes.map((line, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-sm text-surface-600">
+                <span className="w-1 h-1 rounded-full bg-surface-300 mt-[7px] shrink-0" />
+                <span className="min-w-0">{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ),
+    },
+    {
+      key: 'progress',
+      show: stage === 'downloading',
+      node: (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-surface-500">
+            <span>正在下载更新包…</span>
+            <span className="font-mono">{formatProgress(progress)}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-surface-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary-500 transition-all duration-200"
+              style={{ width: `${progressPercent(progress)}%` }}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'ready',
+      show: stage === 'ready',
+      node: (
+        <div className="flex items-center gap-2 text-sm text-surface-600">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          更新包已就绪，重启后自动完成安装。
+        </div>
+      ),
+    },
+    {
+      key: 'safety',
+      // 数据安全提示全阶段常驻，不随 stage 切换折叠
+      show: true,
+      node: <p className="text-xs text-surface-400">更新不会影响你的简历、模板与设置数据。</p>,
+    },
+    {
+      key: 'error',
+      // 错误提示置于内容最下方，避免在更新说明中间突兀出现
+      show: stage === 'error',
+      node: (
+        <div className="flex items-start gap-2 text-sm text-red-600">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span className="min-w-0">{errorMsg}</span>
+        </div>
+      ),
+    },
+  ]
+
+  // 订阅后端下载进度（与 ResumeListDrawer 监听 export:progress 同款写法）。
+  // 载荷契约：Content-Length 已知时为 0-100 百分比，未知时为已下载字节数。
+  useEffect(() => {
+    if (!isWails()) return
+    const off = Events.On('update:progress', (ev) => {
+      const p = typeof ev.data === 'number' ? ev.data : Number(ev.data)
+      if (Number.isFinite(p)) setProgress(p)
+    })
+    return off
+  }, [])
+
+  const handleClose = () => modalRef.current?.close()
+
+  /** 立即下载 / 重试下载。 */
+  const handleDownload = async () => {
+    if (!info.download_url || !info.sha256) {
+      setStage('error')
+      setErrorMsg('更新信息不完整，请重新检查更新')
+      return
+    }
+    setStage('downloading')
+    setProgress(0)
+    setErrorMsg('')
+    try {
+      await callService('UpdateService', 'DownloadUpdate', info.download_url, info.sha256)
+      setStage('ready')
+    } catch (err) {
+      setStage('error')
+      setErrorMsg(extractErrorMessage(err, '下载更新包失败，请稍后重试'))
+    }
+  }
+
+  /** 下载中取消。 */
+  const handleCancelDownload = () => {
+    callService('UpdateService', 'CancelUpdate').catch(() => { /* 忽略 */ })
+    modalRef.current?.close()
+  }
+
+  /** 安装并重启：启动 Helper → 触发窗口关闭（未保存确认）→ 退出后 Helper 替换并重启。 */
+  const handleInstall = async () => {
+    setApplying(true)
+    try {
+      await callService('UpdateService', 'ApplyUpdate')
+      // CloseWindow 触发后端 WindowClosing 钩子 → window:close-requested →
+      // App.tsx 弹未保存确认 → ConfirmWindowClose → 应用退出 → Helper 接管。
+      await callService('SystemService', 'CloseWindow')
+      // 用户取消未保存确认时应用继续运行；关闭本对话框，可稍后从设置页重新触发。
+      modalRef.current?.close()
+    } catch (err) {
+      setApplying(false)
+      setErrorMsg(extractErrorMessage(err, '启动更新失败'))
+      setStage('error')
+    }
+  }
+
+  return (
+    <Modal
+      ref={modalRef}
+      onClose={onClose}
+      width="w-[480px]"
+      cardClassName="flex flex-col overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-6 py-3 border-b border-surface-100 flex-shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+          <ArrowUpCircle className="w-4 h-4 text-primary-600" />
+        </div>
+        <h2 className="text-base font-semibold text-surface-800">发现新版本</h2>
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-4">
+        {/* 版本对比 + 发布日期（固定块，不参与折叠） */}
+        <div className="flex items-center gap-2 flex-wrap pb-4">
+          <span className="px-2 py-0.5 rounded-md bg-surface-100 text-surface-500 font-mono text-sm">
+            v{info.current_version ?? '—'}
+          </span>
+          <ArrowRight className="w-4 h-4 text-surface-400" />
+          <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 font-mono text-sm font-medium">
+            v{info.latest_version ?? ''}
+          </span>
+          {info.release_date && (
+            <span className="text-xs text-surface-400">{info.release_date}</span>
+          )}
+        </div>
+
+        {/* 动态内容区：grid 行 0fr↔1fr + 淡入淡出，stage 切换高度平滑过渡 */}
+        <div
+          className="grid transition-all duration-200 ease-out"
+          style={{ gridTemplateRows: rows.map((r) => (r.show ? '1fr' : '0fr')).join(' ') }}
+        >
+          {rows.map((r) => (
+            <div key={r.key} className="overflow-hidden" aria-hidden={!r.show}>
+              <div className={r.show ? 'pt-4 opacity-100' : 'pt-4 opacity-0'}>{r.node}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer：按阶段切换按钮 */}
+      <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-surface-100 flex-shrink-0">
+        {stage === 'available' && (
+          <>
+            <button onClick={handleClose} className="btn-secondary btn-sm">
+              稍后提醒
+            </button>
+            <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
+              <Download className="w-4 h-4" /> 立即下载
+            </button>
+          </>
+        )}
+        {stage === 'downloading' && (
+          <button onClick={handleCancelDownload} className="btn-secondary btn-sm">
+            取消
+          </button>
+        )}
+        {stage === 'ready' && (
+          <>
+            <button onClick={handleClose} className="btn-secondary btn-sm">
+              稍后安装
+            </button>
+            <button
+              onClick={handleInstall}
+              disabled={applying}
+              className="btn-primary btn-sm inline-flex items-center gap-1.5 disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" /> {applying ? '正在准备…' : '安装并重启'}
+            </button>
+          </>
+        )}
+        {stage === 'error' && (
+          <>
+            <button onClick={handleClose} className="btn-secondary btn-sm">
+              关闭
+            </button>
+            <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
+              <RotateCw className="w-4 h-4" /> 重试下载
+            </button>
+          </>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * 进度值展示：百分比模式（0-100）显示 xx%；字节数模式（>100）显示已下载 MB。
+ */
+function formatProgress(progress: number | null): string {
+  if (progress === null) return '0%'
+  if (progress <= 100) return `${Math.round(progress)}%`
+  return `${(progress / 1024 / 1024).toFixed(1)} MB`
+}
+
+/** 进度条宽度：百分比模式直接取值，字节数模式按 50MB 估算封顶。 */
+function progressPercent(progress: number | null): number {
+  if (progress === null) return 0
+  if (progress <= 100) return Math.max(0, Math.min(100, progress))
+  return Math.min(100, (progress / (50 * 1024 * 1024)) * 100)
+}

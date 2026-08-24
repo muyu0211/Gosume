@@ -24,11 +24,14 @@ type ServerConfig struct {
 
 // AppConfig 描述应用基础元信息。
 type AppConfig struct {
-	Name        string `yaml:"name"`
-	Version     string `yaml:"version"`
-	Description string `yaml:"description"`
-	Copyright   string `yaml:"copyright"`
-	Identifier  string `yaml:"identifier"`
+	Name               string `yaml:"name"`
+	Version            string `yaml:"version"`
+	Description        string `yaml:"description"`
+	Copyright          string `yaml:"copyright"`
+	Identifier         string `yaml:"identifier"`
+	UpdatePackageFile  string `yaml:"update_package_file"`
+	UpdatePackageTmp   string `yaml:"update_package_tmp"`
+	UpdateHelperScript string `yaml:"update_helper_script"`
 }
 
 // WindowConfig 描述主窗口的初始与约束参数。
@@ -61,4 +64,9 @@ func Load() {
 	if err := yaml.Unmarshal(configYAML, GlobalConfig); err != nil {
 		panic(fmt.Sprintf("config: 解析嵌入的 config.yaml 失败: %v", err))
 	}
+
+	GlobalConfig.App.UpdatePackageTmp = GlobalConfig.App.UpdatePackageFile + ".part"
+	// 更新助手脚本默认名：config.yaml 未声明时取该默认，避免占位符留空。
+	// Unix 平台 Helper 将脚本写入 {dataDir}/updates/ 下此文件再执行。
+	GlobalConfig.App.UpdateHelperScript = "gosume-update-helper.sh"
 }

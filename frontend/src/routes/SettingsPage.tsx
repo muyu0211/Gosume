@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, SlidersHorizontal, Plus, Trash2, RotateCcw } from 'lucide-react'
+import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, SlidersHorizontal, Plus, Trash2, RotateCcw, Download } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { useResumeStore } from '../stores/resumeStore'
 import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
 import { callService } from '../services/backend'
+import { extractErrorMessage } from '../lib/errorUtils'
 import type { LayoutPresetSettings, MarginTier, SpacingTier } from '../lib/layoutPresets'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
@@ -143,6 +145,41 @@ export function SettingsPage() {
   const [dirStatus, setDirStatus] = useState<'' | 'success' | 'error'>('')
   const [dirErrorMsg, setDirErrorMsg] = useState('')
   const [pendingDir, setPendingDir] = useState<string | null>(null)
+
+  // Update check state
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [updateStatus, setUpdateStatus] = useState<'' | 'latest' | 'error'>('')
+  const [updateMsg, setUpdateMsg] = useState('')
+  /** 检查到的新版本信息；非空时渲染更新确认模态。 */
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+
+  // 检查更新：拉取服务端 appcast 并与当前版本比较
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true)
+    // 仅收起消息：旧文本保持挂载，让高度折叠动画播放完，新结果到达后再展开
+    setUpdateStatus('')
+    try {
+      const info = await callService<UpdateInfo | null>('UpdateService', 'CheckUpdate')
+      if (!info) {
+        setUpdateStatus('error')
+        setUpdateMsg('当前环境不支持在线检查更新')
+        return
+      }
+      if (info.has_update) {
+        // 发现新版本：弹出更新确认模态
+        setUpdateInfo(info)
+      } else {
+        setUpdateStatus('latest')
+        // 有 reason 时展示后端说明（如 Linux 包管理器安装形态的提示）
+        setUpdateMsg(info.reason || '当前已是最新版本')
+      }
+    } catch (err) {
+      setUpdateStatus('error')
+      setUpdateMsg(extractErrorMessage(err, '检查更新失败，请稍后重试'))
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
 
   useEffect(() => {
     callService<string>('SystemService', 'GetDataDir')
@@ -487,6 +524,34 @@ export function SettingsPage() {
             <p><span className="font-medium">Gosume</span> v1.0.0</p>
             <p className="text-xs text-surface-400">桌面级简历制作工具</p>
             <p className="text-xs text-surface-400 mt-2">基于 Wails v3构建</p>
+            <div className="pt-2">
+              <button
+                onClick={handleCheckUpdate}
+                disabled={checkingUpdate}
+                className="btn-secondary btn-sm inline-flex items-center gap-1.5"
+              >
+                {checkingUpdate ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> 检查中...</>
+                ) : (
+                  <><Download className="w-4 h-4" /> 检查更新</>
+                )}
+              </button>
+              {/* 检查结果：grid 行高 0fr↔1fr + 淡入淡出，展开/收起带 200ms 高度渐变（对齐模态窗口动画） */}
+              <div
+                className={`grid transition-all duration-200 ${
+                  updateStatus !== '' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  {updateMsg && (
+                    <p className={`mt-2 text-xs flex items-center gap-1 ${updateStatus === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                      {updateStatus === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                      {updateMsg}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -512,6 +577,15 @@ export function SettingsPage() {
         onConfirm={handleResetLayout}
         onCancel={() => setShowResetConfirm(false)}
       />
+
+      {/* Update dialog: pops up when a new version is found; internal state
+          machine covers download progress / install / retry. */}
+      {updateInfo && (
+        <UpdateDialog
+          info={updateInfo}
+          onClose={() => setUpdateInfo(null)}
+        />
+      )}
 
       {/* Change data directory confirmation dialog */}
       <ConfirmDialog

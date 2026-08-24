@@ -7,6 +7,7 @@ import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
 import { resolvePaper } from '../lib/paper'
@@ -18,6 +19,12 @@ import type { TemplateMeta } from '../types/template'
 import type { ResumeListItem } from '../types/resume'
 import type { FileParseResult, FileImportResponse } from '../types/gosume_file'
 import { migratePersonalSummary } from '../types/resume'
+
+// 本次会话是否已做过启动更新检查（避免从编辑器返回首页时重复请求）
+let updateCheckedThisSession = false
+// 启动检查结果缓存：WelcomePage 路由切走会卸载、组件 state 随之丢失，
+// 结果提升到模块级，返回首页时角标可直接恢复、保持常驻
+let sessionUpdateInfo: UpdateInfo | null = null
 
 export function WelcomePage() {
   const navigate = useNavigate()
@@ -33,6 +40,10 @@ export function WelcomePage() {
   const [importingGosume, setImportingGosume] = useState(false)
   const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
   const [importSuccess, setImportSuccess] = useState('')
+  // 启动更新检查：有新版本时 logo 显示 NEW 角标，点击角标弹出更新对话框。
+  // 初始值取自模块级缓存，路由切走再回来角标直接恢复。
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
@@ -56,6 +67,21 @@ export function WelcomePage() {
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  // 应用启动时静默检查一次更新（复用 UpdateService.CheckUpdate）。
+  // 失败静默——启动检查不打扰用户；有新版本时在 logo 上渲染 NEW 角标。
+  useEffect(() => {
+    if (updateCheckedThisSession) return
+    updateCheckedThisSession = true
+    callService<UpdateInfo | null>('UpdateService', 'CheckUpdate')
+      .then((info) => {
+        if (info?.has_update) {
+          sessionUpdateInfo = info
+          setUpdateInfo(info)
+        }
+      })
+      .catch(() => { /* 静默：网络失败等情况不提示 */ })
   }, [])
 
   const loadData = async () => {
@@ -231,8 +257,20 @@ export function WelcomePage() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            {/* 新版本角标：启动检查到更新时渲染，点击弹出更新对话框（复用设置页 UpdateDialog） */}
+            {updateInfo && (
+              <button
+                onClick={() => setShowUpdateDialog(true)}
+                className="absolute -top-1.5 -right-2.5 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold tracking-wider shadow-md shadow-red-500/30 animate-badge-pop hover:bg-red-600 active:scale-95 transition-colors"
+                title={`发现新版本 v${updateInfo.latest_version}，点击查看`}
+              >
+                NEW
+              </button>
+            )}
           </div>
           <div>
             <h1 className="text-xl font-bold text-surface-800 tracking-tight">Gosume</h1>
@@ -380,6 +418,14 @@ export function WelcomePage() {
           preview={importPreview}
           onClose={() => setImportPreview(null)}
           onImported={handleImported}
+        />
+      )}
+
+      {/* 新版本更新对话框：与设置页检查更新共用同一组件与流程 */}
+      {showUpdateDialog && updateInfo && (
+        <UpdateDialog
+          info={updateInfo}
+          onClose={() => setShowUpdateDialog(false)}
         />
       )}
 

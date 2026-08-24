@@ -14,6 +14,7 @@ const (
 	FILE_IMPORTED          = "file:imported"
 	CONFIG_DATADIR_CHANGED = "config:datadir-changed"
 	WINDOW_CLOSE_REQUESTED = "window:close-requested"
+	UPDATE_PROGRESS        = "update:progress" // 更新包下载进度：int（0-100 百分比；总大小未知时为已下载字节数）
 )
 
 // application.RegisterEvent[int]("export:progress")
