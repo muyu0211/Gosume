@@ -6,7 +6,7 @@ client:
   service:                                 # 命名服务端列表
     - name: gosume.UpdateService           # 服务端名，代码里按此名引用
       proto: http                          # 客户端协议：http（默认）；后续可扩展 redis/mysql/kafka 等
-      target: https://github.com/muyu/gosume/releases/latest/download   # 服务端 HTTP 地址（更新检查的相对路径以此为前缀）
+      target: https://raw.githubusercontent.com/muyu/gosume/main   # 服务端 HTTP 地址（更新检查的相对路径以此为前缀）
       timeout_sec: 0                       # 显式 0：不设整体超时（更新包下载为长请求，超时由调用方 context 控制）
       proxy: ""                            # 该服务代理地址（留空则不设）
     # - name: gosume.TelemetryService

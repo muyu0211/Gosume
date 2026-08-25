@@ -1,0 +1,16 @@
+{
+    "product": "Gosume",
+    "channel": "stable",
+    "platforms": {
+        "windows-amd64": {
+            "version": "1.1.0",
+            "release_date": "2026-08-25",
+            "notes_zh": "新版本",
+            "notes_en": "test release",
+            "artifact_type": "nsis-installer",
+            "installer_url": "https://github.com/muyu/gosume/releases/download/v1.1.0/Gosume-amd64-installer.exe",
+            "sha256": "BEA9D1A43D1041ADC8D2FBAC47AF99D342DA10B728F17AB7B8AFE0393F7F2ECB",
+            "mandatory": false
+        }
+    }
+}
