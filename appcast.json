@@ -4,12 +4,12 @@
     "platforms": {
         "windows-amd64": {
             "version": "1.1.0",
-            "release_date": "2026-08-25",
+            "release_date": "2026-08-26",
             "notes_zh": "新版本",
             "notes_en": "test release",
             "artifact_type": "nsis-installer",
-            "installer_url": "https://github.com/muyu/gosume/releases/download/v1.1.0/Gosume-amd64-installer.exe",
-            "sha256": "E183457114D2D62F68220D0BB7F75EF78CAEE4BB09B0285E44961D30EDD301AE",
+            "installer_url": "https://github.com/muyu0211/Gosume/releases/download/v1.1.0/Gosume-amd64-installer.exe",
+            "sha256": "8C8A4126791A8923AEDAD65D92C6A9BD11AAA285AEB38204E66E06B972E34CAE",
             "mandatory": false
         }
     }

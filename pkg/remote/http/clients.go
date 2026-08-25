@@ -6,6 +6,8 @@ import (
 	"gosume/pkg/config"
 	"gosume/pkg/remote"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"resty.dev/v3"
@@ -18,6 +20,7 @@ const (
 
 // Clients 是面向调用方的统一 HTTP 请求门面：封装基本的 REST 请求方法，
 // 调用方一行代码即可完成请求发起与响应解析。
+// 各方法的 path 均为相对服务 target 的资源路径（执行时自动拼接），传绝对 URL 则按原样请求；
 // 返回的 *Response 自行负责响应流的释放，调用方无需手动关闭。
 type Clients interface {
 	Get(ctx context.Context, path string, rspBody any, opts ...Option) (*Response, error)
@@ -92,27 +95,41 @@ func buildClient(svc config.ServiceConfig) *cli {
 	return &cli{serviceName: svc.Name, client: c}
 }
 
-// Get 发起 GET 请求；rspBody 非 nil 时自动按 JSON 解析响应体到其中。
+// resolveURL 把请求 path 显式拼接服务基地址（服务配置的 target），
+// 使 target 的作用可预期、对接层配置保持「target + 相对资源路径」的语义：
+//   - path 为绝对 URL（含 scheme，如完整 http(s) 地址）时按原样返回；
+//   - 否则视为相对资源路径，规整前后斜杠后拼接在 target 后。
+//
+// 避免依赖 resty 对相对路径隐式拼接时对「以 / 开头」「target 末尾斜杠」的脆弱处理。
+func (ci *cli) resolveURL(path string) string {
+	if u, err := url.Parse(path); err == nil && u.IsAbs() {
+		return path
+	}
+	return strings.TrimRight(ci.client.BaseURL(), "/") + "/" + strings.TrimLeft(path, "/")
+}
+
+// Get 发起 GET 请求；path 为相对服务 target 的资源路径，执行时自动拼接；
+// rspBody 非 nil 时自动按 JSON 解析响应体到其中。
 func (ci *cli) Get(ctx context.Context, path string, rspBody any, opts ...Option) (*Response, error) {
 	return ci.do(ctx, http.MethodGet, path, nil, rspBody, opts...)
 }
 
-// Post 发起 POST 请求；reqBody 为请求体（nil 表示无请求体）。
+// Post 发起 POST 请求；path 为相对服务 target 的资源路径；reqBody 为请求体（nil 表示无请求体）。
 func (ci *cli) Post(ctx context.Context, path string, reqBody any, rspBody any, opts ...Option) (*Response, error) {
 	return ci.do(ctx, http.MethodPost, path, reqBody, rspBody, opts...)
 }
 
-// Put 发起 PUT 请求；reqBody 为请求体（nil 表示无请求体）。
+// Put 发起 PUT 请求；path 为相对服务 target 的资源路径；reqBody 为请求体（nil 表示无请求体）。
 func (ci *cli) Put(ctx context.Context, path string, reqBody any, rspBody any, opts ...Option) (*Response, error) {
 	return ci.do(ctx, http.MethodPut, path, reqBody, rspBody, opts...)
 }
 
-// Delete 发起 DELETE 请求；reqBody 为请求体（nil 表示无请求体）。
+// Delete 发起 DELETE 请求；path 为相对服务 target 的资源路径；reqBody 为请求体（nil 表示无请求体）。
 func (ci *cli) Delete(ctx context.Context, path string, reqBody any, rspBody any, opts ...Option) (*Response, error) {
 	return ci.do(ctx, http.MethodDelete, path, reqBody, rspBody, opts...)
 }
 
-// Patch 发起 PATCH 请求；reqBody 为请求体（nil 表示无请求体）。
+// Patch 发起 PATCH 请求；path 为相对服务 target 的资源路径；reqBody 为请求体（nil 表示无请求体）。
 func (ci *cli) Patch(ctx context.Context, path string, reqBody any, rspBody any, opts ...Option) (*Response, error) {
 	return ci.do(ctx, http.MethodPatch, path, reqBody, rspBody, opts...)
 }
@@ -145,7 +162,7 @@ func (ci *cli) do(ctx context.Context, method, path string, reqBody, rspBody any
 		r.SetResult(rspBody)
 	}
 
-	res, err := r.Execute(method, path)
+	res, err := r.Execute(method, ci.resolveURL(path))
 	if err != nil {
 		return nil, err
 	}

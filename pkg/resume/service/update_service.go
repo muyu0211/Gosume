@@ -29,12 +29,6 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// UpdateCheckEndpoint 在线更新 appcast 相对路径，实际地址为
-// config.yaml 中 gosume.UpdateService 服务的 target 加上此路径。
-// 服务端只需静态托管一份 appcast.json，格式见《在线更新开发方案》§5.1。
-// TODO(更新服务)：替换 target 为真实的更新服务器地址（如 https://dl.example.com/gosume）。
-const UpdateCheckEndpoint = "/appcast.json"
-
 // allowedDownloadHosts 允许下载更新包的域名白名单。
 // 防止 appcast 被篡改后指向任意可执行文件；TODO(更新服务)：替换为真实 CDN 域名。
 var allowedDownloadHosts = []string{
@@ -408,7 +402,7 @@ func fetchAppcast() (*appcastManifest, error) {
 	var m appcastManifest
 	client := http.NewHttpClient("gosume.UpdateService")
 
-	resp, err := client.Get(context.Background(), UpdateCheckEndpoint, &m,
+	resp, err := client.Get(context.Background(), "/appcast.json", &m,
 		http.WithTimeout(10*time.Second),
 		http.WithForceJSON(),
 	)
