@@ -5,11 +5,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
-	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -24,6 +21,7 @@ import (
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
+	"gosume/pkg/remote/http"
 	"gosume/pkg/resume/helper"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
@@ -31,10 +29,11 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// UpdateCheckEndpoint 在线更新 appcast 地址（占位，待替换为真实更新服务器）。
+// UpdateCheckEndpoint 在线更新 appcast 相对路径，实际地址为
+// config.yaml 中 gosume.UpdateService 服务的 target 加上此路径。
 // 服务端只需静态托管一份 appcast.json，格式见《在线更新开发方案》§5.1。
-// TODO(更新服务)：替换为真实的 CDN 地址（如 https://dl.example.com/gosume/appcast.json）。
-const UpdateCheckEndpoint = "https://example.com/gosume/appcast.json"
+// TODO(更新服务)：替换 target 为真实的更新服务器地址（如 https://dl.example.com/gosume）。
+const UpdateCheckEndpoint = "/appcast.json"
 
 // allowedDownloadHosts 允许下载更新包的域名白名单。
 // 防止 appcast 被篡改后指向任意可执行文件；TODO(更新服务)：替换为真实 CDN 域名。
@@ -60,15 +59,15 @@ const (
 //     Helper 等主进程退出后完成静默替换并重启新版本。
 type UpdateService struct {
 	App          *application.App
-	configMgr    *user_config.Manager
-	state        atomic.Int32        // 下载状态：0=idle、1=downloading，防止并发下载。
-	cancel       context.CancelFunc  //  取消正在进行的下载。
-	cancelMu     sync.Mutex          // 下载取消锁。
-	helper       *exec.Cmd           // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
-	helperMu     sync.Mutex          // helper 互斥锁
-	checkCache   *UpdateInfoResponse // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
-	checkCacheMu sync.Mutex          // 检查缓存锁
-	checkMu      sync.Mutex          // 检查执行串行锁：并发调用时后者等待前者完成并命中缓存
+	configMgr    *user_config.Manager // 用户配置管理器
+	state        atomic.Int32         // 下载状态：0=idle、1=downloading，防止并发下载。
+	cancel       context.CancelFunc   //  取消正在进行的下载。
+	cancelMu     sync.Mutex           // 下载取消锁。
+	helper       *exec.Cmd            // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
+	helperMu     sync.Mutex           // helper 互斥锁
+	checkCache   *UpdateInfoResponse  // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
+	checkCacheMu sync.Mutex           // 检查缓存锁
+	checkMu      sync.Mutex           // 检查执行串行锁：并发调用时后者等待前者完成并命中缓存
 }
 
 // ---------- appcast 协议 ----------
@@ -146,10 +145,7 @@ func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
 
 	// NOTE: 测试直接返回更新
 	if !util.IsProd() {
-		log.Infof("[CheckUpdate] 检查更新")
-
-		time.Sleep(5 * time.Second)
-
+		log.Infof("[CheckUpdate] Test Env 检查更新")
 		return UpdateInfoResponse{
 			HasUpdate:      true,
 			CurrentVersion: current,
@@ -172,7 +168,7 @@ func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
 	}
 
 	// 获取更新信息
-	manifest, err := fetchAppcast(UpdateCheckEndpoint)
+	manifest, err := fetchAppcast()
 	if err != nil {
 		log.Errorf("[update_service] CheckUpdate: 拉取更新信息失败: %v", err)
 		return UpdateInfoResponse{}, "检查更新失败，请检查网络后重试"
@@ -359,18 +355,25 @@ func (s *UpdateService) DownloadUpdate(dlURL, sha256Hex string) *util.Response {
 }
 
 // download 执行下载：写入 dst，边下边算 sha256 与推送进度，返回文件哈希。
+// 走 remote 统一客户端（绝对地址直接请求，忽略服务基地址）；服务配置为
+// 不设整体超时，下载时长由调用方 context 控制。
 func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dlURL, nil)
+	client := http.NewHttpClient("gosume.UpdateService")
+	resp, err := client.Get(ctx, dlURL, nil,
+		http.WithRetryCount(0), // 下载流不自动重试（重下整个包代价大），失败由用户手动重试
+		http.WithDoNotParse(),  // 流式读取，避免整体读入内存
+	)
 	if err != nil {
 		return "", err
 	}
-	resp, err := newDownloadClient().Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status %d", resp.StatusCode)
+	// 响应流由 remote/http 包自管理（读尽自动关闭），调用方无需手动 Close。
+
+	// 总大小未知时按已下载字节数上报，Content-Length 缺失则置 -1
+	total := int64(-1)
+	if v := resp.Header().Get("Content-Length"); v != "" {
+		if n, perr := strconv.ParseInt(v, 10, 64); perr == nil {
+			total = n
+		}
 	}
 
 	f, err := os.Create(dst)
@@ -381,8 +384,8 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 
 	hasher := sha256.New()
 	pr := &progressReader{
-		r:     io.TeeReader(resp.Body, hasher),
-		total: resp.ContentLength,
+		r:     io.TeeReader(resp.Body(), hasher),
+		total: total,
 		emit: func(pct int, read, total int64) {
 			// 百分比模式发 pct（0-100）；未知总大小时发已下载字节数
 			if total > 0 {
@@ -398,35 +401,24 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// newDownloadClient 返回用于下载更新包的客户端：仅对建连(Dial/TLS)与
-// 响应首字节设超时，不设置整体读超时，避免大安装包在慢网下被裁断。
-// 服务器在建连/响应阶段僵死时会及时超时，不会再无限阻塞。
-func newDownloadClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy:                 http.ProxyFromEnvironment,
-			DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 15 * time.Second,
-			IdleConnTimeout:       90 * time.Second,
-		},
-	}
-}
+// fetchAppcast 拉取并解析服务端 appcast.json（走 remote 统一客户端）。
+// appcast 为小文件，请求级超时收紧到 10s（覆盖服务配置的不设整体超时）；
+// 静态托管的 appcast.json Content-Type 可能不规范，强制按 JSON 解析。
+func fetchAppcast() (*appcastManifest, error) {
+	var m appcastManifest
+	client := http.NewHttpClient("gosume.UpdateService")
 
-// fetchAppcast 拉取并解析服务端 appcast.json。
-func fetchAppcast(endpoint string) (*appcastManifest, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(endpoint)
+	resp, err := client.Get(context.Background(), UpdateCheckEndpoint, &m,
+		http.WithTimeout(10*time.Second),
+		http.WithForceJSON(),
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
-	}
-	var m appcastManifest
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&m); err != nil {
-		return nil, err
+
+	// 响应体上限 1MB，防御异常响应拖垮内存
+	if resp.Size() > 1<<20 {
+		return nil, fmt.Errorf("appcast 响应过大: %d bytes", resp.Size())
 	}
 	return &m, nil
 }

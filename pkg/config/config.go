@@ -12,9 +12,25 @@ var GlobalConfig *Config
 // Config 是应用级配置的根结构，对应 config.yaml。
 type Config struct {
 	Server ServerConfig `yaml:"server"`
+	Client ClientConfig `yaml:"client"`
 	App    AppConfig    `yaml:"app"`
 	Window WindowConfig `yaml:"window"`
 	Log    LogConfig    `yaml:"log"`
+}
+
+// ClientConfig 描述统一客户端的全局默认配置与命名服务列表，由 pkg/remote 消费。
+type ClientConfig struct {
+	Services []ServiceConfig `yaml:"service"` // 命名服务端列表
+}
+
+// ServiceConfig 描述单个命名服务端：代码里按 Name 向 remote 申请客户端。
+type ServiceConfig struct {
+	Name       string `yaml:"name"`        // 服务端名，代码里按此名引用
+	Proto      string `yaml:"proto"`       // 客户端使用的协议：http（默认，HTTP 客户端）；后续可扩展 redis/mysql/kafka 等用于 RPC 客户端调用
+	Target     string `yaml:"target"`      // 服务端地址（HTTP 基地址）
+	TimeoutSec *int   `yaml:"timeout_sec"` // 可选：整体超时秒数；未配置用默认值，显式 0 表示不设整体超时（下载类长请求）
+	RetryCount int    `yaml:"retry_count"` // 可选：重试次数；未配置（0）用默认值，仅对幂等请求生效
+	Proxy      string `yaml:"proxy"`       // 可选：该服务的代理地址（http/https/socks5）；留空不设代理
 }
 
 // ServerConfig 描述服务器配置。
