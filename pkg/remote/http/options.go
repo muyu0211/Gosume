@@ -18,6 +18,7 @@ type Options struct {
 	basicPass   string            // 请求级 Basic 认证密码
 	forceJSON   bool              // 强制按 JSON 解析响应体（服务器 Content-Type 不规范时）
 	doNotParse  bool              // 不解析响应体（流式读取大文件时，rspBody 应传 nil）
+	forceHTTP1  bool              // 强制使用 HTTP/1.1 发送本次请求
 }
 
 // Option 是选项模式的注入函数，按需修改 Options 中的字段。
@@ -95,6 +96,13 @@ func WithForceJSON() Option {
 // 用于下载大文件等场景（此时 rspBody 参数应传 nil）。
 func WithDoNotParse() Option {
 	return func(o *Options) { o.doNotParse = true }
+}
+
+// WithForceHTTP1 强制请求走 HTTP/1.1（在请求层切换传输层），
+// 用于部分服务器/网络环境下 HTTP/2 连接复用导致连接被重置（http2: response body closed）的场景。
+// 注意：HTTP/1.1 连接无法多路复用，仅建议用于大文件下载等单次场景。
+func WithForceHTTP1() Option {
+	return func(o *Options) { o.forceHTTP1 = true }
 }
 
 // apply 将 Options 应用到 resty 请求上，返回配置好的请求。

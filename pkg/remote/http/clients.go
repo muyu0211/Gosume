@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"gosume/pkg/config"
 	"gosume/pkg/remote"
@@ -108,6 +109,23 @@ func (ci *cli) resolveURL(path string) string {
 	return strings.TrimRight(ci.client.BaseURL(), "/") + "/" + strings.TrimLeft(path, "/")
 }
 
+// newHTTP1Transport 构造一个强制走 HTTP/1.1 的传输层：
+// 关闭 HTTP/2 协商（ForceAttemptHTTP2=false）并把 ALPN 限定为 http/1.1，
+// 其余连接池/超时等参数沿用默认传输层。
+func newHTTP1Transport() http.RoundTripper {
+	t, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return http.DefaultTransport
+	}
+	t = t.Clone()
+	t.ForceAttemptHTTP2 = false
+	if t.TLSClientConfig == nil {
+		t.TLSClientConfig = &tls.Config{}
+	}
+	t.TLSClientConfig.NextProtos = []string{"http/1.1"}
+	return t
+}
+
 // Get 发起 GET 请求；path 为相对服务 target 的资源路径，执行时自动拼接；
 // rspBody 非 nil 时自动按 JSON 解析响应体到其中。
 func (ci *cli) Get(ctx context.Context, path string, rspBody any, opts ...Option) (*Response, error) {
@@ -152,6 +170,9 @@ func (ci *cli) ping(ctx context.Context) error {
 // 返回的 *Response 已接管响应流的释放，调用方无需手动关闭。
 func (ci *cli) do(ctx context.Context, method, path string, reqBody, rspBody any, opts ...Option) (*Response, error) {
 	option := apply(opts...)
+	if option.forceHTTP1 {
+		ci.client.SetTransport(newHTTP1Transport())
+	}
 	r := option.apply(ci.client.R().SetContext(ctx))
 	r.SetMethod(method)
 

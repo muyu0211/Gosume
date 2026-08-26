@@ -205,15 +205,15 @@ func (s *UpdateService) setCheckCache(info UpdateInfoResponse) {
 
 // ApplyUpdate 启动分离的 Helper 进程完成静默替换（方案 §6.5）。
 //
-// 成功返回后由前端调用 SystemService.CloseWindow 触发既有未保存确认流程退出；
-// Helper 等主进程退出（最多 120s）后执行替换并重启新版本。
+// 成功返回后由前端走既有未保存确认流程，并经 SystemService.QuitApp
+// 显式终止主进程；Helper 等主进程真正退出（最多 120s）后执行替换并重启新版本。
 func (s *UpdateService) ApplyUpdate() *util.Response {
 	if !util.IsProd() {
 		return util.DoRsp(util.ErrCode, "开发模式下不支持应用更新", nil)
 	}
 
 	updateDir := s.updateDir()
-	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.UpdatePackageFile)
+	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)
 	if _, err := os.Stat(pkgPath); err != nil {
 		return util.DoRsp(util.ErrCode, "更新包未就绪，请先下载", nil)
 	}
@@ -302,29 +302,29 @@ func (s *UpdateService) DownloadUpdate(dlURL, sha256Hex string) *util.Response {
 	}()
 
 	// 下载 + 流式哈希
-	tmpPath := filepath.Join(updateDir, config.GlobalConfig.App.UpdatePackageTmp)
+	tmpPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageTmp)
 	hashHex, err := s.download(ctx, dlURL, tmpPath)
 	if err != nil {
 		os.Remove(tmpPath)
 		if ctx.Err() != nil {
 			return util.DoRsp(util.ErrCode, "下载已取消", nil)
 		}
-		log.Errorf("[update_service] DownloadUpdate: 下载失败 %s: %v", dlURL, err)
+		log.Errorf("[update_service] DownloadUpdate 下载失败: %v", err)
 		return util.DoRsp(util.ErrCode, "下载失败，请检查网络后重试", nil)
 	}
 
 	// sha256 校验：不通过则删除文件并报错
 	if hashHex != sha256Hex {
 		os.Remove(tmpPath)
-		log.Errorf("[update_service] DownloadUpdate: sha256 不匹配（期望 %s，实际 %s）", sha256Hex, hashHex)
+		log.Errorf("[update_service] DownloadUpdate sha256 不匹配（期望 %s，实际 %s）", sha256Hex, hashHex)
 		return util.DoRsp(util.ErrCode, "更新包校验失败，已丢弃", nil)
 	}
 
 	// 落地为正式包名
-	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.UpdatePackageFile)
+	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)
 	if err := os.Rename(tmpPath, pkgPath); err != nil {
 		os.Remove(tmpPath)
-		log.Errorf("[update_service] DownloadUpdate: 保存更新包失败: %v", err)
+		log.Errorf("[update_service] DownloadUpdate 保存更新包失败: %v", err)
 		return util.DoRsp(util.ErrCode, "保存更新包失败", nil)
 	}
 
@@ -332,19 +332,19 @@ func (s *UpdateService) DownloadUpdate(dlURL, sha256Hex string) *util.Response {
 	switch runtime.GOOS {
 	case "darwin":
 		if err := extractAppBundle(pkgPath, updateDir); err != nil {
-			log.Errorf("[update_service] DownloadUpdate: 解压更新包失败: %v", err)
+			log.Errorf("[update_service] DownloadUpdate 解压更新包失败: %v", err)
 			return util.DoRsp(util.ErrCode, "更新包解压失败", nil)
 		}
 	case "linux":
 		if err := os.Chmod(pkgPath, 0755); err != nil {
-			log.Errorf("[update_service] DownloadUpdate: 设置执行权限失败: %v", err)
+			log.Errorf("[update_service] DownloadUpdate 设置执行权限失败: %v", err)
 			return util.DoRsp(util.ErrCode, "准备更新包失败", nil)
 		}
 	}
 
 	// 给前端推送 100% 进度
 	s.App.Event.Emit(event.UPDATE_PROGRESS, 100)
-	log.Infof("[update_service] DownloadUpdate: 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
+	log.Infof("[update_service] DownloadUpdate 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -356,11 +356,12 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 	resp, err := client.Get(ctx, dlURL, nil,
 		http.WithRetryCount(0), // 下载流不自动重试（重下整个包代价大），失败由用户手动重试
 		http.WithDoNotParse(),  // 流式读取，避免整体读入内存
+		http.WithForceHTTP1(),  // 部分网络下 HTTP/2 连接复用易被重置，下载改用 HTTP/1.1
 	)
 	if err != nil {
+		log.Errorf("[update_service] download: 下载失败: %v", err)
 		return "", err
 	}
-	// 响应流由 remote/http 包自管理（读尽自动关闭），调用方无需手动 Close。
 
 	// 总大小未知时按已下载字节数上报，Content-Length 缺失则置 -1
 	total := int64(-1)
@@ -372,6 +373,7 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 
 	f, err := os.Create(dst)
 	if err != nil {
+		log.Errorf("[update_service] download: 创建更新包文件失败: %v", err)
 		return "", err
 	}
 	defer f.Close()
@@ -390,6 +392,7 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 		},
 	}
 	if _, err := io.Copy(f, pr); err != nil {
+		log.Errorf("[update_service] download: 写入更新包文件失败: %v", err)
 		return "", err
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), nil
@@ -523,11 +526,11 @@ func extractZipFile(f *zip.File, dst string) error {
 }
 
 // cleanUpdateArtifacts 下载前清理 updates/ 内残留的临时包与既往解压产物。
-// 刻意保留上一份可用的正式安装包（UpdatePackageFile）：若本次下载/校验失败，
+// 刻意保留上一份可用的正式安装包（Update.PackageFile）：若本次下载/校验失败，
 // 旧包仍可备用，不会被误删；新包校验通过后rename会原子覆盖旧包。
 func cleanUpdateArtifacts(updateDir string) {
-	os.Remove(filepath.Join(updateDir, config.GlobalConfig.App.UpdatePackageTmp))
-	os.Remove(filepath.Join(updateDir, config.GlobalConfig.App.UpdateHelperScript))
+	os.Remove(filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageTmp))
+	os.Remove(filepath.Join(updateDir, config.GlobalConfig.App.Update.UnixHelperScript))
 	os.RemoveAll(filepath.Join(updateDir, config.GlobalConfig.App.Name+".app"))
 }
 

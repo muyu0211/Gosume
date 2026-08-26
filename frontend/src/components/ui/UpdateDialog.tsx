@@ -3,6 +3,7 @@ import { Events } from '@wailsio/runtime'
 import { AlertCircle, ArrowRight, ArrowUpCircle, CheckCircle2, Download, RotateCw } from 'lucide-react'
 import { Modal, type ModalHandle } from './Modal'
 import { callService, isWails } from '../../services/backend'
+import { useResumeStore } from '../../stores/resumeStore'
 import { extractErrorMessage } from '../../lib/errorUtils'
 
 /**
@@ -170,14 +171,18 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
     modalRef.current?.close()
   }
 
-  /** 安装并重启：启动 Helper → 触发窗口关闭（未保存确认）→ 退出后 Helper 替换并重启。 */
+  /** 安装并重启：启动 Helper → 未保存二确 → QuitApp 终止进程 → Helper 替换并重启。 */
   const handleInstall = async () => {
     setApplying(true)
     try {
       await callService('UpdateService', 'ApplyUpdate')
-      // CloseWindow 触发后端 WindowClosing 钩子 → window:close-requested →
-      // App.tsx 弹未保存确认 → ConfirmWindowClose → 应用退出 → Helper 接管。
-      await callService('SystemService', 'CloseWindow')
+      // 复用既有未保存守卫：有改动先弹二确，确认（保存/不保存）后调 QuitApp。
+      // 不依赖 CloseWindow 的「关窗口→进程退出」翻译（macOS 下已禁用该行为，
+      // Windows 下也要走异步事件往返），QuitApp 直接终止进程，Helper 才能
+      // 等到主进程退出后接管替换并重启。
+      useResumeStore.getState().requestLeave(() => {
+        callService('SystemService', 'QuitApp').catch(() => { /* 忽略 */ })
+      })
       // 用户取消未保存确认时应用继续运行；关闭本对话框，可稍后从设置页重新触发。
       modalRef.current?.close()
     } catch (err) {
@@ -258,7 +263,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
               disabled={applying}
               className="btn-primary btn-sm inline-flex items-center gap-1.5 disabled:opacity-60"
             >
-              <Download className="w-4 h-4" /> {applying ? '正在准备…' : '安装并重启'}
+              <Download className="w-4 h-4" /> {applying ? '正在准备…' : '重启并安装'}
             </button>
           </>
         )}

@@ -58,9 +58,21 @@ func (s *SystemService) Inject(app *application.App, configMgr *user_config.Mana
 }
 
 // ConfirmWindowClose 前端完成未保存确认（保存或不保存）后调用，真正关闭窗口。
+//
+// 关闭行为分平台：
+//   - macOS：应用常驻 dock（已禁用 ApplicationShouldTerminateAfterLastWindowClosed），
+//     「关闭」改为隐藏窗口而非销毁——销毁会触发内置监听器把窗口从注册表移除
+//     （Window.Remove），导致点击 dock 图标时 Wails 的 ApplicationShouldHandleReopen
+//     无窗口可复原。隐藏则保留在注册表中，dock 点击即可重新显示。
+//   - Windows/Linux：销毁窗口，最后一个窗口关闭时进程退出。
 func (s *SystemService) ConfirmWindowClose() *util.Response {
 	s.closeConfirmed.Store(true)
-	s.win.Close()
+	if runtime.GOOS == "darwin" {
+		s.win.Hide()
+		s.closeConfirmed.Store(false)
+	} else {
+		s.win.Close()
+	}
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -88,6 +100,16 @@ func (s *SystemService) IsWindowMaximised() *util.Response {
 // CloseWindow 关闭应用窗口。
 func (s *SystemService) CloseWindow() *util.Response {
 	s.win.Close()
+	return util.DoRsp(util.SuccCode, "成功", nil)
+}
+
+// QuitApp 立即终止应用进程（供更新「安装并重启」流程使用）。
+// 与 CloseWindow 不同，这里不依赖「关闭窗口→进程退出」的平台行为
+// （macOS 已禁用 ApplicationShouldTerminateAfterLastWindowClosed，
+// 关闭窗口不会退出进程），而是直接终结进程，确保更新 Helper 能等
+// 到主进程退出后执行替换并重启新版本。调用方须先完成未保存确认。
+func (s *SystemService) QuitApp() *util.Response {
+	s.App.Quit()
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 

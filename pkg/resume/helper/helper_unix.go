@@ -27,14 +27,21 @@ func Start(updateDir, pkgPath, execPath string, trackHelper func(*exec.Cmd)) err
 
 // waitForExitSnippet 返回等待指定进程退出的 shell 片段（最多 timeoutSec 秒）。
 // kill -0 仅探测进程存在（不发信号），进程已退出或超时则继续执行后续命令。
+// 退出或超时均不区分：darwin/linux 替换是等主进程退出，若超时（主进程仍在，
+// 如用户在确认框取消）则 mv/open 会失败，但因写权限预检与文件完整性校验，
+// 失败仅导致不替换，不破坏已有安装，故无需显式中止。
 func waitForExitSnippet(pid, timeoutSec int) string {
 	return fmt.Sprintf("i=0; while kill -0 %d 2>/dev/null && [ $i -lt %d ]; do sleep 1; i=$((i+1)); done", pid, timeoutSec)
 }
 
 // startDarwinHelper 启动 shell 脚本 Helper（方案 §6.5.2）：等主进程退出 → rm 旧 .app → mv 新 .app 至原路径 → open 重启。
 func startDarwinHelper(updateDir, execPath string, trackHelper func(*exec.Cmd)) error {
-	// .app 根 = execPath 向上三层（…/Gosume.app/Contents/MacOS/Gosume）
-	appRoot := filepath.Dir(filepath.Dir(filepath.Dir(execPath)))
+	// .app 根 = execPath 向上回溯 AppBundleDepth 层（…/Gosume.app/Contents/MacOS/Gosume）
+	u := &config.GlobalConfig.App.Update
+	appRoot := execPath
+	for i := 0; i < u.AppBundleDepth; i++ {
+		appRoot = filepath.Dir(appRoot)
+	}
 	if !strings.HasSuffix(appRoot, ".app") {
 		return fmt.Errorf("应用不在 .app 包内(%s), 无法自动更新", execPath)
 	}
@@ -54,7 +61,7 @@ func startDarwinHelper(updateDir, execPath string, trackHelper func(*exec.Cmd)) 
 	script := fmt.Sprintf("#!/bin/sh\n"+
 		"%s\n"+
 		"rm -rf %s && mv %s %s && open %s\n",
-		waitForExitSnippet(os.Getpid(), 120),
+		waitForExitSnippet(os.Getpid(), u.WaitTimeoutSec),
 		util.ShQuote(appRoot), util.ShQuote(newApp), util.ShQuote(appRoot), util.ShQuote(appRoot))
 
 	return runScriptHelper(updateDir, script, trackHelper)
@@ -69,6 +76,7 @@ func startLinuxHelper(updateDir, pkg, execPath string, trackHelper func(*exec.Cm
 		appPath = execPath
 	}
 
+	u := &config.GlobalConfig.App.Update
 	// 写权限预检：无权限直接报错，不进入替换流程
 	if err := checkDirWritable(filepath.Dir(appPath)); err != nil {
 		return fmt.Errorf("无安装位置写权限: %w", err)
@@ -77,7 +85,7 @@ func startLinuxHelper(updateDir, pkg, execPath string, trackHelper func(*exec.Cm
 	script := fmt.Sprintf("#!/bin/sh\n"+
 		"%s\n"+
 		"mv %s %s && chmod +x %s && nohup %s >/dev/null 2>&1 &\n",
-		waitForExitSnippet(os.Getpid(), 120),
+		waitForExitSnippet(os.Getpid(), u.WaitTimeoutSec),
 		util.ShQuote(pkg), util.ShQuote(appPath), util.ShQuote(appPath), util.ShQuote(appPath))
 
 	return runScriptHelper(updateDir, script, trackHelper)
@@ -87,7 +95,8 @@ func startLinuxHelper(updateDir, pkg, execPath string, trackHelper func(*exec.Cm
 //
 // 脚本落盘（而非 -c 传参）：路径含空格时引号转义复杂度可控，且便于排查。
 func runScriptHelper(updateDir, script string, trackHelper func(*exec.Cmd)) error {
-	scriptPath := filepath.Join(updateDir, config.GlobalConfig.App.UpdateHelperScript)
+	u := &config.GlobalConfig.App.Update
+	scriptPath := filepath.Join(updateDir, u.UnixHelperScript)
 	if err := os.WriteFile(scriptPath, []byte(script), 0755); err != nil {
 		return err
 	}
@@ -103,7 +112,7 @@ func runScriptHelper(updateDir, script string, trackHelper func(*exec.Cmd)) erro
 
 // checkDirWritable 探测目录可写性：尝试创建并删除临时探测文件。
 func checkDirWritable(dir string) error {
-	probe := filepath.Join(dir, ".gosume-update-probe")
+	probe := filepath.Join(dir, config.GlobalConfig.App.Update.ProbeFileName)
 	f, err := os.OpenFile(probe, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
 	if err != nil {
 		return err

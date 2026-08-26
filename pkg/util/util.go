@@ -5,6 +5,7 @@ import (
 	"gosume/pkg/log"
 	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/vo"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -101,4 +102,24 @@ func GetTemplateMeta(t *dto.Template) vo.TemplateMeta {
 		UsesUnifiedHTML: t.Meta.UseUnifiedHTML,
 		IsBuiltin:       t.IsBuiltin,
 	}
+}
+
+// CopyFile 把 src 复制为 dst（覆盖已有目标）
+func CopyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	os.Remove(dst)
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		return err
+	}
+	return out.Close()
 }
