@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gosume/pkg/config"
+	"gosume/pkg/log"
 	"gosume/pkg/remote"
 	"io"
 	"net/http"
@@ -100,7 +101,7 @@ func (sc *stdCli) do(ctx context.Context, method, path string, reqBody, rspBody 
 		sc.client.Transport = remote.BuildTransport(sc.service, true)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, resolveURL(sc.service.Target, path), nil)
+	req, err := http.NewRequestWithContext(ctx, method, remote.ResolveURL(sc.service.Target, path), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +137,7 @@ func (sc *stdCli) do(ctx context.Context, method, path string, reqBody, rspBody 
 		req.Body = io.NopCloser(bytes.NewReader(b))
 	}
 
+	log.Infof("[stdCli] 发起 %s %s 请求", method, req.URL.String())
 	res, err := sc.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -144,7 +146,7 @@ func (sc *stdCli) do(ctx context.Context, method, path string, reqBody, rspBody 
 
 	if res.StatusCode >= 400 {
 		resp.close()
-		return resp, fmt.Errorf("HTTP %d: %s", res.StatusCode, res.Status)
+		return resp, fmt.Errorf("%s", res.Status)
 	}
 
 	// 非流式：解析到 rspBody 或确认无响应体后主动关闭，避免连接泄漏。

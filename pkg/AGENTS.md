@@ -113,8 +113,8 @@ SQLite pragma 设置：WAL 模式、外键约束、5 秒忙等待超时。
 
 - 遵循三段式：`[当前模块（包）] 当前方法：当前日志内容`，例如：
 ```
-log.Errorf("[update_service] DownloadUpdate: 设置执行权限失败: %v", err)
-log.Infof("[update_service] DownloadUpdate: 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
+log.Errorf("[update_service] DownloadUpdate 设置执行权限失败: %v", err)
+log.Infof("[update_service] DownloadUpdate 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
 ```
 
 ### 模板系统

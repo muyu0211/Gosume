@@ -2,11 +2,21 @@ package dto
 
 // Template 是一个已加载的模板，包含元数据与文件内容。
 type Template struct {
-	Meta      TemplateMeta
-	IsBuiltin bool
-	DirPath   string
-	HTML      string
-	CSS       string
+	Meta       TemplateMeta
+	IsBuiltin  bool
+	IsFavorite bool
+	DirPath    string
+	HTML       string
+	CSS        string
+}
+
+// ImportLog 是模板包导入历史记录，用于模板市场的"导入记录"视图。
+type ImportLog struct {
+	ID           int64  `json:"id"`
+	TemplateID   string `json:"template_id"`
+	TemplateName string `json:"template_name"`
+	Source       string `json:"source"` // local | share
+	ImportedAt   string `json:"imported_at"`
 }
 
 // TemplateMeta 是模板元数据，对应模板包中的 template.json。

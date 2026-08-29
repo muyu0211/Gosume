@@ -1,5 +1,5 @@
 import { isWails, callService } from './backend'
-import type { TemplateMeta } from '../types/template'
+import type { TemplateMeta, TemplateCategory, TemplateListResponse, ImportLog } from '../types/template'
 import type { TemplateSet } from '../lib/templateEngine'
 
 // ---------------------------------------------------------------------------
@@ -180,4 +180,68 @@ export async function deleteTemplate(templateId: string): Promise<void> {
 
 export async function saveTemplateMetas(templates: TemplateMeta[]): Promise<void> {
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates))
+}
+
+// ---------------------------------------------------------------------------
+// 模板市场能力（分类浏览 / 收藏 / 导入记录 / 分享导出与导入）
+// 仅在 Wails 桌面环境下可用；纯浏览器模式直接抛错。
+// ---------------------------------------------------------------------------
+
+/** 返回模板分类及数量，供模板市场分类筛选。 */
+export async function listTemplateCategories(): Promise<TemplateCategory[]> {
+  if (!isWails()) return []
+  return (await callService<TemplateCategory[]>('TemplateService', 'ListCategories')) ?? []
+}
+
+/** 按分类/标签/收藏筛选模板并分页返回。 */
+export async function queryTemplates(
+  options: { category?: string; tag?: string; favoriteOnly?: boolean; page?: number; pageSize?: number } = {},
+): Promise<TemplateListResponse | null> {
+  if (!isWails()) return null
+  return callService<TemplateListResponse>(
+    'TemplateService',
+    'ListTemplatesByCategory',
+    options.category ?? '',
+    options.tag ?? '',
+    options.favoriteOnly ?? false,
+    options.page ?? 1,
+    options.pageSize ?? 0,
+  )
+}
+
+/** 收藏或取消收藏模板。 */
+export async function setTemplateFavorite(templateId: string, favorite: boolean): Promise<void> {
+  if (!isWails()) throw new Error('模板收藏需要在 Gosume 桌面应用中使用')
+  await callService('TemplateService', 'SetTemplateFavorite', templateId, favorite)
+}
+
+/** 分页返回模板包导入历史。 */
+export async function listImportLogs(page = 1, pageSize = 50): Promise<ImportLog[]> {
+  if (!isWails()) return []
+  return (await callService<ImportLog[]>('TemplateService', 'ListImportLogs', page, pageSize)) ?? []
+}
+
+/** 删除一条导入历史记录。 */
+export async function deleteImportLog(logId: number): Promise<void> {
+  if (!isWails()) throw new Error('删除导入记录需要在 Gosume 桌面应用中使用')
+  await callService('TemplateService', 'DeleteImportLog', logId)
+}
+
+/**
+ * 把模板导出为可分享的 zip 分享包（弹出原生保存对话框）。
+ * 用户取消时返回空串。
+ */
+export async function exportTemplatePackage(templateId: string): Promise<string | null> {
+  if (!isWails()) throw new Error('模板导出需要在 Gosume 桌面应用中使用')
+  const path = await callService<string>('TemplateService', 'ExportTemplatePackage', templateId)
+  return path || null
+}
+
+/**
+ * 导入他人分享的 .zip 模板包（弹出原生文件选择对话框，复用现有校验流程）。
+ * 用户取消时返回 null。
+ */
+export async function importSharePackage(): Promise<ImportTemplateResult | null> {
+  if (!isWails()) throw new Error('分享包导入需要在 Gosume 桌面应用中使用')
+  return callService<ImportTemplateResult>('TemplateService', 'ImportSharePackage')
 }

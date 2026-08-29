@@ -130,6 +130,7 @@ func (s *FileService) ParseFile() *util.Response {
 		return util.DoRsp(util.ErrCode, "文件内容为空", nil)
 	}
 
+	// 校验模板是否存在
 	resolution := template.ResolveTemplate(
 		s.templateLoader,
 		envelope.Data.Meta.TemplateID,

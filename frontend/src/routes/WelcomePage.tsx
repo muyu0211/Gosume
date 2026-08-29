@@ -1,21 +1,22 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2 } from 'lucide-react'
+import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2, Heart, Download, Star, PackageOpen, Globe } from 'lucide-react'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { Modal, type ModalHandle } from '../components/ui/Modal'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
-import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate } from '../services/templateService'
+import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate, listTemplateCategories, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
 import { resolvePaper } from '../lib/paper'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { createSampleResume } from '../services/sampleData'
-import { callService } from '../services/backend'
+import { callService, isWails } from '../services/backend'
 import { generateAllThumbnails } from '../services/thumbnailService'
-import type { TemplateMeta } from '../types/template'
+import type { TemplateMeta, TemplateCategory, ImportLog } from '../types/template'
 import type { ResumeListItem } from '../types/resume'
 import type { FileParseResult, FileImportResponse } from '../types/gosume_file'
 import { migratePersonalSummary } from '../types/resume'
@@ -45,6 +46,16 @@ export function WelcomePage() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [appVersion, setAppVersion] = useState('')
+  // 模板市场能力整合到主页：分类筛选 / 收藏 / 分享 / 导入记录
+  const [marketCategories, setMarketCategories] = useState<TemplateCategory[]>([])
+  const [activeCategory, setActiveCategory] = useState('')
+  const [favoriteOnly, setFavoriteOnly] = useState(false)
+  const [favLoadingId, setFavLoadingId] = useState<string | null>(null)
+  const [exportingId, setExportingId] = useState<string | null>(null)
+  const [importLogs, setImportLogs] = useState<ImportLog[]>([])
+  const [showImportLogs, setShowImportLogs] = useState(false)
+  const [deleteLogTarget, setDeleteLogTarget] = useState<ImportLog | null>(null)
+  const [deletingLogId, setDeletingLogId] = useState<number | null>(null)
   const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
@@ -56,15 +67,38 @@ export function WelcomePage() {
   const setResume = useResumeStore((s) => s.setResume)
   const clearResume = useResumeStore((s) => s.clearResume)
 
-  const totalPages = Math.max(1, Math.ceil(templates.length / PAGE_SIZE))
-  const paginatedTemplates = templates.slice(
+  // 未分类模板统一归入 custom，与后端 ListCategories 语义一致
+  const categoryOf = (t: TemplateMeta) => (t.category && t.category.trim()) || 'custom'
+
+  // 按分类/收藏过滤后的模板列表（本地筛选，模板体量小无需后端分页）
+  const marketTemplates = useMemo(
+    () => templates.filter((t) => {
+      if (activeCategory && categoryOf(t) !== activeCategory) return false
+      if (favoriteOnly && !t.is_favorite) return false
+      return true
+    }),
+    [templates, activeCategory, favoriteOnly],
+  )
+
+  const totalPages = Math.max(1, Math.ceil(marketTemplates.length / PAGE_SIZE))
+  const paginatedTemplates = marketTemplates.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   )
 
+  // 分类数量汇总（含未分类）
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const t of templates) {
+      const c = categoryOf(t)
+      counts.set(c, (counts.get(c) ?? 0) + 1)
+    }
+    return counts
+  }, [templates])
+
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages)
-  }, [templates.length])
+  }, [marketTemplates.length])
 
   useEffect(() => {
     loadData()
@@ -73,8 +107,8 @@ export function WelcomePage() {
   // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
   useEffect(() => {
     callService<string>('SystemService', 'GetAppVersion')
-      .then(setAppVersion)
-      .catch(() => { /* 获取失败静默，footer 不显示版本号 */ })
+      .then((version) => setAppVersion(version || ''))
+      .catch(() => { })
   }, [])
 
   // 应用启动时静默检查一次更新（复用 UpdateService.CheckUpdate）。
@@ -89,13 +123,18 @@ export function WelcomePage() {
           setUpdateInfo(info)
         }
       })
-      .catch(() => { /* 静默：网络失败等情况不提示 */ })
+      .catch(() => { })
   }, [])
 
   const loadData = async () => {
     try {
       const metas = await loadTemplateMetas()
       setTemplates(metas)
+
+      // 模板市场：同步分类列表（失败静默，非 Wails 场景可忽略）
+      try {
+        setMarketCategories(await listTemplateCategories())
+      } catch { /* 忽略 */ }
 
       const previews: Record<string, string> = {}
       for (const meta of metas) {
@@ -260,6 +299,71 @@ export function WelcomePage() {
     }
   }
 
+  // 收藏 / 取消收藏（写入后端并同步 store，卡片即时反映）
+  const handleToggleFavorite = async (id: string, favorite: boolean) => {
+    setFavLoadingId(id)
+    setImportError('')
+    try {
+      if (isWails()) await setTemplateFavorite(id, favorite)
+      setTemplates(templates.map((t) => (t.id === id ? { ...t, is_favorite: favorite } : t)))
+    } catch (err) {
+      console.error('Toggle favorite failed:', err)
+      setImportError(extractErrorMessage(err, favorite ? '收藏失败' : '取消收藏失败'))
+    } finally {
+      setFavLoadingId(null)
+    }
+  }
+
+  // 导出分享包（弹出原生保存对话框，成功返回文件路径）
+  const handleExportTemplate = async (id: string, name: string) => {
+    setExportingId(id)
+    setImportError('')
+    setImportSuccess('')
+    try {
+      const path = await exportTemplatePackage(id)
+      if (path) setImportSuccess(`分享包已导出：${path}`)
+    } catch (err) {
+      console.error('Export template failed:', err)
+      setImportError(extractErrorMessage(err, '导出分享包失败'))
+    } finally {
+      setExportingId(null)
+    }
+  }
+
+  // 打开导入记录弹窗并拉取历史
+  const handleOpenImportLogs = async () => {
+    setShowImportLogs(true)
+    try {
+      setImportLogs(await listImportLogs())
+    } catch (err) {
+      console.error('Load import logs failed:', err)
+    }
+  }
+
+  // 删除一条导入记录（仅删记录，不影响已安装模板）
+  const handleDeleteLog = async () => {
+    if (!deleteLogTarget) return
+    setDeletingLogId(deleteLogTarget.id)
+    setImportError('')
+    try {
+      await deleteImportLog(deleteLogTarget.id)
+      setImportLogs((prev) => prev.filter((l) => l.id !== deleteLogTarget.id))
+    } catch (err) {
+      console.error('Delete import log failed:', err)
+      setImportError(extractErrorMessage(err, '删除导入记录失败'))
+    } finally {
+      setDeletingLogId(null)
+      setDeleteLogTarget(null)
+    }
+  }
+
+  // 切换分类筛选（重置到第一页）
+  const handleSelectCategory = (category: string) => {
+    setActiveCategory(category)
+    setFavoriteOnly(false)
+    setCurrentPage(1)
+  }
+
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
@@ -286,6 +390,22 @@ export function WelcomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/community')}
+            className="btn-primary btn-sm"
+            title="模板社区：在线模板市场，需联网访问，下载后可离线使用"
+          >
+            <Globe className="w-4 h-4" />
+            模板社区
+          </button>
+          <button
+            onClick={handleOpenImportLogs}
+            className="btn-ghost btn-sm"
+            title="查看模板包导入记录"
+          >
+            <Clock className="w-4 h-4" />
+            导入记录
+          </button>
           <button
             onClick={handleImportTemplate}
             disabled={importingTemplate}
@@ -352,20 +472,62 @@ export function WelcomePage() {
             </h2>
             <div className="flex-1 h-px bg-surface-200" />
           </div>
-          <div className="grid grid-cols-4 gap-5" key={currentPage}>
-            {paginatedTemplates.map((tmpl, i) => (
-              <TemplateCard
-                key={tmpl.id}
-                template={tmpl}
-                previewHtml={previewHtmls[tmpl.id]}
-                onSelect={() => handleNewResume(tmpl.id)}
-                onPreview={() => handlePreviewWithSample(tmpl.id)}
-                onDelete={!tmpl.is_builtin ? () => handleDeleteTemplate(tmpl.id, tmpl.name) : undefined}
-                isDeleting={deletingTemplateId === tmpl.id}
-                index={i}
-              />
+          {/* 分类筛选 / 收藏（模板市场能力整合到主页） */}
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
+            <FilterChip
+              active={!activeCategory && !favoriteOnly}
+              onClick={() => { setActiveCategory(''); setFavoriteOnly(false); setCurrentPage(1) }}
+            >
+              全部
+            </FilterChip>
+            {marketCategories.map((cat) => (
+              <FilterChip
+                key={cat.name}
+                active={activeCategory === cat.name && !favoriteOnly}
+                onClick={() => handleSelectCategory(cat.name)}
+              >
+                {cat.name === 'custom' ? '未分类' : cat.name}
+                <span className="opacity-60">{categoryCounts.get(cat.name) ?? cat.count}</span>
+              </FilterChip>
             ))}
+            <div className="flex-1" />
+            <FilterChip
+              active={favoriteOnly}
+              onClick={() => { setFavoriteOnly(!favoriteOnly); setCurrentPage(1) }}
+            >
+              <Star className="w-3.5 h-3.5" />
+              我的收藏
+              {templates.filter((t) => t.is_favorite).length > 0 && (
+                <span className="opacity-60">{templates.filter((t) => t.is_favorite).length}</span>
+              )}
+            </FilterChip>
           </div>
+          {paginatedTemplates.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-surface-300">
+              <Star className="w-9 h-9 mb-2" />
+              <p className="text-sm">当前分类下没有模板</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-5" key={currentPage}>
+              {paginatedTemplates.map((tmpl, i) => (
+                <TemplateCard
+                  key={tmpl.id}
+                  template={tmpl}
+                  previewHtml={previewHtmls[tmpl.id]}
+                  onSelect={() => handleNewResume(tmpl.id)}
+                  onPreview={() => handlePreviewWithSample(tmpl.id)}
+                  onDelete={!tmpl.is_builtin ? () => handleDeleteTemplate(tmpl.id, tmpl.name) : undefined}
+                  isDeleting={deletingTemplateId === tmpl.id}
+                  favorite={!!tmpl.is_favorite}
+                  favLoading={favLoadingId === tmpl.id}
+                  sharing={exportingId === tmpl.id}
+                  onToggleFavorite={() => handleToggleFavorite(tmpl.id, !tmpl.is_favorite)}
+                  onShare={() => handleExportTemplate(tmpl.id, tmpl.name)}
+                  index={i}
+                />
+              ))}
+            </div>
+          )}
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -447,6 +609,27 @@ export function WelcomePage() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* 模板导入记录（模板市场能力整合到主页） */}
+      {showImportLogs && (
+        <ImportLogsDialog
+          logs={importLogs}
+          deletingId={deletingLogId}
+          onDelete={(log) => setDeleteLogTarget(log)}
+          onClose={() => setShowImportLogs(false)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={!!deleteLogTarget}
+        title="删除导入记录"
+        description={`确定要删除「${deleteLogTarget?.template_name}」的导入记录吗？仅删除记录，不会移除已安装的模板。`}
+        confirmText="删除"
+        danger
+        loading={!!deletingLogId}
+        onConfirm={handleDeleteLog}
+        onCancel={() => setDeleteLogTarget(null)}
+      />
     </AnimatedPage>
   )
 }
@@ -490,7 +673,20 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
   )
 }
 
-function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, isDeleting = false, index = 0 }: { template: TemplateMeta; previewHtml?: string; onSelect: () => void; onPreview: () => void; onDelete?: () => void; isDeleting?: boolean; index?: number }) {
+function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, isDeleting = false, favorite = false, favLoading = false, sharing = false, onToggleFavorite, onShare, index = 0 }: {
+  template: TemplateMeta
+  previewHtml?: string
+  onSelect: () => void
+  onPreview: () => void
+  onDelete?: () => void
+  isDeleting?: boolean
+  favorite?: boolean
+  favLoading?: boolean
+  sharing?: boolean
+  onToggleFavorite?: () => void
+  onShare?: () => void
+  index?: number
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
   const [isHovered, setIsHovered] = useState(false)
@@ -540,6 +736,19 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           </div>
         )}
 
+        {/* 收藏星标（点击独立于卡片选中；置于左上角，避免被右侧 hover 面板遮挡） */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+            disabled={favLoading}
+            className={`absolute top-2.5 left-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-amber-400 text-white hover:bg-amber-500' : 'bg-white/90 text-surface-400 hover:text-amber-500 hover:bg-white'
+              } disabled:opacity-60`}
+            title={favorite ? '取消收藏' : '收藏'}
+          >
+            {favLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />}
+          </button>
+        )}
+
         {/* Hover blur overlay + preview button — slides in from right */}
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-center transition-transform duration-300 ease-out"
@@ -567,6 +776,17 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <Eye className="w-4 h-4 shrink-0" />
               <span className="preview-label">预览</span>
             </button>
+            {onShare && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onShare() }}
+                disabled={sharing}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50/95 text-primary-700 text-sm font-medium border border-white shadow-md hover:bg-primary-50 hover:border-primary-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm disabled:opacity-50"
+                title="导出为模板分享包 (.zip)"
+              >
+                {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
+                <span className="preview-label">导出</span>
+              </button>
+            )}
             {!template.is_builtin && onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
@@ -593,5 +813,80 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
         </div>
       </div>
     </div>
+  )
+}
+
+// 分类筛选胶囊（模板市场能力整合到主页）
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active
+        ? 'bg-primary-50 text-primary-700 border-primary-200'
+        : 'text-surface-500 border-surface-200 hover:border-surface-300 hover:text-surface-700'
+        }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// 模板导入记录弹窗
+function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
+  logs: ImportLog[]
+  deletingId: number | null
+  onDelete: (log: ImportLog) => void
+  onClose: () => void
+}) {
+  const modalRef = useRef<ModalHandle>(null)
+
+  return (
+    <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="flex flex-col overflow-hidden">
+      <div className="flex items-center gap-2.5 px-6 py-3 border-b border-surface-100 flex-shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+          <Clock className="w-4 h-4 text-primary-600" />
+        </div>
+        <span className="text-base font-semibold text-surface-700">模板导入记录</span>
+      </div>
+      <div className="flex-1 overflow-auto px-6 py-3">
+        {logs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 text-surface-300">
+            <Clock className="w-9 h-9 mb-2" />
+            <p className="text-sm">暂无导入记录</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-surface-100 hover:border-surface-200 transition-colors"
+              >
+                <PackageOpen className="w-4 h-4 text-surface-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-surface-700 truncate">{log.template_name}</span>
+                    <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-medium flex-shrink-0 ${log.source === 'share' ? 'bg-primary-50 text-primary-600' : log.source === 'community' ? 'bg-emerald-50 text-emerald-600' : 'bg-surface-100 text-surface-500'
+                      }`}>
+                      {log.source === 'share' ? '分享包' : log.source === 'community' ? '社区' : '本地'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-surface-400 mt-0.5">
+                    {new Date(log.imported_at).toLocaleString('zh-CN')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => onDelete(log)}
+                  disabled={deletingId === log.id}
+                  className="p-1.5 rounded-lg text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
+                  title="删除记录"
+                >
+                  {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
   )
 }

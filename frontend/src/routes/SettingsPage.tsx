@@ -50,7 +50,7 @@ export function SettingsPage() {
   // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
   useEffect(() => {
     callService<string>('SystemService', 'GetAppVersion')
-      .then(setAppVersion)
+      .then((version) => setAppVersion(version || ''))
       .catch(() => { /* 获取失败静默，不显示版本号 */ })
   }, [])
 
@@ -158,13 +158,11 @@ export function SettingsPage() {
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<'' | 'latest' | 'error'>('')
   const [updateMsg, setUpdateMsg] = useState('')
-  /** 检查到的新版本信息；非空时渲染更新确认模态。 */
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
 
   // 检查更新：拉取服务端 appcast 并与当前版本比较
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true)
-    // 仅收起消息：旧文本保持挂载，让高度折叠动画播放完，新结果到达后再展开
     setUpdateStatus('')
     try {
       const info = await callService<UpdateInfo | null>('UpdateService', 'CheckUpdate')
@@ -173,13 +171,13 @@ export function SettingsPage() {
         setUpdateMsg('当前环境不支持在线检查更新')
         return
       }
+
+      // 存在更新
       if (info.has_update) {
-        // 发现新版本：弹出更新确认模态
         setUpdateInfo(info)
       } else {
         setUpdateStatus('latest')
-        // 有 reason 时展示后端说明（如 Linux 包管理器安装形态的提示）
-        setUpdateMsg(info.reason || '当前已是最新版本')
+        setUpdateMsg(info.tips || '当前已是最新版本')
       }
     } catch (err) {
       setUpdateStatus('error')
@@ -194,7 +192,7 @@ export function SettingsPage() {
       .then((dir) => {
         if (dir) setDataDir(dir)
       })
-      .catch(() => { /* 加载失败保持「加载中...」占位 */ })
+      .catch(() => { })
   }, [])
 
   const handleLanguageChange = (lang: string) => {

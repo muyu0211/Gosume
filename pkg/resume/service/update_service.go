@@ -29,10 +29,10 @@ import (
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"golang.org/x/sync/singleflight"
 )
 
 // allowedDownloadHosts 允许下载更新包的域名白名单。
-// 防止 appcast 被篡改后指向任意可执行文件；TODO(更新服务)：替换为真实 CDN 域名。
 var allowedDownloadHosts = []string{
 	"gosume.dpdns.org",
 	"dl.example.com",                // CDN 主域名（占位）
@@ -45,31 +45,24 @@ const (
 	artifactNSIS     = "nsis-installer"
 	artifactAppZip   = "app-zip"
 	artifactAppImage = "appimage"
+	updateMetaFile   = "update-meta.json"
 )
 
 // UpdateService 提供在线更新能力：检查版本、下载更新包、触发静默替换。
-//
-// 流程（见《在线更新开发方案》）：
-//  1. CheckUpdate 拉取 appcast，与当前版本比较；
-//  2. DownloadUpdate 下载更新包到 {dataDir}/updates/ 并校验 sha256；
-//  3. ApplyUpdate 启动分离的 Helper 进程，随后前端走既有未保存确认流程退出，
-//     Helper 等主进程退出后完成静默替换并重启新版本。
 type UpdateService struct {
-	App          *application.App
-	configMgr    *user_config.Manager // 用户配置管理器
-	state        atomic.Int32         // 下载状态机：-1=空闲；0~100=下载中（值为进度%）。0 是下载开始时的初始进度，因此空闲态必须显式置为 -1，避免 Go 零值(0)被误判为“正在下载进度0”。
-	cancel       context.CancelFunc   //  取消正在进行的下载。
-	cancelMu     sync.Mutex           // 下载取消锁。
-	helper       *exec.Cmd            // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
-	helperMu     sync.Mutex           // helper 互斥锁
-	checkCache   *UpdateInfoResponse  // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
-	checkCacheMu sync.Mutex           // 检查缓存锁
-	checkMu      sync.Mutex           // 检查执行串行锁：并发调用时后者等待前者完成并命中缓存
-}
+	App       *application.App
+	configMgr *user_config.Manager // 用户配置管理器
+	state     atomic.Int32         // 下载状态机：-1=空闲；0~100=下载中（值为进度%）。0 是下载开始时的初始进度，因此空闲态必须显式置为 -1，避免 Go 零值(0)被误判为“正在下载进度0”。
+	cancel    context.CancelFunc   // 取消正在进行的下载。
+	helper    *exec.Cmd            // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
+	cache     *UpdateInfoResponse  // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
 
-// updateMetaFile 已下载更新包的元数据文件名（位于 updates/ 目录，跨会话复用）。
-// 记录该更新包对应的服务端版本，CheckUpdate 据此判断本地是否已有“当前最新的已就绪包”，避免下次运行重复下载。
-const updateMetaFile = "update-meta.json"
+	helperMu sync.Mutex // helper 互斥锁
+	cancelMu sync.Mutex // 下载取消锁。
+	cacheMu  sync.Mutex // 缓存锁
+
+	checkGroup singleflight.Group // 并发检查去重：同名调用只执行一次实际检查，其余等待复用同一结果
+}
 
 // updateMeta 记录已下载但尚未安装的更新包元信息。
 type updateMeta struct {
@@ -89,7 +82,7 @@ type UpdateInfoResponse struct {
 	DownloadURL    string `json:"download_url,omitempty"`   // 更新包下载地址
 	SHA256         string `json:"sha256,omitempty"`         // 更新包哈希
 	ArtifactType   string `json:"artifact_type,omitempty"`  // 更新包形态（nsis-installer / app-zip / appimage）
-	Reason         string `json:"reason,omitempty"`         // has_update=false 时的说明（如包管理器提示）
+	Tips           string `json:"tips,omitempty"`           // 更新时的提示（区别于ReleaseNotes）
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
@@ -111,28 +104,29 @@ func (s *UpdateService) GetDownloadProgress() int {
 }
 
 // CheckUpdate 检查是否有可用的新版本。
-// 成功结果写入会话缓存：同一次运行内重复调用直接返回缓存，不再请求后端，
-// 防止高频重复检查；失败结果不缓存，允许用户重试。
-// 并发调用经 checkMu 串行化：首个调用执行实际检查，后续调用等待后命中缓存。
+// 成功结果写入会话缓存：同一次运行内重复调用直接返回缓存，不再请求后端；
+// 失败结果不缓存，允许用户重试。并发调用经 singleflight 去重：同名调用
+// 只执行一次实际检查，其余调用等待并复用同一结果，避免并发打爆服务端。
 func (s *UpdateService) CheckUpdate() *util.Response {
-	// 获取缓存
+	// 快速路径：会话内已有检查结果直接返回，避免走 singleflight 的开销
 	if cached := s.getCheckCache(); cached != nil {
 		return util.DoRsp(util.SuccCode, "成功", *cached)
 	}
 
-	s.checkMu.Lock()
-	defer s.checkMu.Unlock()
-	if cached := s.getCheckCache(); cached != nil {
-		return util.DoRsp(util.SuccCode, "成功", *cached)
+	// singleflight 去重并发检查
+	v, err, _ := s.checkGroup.Do("check-update", func() (any, error) {
+		info, errMsg := s.doCheckUpdate()
+		if errMsg != "" {
+			return nil, fmt.Errorf("%s", errMsg)
+		}
+		s.setCheckCache(info)
+		return info, nil
+	})
+	if err != nil {
+		log.Errorf("[update_service] CheckUpdate 检查更新失败: %v", err)
+		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
-
-	// 执行实际检查
-	info, errMsg := s.doCheckUpdate()
-	if errMsg != "" {
-		return util.DoRsp(util.ErrCode, errMsg, nil)
-	}
-	s.setCheckCache(info)
-	return util.DoRsp(util.SuccCode, "成功", info)
+	return util.DoRsp(util.SuccCode, "成功", v.(UpdateInfoResponse))
 }
 
 // DownloadUpdate 后台下载更新包到 {dataDir}/updates/ 并校验 sha256。
@@ -228,7 +222,7 @@ func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
 		return UpdateInfoResponse{
 			HasUpdate:      false,
 			CurrentVersion: current,
-			Reason:         "测试环境不支持在线更新",
+			Tips:           "测试环境不支持在线更新",
 		}, ""
 	}
 
@@ -237,7 +231,7 @@ func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
 		return UpdateInfoResponse{
 			HasUpdate:      false,
 			CurrentVersion: current,
-			Reason:         "当前安装形态暂不支持应用内更新，请通过系统包管理器获取新版本",
+			Tips:           "当前安装形态暂不支持应用内更新，请通过系统包管理器获取新版本",
 		}, ""
 	}
 
@@ -250,39 +244,46 @@ func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
 
 	// 解析平台条目
 	entry, ok := resolvePlatformEntry(manifest)
-	if !ok || !isAllowedURL(entry.InstallerURL) {
+	if !ok {
+		log.Infof("[update_service] CheckUpdate: 未找到当前平台 %s-%s 的更新条目", runtime.GOOS, runtime.GOARCH)
 		return UpdateInfoResponse{HasUpdate: false, CurrentVersion: current}, ""
 	}
 
-	// 本地是否已下载更新包：一致则无需再下载.
-	ready := s.isUpdateReady(entry)
-
-	log.Infof("[update_service] CheckUpdate 当前 %s，服务端 %s（%s）ready=%v", current, entry.Version, entry.ArtifactType, ready)
-	return UpdateInfoResponse{
+	res := UpdateInfoResponse{
 		HasUpdate:      compareVersion(entry.Version, current) > 0,
 		CurrentVersion: current,
 		LatestVersion:  entry.Version,
-		UpdateReady:    ready,
 		ReleaseDate:    entry.ReleaseDate,
 		ReleaseNotes:   strings.TrimSpace(entry.NotesZh),
 		DownloadURL:    entry.InstallerURL,
 		SHA256:         entry.SHA256,
 		ArtifactType:   entry.ArtifactType,
-	}, ""
+	}
+
+	// 本地是否已下载更新包：一致则无需再下载.
+	res.UpdateReady = s.isUpdateReady(entry)
+
+	// 检测是不是测试版本
+	if strings.Contains(entry.Version, "beta") {
+		res.Tips = "当前版本为测试版本，可能存在未知问题，请谨慎更新"
+	}
+
+	log.Infof("[update_service] CheckUpdate 当前 %s，服务端 %s（%s）ready=%v", current, entry.Version, entry.ArtifactType, res.UpdateReady)
+	return res, ""
 }
 
 // getCheckCache 读取检查结果会话缓存（无则 nil）。
 func (s *UpdateService) getCheckCache() *UpdateInfoResponse {
-	s.checkCacheMu.Lock()
-	defer s.checkCacheMu.Unlock()
-	return s.checkCache
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+	return s.cache
 }
 
 // setCheckCache 写入检查结果会话缓存。
 func (s *UpdateService) setCheckCache(info UpdateInfoResponse) {
-	s.checkCacheMu.Lock()
-	s.checkCache = &info
-	s.checkCacheMu.Unlock()
+	s.cacheMu.Lock()
+	s.cache = &info
+	s.cacheMu.Unlock()
 }
 
 // isUpdateReady 判断本地是否已有“与给定服务端版本一致”的已下载更新包。
@@ -643,9 +644,6 @@ func isAllowedURL(rawURL string) bool {
 }
 
 // compareVersion 比较 x.y.z 格式版本号：a>b 返回 1，a<b 返回 -1，相等返回 0。
-// 逐段比较数字部分；数字相等时，无预发布后缀的正式版（如 2.0.0）大于带后缀的
-// 预发布版（如 2.0.0-beta），从而能正确提示从预发布升级到正式版。
-// 非法段按 0 处理（如 1.0 视为 1.0.0）。
 func compareVersion(a, b string) int {
 	pa := strings.Split(strings.TrimSpace(a), ".")
 	pb := strings.Split(strings.TrimSpace(b), ".")

@@ -73,6 +73,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	systemSvc := &service.SystemService{}
 	fileSvc := &service.FileService{}
 	updateSvc := &service.UpdateService{}
+	communitySvc := &service.CommunityService{}
 
 	// 服务列表
 	svcs := []application.Service{
@@ -82,6 +83,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(systemSvc),
 		application.NewService(fileSvc),
 		application.NewService(updateSvc),
+		application.NewService(communitySvc),
 	}
 
 	// Wails 应用与窗口
@@ -94,6 +96,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	systemSvc.Inject(app, userCfgMgr, window)
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 	updateSvc.Inject(app, userCfgMgr)
+	communitySvc.Inject(app, templateLoader, templateStore)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)

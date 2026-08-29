@@ -26,10 +26,6 @@ type TemplateResolution struct {
 //  2. 失败则按 template name 精确匹配；
 //  3. 均失败 → Matched=false，Available 携带当前全部模板（含元数据）
 //     供前端引导用户手动选择替代模板。
-//
-// 数据与模板完全解耦：模板缺失只影响样式套用，不影响内容字段（PRD F2）。
-// LoadAll 失败时按「均未命中」处理（Matched=false、Available 为空），
-// 由前端继续引导，不阻断导入流程。
 func ResolveTemplate(lister TemplateLister, referencedID, referencedName string) TemplateResolution {
 	res := TemplateResolution{
 		ReferencedID:   referencedID,

@@ -54,3 +54,14 @@ func BuildTransport(svc *config.ServiceConfig, forceHTTP1 bool) *http.Transport 
 	}
 	return t
 }
+
+// resolveURL 把请求 path 显式拼接服务基地址（服务配置的 target），
+// 使 target 的作用可预期、对接层配置保持「target + 相对资源路径」的语义：
+//   - path 为绝对 URL（含 scheme，如完整 http(s) 地址）时按原样返回；
+//   - 否则视为相对资源路径，规整前后斜杠后拼接在 target 后。
+func ResolveURL(base, path string) string {
+	if u, err := url.Parse(path); err == nil && u.IsAbs() {
+		return path
+	}
+	return strings.TrimRight(base, "/") + "/" + strings.TrimLeft(path, "/")
+}

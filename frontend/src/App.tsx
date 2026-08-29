@@ -5,6 +5,7 @@ import { TitleBar } from './components/layout/TitleBar'
 import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
+import { CommunityPage } from './routes/CommunityPage'
 import { useLayoutSettingsStore } from './stores/layoutSettingsStore'
 import { useResumeStore } from './stores/resumeStore'
 import { applyPlatformToDocument } from './lib/platform'
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/" element={<WelcomePage />} />
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/community" element={<CommunityPage />} />
         </Routes>
         </div>
       </div>

@@ -101,6 +101,7 @@ func GetTemplateMeta(t *dto.Template) vo.TemplateMeta {
 		Features:        t.Meta.Features,
 		UsesUnifiedHTML: t.Meta.UseUnifiedHTML,
 		IsBuiltin:       t.IsBuiltin,
+		IsFavorite:      t.IsFavorite,
 	}
 }
 

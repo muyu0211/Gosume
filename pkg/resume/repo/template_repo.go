@@ -58,9 +58,10 @@ func (s *TemplateRepo) Reopen(db *sql.DB, builtinFS fs.FS) error {
 	return nil
 }
 
-// initSchema 在表不存在时创建 templates 表及其索引。
+// initSchema 在表不存在时创建 templates 表及其索引，
+// 并对旧库做幂等迁移（补 is_favorite 列、建导入历史表）。
 func (s *TemplateRepo) initSchema() error {
-	_, err := s.db.Exec(`
+	if _, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS templates (
 			id              TEXT PRIMARY KEY,
 			meta            TEXT NOT NULL DEFAULT '{}',
@@ -73,8 +74,46 @@ func (s *TemplateRepo) initSchema() error {
 			is_deleted      INTEGER NOT NULL DEFAULT 0
 		);
 		CREATE INDEX IF NOT EXISTS idx_templates_builtin ON templates(is_builtin);
-	`)
-	return err
+		CREATE TABLE IF NOT EXISTS template_import_log (
+			id            INTEGER PRIMARY KEY AUTOINCREMENT,
+			template_id   TEXT NOT NULL,
+			template_name TEXT NOT NULL DEFAULT '',
+			source        TEXT NOT NULL DEFAULT 'local',
+			imported_at   TEXT NOT NULL DEFAULT (datetime('now'))
+		);
+		CREATE INDEX IF NOT EXISTS idx_import_log_imported_at ON template_import_log(imported_at DESC);
+	`); err != nil {
+		return err
+	}
+
+	// 幂等迁移：旧库缺少 is_favorite 列时补充，不影响已有数据
+	rows, err := s.db.Query(`PRAGMA table_info(templates)`)
+	if err != nil {
+		return err
+	}
+	hasFavorite := false
+	var fields []string
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt any
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			rows.Close()
+			return err
+		}
+		fields = append(fields, name)
+		if name == "is_favorite" {
+			hasFavorite = true
+		}
+	}
+	rows.Close()
+	if !hasFavorite || len(fields) == 0 {
+		if _, err := s.db.Exec(`ALTER TABLE templates ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // syncBuiltins 把 builtinFS 中的内置模板同步入库。
@@ -174,11 +213,12 @@ type TemplateRow struct {
 	UpdatedAt      string
 }
 
-// ListAll 返回所有未删除的模板，内置模板优先、其后按 ID 升序。
+// ListAll 返回所有未删除的模板，内置模板优先、其次收藏在前、最后按 ID 升序。
 // 单条 meta 解析失败仅告警跳过，不影响其余模板。
 func (s *TemplateRepo) ListAll() ([]*dto.Template, error) {
 	rows, err := s.db.Query(
-		`SELECT id, meta, html, css, is_builtin FROM templates WHERE is_deleted=0 ORDER BY is_builtin DESC, id ASC`,
+		`SELECT id, meta, html, css, is_builtin, is_favorite FROM templates
+		 WHERE is_deleted=0 ORDER BY is_builtin DESC, is_favorite DESC, id ASC`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list templates: %w", err)
@@ -188,8 +228,8 @@ func (s *TemplateRepo) ListAll() ([]*dto.Template, error) {
 	var templates []*dto.Template
 	for rows.Next() {
 		var id, metaJSON, html, css string
-		var isBuiltin int
-		if err := rows.Scan(&id, &metaJSON, &html, &css, &isBuiltin); err != nil {
+		var isBuiltin, isFavorite int
+		if err := rows.Scan(&id, &metaJSON, &html, &css, &isBuiltin, &isFavorite); err != nil {
 			return nil, fmt.Errorf("scan template row: %w", err)
 		}
 
@@ -200,10 +240,11 @@ func (s *TemplateRepo) ListAll() ([]*dto.Template, error) {
 		}
 
 		templates = append(templates, &dto.Template{
-			Meta:      meta,
-			HTML:      html,
-			CSS:       css,
-			IsBuiltin: isBuiltin == 1,
+			Meta:       meta,
+			HTML:       html,
+			CSS:        css,
+			IsBuiltin:  isBuiltin == 1,
+			IsFavorite: isFavorite == 1,
 		})
 	}
 
@@ -213,11 +254,11 @@ func (s *TemplateRepo) ListAll() ([]*dto.Template, error) {
 // GetByID 按 ID 查询单个模板；不存在时返回 TEMPLATE_NOT_FOUND 错误。
 func (s *TemplateRepo) GetByID(id string) (*dto.Template, error) {
 	var metaJSON, html, css string
-	var isBuiltin int
+	var isBuiltin, isFavorite int
 	err := s.db.QueryRow(
-		`SELECT meta, html, css, is_builtin FROM templates WHERE id=? AND is_deleted=0`,
+		`SELECT meta, html, css, is_builtin, is_favorite FROM templates WHERE id=? AND is_deleted=0`,
 		id,
-	).Scan(&metaJSON, &html, &css, &isBuiltin)
+	).Scan(&metaJSON, &html, &css, &isBuiltin, &isFavorite)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &template.Error{Code: "TEMPLATE_NOT_FOUND", Message: "template not found: " + id}
@@ -231,10 +272,11 @@ func (s *TemplateRepo) GetByID(id string) (*dto.Template, error) {
 	}
 
 	return &dto.Template{
-		Meta:      meta,
-		HTML:      html,
-		CSS:       css,
-		IsBuiltin: isBuiltin == 1,
+		Meta:       meta,
+		HTML:       html,
+		CSS:        css,
+		IsBuiltin:  isBuiltin == 1,
+		IsFavorite: isFavorite == 1,
 	}, nil
 }
 
@@ -405,6 +447,74 @@ func (s *TemplateRepo) ReloadFromDir(dir string) error {
 	}
 
 	log.Infof("[template_store] hot-reload complete from %s", dir)
+	return nil
+}
+
+// SetFavorite 设置或取消模板收藏。内置与用户模板均可收藏，命中 0 行时返回 TEMPLATE_NOT_FOUND。
+func (s *TemplateRepo) SetFavorite(id string, favorite bool) error {
+	fav := 0
+	if favorite {
+		fav = 1
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	result, err := s.db.Exec(
+		`UPDATE templates SET is_favorite=?, updated_at=? WHERE id=? AND is_deleted=0`,
+		fav, now, id,
+	)
+	if err != nil {
+		return fmt.Errorf("set favorite: %w", err)
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return &template.Error{Code: "TEMPLATE_NOT_FOUND", Message: "template not found: " + id}
+	}
+	return nil
+}
+
+// AddImportLog 记录一次模板包导入历史（source: local=普通导入, share=分享包导入）。
+func (s *TemplateRepo) AddImportLog(templateID, templateName, source string) error {
+	if _, err := s.db.Exec(
+		`INSERT INTO template_import_log (template_id, template_name, source) VALUES (?, ?, ?)`,
+		templateID, templateName, source,
+	); err != nil {
+		return fmt.Errorf("add import log: %w", err)
+	}
+	return nil
+}
+
+// ListImportLogs 按导入时间倒序返回分页的导入历史。
+func (s *TemplateRepo) ListImportLogs(limit, offset int) ([]*dto.ImportLog, error) {
+	rows, err := s.db.Query(
+		`SELECT id, template_id, template_name, source, imported_at
+		 FROM template_import_log ORDER BY imported_at DESC, id DESC LIMIT ? OFFSET ?`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list import logs: %w", err)
+	}
+	defer rows.Close()
+
+	var logs []*dto.ImportLog
+	for rows.Next() {
+		var log dto.ImportLog
+		if err := rows.Scan(&log.ID, &log.TemplateID, &log.TemplateName, &log.Source, &log.ImportedAt); err != nil {
+			return nil, fmt.Errorf("scan import log: %w", err)
+		}
+		logs = append(logs, &log)
+	}
+	return logs, rows.Err()
+}
+
+// DeleteImportLog 删除一条导入历史记录。命中 0 行时返回 IMPORT_LOG_NOT_FOUND。
+func (s *TemplateRepo) DeleteImportLog(id int64) error {
+	result, err := s.db.Exec(`DELETE FROM template_import_log WHERE id=?`, id)
+	if err != nil {
+		return fmt.Errorf("delete import log: %w", err)
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return &template.Error{Code: "IMPORT_LOG_NOT_FOUND", Message: "import log not found: " + fmt.Sprint(id)}
+	}
 	return nil
 }
 

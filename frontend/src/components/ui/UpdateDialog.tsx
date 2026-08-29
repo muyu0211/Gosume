@@ -28,8 +28,8 @@ export interface UpdateInfo {
   sha256?: string
   /** 更新包形态（nsis-installer / app-zip / appimage，替换阶段按此分派） */
   artifact_type?: string
-  /** has_update=false 时的说明（如 Linux 包管理器安装形态的提示） */
-  reason?: string
+  /** 更新时的提示（区别于ReleaseNotes） */
+  tips?: string
 }
 
 /** 对话框阶段状态机：available → downloading → ready（失败 → error 可重试）。 */
@@ -60,7 +60,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
   const [applying, setApplying] = useState(false)
 
   // 更新说明按行拆分为列表（appcast 的 notes 以 \n 分隔）
-  const notes = (info.release_notes ?? '')
+  const notes = (info.tips ?? '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)

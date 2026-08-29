@@ -1,6 +1,10 @@
 package util
 
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 type RspCode uint32
 
@@ -54,4 +58,23 @@ func IsCancel(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "cancelled") || strings.Contains(err.Error(), "canceled")
+}
+
+// ParseData 从统一响应包裹（util.Response）中提取 data 并反序列化到目标类型。
+func ParseData[T any](r *Response) (T, error) {
+	var zero T
+	if r == nil {
+		return zero, fmt.Errorf("空响应")
+	}
+	if r.Code != SuccCode {
+		return zero, fmt.Errorf("服务错误: %s", r.Message)
+	}
+	b, err := json.Marshal(r.Data)
+	if err != nil {
+		return zero, fmt.Errorf("数据序列化失败: %w", err)
+	}
+	if err := json.Unmarshal(b, &zero); err != nil {
+		return zero, fmt.Errorf("数据解析失败: %w", err)
+	}
+	return zero, nil
 }
