@@ -19,6 +19,7 @@ type Options struct {
 	forceJSON   bool              // 强制按 JSON 解析响应体（服务器 Content-Type 不规范时）
 	doNotParse  bool              // 不解析响应体（流式读取大文件时，rspBody 应传 nil）
 	forceHTTP1  bool              // 强制使用 HTTP/1.1 发送本次请求
+	noStatusErr bool              // 4xx/5xx 响应不转 error，交由调用方按状态码自行处理（如断点续传的 206/416 判定）
 }
 
 // Option 是选项模式的注入函数，按需修改 Options 中的字段。
@@ -96,6 +97,12 @@ func WithForceJSON() Option {
 // 用于下载大文件等场景（此时 rspBody 参数应传 nil）。
 func WithDoNotParse() Option {
 	return func(o *Options) { o.doNotParse = true }
+}
+
+// WithNoStatusError 4xx/5xx 响应不转 error，把原始响应（含状态码）交回调用方判断。
+// 用于需要区分 200/206/416 等状态码自行决策的场景（如断点续传下载）。
+func WithNoStatusError() Option {
+	return func(o *Options) { o.noStatusErr = true }
 }
 
 // WithForceHTTP1 强制请求走 HTTP/1.1（在请求层切换传输层），

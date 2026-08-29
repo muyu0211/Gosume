@@ -77,7 +77,6 @@ export function CommunityPage() {
       setTotal(resp.total)
       setCategories((prev) => [...new Set([...prev, ...resp.items.map((i) => i.category).filter(Boolean)])])
     } catch (err) {
-      console.error('Load community templates failed:', err)
       setError(extractErrorMessage(err, '访问模板社区失败，请检查网络后重试'))
       setItems([])
       setTotal(0)
@@ -99,7 +98,6 @@ export function CommunityPage() {
       })
       .catch(() => { /* 忽略，列表请求会给出具体错误 */ })
     load('', '', 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSearch = () => {
@@ -340,9 +338,8 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-        active ? 'bg-primary-50 text-primary-700 border-primary-200' : 'text-surface-500 border-surface-200 hover:border-surface-300 hover:text-surface-700'
-      }`}
+      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active ? 'bg-primary-50 text-primary-700 border-primary-200' : 'text-surface-500 border-surface-200 hover:border-surface-300 hover:text-surface-700'
+        }`}
     >
       {children}
     </button>

@@ -1,6 +1,8 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"gosume/pkg/config"
 	"gosume/pkg/log"
 	"gosume/pkg/resume/dto"
@@ -123,4 +125,18 @@ func CopyFile(src, dst string) error {
 		return err
 	}
 	return out.Close()
+}
+
+// HashFile 计算整个文件的 sha256，返回十六进制小写字符串。
+func HashFile(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

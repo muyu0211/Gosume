@@ -1,6 +1,7 @@
 # --- Task runner ---
 .task
 .workbuddy
+.appcast.json
 
 # --- Build output ---
 build/linux/appimage/build

@@ -3,11 +3,10 @@ package service
 import (
 	"archive/zip"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -46,6 +45,9 @@ const (
 	artifactAppZip   = "app-zip"
 	artifactAppImage = "appimage"
 	updateMetaFile   = "update-meta.json"
+
+	// maxDownloadAttempts 断点续传最大尝试次数（含首次下载）。
+	maxDownloadAttempts = 3
 )
 
 // UpdateService 提供在线更新能力：检查版本、下载更新包、触发静默替换。
@@ -432,53 +434,120 @@ func (s *UpdateService) doDownload(path, sha256Hex string) {
 	log.Infof("[update_service] doDownload: 更新包已就绪 %s（sha256 %s…）", pkgPath, hashHex[:12])
 }
 
-// download 执行下载：写入 dst，边下边算 sha256 与推送进度，返回文件哈希。
+// download 执行下载：写入 dst，断点续传 + 自动重试，返回整个文件的 sha256。
 // 走 remote/http 标准库后端（NewStdHttpClient）流式传输（WithDoNotParse），
 // 避免 resty 缓冲把大文件整体读入内存；不设整体超时，仅依赖调用方 ctx 控制
-// 生命周期与取消。
+// 生命周期与取消。单次传输被网络中断（如运营商/防火墙重置 TCP 连接）时，
+// 下一次尝试携带 Range 从已下载字节处续传，避免整包重下；sha256 在下载完成后
+// 对整个文件重新计算（续传场景下无法增量累加哈希）。
 func (s *UpdateService) download(ctx context.Context, path, dst string) (string, error) {
 	client := ghttp.NewStdHttpClient("gosume.UpdateService", ghttp.WithForceHTTP1())
-	resp, err := client.Get(ctx, path, nil, ghttp.WithDoNotParse())
-	if err != nil {
-		log.Errorf("[update_service] download: 下载失败: %v", err)
-		return "", err
-	}
 
-	// 总大小未知时按已下载字节数上报，Content-Length 缺失则置 -1
-	total := int64(-1)
-	if v := resp.Header().Get("Content-Length"); v != "" {
-		if n, perr := strconv.ParseInt(v, 10, 64); perr == nil {
-			total = n
+	for attempt := 1; attempt <= maxDownloadAttempts; attempt++ {
+		if ctx.Err() != nil {
+			return "", ctx.Err() // 取消时不重试
 		}
-	}
 
-	f, err := os.Create(dst)
-	if err != nil {
-		log.Errorf("[update_service] download: 创建更新包文件失败: %v", err)
-		return "", err
-	}
-	defer f.Close()
+		// 已下字节数即续传起点；首次为 0，失败重试时保留部分内容
+		offset := fileSize(dst)
+		reqOpts := []ghttp.Option{ghttp.WithDoNotParse(), ghttp.WithNoStatusError()}
+		if offset > 0 {
+			reqOpts = append(reqOpts, ghttp.WithHeader("Range", fmt.Sprintf("bytes=%d-", offset)))
+		}
+		resp, err := client.Get(ctx, path, nil, reqOpts...)
+		if err != nil {
+			log.Warnf("[update_service] download: 第 %d/%d 次请求失败: %v", attempt, maxDownloadAttempts, err)
+			continue
+		}
 
-	hasher := sha256.New()
-	pr := &progressReader{
-		r:     io.TeeReader(resp.Body(), hasher),
-		total: total,
-		emit: func(pct int, read, total int64) {
-			// 百分比模式发 pct（0-100）；未知总大小时发已下载字节数
-			if total > 0 {
-				s.App.Event.Emit(event.UPDATE_PROGRESS, pct)
-				s.state.Store(int32(pct)) // 同步内存进度，供前端重新打开对话框时续显
-			} else {
-				s.App.Event.Emit(event.UPDATE_PROGRESS, int(read))
-				s.state.Store(0) // 总大小未知：仅标记“下载中”，进度按事件推送的字节数展示
+		switch resp.StatusCode() {
+		case http.StatusRequestedRangeNotSatisfiable: // 416：Range 起点等于文件长度，说明已完整
+			hashHex, err := util.HashFile(dst)
+			if err != nil {
+				return "", err
 			}
-		},
+			log.Infof("[update_service] download: 文件已完整（%d 字节），无需续传", fileSize(dst))
+			return hashHex, nil
+		case http.StatusPartialContent: // 206：服务端支持续传，从 offset 追加
+		case http.StatusOK: // 200：服务端忽略 Range，需从头重下
+			if offset > 0 {
+				offset = 0
+				if err := os.Truncate(dst, 0); err != nil {
+					log.Errorf("[update_service] download: 重置下载文件失败: %v", err)
+					return "", err
+				}
+			}
+		default:
+			msg := fmt.Sprintf("下载失败，服务端返回 %s", resp.Status())
+			log.Errorf("[update_service] download: %s", msg)
+			return "", fmt.Errorf("%s", msg)
+		}
+
+		// 本次响应体大小：206 为剩余字节数，200 为完整大小；缺失则置 -1（按字节数上报进度）
+		total := int64(-1)
+		if v := resp.Header().Get("Content-Length"); v != "" {
+			if n, perr := strconv.ParseInt(v, 10, 64); perr == nil {
+				total = n
+			}
+		}
+
+		f, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Errorf("[update_service] download: 打开下载文件失败: %v", err)
+			return "", err
+		}
+		if _, err := f.Seek(offset, io.SeekStart); err != nil {
+			f.Close()
+			log.Errorf("[update_service] download: 定位写入位置失败: %v", err)
+			return "", err
+		}
+
+		base := offset // 本次响应前的已下载字节数，用于换算整体进度
+		pr := &progressReader{
+			r:     resp.Body(),
+			total: total,
+			emit: func(pct int, read, total int64) {
+				// 百分比模式发整体进度（0-100）；未知总大小时发已下载字节数
+				if total > 0 {
+					overall := int(float64(base+read) / float64(base+total) * 100)
+					s.App.Event.Emit(event.UPDATE_PROGRESS, overall)
+					s.state.Store(int32(overall)) // 同步内存进度，供前端重新打开对话框时续显
+				} else {
+					s.App.Event.Emit(event.UPDATE_PROGRESS, int(base+read))
+					s.state.Store(0) // 总大小未知：仅标记“下载中”，进度按事件推送的字节数展示
+				}
+			},
+		}
+		_, err = io.Copy(f, pr)
+		f.Close()
+		if err != nil {
+			if ctx.Err() != nil {
+				return "", ctx.Err()
+			}
+			log.Warnf("[update_service] download: 第 %d/%d 次传输中断（已下载 %d 字节）: %v", attempt, maxDownloadAttempts, fileSize(dst), err)
+			continue
+		}
+
+		// 完整下载成功：对整个文件重新计算 sha256
+		hashHex, err := util.HashFile(dst)
+		if err != nil {
+			log.Errorf("[update_service] download: 计算文件哈希失败: %v", err)
+			return "", err
+		}
+		log.Infof("[update_service] download: 下载完成（%d 字节）", fileSize(dst))
+		return hashHex, nil
 	}
-	if _, err := io.Copy(f, pr); err != nil {
-		log.Errorf("[update_service] download: 写入更新包文件失败: %v", err)
-		return "", err
+
+	return "", fmt.Errorf("下载连续中断 %d 次，请检查网络后重试", maxDownloadAttempts)
+}
+
+// fileSize 返回文件当前字节数；文件不存在或读取失败时返回 0。
+func fileSize(path string) int64 {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return 0
 	}
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	return fi.Size()
 }
 
 // fetchAppcast 拉取并解析服务端 appcast.json（走 remote 统一客户端）。

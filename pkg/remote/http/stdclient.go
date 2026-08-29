@@ -144,7 +144,8 @@ func (sc *stdCli) do(ctx context.Context, method, path string, reqBody, rspBody 
 	}
 	resp := wrapHTTPResponse(res, o.doNotParse)
 
-	if res.StatusCode >= 400 {
+	// 默认把 4xx/5xx 转 error；WithNoStatusError 时交由调用方按状态码自行处理（如断点续传的 206/416）
+	if res.StatusCode >= 400 && !o.noStatusErr {
 		resp.close()
 		return resp, fmt.Errorf("%s", res.Status)
 	}

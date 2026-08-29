@@ -15,7 +15,7 @@ export function extractErrorMessage(err: unknown, fallback = '操作失败'): st
         if (parsed?.message && typeof parsed.message === 'string') {
           return parsed.message
         }
-      } catch { /* not valid JSON, use raw message */ }
+      } catch { }
     }
     return msg
   }

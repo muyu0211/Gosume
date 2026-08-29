@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"gosume/pkg/log"
 	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/repo"
@@ -82,7 +81,8 @@ func (s *CommunityService) ListCommunityTemplates(category, keyword string, page
 	list, err := s.client.ListTemplates(ctx, category, keyword, page, pageSize)
 	if err != nil {
 		log.Errorf("[community_service] ListCommunityTemplates: %v", err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("访问模板社区失败，请检查网络后重试: %v", err), nil)
+		// 错误细节仅入日志，不向用户暴露底层原因（网络/服务端状态等）
+		return util.DoRsp(util.ErrCode, "访问模板社区失败，请检查网络后重试", nil)
 	}
 	for i := range list.Items {
 		list.Items[i].IsInstalled = s.isInstalled(list.Items[i].ID)
@@ -107,7 +107,7 @@ func (s *CommunityService) GetCommunityTemplate(id string) *util.Response {
 	tmpl, err := s.client.GetTemplate(ctx, id)
 	if err != nil {
 		log.Errorf("[community_service] GetCommunityTemplate: id=%s: %v", id, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("获取社区模板失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "获取模板失败，请稍后重试", nil)
 	}
 	tmpl.IsInstalled = s.isInstalled(tmpl.ID)
 	return util.DoRsp(util.SuccCode, "成功", tmpl)
@@ -136,31 +136,31 @@ func (s *CommunityService) DownloadCommunityTemplate(id string) *util.Response {
 	data, err := s.client.DownloadTemplate(ctx, id)
 	if err != nil {
 		log.Errorf("[community_service] DownloadCommunityTemplate: id=%s: %v", id, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("模板包下载失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "模板下载失败，请稍后重试", nil)
 	}
 
 	tmp, err := os.CreateTemp("", "community-dl-*.zip")
 	if err != nil {
 		log.Errorf("[community_service] DownloadCommunityTemplate: 创建临时文件失败: %v", err)
-		return util.DoRsp(util.ErrCode, "模板包下载失败", nil)
+		return util.DoRsp(util.ErrCode, "模板下载失败，请稍后重试", nil)
 	}
 	tmpPath := tmp.Name()
 	defer os.Remove(tmpPath)
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		log.Errorf("[community_service] DownloadCommunityTemplate: 写入临时文件失败: %v", err)
-		return util.DoRsp(util.ErrCode, "模板包下载失败", nil)
+		return util.DoRsp(util.ErrCode, "模板下载失败，请稍后重试", nil)
 	}
 	if err := tmp.Close(); err != nil {
 		log.Errorf("[community_service] DownloadCommunityTemplate: 关闭临时文件失败: %v", err)
-		return util.DoRsp(util.ErrCode, "模板包下载失败", nil)
+		return util.DoRsp(util.ErrCode, "模板下载失败，请稍后重试", nil)
 	}
 
 	// 复用现有模板包校验（路径安全、体积上限、元数据合法性）
 	pkg, err := template.LoadPackageFromZip(tmpPath)
 	if err != nil {
 		log.Errorf("[community_service] DownloadCommunityTemplate: 模板包校验失败 id=%s: %v", id, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("模板包校验失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "模板包校验失败", nil)
 	}
 	if existing, _ := s.loader.LoadByID(pkg.Meta.ID); existing != nil {
 		return util.DoRsp(util.ErrCode, "本地已存在相同模板，安装已跳过", nil)
@@ -168,7 +168,7 @@ func (s *CommunityService) DownloadCommunityTemplate(id string) *util.Response {
 
 	if err := s.tempRepo.Create(pkg.Meta, pkg.CSS); err != nil {
 		log.Errorf("[community_service] DownloadCommunityTemplate: 保存模板失败 id=%s: %v", pkg.Meta.ID, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("安装模板失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "模板安装失败，请稍后重试", nil)
 	}
 	if err := s.tempRepo.AddImportLog(pkg.Meta.ID, pkg.Meta.Name, "community"); err != nil {
 		log.Warnf("[community_service] DownloadCommunityTemplate: 记录导入历史失败: %v", err)
@@ -208,7 +208,7 @@ func (s *CommunityService) PublishCommunityTemplate(id string) *util.Response {
 	resp, err := s.client.PublishTemplate(ctx, string(metaJSON), t.CSS)
 	if err != nil {
 		log.Errorf("[community_service] PublishCommunityTemplate: 发布失败 id=%s: %v", id, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("发布到社区失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "发布失败，请稍后重试", nil)
 	}
 
 	log.Infof("[community_service] PublishCommunityTemplate: 已发布模板 id=%s -> 社区 %s", id, resp.ID)
@@ -232,7 +232,7 @@ func (s *CommunityService) RateCommunityTemplate(id string, score int) *util.Res
 
 	if err := s.client.RateTemplate(ctx, id, score); err != nil {
 		log.Errorf("[community_service] RateCommunityTemplate: id=%s score=%d: %v", id, score, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("评分提交失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, "评分提交失败，请稍后重试", nil)
 	}
 
 	log.Infof("[community_service] RateCommunityTemplate: 已评分 id=%s score=%d", id, score)
