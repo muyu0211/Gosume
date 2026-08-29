@@ -45,6 +45,14 @@ export function SettingsPage() {
   const [layoutErrorMsg, setLayoutErrorMsg] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [deleteTierTarget, setDeleteTierTarget] = useState<{ type: 'margin' | 'spacing'; idx: number; label: string } | null>(null)
+  const [appVersion, setAppVersion] = useState('')
+
+  // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
+  useEffect(() => {
+    callService<string>('SystemService', 'GetAppVersion')
+      .then(setAppVersion)
+      .catch(() => { /* 获取失败静默，不显示版本号 */ })
+  }, [])
 
   // Sync the draft when the store loads its persisted values (app start
   // loads asynchronously) or after reset.
@@ -521,7 +529,7 @@ export function SettingsPage() {
             </div>
           </div>
           <div className="p-3 text-sm text-surface-600 space-y-1">
-            <p><span className="font-medium">Gosume</span> v1.0.0</p>
+            <p><span className="font-medium">Gosume</span> {appVersion ? `v${appVersion}` : ''}</p>
             <p className="text-xs text-surface-400">桌面级简历制作工具</p>
             <p className="text-xs text-surface-400 mt-2">基于 Wails v3构建</p>
             <div className="pt-2">
@@ -538,9 +546,8 @@ export function SettingsPage() {
               </button>
               {/* 检查结果：grid 行高 0fr↔1fr + 淡入淡出，展开/收起带 200ms 高度渐变（对齐模态窗口动画） */}
               <div
-                className={`grid transition-all duration-200 ${
-                  updateStatus !== '' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                }`}
+                className={`grid transition-all duration-200 ${updateStatus !== '' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
               >
                 <div className="overflow-hidden">
                   {updateMsg && (

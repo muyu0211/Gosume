@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -21,7 +22,8 @@ import (
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
-	"gosume/pkg/remote/http"
+	ghttp "gosume/pkg/remote/http"
+	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/helper"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
@@ -32,6 +34,7 @@ import (
 // allowedDownloadHosts 允许下载更新包的域名白名单。
 // 防止 appcast 被篡改后指向任意可执行文件；TODO(更新服务)：替换为真实 CDN 域名。
 var allowedDownloadHosts = []string{
+	"gosume.dpdns.org",
 	"dl.example.com",                // CDN 主域名（占位）
 	"github.com",                    // GitHub Releases 直链
 	"objects.githubusercontent.com", // GitHub Releases 实际跳转域
@@ -54,7 +57,7 @@ const (
 type UpdateService struct {
 	App          *application.App
 	configMgr    *user_config.Manager // 用户配置管理器
-	state        atomic.Int32         // 下载状态：0=idle、1=downloading，防止并发下载。
+	state        atomic.Int32         // 下载状态机：-1=空闲；0~100=下载中（值为进度%）。0 是下载开始时的初始进度，因此空闲态必须显式置为 -1，避免 Go 零值(0)被误判为“正在下载进度0”。
 	cancel       context.CancelFunc   //  取消正在进行的下载。
 	cancelMu     sync.Mutex           // 下载取消锁。
 	helper       *exec.Cmd            // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
@@ -64,25 +67,15 @@ type UpdateService struct {
 	checkMu      sync.Mutex           // 检查执行串行锁：并发调用时后者等待前者完成并命中缓存
 }
 
-// ---------- appcast 协议 ----------
+// updateMetaFile 已下载更新包的元数据文件名（位于 updates/ 目录，跨会话复用）。
+// 记录该更新包对应的服务端版本，CheckUpdate 据此判断本地是否已有“当前最新的已就绪包”，避免下次运行重复下载。
+const updateMetaFile = "update-meta.json"
 
-// appcastManifest 服务端 appcast.json 的根结构。
-type appcastManifest struct {
-	Product   string                     `json:"product"`
-	Channel   string                     `json:"channel"`
-	Platforms map[string]appcastPlatform `json:"platforms"`
-}
-
-// appcastPlatform 单个平台的更新条目。
-type appcastPlatform struct {
-	Version      string `json:"version"`
-	ReleaseDate  string `json:"release_date"`
-	NotesZh      string `json:"notes_zh"`
-	NotesEn      string `json:"notes_en"`
-	ArtifactType string `json:"artifact_type"`
-	InstallerURL string `json:"installer_url"`
-	SHA256       string `json:"sha256"`
-	Mandatory    bool   `json:"mandatory"` // 预留（P3 强制更新），本期忽略
+// updateMeta 记录已下载但尚未安装的更新包元信息。
+type updateMeta struct {
+	Version      string `json:"version"`       // 该包对应的服务端版本号
+	ArtifactType string `json:"artifact_type"` // 更新包形态
+	DownloadedAt string `json:"downloaded_at"` // 下载完成时间
 }
 
 // UpdateInfoResponse 检查更新返回的更新信息。
@@ -90,6 +83,7 @@ type UpdateInfoResponse struct {
 	HasUpdate      bool   `json:"has_update"`               // 是否存在新版本
 	CurrentVersion string `json:"current_version"`          // 当前版本
 	LatestVersion  string `json:"latest_version,omitempty"` // 最新版本号
+	UpdateReady    bool   `json:"update_ready,omitempty"`   // 对应最新版本的更新包已下载就绪，可直接安装
 	ReleaseDate    string `json:"release_date,omitempty"`   // 发布日期
 	ReleaseNotes   string `json:"release_notes,omitempty"`  // 更新说明
 	DownloadURL    string `json:"download_url,omitempty"`   // 更新包下载地址
@@ -107,6 +101,13 @@ func (s *UpdateService) ServiceName() string {
 func (s *UpdateService) Inject(app *application.App, configMgr *user_config.Manager) {
 	s.App = app
 	s.configMgr = configMgr
+	s.state.Store(-1) // 初始化空闲态
+}
+
+// GetDownloadProgress 返回当前下载状态，供前端在重新打开更新对话框时续显：
+// -1=空闲（无下载任务）；0~100=下载中（值为当前进度百分比）。
+func (s *UpdateService) GetDownloadProgress() int {
+	return int(s.state.Load())
 }
 
 // CheckUpdate 检查是否有可用的新版本。
@@ -125,6 +126,7 @@ func (s *UpdateService) CheckUpdate() *util.Response {
 		return util.DoRsp(util.SuccCode, "成功", *cached)
 	}
 
+	// 执行实际检查
 	info, errMsg := s.doCheckUpdate()
 	if errMsg != "" {
 		return util.DoRsp(util.ErrCode, errMsg, nil)
@@ -133,80 +135,34 @@ func (s *UpdateService) CheckUpdate() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", info)
 }
 
-// doCheckUpdate 执行实际的检查逻辑：成功返回更新信息，失败返回错误提示。
-func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
-	current := config.GlobalConfig.App.Version
-
-	// NOTE: 测试直接返回更新
+// DownloadUpdate 后台下载更新包到 {dataDir}/updates/ 并校验 sha256。
+func (s *UpdateService) DownloadUpdate(path, sha256Hex string) *util.Response {
 	if !util.IsProd() {
-		log.Infof("[CheckUpdate] Test Env 检查更新")
-		return UpdateInfoResponse{
-			HasUpdate:      true,
-			CurrentVersion: current,
-			LatestVersion:  "1.0.0",
-			ReleaseDate:    "2025-12-31",
-			ReleaseNotes:   "测试更新说明",
-			DownloadURL:    "https://dl.example.com/gosume/gosume-1.0.0-windows-amd64.exe",
-			SHA256:         "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-			ArtifactType:   "nsis-installer",
-		}, ""
+		return util.DoRsp(util.ErrCode, "开发模式下不支持在线下载", nil)
 	}
 
-	// Linux：仅 AppImage 安装形态支持应用内更新，deb/rpm/AUR 走系统包管理器。
-	if runtime.GOOS == "linux" && !(os.Getenv("APPIMAGE") != "") {
-		return UpdateInfoResponse{
-			HasUpdate:      false,
-			CurrentVersion: current,
-			Reason:         "当前安装形态暂不支持应用内更新，请通过系统包管理器获取新版本",
-		}, ""
+	// 校验 sha256 格式
+	sha256Hex = strings.ToLower(strings.TrimSpace(sha256Hex))
+	if sha256Hex == "" {
+		return util.DoRsp(util.ErrCode, "更新包缺少校验信息", nil)
 	}
 
-	// 获取更新信息
-	manifest, err := fetchAppcast()
-	if err != nil {
-		log.Errorf("[update_service] CheckUpdate: 拉取更新信息失败: %v", err)
-		return UpdateInfoResponse{}, "检查更新失败，请检查网络后重试"
+	// 状态守卫：CAS(-1→0) 占用后台下载权（0 为初始进度）。
+	if !s.state.CompareAndSwap(-1, 0) {
+		log.Infof("[update_service] DownloadUpdate: 已有下载任务进行中，忽略重复请求")
+		return util.DoRsp(util.ErrCode, "已有下载任务进行中", nil)
 	}
+	log.Infof("[update_service] DownloadUpdate: 开始后台下载 %s（sha256 %s…）", path, sha256Hex[:8])
 
-	// 解析平台条目
-	entry, ok := resolvePlatformEntry(manifest)
-	if !ok || !isAllowedURL(entry.InstallerURL) {
-		return UpdateInfoResponse{HasUpdate: false, CurrentVersion: current}, ""
-	}
+	// 后台下载
+	util.Go(func() {
+		s.doDownload(path, sha256Hex)
+	})
 
-	log.Infof("[update_service] CheckUpdate: 当前 %s，服务端 %s（%s）", current, entry.Version, entry.ArtifactType)
-	return UpdateInfoResponse{
-		HasUpdate:      compareVersion(entry.Version, current) > 0,
-		CurrentVersion: current,
-		LatestVersion:  entry.Version,
-		ReleaseDate:    entry.ReleaseDate,
-		ReleaseNotes:   strings.TrimSpace(entry.NotesZh),
-		DownloadURL:    entry.InstallerURL,
-		SHA256:         entry.SHA256,
-		ArtifactType:   entry.ArtifactType,
-	}, ""
+	return util.DoRsp(util.SuccCode, "已开始后台下载", nil)
 }
 
-// getCheckCache 读取检查结果会话缓存（无则 nil）。
-func (s *UpdateService) getCheckCache() *UpdateInfoResponse {
-	s.checkCacheMu.Lock()
-	defer s.checkCacheMu.Unlock()
-	return s.checkCache
-}
-
-// setCheckCache 写入检查结果会话缓存。
-func (s *UpdateService) setCheckCache(info UpdateInfoResponse) {
-	s.checkCacheMu.Lock()
-	s.checkCache = &info
-	s.checkCacheMu.Unlock()
-}
-
-// ---------- ApplyUpdate / CancelUpdate ----------
-
-// ApplyUpdate 启动分离的 Helper 进程完成静默替换（方案 §6.5）。
-//
-// 成功返回后由前端走既有未保存确认流程，并经 SystemService.QuitApp
-// 显式终止主进程；Helper 等主进程真正退出（最多 120s）后执行替换并重启新版本。
+// ApplyUpdate 启动分离的 Helper 进程完成静默替换
 func (s *UpdateService) ApplyUpdate() *util.Response {
 	if !util.IsProd() {
 		return util.DoRsp(util.ErrCode, "开发模式下不支持应用更新", nil)
@@ -246,6 +202,7 @@ func (s *UpdateService) CancelUpdate() *util.Response {
 	s.cancelMu.Lock()
 	if s.cancel != nil {
 		s.cancel()
+		s.state.Store(-1) // 立即回到空闲态；DownloadUpdate 的 defer 会再次释放（幂等）
 	}
 	s.cancelMu.Unlock()
 
@@ -257,107 +214,230 @@ func (s *UpdateService) CancelUpdate() *util.Response {
 	}
 	s.helperMu.Unlock()
 
+	log.Infof("[update_service] CancelUpdate: 已取消")
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
-// DownloadUpdate 下载更新包到 {dataDir}/updates/ 并校验 sha256（阻塞直至完成）。
-//
-// 进度经 update:progress 事件推送：Content-Length 已知时为 0-100 百分比；
-// 未知时为已下载字节数（前端按 MB 展示）。
-// macOS（app-zip）额外解压出 Gosume.app 并校验结构；Linux（appimage）补执行权限。
-func (s *UpdateService) DownloadUpdate(dlURL, sha256Hex string) *util.Response {
+// doCheckUpdate 执行实际的检查逻辑：成功返回更新信息，失败返回错误提示。
+func (s *UpdateService) doCheckUpdate() (UpdateInfoResponse, string) {
+	current := config.GlobalConfig.App.Version
+
+	// NOTE: 测试直接返回更新
 	if !util.IsProd() {
-		return util.DoRsp(util.ErrCode, "开发模式下不支持在线下载", nil)
+		log.Infof("[CheckUpdate] Test Env 检查更新")
+		return UpdateInfoResponse{
+			HasUpdate:      false,
+			CurrentVersion: current,
+			Reason:         "测试环境不支持在线更新",
+		}, ""
 	}
 
-	// 状态守卫：下载中重复调用直接拒绝
-	if !s.state.CompareAndSwap(0, 1) {
-		return util.DoRsp(util.ErrCode, "已有下载任务进行中", nil)
+	// Linux：仅 AppImage 安装形态支持应用内更新，deb/rpm/AUR 走系统包管理器。
+	if runtime.GOOS == "linux" && !(os.Getenv("APPIMAGE") != "") {
+		return UpdateInfoResponse{
+			HasUpdate:      false,
+			CurrentVersion: current,
+			Reason:         "当前安装形态暂不支持应用内更新，请通过系统包管理器获取新版本",
+		}, ""
 	}
-	defer s.state.Store(0)
 
-	// 域名白名单 + HTTPS 校验（与 CheckUpdate 处各验一次，防窗口期不一致）
-	if !isAllowedURL(dlURL) {
-		return util.DoRsp(util.ErrCode, "下载地址不合法", nil)
+	// 获取更新信息
+	manifest, err := fetchAppcast()
+	if err != nil {
+		log.Errorf("[update_service] CheckUpdate: 拉取更新信息失败: %v", err)
+		return UpdateInfoResponse{}, "检查更新失败，请检查网络后重试"
 	}
-	sha256Hex = strings.ToLower(strings.TrimSpace(sha256Hex))
-	if sha256Hex == "" {
-		return util.DoRsp(util.ErrCode, "更新包缺少校验信息", nil)
+
+	// 解析平台条目
+	entry, ok := resolvePlatformEntry(manifest)
+	if !ok || !isAllowedURL(entry.InstallerURL) {
+		return UpdateInfoResponse{HasUpdate: false, CurrentVersion: current}, ""
+	}
+
+	// 本地是否已下载更新包：一致则无需再下载.
+	ready := s.isUpdateReady(entry)
+
+	log.Infof("[update_service] CheckUpdate 当前 %s，服务端 %s（%s）ready=%v", current, entry.Version, entry.ArtifactType, ready)
+	return UpdateInfoResponse{
+		HasUpdate:      compareVersion(entry.Version, current) > 0,
+		CurrentVersion: current,
+		LatestVersion:  entry.Version,
+		UpdateReady:    ready,
+		ReleaseDate:    entry.ReleaseDate,
+		ReleaseNotes:   strings.TrimSpace(entry.NotesZh),
+		DownloadURL:    entry.InstallerURL,
+		SHA256:         entry.SHA256,
+		ArtifactType:   entry.ArtifactType,
+	}, ""
+}
+
+// getCheckCache 读取检查结果会话缓存（无则 nil）。
+func (s *UpdateService) getCheckCache() *UpdateInfoResponse {
+	s.checkCacheMu.Lock()
+	defer s.checkCacheMu.Unlock()
+	return s.checkCache
+}
+
+// setCheckCache 写入检查结果会话缓存。
+func (s *UpdateService) setCheckCache(info UpdateInfoResponse) {
+	s.checkCacheMu.Lock()
+	s.checkCache = &info
+	s.checkCacheMu.Unlock()
+}
+
+// isUpdateReady 判断本地是否已有“与给定服务端版本一致”的已下载更新包。
+func (s *UpdateService) isUpdateReady(entry dto.AppcastPlatform) bool {
+	updateDir := s.updateDir()
+	if _, err := os.Stat(filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)); err != nil {
+		log.Errorf("[update_service] isUpdateReady 更新包缺失 %s", err)
+		return false
+	}
+	// 读取元数据
+	meta, err := s.loadUpdateMeta(updateDir)
+	if err != nil {
+		log.Errorf("[update_service] isUpdateReady 更新包元数据缺失 %s", err)
+		return false // 缺少元数据则无法确认版本，保守视为未就绪
+	}
+	// 校验本地更新包是否与远程一致（版本+形态）
+	return validateUpdatePkg(meta, entry)
+}
+
+// saveUpdateMeta 在下载成功后持久化更新包元信息（版本+形态），供下次运行复用。
+func (s *UpdateService) saveUpdateMeta(updateDir string, meta updateMeta) error {
+	data, err := json.Marshal(meta)
+	if err != nil {
+		log.Errorf("[update_service] saveUpdateMeta 序列化更新包元数据失败: %v", err)
+		return err
+	}
+	return os.WriteFile(filepath.Join(updateDir, updateMetaFile), data, 0644)
+}
+
+// loadUpdateMeta 读取已下载更新包的元信息；不存在或损坏时返回错误。
+func (s *UpdateService) loadUpdateMeta(updateDir string) (updateMeta, error) {
+	var meta updateMeta
+	data, err := os.ReadFile(filepath.Join(updateDir, updateMetaFile))
+	if err != nil {
+		return meta, err
+	}
+	err = json.Unmarshal(data, &meta)
+	return meta, err
+}
+
+// validateUpdatePkg 校验本地更新包是否与远程一致（版本+形态）。
+func validateUpdatePkg(meta updateMeta, entry dto.AppcastPlatform) bool {
+	return meta.Version == entry.Version && meta.ArtifactType == entry.ArtifactType
+}
+
+// doDownload 在后台 goroutine 中执行下载全流程：下载 → sha256 校验 →
+// 落地正式包 → 平台后处理 → 记录元信息，完成后经 update:result 通知前端。
+func (s *UpdateService) doDownload(path, sha256Hex string) {
+	defer s.state.Store(-1) // 结束统一回到空闲态，供后续再次下载
+
+	// 完成（成功/失败/取消）时释放取消句柄，避免悬挂引用。
+	defer func() {
+		s.cancelMu.Lock()
+		if s.cancel != nil {
+			s.cancel()
+		}
+		s.cancel = nil
+		s.cancelMu.Unlock()
+	}()
+
+	// 把下载结果经事件推送给前端（对话框可能已关闭/重开，不依赖同步返回）。
+	emitResult := func(success bool, msg string) {
+		if success {
+			s.App.Event.Emit(event.UPDATE_RESULT, "ok")
+		} else {
+			s.App.Event.Emit(event.UPDATE_RESULT, "error:"+msg)
+		}
 	}
 
 	updateDir := s.updateDir()
 	if err := os.MkdirAll(updateDir, 0755); err != nil {
-		log.Errorf("[update_service] DownloadUpdate: 创建更新目录失败: %v", err)
-		return util.DoRsp(util.ErrCode, "创建更新目录失败", nil)
+		log.Errorf("[update_service] doDownload 创建更新目录失败: %v", err)
+		emitResult(false, "创建更新目录失败")
+		return
 	}
 
 	// 清理旧包，目录内恒为最新一份
 	cleanUpdateArtifacts(updateDir)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.setDownloadCancel(cancel)
-	defer func() {
-		cancel()
-		s.setDownloadCancel(nil)
-	}()
+	s.cancelMu.Lock()
+	s.cancel = cancel
+	s.cancelMu.Unlock()
 
 	// 下载 + 流式哈希
 	tmpPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageTmp)
-	hashHex, err := s.download(ctx, dlURL, tmpPath)
+	hashHex, err := s.download(ctx, path, tmpPath)
 	if err != nil {
 		os.Remove(tmpPath)
 		if ctx.Err() != nil {
-			return util.DoRsp(util.ErrCode, "下载已取消", nil)
+			log.Infof("[update_service] doDownload: 下载已取消")
+			emitResult(false, "下载已取消")
+			return
 		}
-		log.Errorf("[update_service] DownloadUpdate 下载失败: %v", err)
-		return util.DoRsp(util.ErrCode, "下载失败，请检查网络后重试", nil)
+		log.Errorf("[update_service] doDownload 下载失败: %v", err)
+		emitResult(false, "下载失败，请检查网络后重试")
+		return
 	}
 
 	// sha256 校验：不通过则删除文件并报错
 	if hashHex != sha256Hex {
 		os.Remove(tmpPath)
-		log.Errorf("[update_service] DownloadUpdate sha256 不匹配（期望 %s，实际 %s）", sha256Hex, hashHex)
-		return util.DoRsp(util.ErrCode, "更新包校验失败，已丢弃", nil)
+		log.Errorf("[update_service] doDownload sha256 不匹配（期望 %s，实际 %s）", sha256Hex, hashHex)
+		emitResult(false, "更新包校验失败，已丢弃")
+		return
 	}
 
 	// 落地为正式包名
 	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)
 	if err := os.Rename(tmpPath, pkgPath); err != nil {
 		os.Remove(tmpPath)
-		log.Errorf("[update_service] DownloadUpdate 保存更新包失败: %v", err)
-		return util.DoRsp(util.ErrCode, "保存更新包失败", nil)
+		log.Errorf("[update_service] doDownload 保存更新包失败: %v", err)
+		emitResult(false, "保存更新包失败")
+		return
 	}
 
 	// 平台后处理
 	switch runtime.GOOS {
 	case "darwin":
 		if err := extractAppBundle(pkgPath, updateDir); err != nil {
-			log.Errorf("[update_service] DownloadUpdate 解压更新包失败: %v", err)
-			return util.DoRsp(util.ErrCode, "更新包解压失败", nil)
+			log.Errorf("[update_service] doDownload 解压更新包失败: %v", err)
+			emitResult(false, "更新包解压失败")
+			return
 		}
 	case "linux":
 		if err := os.Chmod(pkgPath, 0755); err != nil {
-			log.Errorf("[update_service] DownloadUpdate 设置执行权限失败: %v", err)
-			return util.DoRsp(util.ErrCode, "准备更新包失败", nil)
+			log.Errorf("[update_service] doDownload 设置执行权限失败: %v", err)
+			emitResult(false, "准备更新包失败")
+			return
 		}
 	}
 
-	// 给前端推送 100% 进度
+	// 记录更新包元信息（版本+形态），供下次运行 CheckUpdate 时判定“已下载就绪”，
+	// 避免用户未立即安装、下次想装时重新下载。版本取自本次会话的检查缓存。
+	if cached := s.getCheckCache(); cached != nil {
+		_ = s.saveUpdateMeta(updateDir, updateMeta{
+			Version:      cached.LatestVersion,
+			ArtifactType: cached.ArtifactType,
+			DownloadedAt: time.Now().Format(time.RFC3339),
+		})
+	}
+
+	// 给前端推送 100% 进度 + 完成通知
 	s.App.Event.Emit(event.UPDATE_PROGRESS, 100)
-	log.Infof("[update_service] DownloadUpdate 更新包已就绪 %s（sha256 %s）", pkgPath, hashHex[:12])
-	return util.DoRsp(util.SuccCode, "成功", nil)
+	s.App.Event.Emit(event.UPDATE_RESULT, "ok")
+	log.Infof("[update_service] doDownload: 更新包已就绪 %s（sha256 %s…）", pkgPath, hashHex[:12])
 }
 
 // download 执行下载：写入 dst，边下边算 sha256 与推送进度，返回文件哈希。
-// 走 remote 统一客户端（绝对地址直接请求，忽略服务基地址）；服务配置为
-// 不设整体超时，下载时长由调用方 context 控制。
-func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string, error) {
-	client := http.NewHttpClient("gosume.UpdateService")
-	resp, err := client.Get(ctx, dlURL, nil,
-		http.WithRetryCount(0), // 下载流不自动重试（重下整个包代价大），失败由用户手动重试
-		http.WithDoNotParse(),  // 流式读取，避免整体读入内存
-		http.WithForceHTTP1(),  // 部分网络下 HTTP/2 连接复用易被重置，下载改用 HTTP/1.1
-	)
+// 走 remote/http 标准库后端（NewStdHttpClient）流式传输（WithDoNotParse），
+// 避免 resty 缓冲把大文件整体读入内存；不设整体超时，仅依赖调用方 ctx 控制
+// 生命周期与取消。
+func (s *UpdateService) download(ctx context.Context, path, dst string) (string, error) {
+	client := ghttp.NewStdHttpClient("gosume.UpdateService", ghttp.WithForceHTTP1())
+	resp, err := client.Get(ctx, path, nil, ghttp.WithDoNotParse())
 	if err != nil {
 		log.Errorf("[update_service] download: 下载失败: %v", err)
 		return "", err
@@ -386,8 +466,10 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 			// 百分比模式发 pct（0-100）；未知总大小时发已下载字节数
 			if total > 0 {
 				s.App.Event.Emit(event.UPDATE_PROGRESS, pct)
+				s.state.Store(int32(pct)) // 同步内存进度，供前端重新打开对话框时续显
 			} else {
 				s.App.Event.Emit(event.UPDATE_PROGRESS, int(read))
+				s.state.Store(0) // 总大小未知：仅标记“下载中”，进度按事件推送的字节数展示
 			}
 		},
 	}
@@ -401,13 +483,12 @@ func (s *UpdateService) download(ctx context.Context, dlURL, dst string) (string
 // fetchAppcast 拉取并解析服务端 appcast.json（走 remote 统一客户端）。
 // appcast 为小文件，请求级超时收紧到 10s（覆盖服务配置的不设整体超时）；
 // 静态托管的 appcast.json Content-Type 可能不规范，强制按 JSON 解析。
-func fetchAppcast() (*appcastManifest, error) {
-	var m appcastManifest
-	client := http.NewHttpClient("gosume.UpdateService")
-
+func fetchAppcast() (*dto.AppcastManifest, error) {
+	var m dto.AppcastManifest
+	client := ghttp.NewHttpClient("gosume.UpdateService")
 	resp, err := client.Get(context.Background(), "/appcast.json", &m,
-		http.WithTimeout(10*time.Second),
-		http.WithForceJSON(),
+		ghttp.WithTimeout(10*time.Second),
+		ghttp.WithForceJSON(),
 	)
 	if err != nil {
 		return nil, err
@@ -422,7 +503,7 @@ func fetchAppcast() (*appcastManifest, error) {
 
 // resolvePlatformEntry 按本机环境解析 appcast 平台条目（方案 §5.1.1）。
 // darwin 优先 universal 条目（双架构合一），无则回退本机架构。
-func resolvePlatformEntry(m *appcastManifest) (appcastPlatform, bool) {
+func resolvePlatformEntry(m *dto.AppcastManifest) (dto.AppcastPlatform, bool) {
 	var keys []string
 	switch runtime.GOOS {
 	case "darwin":
@@ -435,7 +516,7 @@ func resolvePlatformEntry(m *appcastManifest) (appcastPlatform, bool) {
 			return e, true
 		}
 	}
-	return appcastPlatform{}, false
+	return dto.AppcastPlatform{}, false
 }
 
 // progressReader 包装下载流：按「每 1% 或每 100ms」节流上报进度。

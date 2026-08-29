@@ -104,6 +104,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	event.AddEvent(event.CONFIG_DATADIR_CHANGED, "1")
 	event.AddEvent(event.WINDOW_CLOSE_REQUESTED, "")
 	event.AddEvent(event.UPDATE_PROGRESS, 1)
+	event.AddEvent(event.UPDATE_RESULT, "1")
 	event.RegisterEvents()
 
 	// 数据目录变更回调：关闭日志 → 重开存储 → 重新注入依赖 → 通知前端。

@@ -91,14 +91,9 @@ type UpdateConfig struct {
 	LinuxExecPerm uint32 // 0755
 }
 
-// configYAML 是同目录 config.yaml 的原始内容，编译期嵌入二进制。
-//
-//go:embed config.yaml
-var configYAML []byte
-
 // Load 解析嵌入的 config.yaml 并返回配置。
 // 解析失败将 panic，因为应用级配置错误应在启动期立即暴露。
-func Load() {
+func Load(configYAML []byte) {
 	GlobalConfig = &Config{}
 	if err := yaml.Unmarshal(configYAML, GlobalConfig); err != nil {
 		panic(fmt.Sprintf("config: 解析嵌入的 config.yaml 失败: %v", err))

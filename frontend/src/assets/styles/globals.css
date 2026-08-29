@@ -267,6 +267,14 @@ body {
   animation: preview-enter 0.28s ease-out both;
 }
 
+/* 模板卡片的悬停预览按钮：卡片变窄时（容器查询，基于卡片实际宽度而非
+   窗口像素）隐藏按钮文字，只保留图标，避免按钮在窄卡片内挤压变形。 */
+@container (max-width: 280px) {
+  .preview-label {
+    display: none;
+  }
+}
+
 /* Title Bar */
 .titlebar {
   height: var(--titlebar-height);

@@ -44,6 +44,7 @@ export function WelcomePage() {
   // 初始值取自模块级缓存，路由切走再回来角标直接恢复。
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
   const PAGE_SIZE = 8
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
@@ -67,6 +68,13 @@ export function WelcomePage() {
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
+  useEffect(() => {
+    callService<string>('SystemService', 'GetAppVersion')
+      .then(setAppVersion)
+      .catch(() => { /* 获取失败静默，footer 不显示版本号 */ })
   }, [])
 
   // 应用启动时静默检查一次更新（复用 UpdateService.CheckUpdate）。
@@ -403,7 +411,7 @@ export function WelcomePage() {
       {/* Footer */}
       <footer className="px-8 py-4 border-t border-surface-100 text-center">
         <p className="text-xs text-surface-400">
-          Gosume v1.0.0 — 专注于内容，让简历排版变得简单
+          Gosume{appVersion ? ` v${appVersion}` : ''} — 专注于内容，让简历排版变得简单
         </p>
       </footer>
 
@@ -462,11 +470,10 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-            page === currentPage
-              ? 'bg-primary-600 text-white shadow-sm'
-              : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
-          }`}
+          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === currentPage
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
+            }`}
         >
           {page}
         </button>
@@ -511,7 +518,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
-      style={{ animationDelay: `${index * 60}ms` }}
+      style={{ animationDelay: `${index * 60}ms`, containerType: 'inline-size' }}
     >
       {/* Preview area */}
       <div ref={containerRef} className="relative overflow-hidden bg-surface-100" style={{ aspectRatio: `${paper.mmW} / ${paper.mmH}` }}>
@@ -557,8 +564,8 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               onClick={(e) => { e.stopPropagation(); onPreview() }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50/95 text-surface-800 text-sm font-medium border border-white shadow-md hover:bg-amber-50 hover:border-surface-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm"
             >
-              <Eye className="w-4 h-4" />
-              预览
+              <Eye className="w-4 h-4 shrink-0" />
+              <span className="preview-label">预览</span>
             </button>
             {!template.is_builtin && onDelete && (
               <button
@@ -566,8 +573,8 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
                 disabled={isDeleting}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50/95 text-red-600 text-sm font-medium border border-white shadow-md hover:bg-red-50 hover:border-red-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm disabled:opacity-50"
               >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                删除
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
+                <span className="preview-label">删除</span>
               </button>
             )}
           </div>

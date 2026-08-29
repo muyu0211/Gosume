@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"gosume/pkg/config"
 	"gosume/pkg/remote"
@@ -33,9 +32,9 @@ type Clients interface {
 
 // cli 是 Clients 接口的实现，同时实现 remote.Client 接口以纳入统一客户端工厂。
 type cli struct {
-	serviceName string
-	client      *resty.Client
-	opts        []Option
+	service *config.ServiceConfig // 服务配置
+	client  *resty.Client
+	opts    []Option
 }
 
 // NewHttpClient 返回指定命名服务的 Clients 门面实例。
@@ -52,15 +51,8 @@ func NewHttpClient(serviceName string, opts ...Option) *cli {
 	return c
 }
 
-// Proto 返回本客户端对应的协议名，实现 remote.Client 接口。
-func (ci *cli) Proto() string { return remote.ProtoHTTP }
-
-// Close 释放底层连接池，实现 remote.Client 接口。
-func (ci *cli) Close() error { return ci.client.Close() }
-
-// buildClient 按服务声明构建并返回 HTTP resty 客户端：基地址、超时、重试、代理与 User-Agent。
-// 超时与重试配置解析优先级：服务级 > 客户端级（ClientConfig 全局默认）> 内建默认；代理仅支持服务级。
-func buildClient(svc config.ServiceConfig) *cli {
+// buildClient 按服务声明构建并返回 HTTP resty 客户端
+func buildClient(svc *config.ServiceConfig) *cli {
 	c := resty.New()
 	c.SetBaseURL(svc.Target)
 
@@ -93,37 +85,23 @@ func buildClient(svc config.ServiceConfig) *cli {
 	c.SetHeader("User-Agent", fmt.Sprintf("%s/%s", app.Name, app.Version))
 
 	// 默认每请求新建独立上下文；超时等全局设置已作用到客户端
-	return &cli{serviceName: svc.Name, client: c}
+	return &cli{service: svc, client: c}
 }
 
 // resolveURL 把请求 path 显式拼接服务基地址（服务配置的 target），
 // 使 target 的作用可预期、对接层配置保持「target + 相对资源路径」的语义：
 //   - path 为绝对 URL（含 scheme，如完整 http(s) 地址）时按原样返回；
 //   - 否则视为相对资源路径，规整前后斜杠后拼接在 target 后。
-//
-// 避免依赖 resty 对相对路径隐式拼接时对「以 / 开头」「target 末尾斜杠」的脆弱处理。
-func (ci *cli) resolveURL(path string) string {
+func resolveURL(base, path string) string {
 	if u, err := url.Parse(path); err == nil && u.IsAbs() {
 		return path
 	}
-	return strings.TrimRight(ci.client.BaseURL(), "/") + "/" + strings.TrimLeft(path, "/")
+	return strings.TrimRight(base, "/") + "/" + strings.TrimLeft(path, "/")
 }
 
-// newHTTP1Transport 构造一个强制走 HTTP/1.1 的传输层：
-// 关闭 HTTP/2 协商（ForceAttemptHTTP2=false）并把 ALPN 限定为 http/1.1，
-// 其余连接池/超时等参数沿用默认传输层。
-func newHTTP1Transport() http.RoundTripper {
-	t, ok := http.DefaultTransport.(*http.Transport)
-	if !ok {
-		return http.DefaultTransport
-	}
-	t = t.Clone()
-	t.ForceAttemptHTTP2 = false
-	if t.TLSClientConfig == nil {
-		t.TLSClientConfig = &tls.Config{}
-	}
-	t.TLSClientConfig.NextProtos = []string{"http/1.1"}
-	return t
+// Close 释放底层连接池（调用方通常无需主动调用，进程退出前如需要可调用）。
+func (ci *cli) Close() error {
+	return ci.client.Close()
 }
 
 // Get 发起 GET 请求；path 为相对服务 target 的资源路径，执行时自动拼接；
@@ -171,7 +149,7 @@ func (ci *cli) ping(ctx context.Context) error {
 func (ci *cli) do(ctx context.Context, method, path string, reqBody, rspBody any, opts ...Option) (*Response, error) {
 	option := apply(opts...)
 	if option.forceHTTP1 {
-		ci.client.SetTransport(newHTTP1Transport())
+		ci.client.SetTransport(remote.BuildTransport(ci.service, true))
 	}
 	r := option.apply(ci.client.R().SetContext(ctx))
 	r.SetMethod(method)
@@ -183,14 +161,13 @@ func (ci *cli) do(ctx context.Context, method, path string, reqBody, rspBody any
 		r.SetResult(rspBody)
 	}
 
-	res, err := r.Execute(method, ci.resolveURL(path))
+	res, err := r.Execute(method, resolveURL(ci.client.BaseURL(), path))
 	if err != nil {
 		return nil, err
 	}
-	resp := wrapResponse(res, option.doNotParse)
+	resp := wrapRestyResponse(res, option.doNotParse)
 
 	if res.IsStatusFailure() {
-		// 以 error 拒绝的场景调用方不会读取响应流，直接释放以免泄漏
 		resp.close()
 		return resp, fmt.Errorf("HTTP %d: %s", res.StatusCode(), res.Status())
 	}

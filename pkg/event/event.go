@@ -15,6 +15,7 @@ const (
 	CONFIG_DATADIR_CHANGED = "config:datadir-changed"
 	WINDOW_CLOSE_REQUESTED = "window:close-requested"
 	UPDATE_PROGRESS        = "update:progress" // 更新包下载进度：int（0-100 百分比；总大小未知时为已下载字节数）
+	UPDATE_RESULT          = "update:result"   // 更新包后台下载结果：string（"ok" 成功；"error:<原因>" 失败）
 )
 
 // application.RegisterEvent[int]("export:progress")

@@ -16,6 +16,8 @@ export interface UpdateInfo {
   current_version?: string
   /** 最新版本号 */
   latest_version?: string
+  /** 对应最新版本的更新包已下载就绪，可直接安装（复用之前下载未安装的包） */
+  update_ready?: boolean
   /** 发布日期（如 2026-09-01） */
   release_date?: string
   /** 更新说明（\n 分隔的多行文本） */
@@ -52,7 +54,7 @@ interface UpdateDialogProps {
  */
 export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
   const modalRef = useRef<ModalHandle>(null)
-  const [stage, setStage] = useState<Stage>('available')
+  const [stage, setStage] = useState<Stage>(info.update_ready ? 'ready' : 'available')
   const [progress, setProgress] = useState<number | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [applying, setApplying] = useState(false)
@@ -144,6 +146,39 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
     return off
   }, [])
 
+  // 订阅后台下载完成/失败事件：后端在独立 goroutine 下载，本对话框可能已
+  // 关闭/重开，统一由该事件把 stage 收敛到 ready 或 error（而不是依赖
+  // DownloadUpdate 的同步返回）。
+  useEffect(() => {
+    if (!isWails()) return
+    const off = Events.On('update:result', (ev) => {
+      const s = String(ev.data)
+      if (s === 'ok') {
+        setProgress(100)
+        setStage('ready')
+      } else {
+        setErrorMsg(s.startsWith('error:') ? s.slice('error:'.length) : s)
+        setStage('error')
+      }
+    })
+    return off
+  }, [])
+
+  // 挂载时查询后端是否有进行中的下载任务：用户关闭对话框（X）后下载不会停止，
+  // 从其它入口再次打开本对话框时，据此续显“下载中 + 当前进度”，而非回到 available。
+  // 后端返回 -1 表示空闲；0~100 为下载中进度（0 表示刚开始下载）。
+  useEffect(() => {
+    if (!isWails()) return
+    callService<number>('UpdateService', 'GetDownloadProgress')
+      .then((p) => {
+        if (typeof p === 'number' && p >= 0) {
+          setStage('downloading')
+          setProgress(p)
+        }
+      })
+      .catch(() => { /* 查询失败保持默认阶段 */ })
+  }, [])
+
   const handleClose = () => modalRef.current?.close()
 
   /** 立即下载 / 重试下载。 */
@@ -157,8 +192,9 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
     setProgress(0)
     setErrorMsg('')
     try {
+      // 后端为异步后台下载：方法立即返回（同步校验失败才在此报错），
+      // 完成/失败改由 update:result 事件驱动，切页/关窗都不中断下载。
       await callService('UpdateService', 'DownloadUpdate', info.download_url, info.sha256)
-      setStage('ready')
     } catch (err) {
       setStage('error')
       setErrorMsg(extractErrorMessage(err, '下载更新包失败，请稍后重试'))

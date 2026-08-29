@@ -1,0 +1,16 @@
+{
+    "product": "Gosume",
+    "channel": "stable",
+    "platforms": {
+        "windows-amd64": {
+            "version": "1.2.0",
+            "release_date": "2026-08-29",
+            "notes_zh": "新版本",
+            "notes_en": "test release",
+            "artifact_type": "nsis-installer",
+            "installer_url": "gosume-amd64-installer.exe",
+            "sha256": "15B728251FD6A956CA503D3DC7203A1C09094011130996673FAF88E843397EEF",
+            "mandatory": false
+        }
+    }
+}
