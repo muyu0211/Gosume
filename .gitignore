@@ -55,7 +55,6 @@ Desktop.ini
 *.log
 
 appcast.json
-config.yaml
 Gosume.exe
 GOsume-*.exe
 Gosume-*.nsi
