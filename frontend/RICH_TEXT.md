@@ -15,13 +15,15 @@
 
 **关卡原则**：编辑区输入 → `htmlToMarkdown` 序列化成 Markdown 落库；简历预览/导出 → `markdownToHtml` 从同一份 Markdown 渲染。两处共用同一套解析规则，确保往返一致、不因"反复嵌套字体格式"产生偏差。
 
-## 2. 数据模型：Markdown 源
+## 2. 数据模型：Markdown 源（含 HTML 标签）
 
-所有富文本字段（个人总结、工作/项目简述、关键亮点、获奖概述、扩展信息值）在状态与存储层是 **Markdown 字符串**，而非 HTML。
+所有富文本字段（个人总结、工作/项目简述、关键亮点、获奖概述、扩展信息值）在状态与存储层是
+**Markdown 字符串**，其中行内强调以 `<strong>/<em>` HTML 标签表达（见 §3.3），颜色/列表/链接
+用 markdown 私有语法。
 
-* 编辑器对外暴露 `value: string`（Markdown）与 `onChange(value)`。
+* 编辑器对外暴露 `value: string`（Markdown + 内联标签）与 `onChange(value)`。
 
-* 落库、undo/redo、导入导出、模板渲染全部消费这份 Markdown。
+* 落库、undo/redo、导入导出、模板渲染全部消费这份数据。
 
 * HTML 只存在于编辑区 DOM（contentEditable）与模板渲染的瞬时输出中。
 
@@ -31,9 +33,9 @@
 
 ### 3.1 标准格式映射
 
-* `<strong>/<b>` → `**…**`
+* `<strong>/<b>` → 保留 `<strong>…</strong>` 标签（不压成 `**`）
 
-* `<em>/<i>` → `*…*`
+* `<em>/<i>` → 保留 `<em>…</em>` 标签（不压成 `*`）
 
 * `<a href>` → `[text](url)`
 
@@ -53,12 +55,13 @@
 
 编号**不落库**：有序列表数据源不存编号，渲染时由 CSS counter 从 1 连续生成，删项自动递补。
 
-### 3.3 相邻强调的分隔（关键设计）
+### 3.3 强调采用"保留标签"无损方案（关键设计）
 
-编辑器 HTML 中相邻的 `<strong>/<em>`（如 `<strong>a</strong><em>b</em>`）若直接拼 `**a**` + `*b*`，
-会得到 `**a***b*`——CommonMark 无法还原为并列区间（规范死区）。因此序列化时通过
-`emphasizeBoundaryZwsp` 给相邻强调节点的边界补零宽空格（U+200B），把合并的 run 拆回独立定界符：
-`**a**⟦ZW⟧*b*`。渲染端再剥离/保留该 ZWSP（见 §5）。
+编辑区 DOM 里的 `<strong>`/`<em>` 可能是**任意交叉嵌套树**（如 `<em>美</em><strong>团<em>外卖</em></strong>`）。
+如果把强调压成 `**`/`*` 定界符字符串，CommonMark 强调算法对交叉嵌套有理论死区，渲染时无法还原
+（`separate/Z-WSP/宽松强调` 等补丁都只是缓解）。因此**序列化时原样保留** **`<strong>/<em>`** **标签**，
+渲染端 `html:true` + DOMPurify 白名单透传，简历与编辑区所见完全一致、天然无损。渲染端**禁用强调
+定界符**（`**`/`*` 按字面显示），只认 `<strong>/<em>` 标签。
 
 ## 4. 编辑区交互（RichTextField）
 
@@ -106,22 +109,18 @@
 
 入口 [markdown.ts markdownToHtml](src/lib/markdown.ts)，mode 分 `block`/`inline`。
 
-### 5.1 预处理（历史兼容 + 相邻定界符）
+### 5.1 markdown-it 引擎
 
-1. `stripHistoricalZwsp`：剥离历史数据中**定界符内侧**的 ZWSP；但**保留夹在两个** **`*`** **run 之间**的 ZWSP
-   （`**a**⟦ZW⟧**b**` 的分隔），否则会把正确的相邻格式退化成合并 run。
-2. `separateConsecutiveDelims`：把历史数据的 ≥4 连 `*` run（`**a****b**`）按每 2 个分隔插 ZWSP，
-   交给原生强调按独立 run 配对。
+* `mdBlock`：`html:true` + `breaks:true`（单换行→`<br>`）+ 禁用 image/table/heading/blockquote/hr/fence/backticks/strikethrough/html\_block。
 
-> 这两步共同构成"相邻强调隔离"的防御层，覆盖旧数据与手写 markdown，与新序列化（§3.3）互补。
+* `mdInline`：`html:true` + 仅行内（禁 image/backticks/strikethrough，**保留 html\_inline 以透传** **`<strong>/<em>`**），`render` 后 `.replace(/\n/g,'<br>')`。
 
-### 5.2 markdown-it 引擎
+* **html 透传**：序列化的 `<strong>/<em>` 标签原样进入输出（DOMPurify 白名单含 strong/em，安全）。
 
-* `mdBlock`：`breaks:true`（单换行→`<br>`）+ 禁用 image/table/heading/blockquote/hr/fence/backticks/strikethrough/html\_block。
+* **禁用强调定界符**：两引擎 `inline.ruler.disable('emphasis')`——`**`/`*` 不再解析为强调，按字面显示。
+  强调只接受 `<strong>/<em>` 标签，彻底规避 CommonMark 对交叉嵌套的死区。
 
-* `mdInline`：仅行内（禁 image/html\_inline/backticks/strikethrough），`render` 后 `.replace(/\n/g,'<br>')`。
-
-### 5.3 私有扩展渲染规则
+### 5.2 私有扩展渲染规则
 
 * `color_open` / `color_close` inline rule：把 `[color:#hex]…[/color]` 转为 `<span style="color:{$1}">`。
 
@@ -129,16 +128,17 @@
 
 * `orderedListRule`（block）：把 `i./a./A./(1)/[1] + 空格` 开头的连续行解析为带 `data-marker` 的 `<ol>`，前缀剥离。
 
-### 5.4 安全化（DOMPurify）
+### 5.3 安全化（DOMPurify）
 
 * 白名单 `ALLOWED_TAGS`（p/br/strong/em/a/span/ul/ol/li）、`ALLOWED_ATTR`（href/data-marker/style）、
-  `ALLOWED_URI_REGEXP`（http/https/mailto）。
+  `ALLOWED_URI_REGEXP`（http/https/mailto）——**透传的** **`<strong>/<em>`** **在此被白名单约束**，
+  恶意标签（img/script/onclick 等）在此剥离。
 
 * Hook 收敛 `style`：仅允许纯 `color:#hex`，其余移除。
 
-* 最后剥离所有残留 ZWSP（ZWSP 仅作分隔信号，不进入最终 HTML）。
+* 剥离残留零宽空格（U+200B，兼容旧数据）。
 
-### 5.5 有序列表编号归一
+### 5.4 有序列表编号归一
 
 `mdBlock.render` 后 `.replace(/<ol start="\d+">/g, '<ol>')`，忽略手写 `start`，编号统一从 1 走 CSS counter。
 
@@ -175,14 +175,21 @@
 
 * 删除 `frontend/_paginationCore.mjs` —— paginationCore.ts 的临时 bundle 导出，无引用。
 
+* 删除 `markdown.ts` 的 `stripHistoricalZwsp` —— 早期为旧版 ZWSP 填充格式做的历史数据兼容，删除后功能等价。
+
+* 删除 `emphasizeBoundaryZwsp`/`INLINE_FORMAT_TAGS`（相邻定界符 ZWSP 分隔）—— 标签方案下不再需要。
+
+* 删除 `looseEmphasisTokenize` + `separateConsecutiveDelims`，并禁用强调定界符规则 —— 核心改为"保留标签"：
+  强调只认 `<strong>/<em>` 标签，`**`/`*` 定界符引擎整体移除（不再处理定界符强调）。
+
 * 确认 markdown.ts / RichTextField.tsx 内不存在未使用的导出 / 冗余分支（逐个 grep 核验通过）。
 
 ## 9. 已知边界（非本次修复范围）
 
-* **三层以上交替嵌套**（如"粗→斜→粗→斜"连续交替形成的 `**a*b**c**d*e**`）在 CommonMark 参考实现
-  中同样存在歧义，属规范固有死区。真实编辑器的一次粗/斜交叉最多产生相邻或双层，已被 §3.3 + §5.1
-  覆盖。对三层特例，唯一彻底规避手段是改用私有内联标签（不作为默认方案）。
+* **强调交叉死区已彻底解决**：编辑区任意 `<strong>/<em>` 交叉嵌套树，序列化保留标签、渲染端
+  html:true 透传，简历与编辑区完全一致。**纯标签方案下** **`**`/`*`** **定界符不再解析**（字面显示），
+  若将来需要支持手动粘贴 markdown 强调，需另加定界符解析分支。
 
-* Go 侧 `pkg/resume/template_render/markdown.go`（goldmark）为遗留渲染路径，前端渲染不调用；其
-  已对齐 ZWSP 剥离，但不复现前端对历史脏数据（定界符贴标点）的修复，仅服务旧链路兼容。
+* Go 侧**无任何渲染逻辑**（goldmark / template\_render 均已删除），所有渲染（主页预览、编辑预览、
+  导出）全部在**前端**经 `templateEngine` → `markdownToHtml` 完成。
 
