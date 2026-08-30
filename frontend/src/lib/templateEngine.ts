@@ -33,7 +33,6 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
     },
     i18n: (lang, zhKey, enKey) => lang === 'zh-CN' ? zhKey : enKey,
     nl2br: (s) => escapeHtml(s).replace(/\n/g, '<br>'),
-    // 受限子集 Markdown → HTML（block：段落+列表；inline：仅行内），输出已消毒。
     md: (s) => markdownToHtml(s, 'block'),
     mdInline: (s) => markdownToHtml(s, 'inline'),
     safeHTML: (s) => s,
