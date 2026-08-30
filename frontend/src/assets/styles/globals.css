@@ -14,7 +14,9 @@
   --titlebar-bg: #FAFAF9;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -34,13 +36,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #D6D3D1;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #A8A29E;
 }
@@ -49,67 +54,66 @@ body {
 .form-section {
   @apply bg-white rounded-xl border border-surface-200 p-4 mb-3;
 }
+
 .form-section-header {
   @apply flex items-center justify-between mb-3 pb-2.5 border-b border-surface-100;
 }
+
 .form-section-title {
   @apply text-xs font-semibold text-surface-500 uppercase tracking-wider;
 }
+
 .form-label {
   @apply text-xs font-medium text-surface-500 mb-1.5 block;
 }
+
 .form-input {
-  @apply w-full px-3 py-2 text-sm border border-surface-200 rounded-lg
-         bg-white placeholder:text-surface-300
-         focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400
-         transition-all duration-150;
+  @apply w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white placeholder:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition-all duration-150;
 }
+
 .form-textarea {
-  @apply w-full px-3 py-2 text-sm border border-surface-200 rounded-lg
-         bg-white placeholder:text-surface-300
-         focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400
-         transition-all duration-150 resize-none;
+  @apply w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white placeholder:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition-all duration-150 resize-none;
 }
+
 .form-textarea-resizable {
-  @apply w-full px-3 py-2 pr-7 text-sm border border-surface-200 rounded-lg
-         bg-white placeholder:text-surface-300
-         focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400
-         transition-all duration-150;
+  @apply w-full px-3 py-2 pr-7 text-sm border border-surface-200 rounded-lg bg-white placeholder:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition-all duration-150;
   resize: vertical;
   min-height: 64px;
 }
+
 .form-textarea-resizable::-webkit-resizer {
-  background: repeating-linear-gradient(
-    135deg,
-    transparent,
-    transparent 3px,
-    #d6d3d1 3px,
-    #d6d3d1 4px
-  );
+  background: repeating-linear-gradient(135deg,
+      transparent,
+      transparent 3px,
+      #d6d3d1 3px,
+      #d6d3d1 4px);
   border-radius: 0 0 8px 0;
 }
+
 .btn {
-  @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium
-         rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1
-         active:scale-[0.98];
+  @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 active:scale-[0.98];
 }
+
 .btn-primary {
-  @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500
-         shadow-sm shadow-primary-600/20;
+  @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm shadow-primary-600/20;
 }
+
 .btn-secondary {
-  @apply btn bg-white text-surface-700 border border-surface-200 hover:bg-surface-50
-         hover:border-surface-300 focus:ring-surface-300;
+  @apply btn bg-white text-surface-700 border border-surface-200 hover:bg-surface-50 hover:border-surface-300 focus:ring-surface-300;
 }
+
 .btn-ghost {
   @apply btn text-surface-500 hover:text-surface-700 hover:bg-surface-100 focus:ring-surface-300;
 }
+
 .btn-danger {
   @apply btn bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-300;
 }
+
 .btn-sm {
   @apply px-2.5 py-1.5 text-xs rounded-md;
 }
+
 .btn-xs {
   @apply px-2 py-1 text-xs rounded-md;
 }
@@ -120,6 +124,7 @@ body {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -132,13 +137,101 @@ body {
 
 /* Update badge pop animation（新版本角标弹性入场） */
 @keyframes badge-pop {
-  0% { transform: scale(0); }
-  60% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+
+  60% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .animate-badge-pop {
   animation: badge-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 富文本编辑器（RichTextField）内联格式视觉反馈 */
+/* 列表统一样式：所有 marker 用 li::before 绝对定位到 padding 区左端，
+   任何环境（编辑器/预览/PDF 打印）表现一致，左空隙不随样式变化。 */
+.rich-editor ul,
+.rich-editor ol {
+  list-style: none;
+  padding-left: 1.3em;
+}
+
+.rich-editor li {
+  position: relative;
+}
+
+/* 默认符号 / 编号（与自定义样式同一定位，左空隙一致） */
+.rich-editor ul>li::before {
+  content: '• ';
+  position: absolute;
+  left: -1.3em;
+}
+
+.rich-editor ol>li::before {
+  content: counter(list-item) '. ';
+  position: absolute;
+  left: -1.3em;
+}
+
+/* 无序变体 */
+.rich-editor ul[data-marker='point']>li::before {
+  content: '• ';
+}
+
+.rich-editor ul[data-marker='square']>li::before {
+  content: '■ ';
+}
+
+.rich-editor ul[data-marker='arrow']>li::before {
+  content: '→ ';
+}
+
+.rich-editor ul[data-marker='dash']>li::before {
+  content: '— ';
+}
+
+.rich-editor ul[data-marker='check']>li::before {
+  content: '✓ ';
+}
+
+/* 有序变体：编号由 counter 自动从 1 连续生成（删项自动递补） */
+.rich-editor ol[data-marker='paren']>li::before {
+  content: '(' counter(list-item) ') ';
+}
+
+.rich-editor ol[data-marker='bracket']>li::before {
+  content: '[' counter(list-item) '] ';
+}
+
+.rich-editor ol[data-marker='lower_roman']>li::before {
+  content: counter(list-item, lower-roman) '. ';
+}
+
+.rich-editor ol[data-marker='upper_roman']>li::before {
+  content: counter(list-item, upper-roman) '. ';
+}
+
+.rich-editor ol[data-marker='lower_alpha']>li::before {
+  content: counter(list-item, lower-alpha) '. ';
+}
+
+.rich-editor ol[data-marker='upper_alpha']>li::before {
+  content: counter(list-item, upper-alpha) '. ';
+}
+
+.rich-editor ol[data-marker='paren']>li::before {
+  content: '(' counter(list-item) ') ';
+}
+
+.rich-editor ol[data-marker='bracket']>li::before {
+  content: '[' counter(list-item) '] ';
 }
 
 /* Dialog animation */
@@ -147,6 +240,7 @@ body {
     opacity: 0;
     transform: scale(0.96) translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -158,8 +252,13 @@ body {
 }
 
 @keyframes dialog-overlay-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-dialog-overlay-enter {
@@ -172,6 +271,7 @@ body {
     opacity: 0;
     transform: translateY(-4px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -187,6 +287,7 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+
   to {
     opacity: 0;
     transform: translateY(-4px) scale(0.96);
@@ -203,6 +304,7 @@ body {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -215,9 +317,17 @@ body {
 
 /* Loading bar animation */
 @keyframes loading-bar {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .animate-loading-bar {
@@ -226,8 +336,13 @@ body {
 
 /* Shimmer for skeletons */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-shimmer {
@@ -242,6 +357,7 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -258,6 +374,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

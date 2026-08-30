@@ -8,22 +8,18 @@ import (
 
 	"gosume/pkg/resume/model"
 	"gosume/pkg/resume/repo"
-	"gosume/pkg/resume/template_export"
-	"gosume/pkg/resume/template_render"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// ResumeService 管理当前编辑中的简历数据与预览渲染。
+// ResumeService 管理当前编辑中的简历数据。
 //
 // 采用两层保存模型：内存态（current）与持久态（DB 记录）分离，
 // 只有用户显式保存过的简历才允许自动保存，避免意外落库。
 type ResumeService struct {
 	app            *application.App
 	resumeRepo     *repo.ResumeRepo
-	renderer       *template_render.HTMLRenderer
-	browserManager *template_export.BrowserManager
 	currentContent *model.Resume
 	currentID      string
 	persisted      bool // 当前简历是否至少成功持久化过一次
@@ -36,11 +32,9 @@ func (s *ResumeService) ServiceName() string {
 }
 
 // Inject 注入依赖。
-func (s *ResumeService) Inject(app *application.App, resumeStore *repo.ResumeRepo, renderer *template_render.HTMLRenderer, mgr *template_export.BrowserManager) {
+func (s *ResumeService) Inject(app *application.App, resumeStore *repo.ResumeRepo) {
 	s.app = app
 	s.resumeRepo = resumeStore
-	s.renderer = renderer
-	s.browserManager = mgr
 }
 
 // NewResume 仅在内存中创建一份空白简历。
@@ -119,23 +113,6 @@ func (s *ResumeService) InitResume(resume *model.Resume) *util.Response {
 	s.persisted = false
 	log.Infof("[resume_service] InitResume 成功加载简历 (仅在保存时创建)")
 	return util.DoRsp(util.SuccCode, "成功", nil)
-}
-
-// RenderPreview 把当前简历渲染为预览用的 HTML。
-func (s *ResumeService) RenderPreview() *util.Response {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if s.currentContent == nil {
-		log.Errorf("[resume_service] no resume loaded")
-		return util.DoRsp(util.ErrCode, "未加载简历", nil)
-	}
-	html, err := s.renderer.Render(s.currentContent)
-	if err != nil {
-		log.Errorf("[resume_service] RenderPreview: 渲染预览失败: %v", err)
-		return util.DoRsp(util.ErrCode, "渲染预览失败", nil)
-	}
-	return util.DoRsp(util.SuccCode, "成功", html)
 }
 
 // AutoSave 把当前状态写回 SQLite。

@@ -3,6 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import type { Education } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, GripVertical, EyeOff } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
+import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 
 export function EducationSection() {
@@ -176,10 +177,11 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
           <div className="flex items-center px-1 pt-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
           </div>
-          <input
-            className="form-input flex-1 text-sm"
+          <RichTextField
+            variant="inline"
+            minHeight={36}
             value={h}
-            onChange={(e) => updateHighlight(i, e.target.value)}
+            onChange={(v) => updateHighlight(i, v)}
             placeholder={`亮点 ${i + 1}`}
             maxLength={500}
           />

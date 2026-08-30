@@ -13,7 +13,6 @@ import (
 	"gosume/pkg/resume/service"
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_export"
-	"gosume/pkg/resume/template_render"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
@@ -59,8 +58,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		tempHTML = []byte{}
 	}
 
-	// 渲染与导出
-	htmlRenderer := template_render.NewHTMLRenderer(&templateAdapter{loader: templateLoader, unifiedHTML: string(tempHTML)})
+	// 导出
 	browserManager := template_export.NewBrowserManager()
 
 	// 项目文件存储
@@ -90,7 +88,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	app, window := createApp(assets, svcs)
 
 	// 依赖注入
-	resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
+	resumeSvc.Inject(app, resumeStore)
 	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 	exportSvc.Inject(app, browserManager)
 	systemSvc.Inject(app, userCfgMgr, window)
@@ -132,7 +130,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		log.Init(newDir, "Gosume", log.INFO, true)
 
 		// 重新注入依赖
-		resumeSvc.Inject(app, resumeStore, htmlRenderer, browserManager)
+		resumeSvc.Inject(app, resumeStore)
 		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
 		fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 

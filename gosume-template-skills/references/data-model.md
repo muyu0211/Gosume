@@ -149,7 +149,7 @@
 
 ## 隐藏（Hidden）字段
 
-所有条目类型都有可选的 `Hidden` 字段。**统一 HTML 不渲染 Hidden 守卫，隐藏由数据层统一过滤**（前端 `toGoShape` + 后端 `WithoutHidden`）：
+所有条目类型都有可选的 `Hidden` 字段。**统一 HTML 不渲染 Hidden 守卫，隐藏由前端数据层统一过滤**（`toGoShape`）：
 
 - 被隐藏的条目在渲染前就从数组移除，模板 CSS 完全无感知。
 - 区块内所有条目隐藏时，`{{if .Section}}` 使整个区块（含标题）不渲染。

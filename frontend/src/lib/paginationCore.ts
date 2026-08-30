@@ -275,18 +275,14 @@ function placeSections(ctx: PageCtx, cursor: Cursor, sections: HTMLElement[]): v
     if (pendingTitle) {
       const title = pendingTitle
       pendingTitle = null
-      // Keep the title on the same page as the first piece of the entry that
-      // follows it. Probe "title + first piece" together; if they don't fit the
-      // current page, move both to a fresh page. The entry's remaining pieces
-      // are then flowed via placeChildren, so only the tail may spill over.
-      const first = firstPiece(section)
-      if (blockFits(ctx, cursor, [title, first])) {
+      // 保持标题与其后条目的「整段」同页：探测「标题 + 整个条目」，放得下就整段放置
+      if (blockFits(ctx, cursor, [title, section])) {
         placeBlock(cursor, title)
-        placeChildren(ctx, cursor, section, 0)
+        placeSection(ctx, cursor, section, 0)
       } else {
         newPage(ctx, cursor)
         placeBlock(cursor, title)
-        placeChildren(ctx, cursor, section, 0)
+        placeSection(ctx, cursor, section, 0)
       }
       continue
     }
@@ -318,13 +314,6 @@ function blockFits(ctx: PageCtx, cursor: Cursor, blocks: HTMLElement[]): boolean
   const fits = !overflows(cursor.page)
   for (const c of clones) cursor.container.removeChild(c)
   return fits
-}
-
-/** Returns the first element child of a section, or the section itself if it
- *  is a leaf. Used to keep a heading attached to the start of an entry. */
-function firstPiece(section: HTMLElement): HTMLElement {
-  const first = section.firstElementChild as HTMLElement | null
-  return first ?? section
 }
 
 /**

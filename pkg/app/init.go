@@ -4,13 +4,9 @@ import (
 	"embed"
 	"fmt"
 	"gosume/pkg/log"
-	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/repo"
-	"gosume/pkg/resume/template"
-	"gosume/pkg/resume/template_render"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // --- 初始化辅助函数 ---
@@ -55,54 +51,4 @@ func initDevWatcher(templateStore *repo.TemplateRepo) chan struct{} {
 		return stopWatch
 	}
 	return nil
-}
-
-// --- 适配器 ---
-
-// templateAdapter 把 template.Loader 适配为 render.TemplateLoader 接口，
-// 并在加载时统一决定模板实际使用的 HTML。
-type templateAdapter struct {
-	loader      *template.Loader
-	unifiedHTML string
-}
-
-// effectiveHTML 返回模板实际使用的 HTML：已迁移到统一骨架（uses_unified_html）
-// 或模板无自带 HTML 时使用应用内置的 template.html。
-func (a *templateAdapter) effectiveHTML(t *dto.Template) string {
-	if t.Meta.UseUnifiedHTML || strings.TrimSpace(t.HTML) == "" {
-		return a.unifiedHTML
-	}
-	return t.HTML
-}
-
-// LoadByID 按 ID 加载模板并转换为渲染层所需的结构。
-func (a *templateAdapter) LoadByID(id string) (*template_render.Template, error) {
-	t, err := a.loader.LoadByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return &template_render.Template{
-		Meta:    template_render.TemplateMeta{ID: t.Meta.ID},
-		HTML:    a.effectiveHTML(t),
-		CSS:     t.CSS,
-		DirPath: t.DirPath,
-	}, nil
-}
-
-// LoadAll 加载全部模板并转换为渲染层所需的结构。
-func (a *templateAdapter) LoadAll() ([]*template_render.Template, error) {
-	templates, err := a.loader.LoadAll()
-	if err != nil {
-		return nil, err
-	}
-	var result []*template_render.Template
-	for _, t := range templates {
-		result = append(result, &template_render.Template{
-			Meta:    template_render.TemplateMeta{ID: t.Meta.ID},
-			HTML:    a.effectiveHTML(t),
-			CSS:     t.CSS,
-			DirPath: t.DirPath,
-		})
-	}
-	return result, nil
 }

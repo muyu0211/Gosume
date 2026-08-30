@@ -158,7 +158,7 @@ Gosume 支持的模板包主要包含**两个文件**：
 
 ### 7. 隐藏（Hidden）由数据层处理，模板不写守卫
 
-简历每个条目都有 `Hidden` 开关，但**统一 HTML 已移除 `{{if not .Hidden}}` 守卫**，隐藏改由数据层统一过滤（前端 `toGoShape` + 后端 `WithoutHidden`）。因此：
+简历每个条目都有 `Hidden` 开关，但**统一 HTML 已移除 `{{if not .Hidden}}` 守卫**，隐藏改由前端数据层统一过滤（`toGoShape`）。因此：
 
 - 模板 CSS **不需要、也不应该**写任何 Hidden 守卫——它们已经不存在于 HTML 中。
 - 区块级隐藏（所有条目隐藏时标题不显示）由统一 HTML 的 `{{if .Section}}` 天然实现——过滤后数组为空即不渲染整个区块。

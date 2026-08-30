@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { Plus, Trash2, ChevronDown, ChevronRight, Award, GripVertical, EyeOff } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
+import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 
 export function AwardSection() {
@@ -103,8 +104,7 @@ export function AwardSection() {
                   </div>
                   <div>
                     <label className="form-label">说明</label>
-                    <textarea className="form-textarea-resizable" rows={2} value={award.summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value })} placeholder="简要描述获奖原因或背景" maxLength={500} />
-                    <p className="text-[10px] text-surface-400 mt-0.5">{(award.summary || '').length} / 500 字</p>
+                    <RichTextField value={award.summary || ''} onChange={(v) => updateItem(idx, { summary: v })} placeholder="简要描述获奖原因或背景" maxLength={500} />
                   </div>
                 </div>
               )}

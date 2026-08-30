@@ -3,6 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import type { Job, Project, Internship } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical, EyeOff } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
+import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { ExtrasEditor } from './ExtrasEditor'
 
@@ -176,8 +177,12 @@ export function ExperienceSection({ type, title }: Props) {
                       </div>
                       <div>
                         <label className="form-label">工作概述</label>
-                        <textarea className="form-textarea-resizable h-16" value={(item as Job).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Job>)} placeholder="工作经历概述..." maxLength={500} />
-                        <p className="text-[10px] text-surface-400 mt-0.5">{((item as Job).summary || '').length} / 500 字</p>
+                        <RichTextField
+                          value={(item as Job).summary || ''}
+                          onChange={(v) => updateItem(idx, { summary: v } as Partial<Job>)}
+                          placeholder="工作经历概述..."
+                          maxLength={500}
+                        />
                       </div>
                     </>
                   ) : (
@@ -220,8 +225,12 @@ export function ExperienceSection({ type, title }: Props) {
                       </label>
                       <div>
                         <label className="form-label">项目简述</label>
-                        <textarea className="form-textarea-resizable h-16" value={(item as Project).summary || ''} onChange={(e) => updateItem(idx, { summary: e.target.value } as Partial<Project>)} placeholder="项目简要描述..." maxLength={500} />
-                        <p className="text-[10px] text-surface-400 mt-0.5">{((item as Project).summary || '').length} / 500 字</p>
+                        <RichTextField
+                          value={(item as Project).summary || ''}
+                          onChange={(v) => updateItem(idx, { summary: v } as Partial<Project>)}
+                          placeholder="项目简要描述..."
+                          maxLength={500}
+                        />
                       </div>
                     </>
                   )}
@@ -286,14 +295,15 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
           <div className="flex items-center px-1 pt-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
           </div>
-          <input
-            className="form-input flex-1 text-sm"
+          <RichTextField
+            variant="inline"
+            minHeight={36}
             value={h}
-            onChange={(e) => updateHighlight(i, e.target.value)}
+            onChange={(v) => updateHighlight(i, v)}
             placeholder={`亮点 ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-surface-400 hover:text-red-500">
+          <button onClick={() => removeHighlight(i)} className="p-1 text-surface-400 hover:text-red-500 flex-shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

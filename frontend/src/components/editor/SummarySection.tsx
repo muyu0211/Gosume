@@ -1,5 +1,6 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, EyeOff } from 'lucide-react'
+import { RichTextField } from '../ui/RichTextField'
 
 export function SummarySection() {
   const resume = useResumeStore((s) => s.resume)
@@ -36,14 +37,13 @@ export function SummarySection() {
       </div>
       <div>
         <label className="form-label">求职意向 / 个人简介</label>
-        <textarea
-          className="form-textarea-resizable h-24"
+        <RichTextField
           value={summary?.summary || ''}
-          onChange={(e) => updateField('personal_summary.summary', e.target.value)}
+          onChange={(v) => updateField('personal_summary.summary', v)}
           placeholder="简要描述你的职业背景、核心能力和求职目标..."
           maxLength={1000}
+          minHeight={96}
         />
-        <p className="text-[10px] text-surface-400 mt-1">{(summary?.summary || '').length} / 1000 字</p>
       </div>
     </div>
   )

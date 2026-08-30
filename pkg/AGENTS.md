@@ -123,7 +123,7 @@ Gosume简历部分中，简历 HTML 由应用内置的统一 HTML（`templates/t
 
 - `templates/template.html` 是唯一的简历 HTML（Go html/template 语法），包含全部数据区块（personal / education / internships / jobs / projects / awards / skills / languages / summary / custom），渲染顺序固定。它输出稳定的 DOM 契约（`.resume-page > .resume-container > .r-header + .r-main`），与前端分页子系统 `paginationCore.ts` 对齐。
 - 模板加载：`template.Loader` 从 `TemplateStore`（内置 `templates/` 目录 + SQLite 用户模板）加载；`GetTemplateContent` 返回模板的 HTML（`effectiveHTML`：`uses_unified_html` 或空 HTML 时用统一 HTML）+ CSS + 纸张规格（`paper_size`/`orientation`，供前端分页与导出使用）。
-- 隐藏（Hidden）由数据层处理：后端渲染前用 `model.WithoutHidden()` 过滤隐藏条目，统一 HTML 不写 Hidden 守卫（前端 `toGoShape` 语义一致）。
+- 隐藏（Hidden）由前端数据层处理：渲染前用 `toGoShape` 过滤隐藏条目，统一 HTML 不写 Hidden 守卫。
 - 模板元数据定义在 `pkg/template/loader.go`（`Meta` 结构），字段规范见 `templates/AGENTS.md`。
 
 ### 模板导入
