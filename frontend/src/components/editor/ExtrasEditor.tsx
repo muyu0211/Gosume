@@ -1,5 +1,6 @@
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { RichTextField } from '../ui/RichTextField'
 import type { ExtraField } from '../../types/resume'
 
 interface Props {
@@ -68,13 +69,16 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             placeholder="字段名"
             maxLength={30}
           />
-          <textarea
-            className="form-textarea-resizable text-sm !flex-1 !w-auto !min-w-0 h-[2.25rem] min-h-[2.25rem]"
+          <RichTextField
+            className="min-w-0 flex-1"
+            variant="inline"
+            toolbar="focus"
+            minHeight={36}
+            showCount={false}
             value={extra.value}
-            onChange={(e) => updateExtra(i, { value: e.target.value })}
-            placeholder="字段值（可多行）"
-            maxLength={500}
-            rows={1}
+            onChange={(v) => updateExtra(i, { value: v })}
+            placeholder="字段值（如：React, Go，可加粗）"
+            maxLength={300}
           />
           <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-surface-400 hover:text-red-500 flex-shrink-0" title="删除">
             <Trash2 className="w-3.5 h-3.5" />

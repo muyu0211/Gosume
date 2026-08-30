@@ -1,10 +1,110 @@
 <!DOCTYPE html>
 <html lang="{{.Meta.Language}}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Personal.FullName}} - 简历</title>
     <style>{{template "styles.css" .}}</style>
+
+    <style>
+        /* markdown 生成的列表落在 .exp-summary/.summary/.extra-value 内，模板的
+         .highlights 样式不命中；这里统一收敛列表样式：marker 用 li::before 绝对
+         定位到 padding 区左端，任何环境左空隙一致（margin 遵循"只用 margin-bottom"）。 */
+        .exp-summary ul,
+        .summary ul,
+        .extra-value ul,
+        .exp-summary ol,
+        .summary ol,
+        .extra-value ol {
+            list-style: none;
+            padding-left: 1.3em;
+        }
+
+        .exp-summary li,
+        .summary li,
+        .extra-value li {
+            position: relative;
+        }
+
+        .exp-summary ul>li::before,
+        .summary ul>li::before,
+        .extra-value ul>li::before {
+            content: '•';
+            position: absolute;
+            left: -1.3em;
+        }
+
+        .exp-summary ol>li::before,
+        .summary ol>li::before,
+        .extra-value ol>li::before {
+            content: counter(list-item) '.';
+            position: absolute;
+            left: -1.3em;
+        } 
+
+        /* 无序变体 */
+        .exp-summary ul[data-marker='square']>li::before,
+        .summary ul[data-marker='square']>li::before,
+        .extra-value ul[data-marker='square']>li::before {
+            content: '■';
+        }
+
+        .exp-summary ul[data-marker='arrow']>li::before,
+        .summary ul[data-marker='arrow']>li::before,
+        .extra-value ul[data-marker='arrow']>li::before {
+            content: '→';
+        }
+
+        .exp-summary ul[data-marker='dash']>li::before,
+        .summary ul[data-marker='dash']>li::before,
+        .extra-value ul[data-marker='dash']>li::before {
+            content: '—';
+        }
+
+        .exp-summary ul[data-marker='check']>li::before,
+        .summary ul[data-marker='check']>li::before,
+        .extra-value ul[data-marker='check']>li::before {
+            content: '✓';
+        }
+
+        /* 有序变体：编号由 counter 自动从 1 连续生成（删项自动递补） */
+        .exp-summary ol[data-marker='lower_roman']>li::before,
+        .summary ol[data-marker='lower_roman']>li::before,
+        .extra-value ol[data-marker='lower_roman']>li::before {
+            content: counter(list-item, lower-roman) '.';
+        }
+
+        .exp-summary ol[data-marker='upper_roman']>li::before,
+        .summary ol[data-marker='upper_roman']>li::before,
+        .extra-value ol[data-marker='upper_roman']>li::before {
+            content: counter(list-item, upper-roman) '.';
+        }
+
+        .exp-summary ol[data-marker='lower_alpha']>li::before,
+        .summary ol[data-marker='lower_alpha']>li::before,
+        .extra-value ol[data-marker='lower_alpha']>li::before {
+            content: counter(list-item, lower-alpha) '.';
+        }
+
+        .exp-summary ol[data-marker='upper_alpha']>li::before,
+        .summary ol[data-marker='upper_alpha']>li::before,
+        .extra-value ol[data-marker='upper_alpha']>li::before {
+            content: counter(list-item, upper-alpha) '.';
+        }
+
+        .exp-summary ol[data-marker='paren']>li::before,
+        .summary ol[data-marker='paren']>li::before,
+        .extra-value ol[data-marker='paren']>li::before {
+            content: '(' counter(list-item) ')';
+        }
+
+        .exp-summary ol[data-marker='bracket']>li::before,
+        .summary ol[data-marker='bracket']>li::before,
+        .extra-value ol[data-marker='bracket']>li::before {
+            content: '[' counter(list-item) ']';
+        }
+    </style>
 </head>
 <!--
   统一简历 HTML（Gosume 一期改造 · 优化版：header/aside 合并）
@@ -35,10 +135,11 @@
   双栏模式下 .r-header 即持久侧栏（续页重复空壳），单栏模式下为页 1 前置块。
 
   头像：仅在简历含头像数据时渲染，位置由 CSS 决定（features.avatar 为元数据，不参与渲染）。
-  隐藏（Hidden）由数据层负责（前端 toGoShape / 后端 model.WithoutHidden），本 HTML 不写 Hidden 守卫。
+  隐藏（Hidden）由前端数据层负责（toGoShape），本 HTML 不写 Hidden 守卫。
   语法约束：仅使用前后端渲染引擎共同支持的表达式（if/range + 简单路径 +
     not/and/or/eq/ne + dateRange/skillLevel/i18n/nl2br/safeHTML/safeURL/defaultVal）。
 -->
+
 <body>
     <div class="resume-page">
         <div class="resume-container">
@@ -59,21 +160,36 @@
 
                 <div class="r-contact">
                     <div class="r-subtitle">{{i18n .Meta.Language "个人信息" "Personal"}}</div>
-                    {{if .Personal.Email}}<div class="r-contact-item"><span class="r-contact-label">{{i18n .Meta.Language "邮箱" "Email"}}</span><span class="r-contact-value">{{.Personal.Email}}</span></div>{{end}}
-                    {{if .Personal.Phone}}<div class="r-contact-item"><span class="r-contact-label">{{i18n .Meta.Language "手机" "Phone"}}</span><span class="r-contact-value">{{.Personal.Phone}}</span></div>{{end}}
-                    {{if .Personal.Wechat}}<div class="r-contact-item"><span class="r-contact-label">{{i18n .Meta.Language "微信" "WeChat"}}</span><span class="r-contact-value">{{.Personal.Wechat}}</span></div>{{end}}
-                    {{if .Personal.QQ}}<div class="r-contact-item"><span class="r-contact-label">QQ</span><span class="r-contact-value">{{.Personal.QQ}}</span></div>{{end}}
-                    {{if .Personal.Location}}<div class="r-contact-item"><span class="r-contact-label">{{i18n .Meta.Language "城市" "Location"}}</span><span class="r-contact-value">{{.Personal.Location}}</span></div>{{end}}
-                    {{if .Personal.Website}}<div class="r-contact-item"><span class="r-contact-label">{{i18n .Meta.Language "网站" "Website"}}</span><span class="r-contact-value">{{.Personal.Website}}</span></div>{{end}}
-                    {{if .Personal.GitHub}}<div class="r-contact-item"><span class="r-contact-label">GitHub</span><span class="r-contact-value">{{.Personal.GitHub}}</span></div>{{end}}
-                    {{if .Personal.LinkedIn}}<div class="r-contact-item"><span class="r-contact-label">LinkedIn</span><span class="r-contact-value">{{.Personal.LinkedIn}}</span></div>{{end}}
+                    {{if .Personal.Email}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "邮箱" "Email"}}</span><span class="r-contact-value">{{.Personal.Email}}</span>
+                    </div>{{end}}
+                    {{if .Personal.Phone}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "手机" "Phone"}}</span><span class="r-contact-value">{{.Personal.Phone}}</span>
+                    </div>{{end}}
+                    {{if .Personal.Wechat}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "微信" "WeChat"}}</span><span
+                            class="r-contact-value">{{.Personal.Wechat}}</span></div>{{end}}
+                    {{if .Personal.QQ}}<div class="r-contact-item"><span class="r-contact-label">QQ</span><span
+                            class="r-contact-value">{{.Personal.QQ}}</span></div>{{end}}
+                    {{if .Personal.Location}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "城市" "Location"}}</span><span
+                            class="r-contact-value">{{.Personal.Location}}</span></div>{{end}}
+                    {{if .Personal.Website}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "网站" "Website"}}</span><span
+                            class="r-contact-value">{{.Personal.Website}}</span></div>{{end}}
+                    {{if .Personal.GitHub}}<div class="r-contact-item"><span class="r-contact-label">GitHub</span><span
+                            class="r-contact-value">{{.Personal.GitHub}}</span></div>{{end}}
+                    {{if .Personal.LinkedIn}}<div class="r-contact-item"><span
+                            class="r-contact-label">LinkedIn</span><span
+                            class="r-contact-value">{{.Personal.LinkedIn}}</span></div>{{end}}
                 </div>
 
                 {{if .Languages}}
                 <div class="r-langs">
                     <div class="r-subtitle">{{i18n .Meta.Language "语言" "Languages"}}</div>
                     {{range .Languages}}
-                    <div class="r-lang" data-id="{{.ID}}">{{.Name}}{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}} · {{.Proficiency}}{{end}}</div>
+                    <div class="r-lang" data-id="{{.ID}}">{{.Name}}{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}}
+                        · {{.Proficiency}}{{end}}</div>
                     {{end}}
                 </div>
                 {{end}}
@@ -89,14 +205,16 @@
                 {{range .Education}}
                 <div class="education-item" data-id="{{.ID}}">
                     <div class="edu-header">
-                        <div class="edu-school">{{.School}}{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} · {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
+                        <div class="edu-school">{{.School}}{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} ·
+                            {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
                     </div>
                     {{if .Minor}}<div class="edu-detail">{{i18n $.Meta.Language "辅修：" "Minor: "}}{{.Minor}}</div>{{end}}
-                    {{if .Courses}}<div class="edu-courses">{{i18n $.Meta.Language "主修课程：" "Courses: "}}{{.Courses}}</div>{{end}}
+                    {{if .Courses}}<div class="edu-courses">{{i18n $.Meta.Language "主修课程：" "Courses: "}}{{.Courses}}
+                    </div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
-                        {{range .Highlights}}<li>{{.}}</li>{{end}}
+                        {{range .Highlights}}<li>{{mdInline .}}</li>{{end}}
                     </ul>
                     {{end}}
                 </div>
@@ -109,14 +227,15 @@
                 {{range .Internships}}
                 <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
-                        <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> · {{.Title}}</span>{{end}}</div>
+                        <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> ·
+                                {{.Title}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
                     </div>
                     {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                    {{if .Summary}}<div class="exp-summary">{{md .Summary}}</div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
-                        {{range .Highlights}}<li>{{.}}</li>{{end}}
+                        {{range .Highlights}}<li>{{mdInline .}}</li>{{end}}
                     </ul>
                     {{end}}
                 </div>
@@ -129,14 +248,15 @@
                 {{range .Jobs}}
                 <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
-                        <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> · {{.Title}}</span>{{end}}</div>
+                        <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> ·
+                                {{.Title}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate .IsCurrent}}</span>{{end}}
                     </div>
                     {{if .Location}}<div class="exp-location">{{.Location}}</div>{{end}}
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                    {{if .Summary}}<div class="exp-summary">{{md .Summary}}</div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
-                        {{range .Highlights}}<li>{{.}}</li>{{end}}
+                        {{range .Highlights}}<li>{{mdInline .}}</li>{{end}}
                     </ul>
                     {{end}}
                 </div>
@@ -149,18 +269,20 @@
                 {{range .Projects}}
                 <div class="experience-item" data-id="{{.ID}}">
                     <div class="exp-header">
-                        <div><span class="company">{{.Name}}</span>{{if .Role}}<span class="title"> · {{.Role}}</span>{{end}}</div>
+                        <div><span class="company">{{.Name}}</span>{{if .Role}}<span class="title"> ·
+                                {{.Role}}</span>{{end}}</div>
                         {{if .StartDate}}<span class="date">{{dateRange .StartDate .EndDate false}}</span>{{end}}
                     </div>
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                    {{if .Summary}}<div class="exp-summary">{{md .Summary}}</div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
-                        {{range .Highlights}}<li>{{.}}</li>{{end}}
+                        {{range .Highlights}}<li>{{mdInline .}}</li>{{end}}
                     </ul>
                     {{end}}
                     {{if .Extras}}
                     {{range .Extras}}
-                    <div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span class="extra-value">{{nl2br .Value}}</span></div>
+                    <div class="extra-row"><span class="extra-label">{{.Label}}:</span> <span class="extra-value">{{mdInline
+                            .Value}}</span></div>
                     {{end}}
                     {{end}}
                 </div>
@@ -177,7 +299,7 @@
                         {{if .Date}}<span class="date">{{.Date}}</span>{{end}}
                     </div>
                     {{if .Issuer}}<div class="award-issuer">{{.Issuer}}</div>{{end}}
-                    {{if .Summary}}<div class="exp-summary">{{.Summary}}</div>{{end}}
+                    {{if .Summary}}<div class="exp-summary">{{md .Summary}}</div>{{end}}
                 </div>
                 {{end}}
                 {{end}}
@@ -203,7 +325,7 @@
                 <!-- 个人总结（hidden 由数据层处理：summary 文本被清空则不渲染） -->
                 {{if .PersonalSummary.Summary}}
                 <div class="section-title">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
-                <div class="summary">{{nl2br .PersonalSummary.Summary}}</div>
+                <div class="summary">{{md .PersonalSummary.Summary}}</div>
                 {{end}}
 
                 <!-- 自定义区块 -->
@@ -214,10 +336,10 @@
                 <div class="custom-item" data-id="{{.ID}}">
                     <h4>{{.Title}}</h4>
                     {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
-                    {{if .Description}}<div class="exp-summary">{{nl2br .Description}}</div>{{end}}
+                    {{if .Description}}<div class="exp-summary">{{md .Description}}</div>{{end}}
                     {{if .Highlights}}
                     <ul class="highlights">
-                        {{range .Highlights}}<li>{{.}}</li>{{end}}
+                        {{range .Highlights}}<li>{{mdInline .}}</li>{{end}}
                     </ul>
                     {{end}}
                 </div>
@@ -229,4 +351,5 @@
         </div>
     </div>
 </body>
+
 </html>

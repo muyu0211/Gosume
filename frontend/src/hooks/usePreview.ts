@@ -17,7 +17,8 @@ export function usePreview() {
   const templateCacheRef = useRef<{ id: string; tmpl: TemplateSet } | null>(null)
 
   const getTemplate = useCallback(async (): Promise<TemplateSet> => {
-    const id = activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
+    const resume = useResumeStore.getState().resume
+    const id = resume?.meta?.template_id || activeTemplateId || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
     if (templateCacheRef.current?.id === id) return templateCacheRef.current.tmpl
     const tmpl = await loadTemplateContent(id)
     templateCacheRef.current = { id, tmpl }

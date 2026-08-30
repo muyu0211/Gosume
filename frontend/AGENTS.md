@@ -1,18 +1,26 @@
 # AGENTS.md
-## 前端 — React/TypeScript
 
+## 前端 — React/TypeScript
 
 ## 技术栈
 
-- **React 18**，全部使用函数组件 + hooks
-- **TypeScript** strict 模式，路径别名 `@/` → `src/`
-- **Vite 5**，配合 `@vitejs/plugin-react` 和 `@wailsio/runtime/plugins/vite`
-- **Tailwind CSS 3**，自定义主题配置在 `tailwind.config.ts`
-- **zustand 5** 状态管理（不使用 Redux）
-- **react-router-dom v7**，使用 HashRouter（适配 Wails 的 file:// 协议）
-- **react-hook-form 7** + **zod 4** 表单校验
-- **lucide-react** 图标库
-- **html2canvas** 客户端截图生成
+* **React 18**，全部使用函数组件 + hooks
+
+* **TypeScript** strict 模式，路径别名 `@/` → `src/`
+
+* **Vite 5**，配合 `@vitejs/plugin-react` 和 `@wailsio/runtime/plugins/vite`
+
+* **Tailwind CSS 3**，自定义主题配置在 `tailwind.config.ts`
+
+* **zustand 5** 状态管理（不使用 Redux）
+
+* **react-router-dom v7**，使用 HashRouter（适配 Wails 的 file:// 协议）
+
+* **react-hook-form 7** + **zod 4** 表单校验
+
+* **lucide-react** 图标库
+
+* **html2canvas** 客户端截图生成
 
 ## 架构模式
 
@@ -28,13 +36,13 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 服务名和方法名与 Go 端定义一一对应：
 
-| 服务 | 可调用方法 |
-|------|-----------|
-| `ResumeService` | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, RenderPreview, ListResumes, UpdateResumeMeta |
+| 服务                | 可调用方法                                                                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ResumeService`   | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, ListResumes, UpdateResumeMeta         |
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ValidateForTemplate |
-| `ExportService` | ExportHTML, ExportBatchHTML |
-| `FileService` | OpenFile, SaveFile, GetRecentFiles |
-| `SystemService` | GetAppInfo, GetConfig, SetConfig, SetDataDir, GetDefaultDataDir, OpenDataDir, GetSystemInfo |
+| `ExportService`   | ExportHTML, ExportBatchHTML                                                                                                                               |
+| `FileService`     | OpenFile, SaveFile, GetRecentFiles                                                                                                                        |
+| `SystemService`   | GetAppInfo, GetConfig, SetConfig, SetDataDir, GetDefaultDataDir, OpenDataDir, GetSystemInfo                                                               |
 
 在纯 Vite 开发模式下（无 Wails 运行时），`callService` 返回 `null`，各 store 有本地 fallback 逻辑。
 
@@ -74,11 +82,11 @@ if (result) {
 
 三个 zustand store：
 
-| Store | 职责 | 核心状态 |
-|-------|------|----------|
-| `resumeStore` | 简历数据与 CRUD | `resume`、`isDirty`、`currentId`、`resumeList`，以及所有数组操作辅助方法 |
-| `templateStore` | 模板列表 | `templates`、`selectedId`、`isLoading` |
-| `editorStore` | 编辑器 UI | 当前编辑区块、撤销栈、预览设置 |
+| Store           | 职责         | 核心状态                                                     |
+| --------------- | ---------- | -------------------------------------------------------- |
+| `resumeStore`   | 简历数据与 CRUD | `resume`、`isDirty`、`currentId`、`resumeList`，以及所有数组操作辅助方法 |
+| `templateStore` | 模板列表       | `templates`、`selectedId`、`isLoading`                     |
+| `editorStore`   | 编辑器 UI     | 当前编辑区块、撤销栈、预览设置                                          |
 
 ### 简历字段更新
 
@@ -101,27 +109,34 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 
 模板引擎（`lib/templateEngine.ts`）是 Go `html/template` 语法的前端实现，提供以下辅助函数与运算符：
 
-| 辅助函数 | 用途 |
-|----------|------|
-| `dateRange(start, end, isCurrent)` | 日期范围，在职/无结束日期显示"至今" |
-| `skillLevel(level)` | 输出 5 个 `.skill-dot`/`.skill-dot.filled` 等级点 |
-| `i18n(lang, zhKey, enKey)` | 根据简历语言切换中英文 |
-| `nl2br(s)` | 换行转 `<br>`，自动 HTML 转义 |
-| `safeHTML(s)` | 输出原始 HTML（仅限已确保安全的内容） |
-| `safeURL(s)` | 标记可信 URL（头像 data URI 不被转义） |
-| `defaultVal(fallback, val)` | 值为空时返回默认值 |
-| `not / and / or / eq / ne` | Go 布尔运算符（`{{if .Jobs}}` 等条件渲染） |
+| 辅助函数                               | 用途                                                 |
+| ---------------------------------- | -------------------------------------------------- |
+| `dateRange(start, end, isCurrent)` | 日期范围，在职/无结束日期显示"至今"                                |
+| `skillLevel(level)`                | 输出 5 个 `.skill-dot`/`.skill-dot.filled` 等级点        |
+| `i18n(lang, zhKey, enKey)`         | 根据简历语言切换中英文                                        |
+| `nl2br(s)`                         | 换行转 `<br>`，自动 HTML 转义                              |
+| `md(s)`                            | 受限子集 Markdown → HTML（段落 + 列表 + 行内，已消毒；单换行转 `<br>`） |
+| `mdInline(s)`                      | 受限子集 Markdown → 仅行内 HTML（亮点条目用，不产生块级标签）            |
+| `safeHTML(s)`                      | 输出原始 HTML（仅限已确保安全的内容）                              |
+| `safeURL(s)`                       | 标记可信 URL（头像 data URI 不被转义）                         |
+| `defaultVal(fallback, val)`        | 值为空时返回默认值                                          |
+| `not / and / or / eq / ne`         | Go 布尔运算符（`{{if .Jobs}}` 等条件渲染）                     |
 
 ### 分页与导出
 
 分页核心在 `lib/paginationCore.ts`，预览和导出共用，保证"所见即所得"：
 
-- `readPageStyle(doc)` 读取 `.resume-page` 的 padding/背景/纸张规格（`data-paper-size`），必须在调用方重绘 body 之前调用。
-- `paginateResume(doc, body, options)` 把 `.resume-container` 内容按纸张规格拆成多页 `.resume-page`，支持 `paged`（固定尺寸分页，预览/PDF）与 `continuous`（单页连续，PNG）两种模式。
-- 预览：`lib/paginate.ts` 的 `paginateContent(iframe)` 返回 `{ pageCount, paper }`，`PreviewPanel` 据此设预览宽度与页数。
-- 导出：`lib/exportHtml.ts` 的 `paginateHTMLString(previewHtml, mode)` 在隐藏 iframe 中分页后序列化，交给后端 `ExportService.ExportHTML` 转 PDF（paged）或 PNG（continuous）。
-- 纸张规格单一来源：`lib/paper.ts`（A4/Letter 的 mm/px/in 三套单位），所有尺寸换算走 `resolvePaper`/`DEFAULT_PAPER`，不再硬编码 A4 像素。
-- 分页前 `waitForDocumentReady(doc)` 等待字体与图片就绪，避免测量高度偏小导致分页错位。
+* `readPageStyle(doc)` 读取 `.resume-page` 的 padding/背景/纸张规格（`data-paper-size`），必须在调用方重绘 body 之前调用。
+
+* `paginateResume(doc, body, options)` 把 `.resume-container` 内容按纸张规格拆成多页 `.resume-page`，支持 `paged`（固定尺寸分页，预览/PDF）与 `continuous`（单页连续，PNG）两种模式。
+
+* 预览：`lib/paginate.ts` 的 `paginateContent(iframe)` 返回 `{ pageCount, paper }`，`PreviewPanel` 据此设预览宽度与页数。
+
+* 导出：`lib/exportHtml.ts` 的 `paginateHTMLString(previewHtml, mode)` 在隐藏 iframe 中分页后序列化，交给后端 `ExportService.ExportHTML` 转 PDF（paged）或 PNG（continuous）。
+
+* 纸张规格单一来源：`lib/paper.ts`（A4/Letter 的 mm/px/in 三套单位），所有尺寸换算走 `resolvePaper`/`DEFAULT_PAPER`，不再硬编码 A4 像素。
+
+* 分页前 `waitForDocumentReady(doc)` 等待字体与图片就绪，避免测量高度偏小导致分页错位。
 
 分页 DOM 契约（与 `templates/AGENTS.md` 对齐）：`.resume-page > .resume-container > .r-header + .r-main`；单栏 `.resume-container` 为 block，双栏为 grid（`.r-header` 即侧栏）。
 
@@ -129,14 +144,16 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 
 `LayoutPopover`（Toolbar 内）提供两项布局设置，均以**枚举 key**持久化（禁止存储具体像素/毫米值），前端负责枚举 → CSS 的映射与注入，后端只透传存储：
 
-| 字段 | 类型 | UI |
-|------|------|-----|
-| `meta.page_margin` | `MarginKey`（compact/narrow/normal/wide/comfortable） | 5 档滑块 |
-| `meta.section_spacing` | `SectionSpacingKey`（同上五档） | 5 档按钮 |
+| 字段                     | 类型                                                  | UI    |
+| ---------------------- | --------------------------------------------------- | ----- |
+| `meta.page_margin`     | `MarginKey`（compact/narrow/normal/wide/comfortable） | 5 档滑块 |
+| `meta.section_spacing` | `SectionSpacingKey`（同上五档）                           | 5 档按钮 |
 
-- 所有档位定义、默认值、枚举 → CSS 值映射集中在 `lib/layoutPresets.ts`；赋值必须引用导出的常量（`DEFAULT_MARGIN_KEY` 等），不得硬编码字符串
-- 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），`normal` 档不注入任何规则，保留模板原生节奏
-- 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"布局档位"小节，新增参与间距调整的组件需两侧同步
+* 所有档位定义、默认值、枚举 → CSS 值映射集中在 `lib/layoutPresets.ts`；赋值必须引用导出的常量（`DEFAULT_MARGIN_KEY` 等），不得硬编码字符串
+
+* 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），`normal` 档不注入任何规则，保留模板原生节奏
+
+* 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"布局档位"小节，新增参与间距调整的组件需两侧同步
 
 ## 开发规范
 
@@ -161,41 +178,60 @@ export function XxxDialog({ onClose }: Props) {
 
 统一行为（Modal 内置，无需重复实现）：
 
-- 三阶段过渡动画：entering → open → exiting（overlay 淡入淡出 + 卡片 opacity/scale/translate-y，200ms）；
-- overlay 点击关闭、Escape 关闭；
-- 卡片 `max-h-[90vh]` 居中，随窗口大小自适应；
-- 业务完成后主动关闭：`modalRef.current?.close()`（触发退场动画后再调 `onClose`）；父组件在 `onClose` 中卸载。
+* 三阶段过渡动画：entering → open → exiting（overlay 淡入淡出 + 卡片 opacity/scale/translate-y，200ms）；
+
+* overlay 点击关闭、Escape 关闭；
+
+* 卡片 `max-h-[90vh]` 居中，随窗口大小自适应；
+
+* 业务完成后主动关闭：`modalRef.current?.close()`（触发退场动画后再调 `onClose`）；父组件在 `onClose` 中卸载。
 
 尺寸与布局：
 
-- `width` 控制卡片宽度（默认 `w-[520px]`）；内容少用 `w-[480px]`，确认框用 `w-[380px]`；
-- 内容可能超高需要滚动时，二选一：
-  - **整体滚动**：`cardClassName="overflow-auto"`（如 ExportDialog）；
-  - **固定 Header/Footer**：`cardClassName="flex flex-col overflow-hidden"`，Header/Footer 加 `flex-shrink-0`、内容区加 `flex-1 overflow-auto`（如 ImportPreviewDialog）；
-- Header 行高默认 `px-6 py-3`，图标盒 `w-8 h-8 rounded-lg`、图标 `w-4 h-4`、标题 `text-base`（紧凑风格，新增对话框遵循）。
+* `width` 控制卡片宽度（默认 `w-[520px]`）；内容少用 `w-[480px]`，确认框用 `w-[380px]`；
+
+* 内容可能超高需要滚动时，二选一：
+
+  * **整体滚动**：`cardClassName="overflow-auto"`（如 ExportDialog）；
+
+  * **固定 Header/Footer**：`cardClassName="flex flex-col overflow-hidden"`，Header/Footer 加 `flex-shrink-0`、内容区加 `flex-1 overflow-auto`（如 ImportPreviewDialog）；
+
+* Header 行高默认 `px-6 py-3`，图标盒 `w-8 h-8 rounded-lg`、图标 `w-4 h-4`、标题 `text-base`（紧凑风格，新增对话框遵循）。
 
 次级确认框（覆盖在模态之上）：
 
-- 用 `ConfirmDialog`，勿自绘；其 overlay 统一 `bg-black/25 backdrop-blur-sm`（ConfirmDialog / UnsavedChangesDialog 已内置）；
-- 嵌套时靠 DOM 顺序自然叠层（同为 z-50），勿再叠加更高 z-index。
+* 用 `ConfirmDialog`，勿自绘；其 overlay 统一 `bg-black/25 backdrop-blur-sm`（ConfirmDialog / UnsavedChangesDialog 已内置）；
+
+* 嵌套时靠 DOM 顺序自然叠层（同为 z-50），勿再叠加更高 z-index。
 
 自定义浮层（下拉等）：
 
-- 浮层面板用 Portal 渲染到 `document.body` + `fixed` 定位 + `z-[9999]`，脱离模态 overflow 裁剪（参考 `components/ui/CustomSelect.tsx`）；
-- 面板内部滚动不应触发关闭；外部滚动时重算定位跟随触发元素。
+* 浮层面板用 Portal 渲染到 `document.body` + `fixed` 定位 + `z-[9999]`，脱离模态 overflow 裁剪（参考 `components/ui/CustomSelect.tsx`）；
+
+* 面板内部滚动不应触发关闭；外部滚动时重算定位跟随触发元素。
 
 ### 通用规则
-- 代码格式化工具：Prettier + ESLint
-- 禁止使用：any 类型、var 声明、硬编码魔法值（如直接写 100 代替 MAX_PAGE_SIZE）
+
+* 代码格式化工具：Prettier + ESLint
+
+* 禁止使用：any 类型、var 声明、硬编码魔法值（如直接写 100 代替 MAX\_PAGE\_SIZE）
 
 ### React+TS 专属规则
-- 组件风格：优先使用函数式组件（React.FC），禁止使用类组件
-- 类型定义：使用 interface 定义组件 props，简单场景可使用 type
-- 命名规范：
-    - 组件名：PascalCase（如 UserList）
-    - 函数名：camelCase（如 handleUserClick）
-    - 常量名：UPPER_CASE_SNAKE_CASE（如 MAX_PAGE_SIZE）
-- 示例：
+
+* 组件风格：优先使用函数式组件（React.FC），禁止使用类组件
+
+* 类型定义：使用 interface 定义组件 props，简单场景可使用 type
+
+* 命名规范：
+
+  * 组件名：PascalCase（如 UserList）
+
+  * 函数名：camelCase（如 handleUserClick）
+
+  * 常量名：UPPER\_CASE\_SNAKE\_CASE（如 MAX\_PAGE\_SIZE）
+
+* 示例：
+
 ```ts
 // 正确示例
 interface UserListProps {
@@ -218,11 +254,16 @@ export const UserList: React.FC<UserListProps> = ({ users }) => {
 ```
 
 ### 代码注释
-- 代码应有详细规范的注释；
-- 注释应符合社区主流注释风格：方法名，方法作用，方法参数等
+
+* 代码应有详细规范的注释；
+
+* 注释应符合社区主流注释风格：方法名，方法作用，方法参数等
 
 ### 禁止操作
-- 不得修改/删除：.env（密钥文件）、src/core（核心工具类）、migrations/（迁移文件）
-- 不得修改：package.json 中的依赖版本、CI/CD 流水线配置（.github/workflows/）
-- 不得提交：node_modules 目录、IDE 配置文件（.vscode/）、未完成的测试代码
+
+* 不得修改/删除：.env（密钥文件）、src/core（核心工具类）、migrations/（迁移文件）
+
+* 不得修改：package.json 中的依赖版本、CI/CD 流水线配置（.github/workflows/）
+
+* 不得提交：node\_modules 目录、IDE 配置文件（.vscode/）、未完成的测试代码
 

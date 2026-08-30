@@ -1,4 +1,5 @@
 import type { Resume } from '../types/resume'
+import { markdownToHtml } from './markdown'
 
 type TemplateFunc = (...args: string[]) => string
 
@@ -32,6 +33,8 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
     },
     i18n: (lang, zhKey, enKey) => lang === 'zh-CN' ? zhKey : enKey,
     nl2br: (s) => escapeHtml(s).replace(/\n/g, '<br>'),
+    md: (s) => markdownToHtml(s, 'block'),
+    mdInline: (s) => markdownToHtml(s, 'inline'),
     safeHTML: (s) => s,
     safeURL: (s) => s,
     defaultVal: (defaultVal, val) => val || defaultVal,
@@ -295,7 +298,8 @@ function evalExpr(
   }
 
   // Function call: funcName arg1 arg2 ...
-  const funcMatch = expr.match(/^(\w+)\s+(.+)$/)
+  // [\s\S] spans newlines so helper calls formatted across multiple lines
+  const funcMatch = expr.match(/^(\w+)\s+([\s\S]+)$/)
   if (funcMatch && funcs[funcMatch[1]]) {
     const rawArgs = parseArgs(funcMatch[2])
     const resolved = rawArgs.map((arg) => {
@@ -351,7 +355,9 @@ function parseArgs(argsStr: string): string[] {
     } else if (ch === '"' || ch === "'") {
       inString = true
       quoteChar = ch
-    } else if (ch === ' ') {
+    } else if (ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r') {
+      // 空白（含换行）作为参数分隔符——与 Go html/template 语义一致，
+      // 兼容模板被格式化后表达式内换行的情况（如 {{i18n ...\n"key"}}）。
       if (current) {
         args.push(current)
         current = ''
@@ -380,8 +386,9 @@ function parseExprArgs(
 ): unknown[] {
   const args: unknown[] = []
   let i = 0
+  const isWhitespace = (c: string) => c === ' ' || c === '\n' || c === '\t' || c === '\r'
   while (i < s.length) {
-    while (i < s.length && s[i] === ' ') i++
+    while (i < s.length && isWhitespace(s[i])) i++
     if (i >= s.length) break
     const ch = s[i]
     if (ch === '(') {
@@ -406,7 +413,7 @@ function parseExprArgs(
     } else {
       // Bare token: read until whitespace, paren, or quote, then evaluate.
       let j = i
-      while (j < s.length && s[j] !== ' ' && s[j] !== '(' && s[j] !== '"' && s[j] !== "'") j++
+      while (j < s.length && !isWhitespace(s[j]) && s[j] !== '(' && s[j] !== '"' && s[j] !== "'") j++
       args.push(evalExpr(s.slice(i, j), data, funcs))
       i = j
     }
@@ -476,8 +483,7 @@ function pascalToSnake(s: string): string {
 function toGoShape(resume: Resume): Record<string, unknown> {
   // Personal-summary hiding: when personal_summary.hidden is set, drop the
   // summary TEXT (not the whole block) so templates written as
-  // {{if .PersonalSummary.Summary}} respect the toggle. Mirrors the Go-side
-  // WithoutHidden behavior (nil/false = visible, true = clear Summary).
+  // {{if .PersonalSummary.Summary}} respect the toggle.
   const shaped: Resume = { ...resume }
   if (shaped.personal_summary?.hidden) {
     shaped.personal_summary = { ...shaped.personal_summary, summary: '' }
