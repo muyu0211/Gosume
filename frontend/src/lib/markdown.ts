@@ -14,8 +14,14 @@ import TurndownService from 'turndown'
  * 字体颜色为私有扩展：源语法 `[color:#rrggbb]文字[/color]` ↔ 渲染 `<span style="color:...">`，
  * 与列表 data-marker 同属"编辑器生成、渲染期转换"的受限语法，用户手写同样生效。
  *
- * 双链路约定（编辑器 + 模板渲染共用同一条 md 解析链，保证往返一致）：
- *   - markdownToHtml：Markdown 源 → 受限 HTML（single-line 软换行转 <br>，空行分段）
+ * 强调（加粗/斜体）采用"保留 HTML 标签"无损方案：
+ *   - 编辑区 DOM 里的 <strong>/<em> 交叉嵌套树，序列化时原样保留标签（不压成 `**`/`*`），
+ *     渲染端 html:true 透传 + DOMPurify 白名单，简历与编辑区所见完全一致（规避 CommonMark
+ *     对交叉强调的死区）；
+ *   - 手写/历史 `**`、`*` 定界符仍由宽松强调规则兜底解析，兼容手动输入。
+ *
+ * 双链路约定（编辑器 + 模板渲染共用同一条解析链，保证往返一致）：
+ *   - markdownToHtml：Markdown 源（含 <strong>/<em> 标签与 [color:]/列表私有语法）→ 受限 HTML
  *   - htmlToMarkdown：编辑区 HTML → Markdown 源（turndown 序列化，保存落库用）
  */
 
@@ -119,8 +125,10 @@ export function cssColorToHex(input: string): string | null {
   }
 }
 
-/** block 模式：段落 + 行内 + 列表；breaks 开启使单个换行输出 <br>。 */
-const mdBlock = new MarkdownIt({ html: false, breaks: true, linkify: false, typographer: false }).disable([
+/** block 模式：段落 + 行内 + 列表；breaks 开启使单个换行输出 <br>。
+ *  html 开启：编辑区强/斜序列化为 <strong>/<em> 标签直接透传，规避 CommonMark
+ *  对交叉强调嵌套的死区；HTML 由下方 DOMPurify 白名单（仅 strong/em/span color）兜底。 */
+const mdBlock = new MarkdownIt({ html: true, breaks: true, linkify: false, typographer: false }).disable([
   'image',
   'table',
   'blockquote',
@@ -133,10 +141,10 @@ const mdBlock = new MarkdownIt({ html: false, breaks: true, linkify: false, typo
   'html_block',
 ])
 
-/** inline 模式：仅行内规则（粗体/斜体/链接/颜色），不产生任何块级元素。 */
-const mdInline = new MarkdownIt({ html: false, breaks: false, linkify: false, typographer: false }).disable([
+/** inline 模式：仅行内规则（粗体/斜体/链接/颜色），不产生任何块级元素。
+ *  html_inline 保留：inline 字段（亮点/扩展值）同样需要透传编辑区 <strong>/<em> 标签。 */
+const mdInline = new MarkdownIt({ html: true, breaks: false, linkify: false, typographer: false }).disable([
   'image',
-  'html_inline',
   'backticks',
   'strikethrough',
 ])
@@ -169,10 +177,12 @@ function colorCloseRule(state: InlineRuleState, silent: boolean): boolean {
   return true
 }
 
-// 注册到两个引擎（block/inline 共用），放在 emphasis 前使 `[color:...]**粗**[/color]` 可内嵌加粗。
+// 注册到两个引擎（block/inline 共用），放在 emphasis 前使 `[color:...]<strong>粗</strong>[/color]` 可内嵌加粗。
 for (const md of [mdBlock, mdInline]) {
   md.inline.ruler.before('emphasis', 'color_open', colorOpenRule as any, { alt: ['['] })
   md.inline.ruler.before('emphasis', 'color_close', colorCloseRule as any, { alt: ['/'] })
+  // 纯标签方案：强调只接受 <strong>/<em> 标签，禁用 markdown 定界符强调（`**`/`*` 显示为字面）。
+  md.inline.ruler.disable('emphasis')
 }
 
 /**
@@ -375,64 +385,28 @@ turndown.addRule('md-color-span', {
 // 图片/表格/分割线等不可见或禁止的内容：连同内容一起丢弃。
 turndown.remove(['img', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'hr', 'video', 'iframe', 'script', 'style'])
 
-// 行内重在强调/加粗标签（渲染成 `**`/`*` 定界符）。相邻这类节点直接拼接会合并定界符，
-// 但编辑器 HTML 里它们是**同级相邻**（非嵌套），合并成的 run（如 `*a**b*`）在 CommonMark
-// 里无法还原为并列区间（规范固有死区，原生 markdown-it 同样错）。因此在序列化时给相邻
-// 边界补零宽空格（U+200B），把被合并的 run 拆回独立定界符；渲染端宽松强调可正确还原，
-// sanitize 时再统一剥离 ZWSP。ZWSP 同时是对"嵌套三连（`***a***`）"与"相邻三连（`**a***b*`）"
-// 的唯一可分辨信号（字符串层面本无二义，靠序列化端结构信息注入）。
-const INLINE_FORMAT_TAGS = new Set(['STRONG', 'B', 'EM', 'I'])
-/** 若 node 的后一个兄弟也是 强调/加粗 节点，则在序列化结尾补 ZWSP 分隔定界符。 */
-function emphasizeBoundaryZwsp(node: HTMLElement): string {
-  const next = node.nextElementSibling
-  return next && INLINE_FORMAT_TAGS.has(next.nodeName) ? '\u200b' : ''
-}
+// 行内强调/加粗：直接保留 <strong>/<em> HTML 标签序列化，而非压成 `**`/`*` 定界符。
+//
+// 为什么改为保留标签：Markdown 强调（CommonMark）只表达嵌套、不能可靠表达交叉/相邻强调，
+// 编辑器 DOM 里的任意 `<strong><em>` 交叉树一旦压成 `**`/`*` 字符串，渲染时无法还原（死区）。
+// 保留标签后，简历渲染端（html:true 透传 + DOMPurify 白名单）与编辑区所见完全一致，天然无损。
+// 颜色/列表/链接仍是 markdown 私有语法（[color:]、行首符号、[text](url)），与标签混合共存。
 turndown.addRule('strong', {
   filter: ['strong', 'b'],
   replacement: (content: string, node: HTMLElement) => {
     if (!content.trim()) return ''
-    return `**${content}**${emphasizeBoundaryZwsp(node)}`
+    return `<strong>${content}</strong>`
   },
 })
 turndown.addRule('emphasis', {
   filter: ['em', 'i'],
   replacement: (content: string, node: HTMLElement) => {
     if (!content.trim()) return ''
-    return `*${content}*${emphasizeBoundaryZwsp(node)}`
+    return `<em>${content}</em>`
   },
 })
 
-/**
- * 历史数据兼容：早期版本用零宽空格（U+200B）填充定界符内侧（如 `**\u200b内容\u200b**`）。
- *
- * 现在 ZWSP 承担"相邻样式定界符分隔符"的语义（见 markdown.ts 顶部双链路约定，以及
- * emphasizeBoundaryZwsp），因此**只能剥离定界符内侧**的历史 ZWSP，必须保留**两个相邻
- * `*` run 之间**的分隔 ZWSP（`**a**\u200b**b**`），否则会把正确的相邻格式退化成合并 run
- * 再次触发 CommonMark 死区。判定：ZWSP 前后都是 `*`（夹在两个 run 之间）→ 保留，否则剥离。
- */
-function stripHistoricalZwsp(src: string): string {
-  return src.replace(/\u200b/g, (zw, idx) => {
-    const prev = src[idx - 1]
-    const next = src[idx + 1]
-    return prev === '*' && next === '*' ? zw : ''
-  })
-}
-
-/**
- * 隔离连续 `*` run（>=4）：历史数据中相邻 strong/strong 序列化会把定界符拼成
- * `****`（`<strong>a</strong><strong>b</strong>` → `**a****b**`）。渲染前把 ≥4 连的 run
- * 按每 2 个分隔插入 ZWSP（`****`→`**⟦ZW⟧**`），交给原生强调按独立 run 配对。
- */
-function separateConsecutiveDelims(src: string): string {
-  return src.replace(/\*+/g, (run) => {
-    if (run.length < 4) return run
-    const chunks: string[] = []
-    for (let i = 0; i < run.length; i += 2) chunks.push(run.slice(i, i + 2))
-    return chunks.join('\u200b')
-  })
-}
-
-/** 净化受限子集 HTML（并剥离残留的零宽空格——ZWSP 仅作分隔信号，最终输出不保留）。 */
+/** 净化受限子集 HTML，并剥离可能残留的零宽空格（U+200B，兼容旧数据）。 */
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR, ALLOWED_URI_REGEXP }).replace(/\u200b/g, '')
 }
@@ -440,14 +414,13 @@ function sanitizeHtml(html: string): string {
 /** 把 Markdown 源渲染为受限子集的安全 HTML（模板渲染与编辑器回显共用）。 */
 export function markdownToHtml(src: string, mode: MarkdownMode): string {
   if (!src) return ''
-  // 强调用 markdown-it 原生规则（CommonMark）。相邻样式由序列化端用 ZWSP 分隔解决；
-  // 这里只剥离历史定界符内侧 ZWSP，再把历史 ≥4 连 run 分隔，保留 run 间 ZWSP 让原生正确配对。
-  const fixed = separateConsecutiveDelims(stripHistoricalZwsp(src))
+  // 纯标签方案：强/斜通过 <strong>/<em> 标签透传；[color:]、列表符号、[text](url) 走私有语法。
+  // 强调定界符（`**`/`*`）已在注册处禁用，保持字面显示。
   if (mode === 'inline') {
-    return sanitizeHtml(mdInline.renderInline(fixed).replace(/\n/g, '<br>'))
+    return sanitizeHtml(mdInline.renderInline(src).replace(/\n/g, '<br>'))
   }
   const html = mdBlock
-    .render(fixed)
+    .render(src)
     // 有序列表编号归一：忽略源中的 start（如手写 3.），编号一律从 1 连续。
     .replace(/<ol start="\d+">/g, '<ol>')
   return sanitizeHtml(html)

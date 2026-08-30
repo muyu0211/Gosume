@@ -226,14 +226,6 @@ body {
   content: counter(list-item, upper-alpha) '. ';
 }
 
-.rich-editor ol[data-marker='paren']>li::before {
-  content: '(' counter(list-item) ') ';
-}
-
-.rich-editor ol[data-marker='bracket']>li::before {
-  content: '[' counter(list-item) '] ';
-}
-
 /* Dialog animation */
 @keyframes dialog-enter {
   from {
