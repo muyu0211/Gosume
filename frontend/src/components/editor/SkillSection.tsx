@@ -143,8 +143,8 @@ export function SkillSection() {
               </button>
             </div>
           </div>
-          )
-        })}
+        )
+      })}
 
         {items.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">
