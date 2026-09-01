@@ -79,7 +79,7 @@ export function SkillSection() {
               >
                 <input
                   type="checkbox"
-                  className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
                   checked={!isGroupHidden}
                   onChange={(e) => updateGroup(gIdx, { hidden: !e.target.checked })}
                 />
@@ -122,7 +122,7 @@ export function SkillSection() {
                   >
                     <input
                       type="checkbox"
-                      className="w-3 h-3 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                      className="w-3 h-3 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
                       checked={!isSkillHidden}
                       onChange={(e) => {
                         const newItems = [...group.items]

@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { useTemplateStore } from '../../stores/templateStore'
+import { useLayoutStore } from '../../stores/layoutStore'
 import { paginateContent } from '../../lib/paginate'
 import { DEFAULT_PAPER, type PaperSpec } from '../../lib/paper'
 import { waitForDocumentReady } from '../../lib/paginationCore'
@@ -46,11 +47,12 @@ export function PreviewPanel() {
     const doc = iframe.contentDocument
     if (!doc) return
 
-    // 四种更新路径：切模板（全量重写）、切布局档位（只改 style）、改头像尺寸（只改 style）、
+    // 四种更新路径：切模板（全量重写）、全局布局变化（只改 style）、改头像尺寸（只改 style）、
     // 纯内容编辑（diff）。head/CSS 只在切模板时重写，布局/头像走 style 增量更新。
     const resume = useResumeStore.getState().resume
     const templateId = useTemplateStore.getState().activeTemplateId
-    const layoutKey = [resume?.meta?.page_margin ?? '', resume?.meta?.section_spacing ?? ''].join('|')
+    const l = useLayoutStore.getState().layout
+    const layoutKey = [l.pageMarginY, l.pageMarginX, l.spacingSection, l.spacingItem, l.spacingDetail].join('|')
     const avatarKey = [String(resume?.personal?.avatar_width ?? ''), String(resume?.personal?.avatar_height ?? '')].join('|')
 
     const isTemplateChange = lastTemplateIdRef.current !== templateId

@@ -1,8 +1,3 @@
-import {
-  DEFAULT_MARGIN_KEY,
-  DEFAULT_SECTION_SPACING_KEY,
-} from '../lib/layoutPresets'
-
 export interface ResumeListItem {
   id: string
   name: string
@@ -50,10 +45,6 @@ export interface ResumeMeta {
   language: string
   /** Base font size in pt; assign via FONT_SIZE_LEVELS (see above). */
   font_size: number
-  /** Page margin tier key; the frontend maps it to CSS values per component type. */
-  page_margin: string
-  /** Section spacing tier key. */
-  section_spacing: string
   created_at: string
   updated_at: string
   export_count: number
@@ -216,8 +207,6 @@ export function createEmptyResume(templateId: string): Resume {
       template_id: templateId,
       language: 'zh-CN',
       font_size: DEFAULT_FONT_SIZE,
-      page_margin: DEFAULT_MARGIN_KEY,
-      section_spacing: DEFAULT_SECTION_SPACING_KEY,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       export_count: 0,

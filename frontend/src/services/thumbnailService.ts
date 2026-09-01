@@ -1,7 +1,6 @@
 import html2canvas from 'html2canvas'
 import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from './templateService'
-import { DEFAULT_MARGIN_KEY, DEFAULT_SECTION_SPACING_KEY } from '../lib/layoutPresets'
 import { DEFAULT_FONT_SIZE } from '../types/resume'
 import { resolvePaper } from '../lib/paper'
 import type { Resume } from '../types/resume'
@@ -16,8 +15,6 @@ const SAMPLE_DATA: Resume = {
     template_id: '',
     language: 'zh-CN',
     font_size: DEFAULT_FONT_SIZE,
-    page_margin: DEFAULT_MARGIN_KEY,
-    section_spacing: DEFAULT_SECTION_SPACING_KEY,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     export_count: 0,

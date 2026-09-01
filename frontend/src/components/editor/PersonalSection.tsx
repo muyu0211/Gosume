@@ -293,7 +293,7 @@ export function PersonalSection() {
               <select
                 value={ratioPreset}
                 onChange={(e) => handlePresetChange(e.target.value)}
-                className="text-xs border border-surface-200 rounded-md px-1.5 py-0.5 bg-white text-surface-600 focus:outline-none focus:border-primary-500"
+                className="text-xs border border-surface-200 rounded-md px-1.5 py-0.5 bg-elev text-surface-600 focus:outline-none focus:border-primary-500"
                 title="选择标准证件照比例"
               >
                 {RATIO_PRESETS.map((pr) => (

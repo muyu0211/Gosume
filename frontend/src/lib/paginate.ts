@@ -40,9 +40,10 @@ export function paginateContent(iframe: HTMLIFrameElement, opts: PaginateContent
 
   const body = doc.body
   body.className = ''
-  body.style.background = '#e5e7eb'
+  body.style.background = previewBackdrop()
   body.style.margin = '0'
-  body.style.padding = `${PAGE_GAP}px 0`
+  // 第一页顶部不留灰条：顶部 padding 归零，仅保留页间/页尾间隙。
+  body.style.padding = `0 0 ${PAGE_GAP}px`
   body.style.overflowX = 'hidden'
 
   const { pageCount } = paginateResume(doc, body, {...pageStyle, pageMarginBottom: `${PAGE_GAP}px`,},opts.sourceEl,opts.targetEl)
@@ -50,4 +51,17 @@ export function paginateContent(iframe: HTMLIFrameElement, opts: PaginateContent
   void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`
   return { pageCount, paper: pageStyle.paper }
+}
+
+/**
+ * 读取应用主题的背景色作为预览外盒的底色（页面间隙 / 外沿），使深浅主题下预览
+ * 与外壳一致，避免硬编码浅灰 `#e5e7eb`（在深色主题下会压出亮灰条）。
+ */
+function previewBackdrop(): string {
+  try {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--app-bg').trim()
+    return bg || '#e5e7eb'
+  } catch {
+    return '#e5e7eb'
+  }
 }

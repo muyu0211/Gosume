@@ -140,20 +140,16 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 
 分页 DOM 契约（与 `templates/AGENTS.md` 对齐）：`.resume-page > .resume-container > .r-header + .r-main`；单栏 `.resume-container` 为 block，双栏为 grid（`.r-header` 即侧栏）。
 
-### 页面布局档位
+### 页面布局
 
-`LayoutPopover`（Toolbar 内）提供两项布局设置，均以**枚举 key**持久化（禁止存储具体像素/毫米值），前端负责枚举 → CSS 的映射与注入，后端只透传存储：
+`LayoutPopover`（Toolbar 内）提供「页边距」（上下/左右）与「内容间距」（模块/条目/细节）两组**1px 拖动条**，以 **px 数值**存于全局配置（`lib/layoutPresets.ts` 的 `GlobalLayout`，经 `SystemService.GetLayout/SaveLayout` 读写，运行时经 `stores/layoutStore.ts` 加载），所有简历共享：
 
-| 字段                     | 类型                                                  | UI    |
-| ---------------------- | --------------------------------------------------- | ----- |
-| `meta.page_margin`     | `MarginKey`（compact/narrow/normal/wide/comfortable） | 5 档滑块 |
-| `meta.section_spacing` | `SectionSpacingKey`（同上五档）                           | 5 档按钮 |
+* 页边距范围 `MARGIN_PX_MIN..MARGIN_PX_MAX`（1–60px），内容间距 `SPACING_PX_MIN..SPACING_PX_MAX`（1–20px）；范围/默认常量引用 `lib/layoutPresets.ts`，不得硬编码
+* 渲染时前端将 px 按 `25.4/96` 换算为 mm 注入（页边距为 `--resume-padding[-y/-x]`，内容间距三层注入 `margin-bottom !important`）
 
-* 所有档位定义、默认值、枚举 → CSS 值映射集中在 `lib/layoutPresets.ts`；赋值必须引用导出的常量（`DEFAULT_MARGIN_KEY` 等），不得硬编码字符串
+* 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），集合在 `lib/layoutPresets.ts` 的 `buildLayoutCss`
 
-* 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），`normal` 档不注入任何规则，保留模板原生节奏
-
-* 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"布局档位"小节，新增参与间距调整的组件需两侧同步
+* 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"全局布局"小节，新增参与间距调整的组件需两侧同步
 
 ## 开发规范
 
@@ -215,6 +211,9 @@ export function XxxDialog({ onClose }: Props) {
 * 代码格式化工具：Prettier + ESLint
 
 * 禁止使用：any 类型、var 声明、硬编码魔法值（如直接写 100 代替 MAX\_PAGE\_SIZE）
+
+* **样式须适配 Gosume 主题**：所有界面颜色/背景/边框/阴影一律使用主题令牌（`surface-*`/`primary-*`/`bg-elev` 及 `globals.css` 中的 CSS 变量），禁止在组件里硬编码与主题相关的 hex / `bg-white` / `text-black` 等，确保三套主题（经典/麦色/深色）与"跟随系统"下均可读、一致。
+* **下拉/按钮风格一致**：工具栏按钮及点击展开的下拉面板样式必须保持统一——触发器用 `bg-elev`/`surface` 边框 + hover 态，面板用 Portal + `fixed` + `z-[9999]` + `animate-dropdown-enter`（参考 `CustomSelect.tsx` 与 `Tooltip.tsx`）；同一功能的多个入口（如"页边距""内容间距"两个下拉按钮）视觉与交互需完全一致。
 
 ### React+TS 专属规则
 

@@ -2,10 +2,13 @@ import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2, Heart, Download, Star, PackageOpen, Globe } from 'lucide-react'
+import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2, Heart, Download, Star, PackageOpen, Globe, Moon, Palette, Sun } from 'lucide-react'
+import { useThemeStore } from '../stores/themeStore'
+import { nextExplicitTheme, type AppliedTheme } from '../lib/theme'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
+import { Tooltip } from '../components/ui/Tooltip'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Modal, type ModalHandle } from '../components/ui/Modal'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
@@ -31,6 +34,18 @@ export function WelcomePage() {
   const navigate = useNavigate()
   const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
   const [showDrawer, setShowDrawer] = useState(false)
+
+  // 主题切换按钮：点击在三套显式主题间轮换（经典→麦色→深色→经典），带淡入换肤动画。
+  const appliedTheme = useThemeStore((s) => s.applied)
+  const themeMode = useThemeStore((s) => s.mode)
+  // flashKey 变化会重建 flash 遮罩层，触发 theme-flash 动画（结束即复位移除）。
+  const [flashKey, setFlashKey] = useState(0)
+  const ThemeIcon = appliedTheme === 'obsidian' ? Moon : appliedTheme === 'wheat' ? Palette : Sun
+  const themeTitle = appliedTheme === 'obsidian' ? '当前：深色' : appliedTheme === 'wheat' ? '当前：麦色' : '当前：经典'
+  const handleCycleTheme = () => {
+    useThemeStore.getState().setMode(nextExplicitTheme(themeMode))
+    setFlashKey((k) => k + 1)
+  }
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [importingTemplate, setImportingTemplate] = useState(false)
   const [importError, setImportError] = useState('')
@@ -45,7 +60,6 @@ export function WelcomePage() {
   // 初始值取自模块级缓存，路由切走再回来角标直接恢复。
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
-  const [appVersion, setAppVersion] = useState('')
   // 模板市场能力整合到主页：分类筛选 / 收藏 / 分享 / 导入记录
   const [marketCategories, setMarketCategories] = useState<TemplateCategory[]>([])
   const [activeCategory, setActiveCategory] = useState('')
@@ -102,13 +116,6 @@ export function WelcomePage() {
 
   useEffect(() => {
     loadData()
-  }, [])
-
-  // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
-  useEffect(() => {
-    callService<string>('SystemService', 'GetAppVersion')
-      .then((version) => setAppVersion(version || ''))
-      .catch(() => { })
   }, [])
 
   // 应用启动时静默检查一次更新（复用 UpdateService.CheckUpdate）。
@@ -365,6 +372,7 @@ export function WelcomePage() {
   }
 
   return (
+    <>
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-6">
@@ -393,7 +401,6 @@ export function WelcomePage() {
           <button
             onClick={() => navigate('/community')}
             className="btn-primary btn-sm"
-            title="模板社区：在线模板市场，需联网访问，下载后可离线使用"
           >
             <Globe className="w-4 h-4" />
             模板社区
@@ -401,7 +408,6 @@ export function WelcomePage() {
           <button
             onClick={handleOpenImportLogs}
             className="btn-ghost btn-sm"
-            title="查看模板包导入记录"
           >
             <Clock className="w-4 h-4" />
             导入记录
@@ -410,7 +416,6 @@ export function WelcomePage() {
             onClick={handleImportTemplate}
             disabled={importingTemplate}
             className="btn-secondary btn-sm"
-            title="导入 .zip 模板包"
           >
             {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             导入模板
@@ -419,7 +424,6 @@ export function WelcomePage() {
             onClick={handleImportGosume}
             disabled={importingGosume}
             className="btn-secondary btn-sm"
-            title="导入可编辑简历文件 (.gosume)"
           >
             {importingGosume ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
             导入简历
@@ -431,13 +435,22 @@ export function WelcomePage() {
             <List className="w-4 h-4" />
             全部简历
           </button>
-          <button
-            onClick={() => navigate('/settings')}
-            className="btn-ghost btn-sm"
-            title="设置"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          <Tooltip label={themeTitle}>
+            <button
+              onClick={handleCycleTheme}
+              className="btn-ghost btn-sm w-9 h-9 p-0 justify-center focus:ring-0 focus:ring-offset-0"
+            >
+              <ThemeIcon className="w-4 h-4" />
+            </button>
+          </Tooltip>
+          <Tooltip label="设置">
+            <button
+              onClick={() => navigate('/settings')}
+              className="btn-ghost btn-sm"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       </header>
 
@@ -550,7 +563,7 @@ export function WelcomePage() {
               {recentFiles.slice(0, 3).map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-white border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-elev border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
                   onClick={() => handleOpenRecent(file.id)}
                 >
                   <div className="w-9 h-9 rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
@@ -569,13 +582,6 @@ export function WelcomePage() {
           </section>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="px-8 py-4 border-t border-surface-100 text-center">
-        <p className="text-xs text-surface-400">
-          Gosume{appVersion ? ` v${appVersion}` : ''} — 专注于内容，让简历排版变得简单
-        </p>
-      </footer>
 
       <ResumeListDrawer
         open={showDrawer}
@@ -631,6 +637,16 @@ export function WelcomePage() {
         onCancel={() => setDeleteLogTarget(null)}
       />
     </AnimatedPage>
+
+      {/* 主题切换过渡遮罩：flashKey 每次点击自增，重建后播一次淡出动画，结束即移除 */}
+      {flashKey > 0 && (
+        <div
+          key={flashKey}
+          className="theme-flash-overlay"
+          onAnimationEnd={() => setFlashKey(0)}
+        />
+      )}
+    </>
   )
 }
 
@@ -713,7 +729,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
+      className="group cursor-pointer rounded-xl border border-surface-200 bg-elev overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
       style={{ animationDelay: `${index * 60}ms`, containerType: 'inline-size' }}
     >
       {/* Preview area */}
@@ -738,15 +754,16 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
 
         {/* 收藏星标（点击独立于卡片选中；置于左上角，避免被右侧 hover 面板遮挡） */}
         {onToggleFavorite && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
-            disabled={favLoading}
-            className={`absolute top-2.5 left-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-amber-400 text-white hover:bg-amber-500' : 'bg-white/90 text-surface-400 hover:text-amber-500 hover:bg-white'
-              } disabled:opacity-60`}
-            title={favorite ? '取消收藏' : '收藏'}
-          >
-            {favLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />}
-          </button>
+          <Tooltip label={favorite ? '取消收藏' : '收藏'} className="absolute top-2.5 left-2.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+              disabled={favLoading}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-amber-400 text-white hover:bg-amber-500' : 'bg-elev/90 text-surface-400 hover:text-amber-500 hover:bg-elev'
+                } disabled:opacity-60`}
+            >
+              {favLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />}
+            </button>
+          </Tooltip>
         )}
 
         {/* Hover blur overlay + preview button — slides in from right */}
@@ -758,20 +775,20 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Gaussian blur backdrop */}
+          {/* Gaussian blur backdrop（背景色取自主题 --elev：浅色白色磨砂，深色自动变深） */}
           <div
             className="absolute inset-0"
             style={{
               backdropFilter: 'blur(12px) saturate(1.2)',
               WebkitBackdropFilter: 'blur(12px) saturate(1.2)',
-              background: 'rgba(255,255,255,0.25)',
+              background: 'rgb(var(--elev) / 0.25)',
             }}
           />
           {/* Preview + delete buttons on top of blur */}
           <div className="relative z-10 flex flex-col items-center gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); onPreview() }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50/95 text-surface-800 text-sm font-medium border border-white shadow-md hover:bg-amber-50 hover:border-surface-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-surface-800 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
             >
               <Eye className="w-4 h-4 shrink-0" />
               <span className="preview-label">预览</span>
@@ -780,7 +797,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <button
                 onClick={(e) => { e.stopPropagation(); onShare() }}
                 disabled={sharing}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50/95 text-primary-700 text-sm font-medium border border-white shadow-md hover:bg-primary-50 hover:border-primary-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
                 title="导出为模板分享包 (.zip)"
               >
                 {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
@@ -791,7 +808,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
                 disabled={isDeleting}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50/95 text-red-600 text-sm font-medium border border-white shadow-md hover:bg-red-50 hover:border-red-100 hover:shadow-lg active:scale-95 transition-all duration-150 backdrop-blur-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-red-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-red-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
                 <span className="preview-label">删除</span>

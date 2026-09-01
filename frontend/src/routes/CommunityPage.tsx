@@ -179,7 +179,7 @@ export function CommunityPage() {
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
-      <header className="flex items-center gap-3 px-8 py-5 border-b border-surface-100 bg-white/70 backdrop-blur-sm">
+      <header className="flex items-center gap-3 px-8 py-5 border-b border-surface-100 bg-elev/70 backdrop-blur-sm">
         <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm" title="返回首页">
           <ArrowLeft className="w-4 h-4" />
           首页
@@ -203,7 +203,7 @@ export function CommunityPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="搜索模板名称 / 标签"
-              className="w-full h-9 pl-9 pr-20 rounded-lg border border-surface-200 bg-white text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
+              className="w-full h-9 pl-9 pr-20 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
             />
             <button
               onClick={handleSearch}
@@ -378,7 +378,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
   return (
     <div
       onClick={onOpen}
-      className="group cursor-pointer rounded-xl border border-surface-200 bg-white overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
+      className="group cursor-pointer rounded-xl border border-surface-200 bg-elev overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
       style={{ animationDelay: `${index * 50}ms` }}
     >
       {/* 缩略图 */}
@@ -593,7 +593,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
           <select
             value={selectedId}
             onChange={(e) => onSelect(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-surface-200 bg-white text-sm text-surface-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+            className="w-full h-10 px-3 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
           >
             {templates.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>

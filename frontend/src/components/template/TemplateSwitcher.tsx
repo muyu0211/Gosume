@@ -150,7 +150,7 @@ export function TemplateSwitcher() {
       </button>
 
       {visible && (
-        <div className={`absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
+        <div className={`absolute right-0 top-full mt-1 w-72 bg-elev rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
           <div className="px-3 py-1.5 text-[11px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
             <Layout className="w-3 h-3" />
             切换模板风格

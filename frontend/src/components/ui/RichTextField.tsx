@@ -589,7 +589,7 @@ export function RichTextField({
           onCompositionEnd={handleCompositionEnd}
           onBeforeInput={handleBeforeInput}
           onPaste={handlePaste}
-          className={`rich-editor w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white
+          className={`rich-editor w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-elev
             focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400
             transition-all duration-150 overflow-auto break-words leading-relaxed
             ${isInline ? '' : 'text-surface-800'}`}
@@ -617,7 +617,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={listMenu.menuRef}
-            className="fixed z-[9999] min-w-[132px] bg-white border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
+            className="fixed z-[9999] min-w-[132px] bg-elev border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
             style={{ top: listMenu.pos.top, left: listMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >
@@ -641,7 +641,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={orderedMenu.menuRef}
-            className="fixed z-[9999] min-w-[132px] bg-white border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
+            className="fixed z-[9999] min-w-[132px] bg-elev border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
             style={{ top: orderedMenu.pos.top, left: orderedMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >
@@ -666,7 +666,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={colorMenu.menuRef}
-            className="fixed z-[9999] bg-white border border-surface-200 rounded-lg shadow-lg p-2 animate-dropdown-enter"
+            className="fixed z-[9999] bg-elev border border-surface-200 rounded-lg shadow-lg p-2 animate-dropdown-enter"
             style={{ top: colorMenu.pos.top, left: colorMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >

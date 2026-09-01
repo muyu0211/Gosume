@@ -75,7 +75,7 @@ export function AwardSection() {
                 >
                   <input
                     type="checkbox"
-                    className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
                     checked={!isHidden}
                     onChange={(e) => updateItem(idx, { hidden: !e.target.checked })}
                   />

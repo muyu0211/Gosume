@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync/atomic"
 
 	"gosume/pkg/user_config"
@@ -123,37 +122,43 @@ func (s *SystemService) GetDataDir() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", s.configMgr.DataDir())
 }
 
-// GetLayoutPresets 返回生效的布局档位配置：
-// 用户自定义的档位，或内置默认档位。
-func (s *SystemService) GetLayoutPresets() *util.Response {
-	return util.DoRsp(util.SuccCode, "成功", s.configMgr.GetLayoutPresets())
+// GetTheme 返回用户当前的主题选项（system/classic/wheat/obsidian）。
+func (s *SystemService) GetTheme() *util.Response {
+	return util.DoRsp(util.SuccCode, "成功", s.configMgr.GetTheme())
 }
 
-// SetLayoutPresets 校验并持久化用户自定义的布局档位配置
-// （档位名称、数值与数量）。
-func (s *SystemService) SetLayoutPresets(cfg user_config.LayoutPreset) *util.Response {
-	// 校验参数
-	if err := validateLayoutPresets(cfg); err != nil {
-		log.Errorf("[system_service] SetLayoutPresets: 参数校验失败: %v", err)
+// SetTheme 校验并持久化用户主题选项。
+// 取值不合法或为空时回退到默认主题（跟随系统）。
+func (s *SystemService) SetTheme(theme string) *util.Response {
+	if !user_config.IsValidTheme(theme) {
+		log.Warnf("[system_service] SetTheme: 非法主题取值 %q，回退为 %s", theme, user_config.DefaultTheme)
+		theme = user_config.DefaultTheme
+	}
+	if err := s.configMgr.SetTheme(theme); err != nil {
+		log.Errorf("[system_service] SetTheme: 持久化失败 %q: %v", theme, err)
 		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
-
-	// 持久化配置
-	if err := s.configMgr.SetLayoutPresets(cfg); err != nil {
-		log.Errorf("[system_service] SetLayoutPresets: 持久化失败: %v", err)
-		return util.DoRsp(util.ErrCode, err.Error(), nil)
-	}
-	log.Infof("[system_service] SetLayoutPresets: 已保存布局档位，页边距 %d 档、间距 %d 档", len(cfg.Margins), len(cfg.Spacings))
+	log.Infof("[system_service] SetTheme: 已保存主题 %s", theme)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
-// ResetLayoutPresets 恢复内置默认布局档位。
-func (s *SystemService) ResetLayoutPresets() *util.Response {
-	if err := s.configMgr.ResetLayoutPresets(); err != nil {
-		log.Errorf("[system_service] ResetLayoutPresets: 恢复默认失败: %v", err)
-		return util.DoRsp(util.ErrCode, "恢复默认布局档位失败", nil)
+// GetLayout 返回当前的全局布局（页边距 + 内容间距，px）。
+func (s *SystemService) GetLayout() *util.Response {
+	return util.DoRsp(util.SuccCode, "成功", s.configMgr.GetLayout())
+}
+
+// SaveLayout 校验并持久化全局布局（px 数值）。
+func (s *SystemService) SaveLayout(l user_config.GlobalLayout) *util.Response {
+	if err := user_config.ValidateGlobalLayout(l); err != nil {
+		log.Errorf("[system_service] SaveLayout: 参数校验失败: %v", err)
+		return util.DoRsp(util.ErrCode, err.Error(), nil)
 	}
-	log.Infof("[system_service] ResetLayoutPresets: 已恢复默认布局档位")
+	if err := s.configMgr.SetLayout(l); err != nil {
+		log.Errorf("[system_service] SaveLayout: 持久化失败: %v", err)
+		return util.DoRsp(util.ErrCode, err.Error(), nil)
+	}
+	log.Infof("[system_service] SaveLayout: 已保存全局布局 边距(%d/%d) 间距(%d/%d/%d)",
+		l.PageMarginY, l.PageMarginX, l.SpacingSection, l.SpacingItem, l.SpacingDetail)
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
@@ -355,98 +360,4 @@ func cleanMigrated(dir string, items []migratedEntry) {
 	if err := os.Remove(dir); err != nil {
 		log.Errorf("删除旧数据目录失败: %v", err)
 	}
-}
-
-// 内置默认档位保留的 key 与取值范围约束。
-//
-// normal 档是两个列表的强制回退档，不允许删除；内容间距的 normal 档还必须
-// 保持各 gap 为 nil（即沿用模板内置节奏）。
-const (
-	MarginTierNormalKey            = "normal"
-	SpacingTierNormalKey           = "normal"
-	marginValueMin, marginValueMax = 5.0, 30.0 // 毫米
-	gapValueMin, gapValueMax       = 0.0, 40.0 // 磅
-)
-
-// validateLayoutPresets 校验待保存的布局档位配置。
-//
-// 校验项：列表非空、key 合法且不重复、名称非空、数值在允许区间内、
-// 必须保留 normal 档，且内容间距的 normal 档不得设置具体数值。
-// 返回的错误消息面向用户，可直接展示。
-func validateLayoutPresets(cfg user_config.LayoutPreset) error {
-	if len(cfg.Margins) == 0 {
-		return fmt.Errorf("页边距档位至少保留一个")
-	}
-	if len(cfg.Spacings) == 0 {
-		return fmt.Errorf("内容间距档位至少保留一个")
-	}
-
-	marginKeys := map[string]bool{}
-	for _, t := range cfg.Margins {
-		if err := validTierKey(t.Key); err != nil {
-			return fmt.Errorf("页边距档位 %s", err)
-		}
-		if marginKeys[t.Key] {
-			return fmt.Errorf("页边距档位 key 重复: %s", t.Key)
-		}
-		marginKeys[t.Key] = true
-		if strings.TrimSpace(t.Label) == "" {
-			return fmt.Errorf("页边距档位 %s 的名称为空", t.Key)
-		}
-		if t.PaddingY < marginValueMin || t.PaddingY > marginValueMax ||
-			t.PaddingX < marginValueMin || t.PaddingX > marginValueMax {
-			return fmt.Errorf("页边距档位“%s”的数值需在 %.0f–%.0fmm 之间", t.Label, marginValueMin, marginValueMax)
-		}
-	}
-	if !marginKeys[MarginTierNormalKey] {
-		return fmt.Errorf("页边距必须保留“标准”档位（未选中档位时的回退值）")
-	}
-
-	spacingKeys := map[string]bool{}
-	for _, t := range cfg.Spacings {
-		if err := validTierKey(t.Key); err != nil {
-			return fmt.Errorf("内容间距档位 %s", err)
-		}
-		if spacingKeys[t.Key] {
-			return fmt.Errorf("内容间距档位 key 重复: %s", t.Key)
-		}
-		spacingKeys[t.Key] = true
-		if strings.TrimSpace(t.Label) == "" {
-			return fmt.Errorf("内容间距档位 %s 的名称为空", t.Key)
-		}
-		for name, v := range map[string]*float64{
-			"模块间距": t.SectionGap, "条目间距": t.ItemGap, "细节间距": t.DetailGap,
-		} {
-			if v != nil && (*v < gapValueMin || *v > gapValueMax) {
-				return fmt.Errorf("内容间距档位“%s”的%s需在 %.0f–%.0fpt 之间", t.Label, name, gapValueMin, gapValueMax)
-			}
-		}
-	}
-	if !spacingKeys[SpacingTierNormalKey] {
-		return fmt.Errorf("内容间距必须保留“标准”档位（模板默认 + 回退值）")
-	}
-	// 内容间距的 normal 档必须保持"模板默认"，即各 gap 均为 nil
-	for _, t := range cfg.Spacings {
-		if t.Key == SpacingTierNormalKey &&
-			(t.SectionGap != nil || t.ItemGap != nil || t.DetailGap != nil) {
-			return fmt.Errorf("内容间距“标准”档位为模板内置节奏，不允许修改其数值")
-		}
-	}
-	return nil
-}
-
-// validTierKey 校验档位 key：非空、仅含字母数字与 - _，且不超过 64 字符。
-func validTierKey(key string) error {
-	if key == "" {
-		return fmt.Errorf("key 不能为空")
-	}
-	for _, r := range key {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
-			return fmt.Errorf("key %q 含非法字符（仅限字母、数字、-、_）", key)
-		}
-	}
-	if len(key) > 64 {
-		return fmt.Errorf("key %q 超过 64 字符", key)
-	}
-	return nil
 }

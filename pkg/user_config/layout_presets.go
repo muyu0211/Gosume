@@ -1,63 +1,56 @@
 package user_config
 
-import "gosume/pkg/util"
+import "fmt"
 
 // ---------------------------------------------------------------------------
-// 布局档位配置（页边距 + 内容间距）
+// 全局布局（页边距 + 内容间距，px 数值）
 //
-// 用户可在设置页自定义档位的数值、名称和数量，档位列表持久化到数据目录内的
-// config.json，由前端布局引擎（frontend/src/lib/layoutPresets.ts）消费——
-// 后端不计算 CSS。
-//
-// resume.meta.page_margin / section_spacing 存的是档位 key；引用已删除的 key
-// 时，前端回退到 normal 档。
+// 直接存像素绝对值，所有简历共享（全局配置），替代旧的「档位 key」体系。
+// 渲染时前端按 util 口径把 px 换算为 mm 注入 CSS。
 // ---------------------------------------------------------------------------
 
-// MarginPresetTier 是一个页边距档位。
-//
-// 数值单位为毫米，同时作用于单栏（.resume-page）与分栏模板的内层容器
-// （注入为 --resume-padding / --resume-padding-y/-x）。
-type MarginPresetTier struct {
-	Key      string  `json:"key"`
-	Label    string  `json:"label"`
-	PaddingY float64 `json:"padding_y"` // 毫米，纵向
-	PaddingX float64 `json:"padding_x"` // 毫米，横向
+// 全局布局数值的范围约束（px）。
+const (
+	LayoutMarginPxMin  = 1  // 上下/左右页边距最小值
+	LayoutMarginPxMax  = 60 // 上下/左右页边距最大值
+	LayoutSpacingPxMin = 1  // 模块/条目/细节间距最小值
+	LayoutSpacingPxMax = 20 // 模块/条目/细节间距最大值
+)
+
+// GlobalLayout 是全局布局的 px 数值配置。
+type GlobalLayout struct {
+	PageMarginY    int `json:"page_margin_y"`    // px，上下页边距
+	PageMarginX    int `json:"page_margin_x"`    // px，左右页边距
+	SpacingSection int `json:"spacing_section"`  // px，模块间距
+	SpacingItem    int `json:"spacing_item"`     // px，条目间距
+	SpacingDetail  int `json:"spacing_detail"`   // px，细节间距
 }
 
-// SpacingPresetTier 是一个内容间距档位。
-//
-// 数值单位为磅（pt）；为 nil 表示「沿用模板默认节奏」——该取值只允许出现在
-// normal 档，此时不注入任何 CSS，保留各模板自身的间距设计。
-type SpacingPresetTier struct {
-	Key        string   `json:"key"`
-	Label      string   `json:"label"`
-	SectionGap *float64 `json:"section_gap"` // 磅，模块 ↔ 模块；nil 表示模板默认
-	ItemGap    *float64 `json:"item_gap"`    // 磅，条目 ↔ 条目；nil 表示模板默认
-	DetailGap  *float64 `json:"detail_gap"`  // 磅，细节 ↔ 细节；nil 表示模板默认
-}
-
-// LayoutPreset 是持久化的布局档位配置。
-type LayoutPreset struct {
-	Margins  []MarginPresetTier  `json:"margins"`
-	Spacings []SpacingPresetTier `json:"spacings"`
-}
-
-// DefaultLayoutPresets 返回默认的布局档位配置。
-func DefaultLayoutPresets() LayoutPreset {
-	return LayoutPreset{
-		Margins: []MarginPresetTier{
-			{Key: "compact", Label: "紧凑", PaddingY: 8, PaddingX: 10},
-			{Key: "narrow", Label: "较窄", PaddingY: 10, PaddingX: 12},
-			{Key: "normal", Label: "标准", PaddingY: 12, PaddingX: 14},
-			{Key: "wide", Label: "较宽", PaddingY: 14, PaddingX: 16},
-			{Key: "comfortable", Label: "宽松", PaddingY: 16, PaddingX: 18},
-		},
-		Spacings: []SpacingPresetTier{
-			{Key: "compact", Label: "紧凑", SectionGap: util.FloatPtr(4.0), ItemGap: util.FloatPtr(3.0), DetailGap: util.FloatPtr(1.0)},
-			{Key: "narrow", Label: "较窄", SectionGap: util.FloatPtr(8.0), ItemGap: util.FloatPtr(4.0), DetailGap: util.FloatPtr(2.0)},
-			{Key: "normal", Label: "标准", SectionGap: nil, ItemGap: nil, DetailGap: nil},
-			{Key: "wide", Label: "较宽", SectionGap: util.FloatPtr(14.0), ItemGap: util.FloatPtr(8.0), DetailGap: util.FloatPtr(3.0)},
-			{Key: "comfortable", Label: "宽松", SectionGap: util.FloatPtr(20.0), ItemGap: util.FloatPtr(11.0), DetailGap: util.FloatPtr(4.0)},
-		},
+// DefaultGlobalLayout 返回全局布局的默认值。
+func DefaultGlobalLayout() GlobalLayout {
+	return GlobalLayout{
+		PageMarginY:    15,
+		PageMarginX:    20,
+		SpacingSection: 12,
+		SpacingItem:    8,
+		SpacingDetail:  4,
 	}
+}
+
+// ValidateGlobalLayout 校验全局布局数值是否在允许范围内，返回面向用户的错误信息。
+func ValidateGlobalLayout(l GlobalLayout) error {
+	if l.PageMarginY < LayoutMarginPxMin || l.PageMarginY > LayoutMarginPxMax {
+		return fmt.Errorf("页边距（上下）需在 %d–%dpx 之间", LayoutMarginPxMin, LayoutMarginPxMax)
+	}
+	if l.PageMarginX < LayoutMarginPxMin || l.PageMarginX > LayoutMarginPxMax {
+		return fmt.Errorf("页边距（左右）需在 %d–%dpx 之间", LayoutMarginPxMin, LayoutMarginPxMax)
+	}
+	for name, v := range map[string]int{
+		"模块": l.SpacingSection, "条目": l.SpacingItem, "细节": l.SpacingDetail,
+	} {
+		if v < LayoutSpacingPxMin || v > LayoutSpacingPxMax {
+			return fmt.Errorf("%s间距需在 %d–%dpx 之间", name, LayoutSpacingPxMin, LayoutSpacingPxMax)
+		}
+	}
+	return nil
 }

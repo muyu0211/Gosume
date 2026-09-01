@@ -174,7 +174,7 @@ templates/
    .r-header { padding: var(--resume-padding-y, 12mm) var(--resume-padding-x, 14mm); }
    ```
 
-   前端按 `resume.meta.page_margin` 枚举档位注入这些变量（见下方"布局档位"），模板自身不得硬编码页边距。
+   前端按全局布局（页边距 px→mm）注入这些变量（见下方"全局布局"），模板自身不得硬编码页边距。
 
    > ⚠️ **单栏模板的页边距必须落在** **`.resume-page`** **的 padding 上，不得落在** **`.r-header`/`.r-main`
    > 等内容区自身的 padding 上**。分页与导出管线（`paginationCore.ts` + 导出器）只把 `.resume-page` 的 padding
@@ -212,16 +212,12 @@ templates/
 
 * 链接样式：导出的 PDF 中链接应有明显的颜色区分
 
-### 布局档位（页边距与内容间距）
+### 全局布局（页边距与内容间距）
 
-简历布局由两个枚举档位控制，存储在 `resume.meta` 中（枚举 key 为前后端共享的线上格式：前端定义在 `frontend/src/lib/layoutPresets.ts`，Go 定义在 `pkg/model/resume.go`）：
+布局以 **px 数值**存于全局配置（`frontend/src/lib/layoutPresets.ts` 的 `GlobalLayout`），
+渲染时前端按 `25.4/96` 换算为 mm 注入 CSS（页边距为 `--resume-padding[-y/-x]`，内容间距按下列选择器注入 `margin-bottom !important`）。
 
-| 字段                | 枚举值                                              | 控制内容                                     |
-| ----------------- | ------------------------------------------------ | ---------------------------------------- |
-| `page_margin`     | `compact / narrow / normal / wide / comfortable` | 页面四周留白，前端注入 `--resume-padding[-y/-x]` 变量 |
-| `section_spacing` | `compact / narrow / normal / wide / comfortable` | 内容组件之间的紧凑程度，三层节奏                         |
-
-**内容间距的三层注入规则**（`normal` 档不注入任何规则，保留模板原生节奏；其余档位按以下选择器注入 `margin-bottom !important`）：
+**内容间距的三层注入规则**：
 
 | 层级      | 覆盖选择器                                                                                                             | 说明                                              |
 | ------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -231,9 +227,9 @@ templates/
 
 模板设计要点：
 
-* 新模板只要沿用上述类名，即自动接入内容间距档位；使用其他类名的组件不参与调整
+* 新模板只要沿用上述类名，即自动接入内容间距；使用其他类名的组件不参与调整
 
-* 条目/细节类组件的原始 `margin-bottom` 值是模板作者设计的 `normal` 档默认节奏，应与相邻组件视觉协调
+* 条目/细节类组件的原始 `margin-bottom` 值是模板作者设计的默认节奏，应与相邻组件视觉协调
 
 * 模块末尾条目的 `margin-bottom` 会被运行时归零（`*:has(+ .section-title)`），模块间距由 `* + .section-title` 的 `margin-top` 单独控制，不会叠加
 

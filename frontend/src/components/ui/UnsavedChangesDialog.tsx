@@ -30,7 +30,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
+        className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">

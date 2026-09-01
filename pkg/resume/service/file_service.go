@@ -246,9 +246,7 @@ type ExportEnvelope struct {
 
 // Build 把当前简历打包为可导出的信封：
 //
-//   - 剥离布局档位：page_margin / section_spacing / font_size 归一化为全局
-//     默认常量（normal / normal / medium），防止接收方不存在自定义档位导致
-//     样式解析失败（与 AGENTS.md「两侧均须保留 normal 档作为回退」对齐）；
+//   - 归一化：font_size 归一为全局默认常量（medium），保证接收方一致；
 //   - 不删字段（保持 Resume JSON 形状完整，前端类型无需可选化）；
 //   - 原始 resume 不被修改，导出的是副本。
 //
@@ -266,12 +264,10 @@ func Build(resume *model.Resume, appVersion, templateName string) *ExportEnvelop
 	}
 }
 
-// exportData 返回剥离布局档位后的导出副本（不改原始 resume）。
+// exportData 返回归一化后的导出副本（不改原始 resume）。
 func exportData(r *model.Resume) *model.Resume {
 	out := *r
 	m := r.Meta
-	m.PageMargin = model.PageMarginNormal
-	m.SectionSpacing = model.SectionSpacingNormal
 	m.FontSize = model.FontSizeMedium
 	out.Meta = m
 	return &out

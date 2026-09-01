@@ -30,12 +30,29 @@ const configFileName = "config.json"
 // ChangeFunc 是数据目录变更回调。
 type ChangeFunc = func(oldDir, newDir string)
 
+// Theme 相关的合法取值集合。
+const (
+	// 默认主题：跟随系统深浅（预置主题枚举在此基础上 add classic/wheat/obsidian）。
+	DefaultTheme = "system"
+)
+
+// IsValidTheme 校验主题取值是否合法（system/classic/wheat/obsidian）。
+func IsValidTheme(theme string) bool {
+	switch theme {
+	case "system", "classic", "wheat", "obsidian":
+		return true
+	default:
+		return false
+	}
+}
+
 // UserConfig 用户配置。
 // 数据目录内的完整配置，以及锚点目录内的定位指针
 // （此时仅 DataDir 有值）。旧版把两者合并存放在锚点目录，字段因此保持兼容。
 type UserConfig struct {
-	DataDir       string        `json:"data_dir,omitempty"`
-	LayoutPresets *LayoutPreset `json:"layout_presets,omitempty"`
+	DataDir string        `json:"data_dir,omitempty"`
+	Theme   string        `json:"theme,omitempty"`
+	Layout  *GlobalLayout `json:"layout,omitempty"`
 }
 
 // InitConfigManager 初始化配置管理器
@@ -81,12 +98,12 @@ func NewManager(anchorDir string) (*Manager, error) {
 	return m, nil
 }
 
-// init 定位数据目录（锚点指针 → 默认目录）、加载配置并完成旧版迁移。
+// init 定位数据目录（锚点指针 → 默认目录）、加载配置。
 func (m *Manager) init() error {
 	m.dataDir = m.DefaultDir()
 
 	// 锚点文件既可能是新版指针，也可能是旧版完整配置，故只解析一次，同时用于
-	// 定位数据目录与迁移旧版配置；读取或解析失败按"无锚点"处理（回退默认目录）。
+	// 定位数据目录；读取或解析失败按"无锚点"处理（回退默认目录）。
 	var anchor UserConfig
 	hasAnchor := false
 	if raw, err := os.ReadFile(configFile(m.anchorDir)); err == nil {
@@ -97,13 +114,8 @@ func (m *Manager) init() error {
 	}
 
 	// 数据目录内的配置是权威来源，解析失败视为错误，避免静默丢配置。
-	loaded, err := m.loadLocked()
-	if err != nil {
+	if _, err := m.loadLocked(); err != nil {
 		return err
-	}
-	// 一次性迁移：数据目录内尚无配置时，沿用锚点中的旧版配置。
-	if !loaded && hasAnchor {
-		m.config.LayoutPresets = anchor.LayoutPresets
 	}
 
 	return m.persistLocked()
@@ -178,39 +190,47 @@ func (m *Manager) RemoveOnChange(id int) {
 	delete(m.listeners, id)
 }
 
-// GetLayoutPresets 返回生效的布局档位配置；用户未自定义时回退到内置默认值。
-func (m *Manager) GetLayoutPresets() LayoutPreset {
+// GetTheme 返回当前的用户主题选项；用户未设置（或取值为空）时回退到默认主题。
+func (m *Manager) GetTheme() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	if m.config.LayoutPresets != nil {
-		return *m.config.LayoutPresets
+	if m.config.Theme != "" && IsValidTheme(m.config.Theme) {
+		return m.config.Theme
 	}
-	return DefaultLayoutPresets()
+	return DefaultTheme
 }
 
-// SetLayoutPresets 持久化布局档位配置（参数校验由服务层完成）。
-//
-// 落盘失败时把内存中的档位置空，使下次启动重新从文件加载已持久化的状态。
-func (m *Manager) SetLayoutPresets(cfg LayoutPreset) error {
+// SetTheme 持久化用户主题选项（取值合法性校验在服务层完成）。
+// 落盘失败时把内存中的主题置空，使下次启动重新从文件加载已持久化的状态。
+func (m *Manager) SetTheme(theme string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.config.LayoutPresets = &cfg
+	m.config.Theme = theme
 	if err := m.saveConfigLocked(); err != nil {
-		m.config.LayoutPresets = nil
+		m.config.Theme = ""
 		return fmt.Errorf("save config: %w", err)
 	}
 	return nil
 }
 
-// ResetLayoutPresets 清除自定义档位，恢复内置默认值。
-func (m *Manager) ResetLayoutPresets() error {
+// GetLayout 返回当前的全局布局；用户未设置时回退到默认值。
+func (m *Manager) GetLayout() GlobalLayout {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.config.Layout != nil {
+		return *m.config.Layout
+	}
+	return DefaultGlobalLayout()
+}
+
+// SetLayout 持久化全局布局（数值校验在服务层完成）。
+// 落盘失败时把内存中的布局置空，使下次启动重新从文件加载已持久化的状态。
+func (m *Manager) SetLayout(l GlobalLayout) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.config.LayoutPresets == nil {
-		return nil
-	}
-	m.config.LayoutPresets = nil
+	m.config.Layout = &l
 	if err := m.saveConfigLocked(); err != nil {
+		m.config.Layout = nil
 		return fmt.Errorf("save config: %w", err)
 	}
 	return nil

@@ -201,7 +201,7 @@ function EditorSkeleton() {
   return (
     <div className="h-full flex flex-col bg-surface-50">
       {/* Toolbar skeleton */}
-      <div className="h-12 flex items-center gap-2 px-3 bg-white/80 border-b border-surface-100 flex-shrink-0">
+      <div className="h-12 flex items-center gap-2 px-3 bg-elev/80 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-md bg-surface-200 animate-shimmer" />
         <div className="w-px h-5 bg-surface-200" />
         <div className="w-20 h-8 rounded-md bg-surface-200 animate-shimmer" />

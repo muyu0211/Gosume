@@ -1,6 +1,16 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { Plus, Trash2, Languages, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
+
+// 语言熟练程度档位（与模板 skillLevel/语言说明一致）
+const LEVEL_OPTIONS: SelectOption[] = [
+  { value: '母语', label: '母语' },
+  { value: '流利', label: '流利' },
+  { value: '熟练', label: '熟练' },
+  { value: '良好', label: '良好' },
+  { value: '基础', label: '基础' },
+]
 
 export function LanguageSection() {
   const items = useResumeStore((s) => s.resume?.languages) || []
@@ -59,18 +69,12 @@ export function LanguageSection() {
                 </div>
                 <div>
                   <label className="form-label">熟练程度 *</label>
-                  <select
-                    className="form-input"
+                  <CustomSelect
                     value={lang.level || ''}
-                    onChange={(e) => updateItem(idx, { level: e.target.value })}
-                  >
-                    <option value="">请选择</option>
-                    <option value="母语">母语</option>
-                    <option value="流利">流利</option>
-                    <option value="熟练">熟练</option>
-                    <option value="良好">良好</option>
-                    <option value="基础">基础</option>
-                  </select>
+                    onChange={(v) => updateItem(idx, { level: v })}
+                    options={LEVEL_OPTIONS}
+                    placeholder="请选择"
+                  />
                 </div>
               </div>
               {isHidden && (
@@ -85,7 +89,7 @@ export function LanguageSection() {
               >
                 <input
                   type="checkbox"
-                  className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
                   checked={!isHidden}
                   onChange={(e) => updateItem(idx, { hidden: !e.target.checked })}
                 />

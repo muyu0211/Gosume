@@ -7,7 +7,7 @@ import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
 import { injectLayoutCss, injectAvatarSizeCss } from '../lib/layoutPresets'
 import { useTemplateStore } from './templateStore'
-import { useLayoutSettingsStore } from './layoutSettingsStore'
+import { useLayoutStore } from './layoutStore'
 
 /** 回退模板 ID（与 usePreview / templateStore 默认值一致）。 */
 const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
@@ -210,9 +210,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resume = get().resume
       if (!resume) return null
 
-      // 测量前确保布局档位已加载（页边距/内容间距影响内容高度），
+      // 测量前确保全局布局已加载（页边距/内容间距影响内容高度），
       // 保证首次进入编辑页的测量与保存后的测量口径一致。
-      await useLayoutSettingsStore.getState().ensureLoaded()
+      await useLayoutStore.getState().ensureLoaded()
 
       // 关键：不能用滞后的 previewHtml——预览渲染是 300ms 防抖异步
       // （usePreview.debouncedRefresh），快速编辑后立即保存时 previewHtml
@@ -223,12 +223,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const templateId = useTemplateStore.getState().activeTemplateId || DEFAULT_TEMPLATE_ID
       const tmpl = await loadTemplateContent(templateId)
       const rendered = renderTemplate(tmpl, resume)
-      const html = injectLayoutCss(
-        rendered,
-        resume.meta?.page_margin,
-        resume.meta?.section_spacing,
-        useLayoutSettingsStore.getState(),
-      )
+      const html = injectLayoutCss(rendered, useLayoutStore.getState().layout)
       const htmlWithAvatar = injectAvatarSizeCss(html, resume.personal)
       const paginated = await paginateHTMLString(htmlWithAvatar, 'continuous')
       const h = await callService<number>(

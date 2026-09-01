@@ -8,7 +8,7 @@ import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
 import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
-import { useLayoutSettingsStore } from '../../stores/layoutSettingsStore'
+import { useLayoutStore } from '../../stores/layoutStore'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
 import { Expandable } from '../ui/Expandable'
 import { Modal, type ModalHandle } from '../ui/Modal'
@@ -69,12 +69,7 @@ export function ExportDialog({ onClose }: Props) {
         const templateId = resume.meta.template_id || DEFAULT_TEMPLATE_ID
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
-        const htmlWithLayout = injectLayoutCss(
-          rendered,
-          resume.meta?.page_margin,
-          resume.meta?.section_spacing,
-          useLayoutSettingsStore.getState(),
-        )
+        const htmlWithLayout = injectLayoutCss(rendered, useLayoutStore.getState().layout)
         const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
 
         const pageMode = selectedFormat === 'png' || selectedFormat === '单页pdf' ? 'continuous' : 'paged'

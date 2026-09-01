@@ -30,32 +30,6 @@ type PersonalSummary struct {
 	Hidden  *bool  `json:"hidden,omitempty"`
 }
 
-// PageMargin 是简历的页边距档位。枚举 key 即与前端约定的传输格式
-// resume.meta.page_margin，由前端按模板组件映射为具体 CSS 值。
-type PageMargin string
-
-// 页边距档位取值。
-const (
-	PageMarginCompact     PageMargin = "compact"
-	PageMarginNarrow      PageMargin = "narrow"
-	PageMarginNormal      PageMargin = "normal"
-	PageMarginWide        PageMargin = "wide"
-	PageMarginComfortable PageMargin = "comfortable"
-)
-
-// SectionSpacing 是简历的内容区块间距档位。枚举 key 即与前端约定的传输格式
-// resume.meta.section_spacing。
-type SectionSpacing string
-
-// 内容间距档位取值。
-const (
-	SectionSpacingCompact     SectionSpacing = "compact"
-	SectionSpacingNarrow      SectionSpacing = "narrow"
-	SectionSpacingNormal      SectionSpacing = "normal"
-	SectionSpacingWide        SectionSpacing = "wide"
-	SectionSpacingComfortable SectionSpacing = "comfortable"
-)
-
 // FontSize 是简历的基准字号，单位 pt。传输格式保持数字，以便该枚举引入前
 // 已持久化的简历仍然有效。
 type FontSize int
@@ -69,15 +43,13 @@ const (
 
 // ResumeMeta 保存简历文档的元数据。
 type ResumeMeta struct {
-	TemplateID     string         `json:"template_id"`
-	Name           string         `json:"name"`
-	Language       string         `json:"language"`
-	FontSize       FontSize       `json:"font_size"`
-	PageMargin     PageMargin     `json:"page_margin"`
-	SectionSpacing SectionSpacing `json:"section_spacing"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	ExportCount    int            `json:"export_count"`
+	TemplateID  string    `json:"template_id"`
+	Name        string    `json:"name"`
+	Language    string    `json:"language"`
+	FontSize    FontSize  `json:"font_size"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	ExportCount int       `json:"export_count"`
 }
 
 // SchemaVersion 是简历数据的 schema 版本，与 App 版本（config.yaml 的 app.version）

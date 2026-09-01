@@ -58,7 +58,7 @@ export function ConfirmDialog({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
+        className="bg-elev rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
           {resolvedIcon && (

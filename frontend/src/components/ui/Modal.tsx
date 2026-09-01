@@ -69,7 +69,7 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
       <div
         onTransitionEnd={handleTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-2xl shadow-xl ${width} max-h-[90vh] ${cardClassName} transition-all duration-200 ${
+        className={`bg-elev rounded-2xl shadow-xl ${width} max-h-[90vh] ${cardClassName} transition-all duration-200 ${
           phase === 'entering'
             ? 'opacity-0 scale-96 translate-y-2'
             : phase === 'open'

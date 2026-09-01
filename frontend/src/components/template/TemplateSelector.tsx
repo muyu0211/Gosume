@@ -47,7 +47,7 @@ function TemplateCard({ template, isActive, onSelect }: { template: TemplateMeta
     <div
       onClick={onSelect}
       className={`relative cursor-pointer rounded-lg border-2 p-3 transition-all ${
-        isActive ? 'border-primary-500 bg-primary-50/50' : 'border-surface-200 hover:border-surface-300 bg-white'
+        isActive ? 'border-primary-500 bg-primary-50/50' : 'border-surface-200 hover:border-surface-300 bg-elev'
       }`}
     >
       {isActive && (

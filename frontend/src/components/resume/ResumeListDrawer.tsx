@@ -7,7 +7,7 @@ import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
 import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
-import { useLayoutSettingsStore } from '../../stores/layoutSettingsStore'
+import { useLayoutStore } from '../../stores/layoutStore'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
@@ -167,10 +167,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     setBatchExporting(true)
     setExportProgress(0)
     try {
-      // Layout tiers are user-customizable (config.json); make sure they
-      // are loaded before resolving resume.meta keys during export.
-      await useLayoutSettingsStore.getState().ensureLoaded()
-      const { margins, spacings } = useLayoutSettingsStore.getState()
+      // 全局布局（px）存储于 config.json，确保已加载后再用于批量导出。
+      await useLayoutStore.getState().ensureLoaded()
+      const layout = useLayoutStore.getState().layout
 
       const ids = Array.from(selectedIds)
       const items: { name: string; html: string }[] = []
@@ -183,14 +182,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
-        // Inject layout overrides (margin + section spacing tier keys) so
-        // batch export honors resume.meta.page_margin / section_spacing
-        const htmlWithLayout = injectLayoutCss(
-          rendered,
-          resume.meta?.page_margin,
-          resume.meta?.section_spacing,
-          { margins, spacings },
-        )
+        // 注入全局布局 CSS（页边距 + 内容间距，px→mm）。
+        const htmlWithLayout = injectLayoutCss(rendered, layout)
         // Apply user-controlled avatar display size (consistent with preview).
         const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
         const paginatedHtml = await paginateHTMLString(htmlWithAvatar, batchExportFormat === 'png' ? 'continuous' : 'paged')
@@ -241,7 +234,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       <div
         onTransitionEnd={handleTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className={`w-[420px] max-w-[90vw] h-full bg-white shadow-2xl flex flex-col transition-all duration-300 ${
+        className={`w-[420px] max-w-[90vw] h-full bg-elev shadow-2xl flex flex-col transition-all duration-300 ${
           phase === 'entering'
             ? 'translate-x-full'
             : phase === 'open'
@@ -397,7 +390,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-xl shadow-2xl p-6 w-[360px] max-w-[90vw] animate-dialog-enter"
+            className="bg-elev rounded-xl shadow-2xl p-6 w-[360px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
@@ -445,7 +438,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
+            className="bg-elev rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
@@ -493,7 +486,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
+            className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4 mb-5">
               <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, SlidersHorizontal, Plus, Trash2, RotateCcw, Download } from 'lucide-react'
+import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { useResumeStore } from '../stores/resumeStore'
-import { useLayoutSettingsStore } from '../stores/layoutSettingsStore'
+import { useThemeStore } from '../stores/themeStore'
 import { callService } from '../services/backend'
 import { extractErrorMessage } from '../lib/errorUtils'
-import type { LayoutPresetSettings, MarginTier, SpacingTier } from '../lib/layoutPresets'
+import type { ThemeMode } from '../lib/theme'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
 
@@ -18,14 +18,6 @@ function getAutoSavePref(): boolean {
   return v === 'true'
 }
 
-/** Generates a unique key for user-added tiers. */
-function newTierKey(): string {
-  return `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-}
-
-const inputCls = 'w-16 px-1.5 py-1 text-xs border border-surface-200 rounded-md focus:outline-none focus:border-primary-500 tabular-nums'
-const labelInputCls = 'w-20 px-1.5 py-1 text-xs border border-surface-200 rounded-md focus:outline-none focus:border-primary-500'
-
 export function SettingsPage() {
   const navigate = useNavigate()
   const resume = useResumeStore((s) => s.resume)
@@ -33,18 +25,18 @@ export function SettingsPage() {
   const language = resume?.meta?.language || 'zh-CN'
   const [autoSave, setAutoSave] = useState(getAutoSavePref)
 
-  // Layout preset tiers (page margin + section spacing), editable as a
-  // local draft; persisted to config.json via SystemService on save.
-  const layoutSettings = useLayoutSettingsStore()
-  const [draft, setDraft] = useState<LayoutPresetSettings>(() => ({
-    margins: structuredClone(layoutSettings.margins),
-    spacings: structuredClone(layoutSettings.spacings),
-  }))
-  const [layoutSaving, setLayoutSaving] = useState(false)
-  const [layoutStatus, setLayoutStatus] = useState<'' | 'success' | 'error'>('')
-  const [layoutErrorMsg, setLayoutErrorMsg] = useState('')
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [deleteTierTarget, setDeleteTierTarget] = useState<{ type: 'margin' | 'spacing'; idx: number; label: string } | null>(null)
+  // 主题选项（跟随系统/经典/麦色/深色），切换即时生效并持久化。
+  const themeMode = useThemeStore((s) => s.mode)
+  const handleThemeChange = async (mode: ThemeMode) => {
+    await useThemeStore.getState().setMode(mode)
+  }
+  const themeOptions: Array<{ value: ThemeMode; title: string; desc: string }> = [
+    { value: 'system', title: '跟随系统', desc: '系统浅色用麦色，系统深色用深色' },
+    { value: 'wheat', title: '麦色', desc: '象牙纸暖色，艺术编辑风' },
+    { value: 'obsidian', title: '深色', desc: '黑曜石深色，与宣传前端呼应' },
+    { value: 'classic', title: '经典', desc: '现有默认亮色风格' },
+  ]
+
   const [appVersion, setAppVersion] = useState('')
 
   // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
@@ -53,99 +45,6 @@ export function SettingsPage() {
       .then((version) => setAppVersion(version || ''))
       .catch(() => { /* 获取失败静默，不显示版本号 */ })
   }, [])
-
-  // Sync the draft when the store loads its persisted values (app start
-  // loads asynchronously) or after reset.
-  useEffect(() => {
-    setDraft({
-      margins: structuredClone(layoutSettings.margins),
-      spacings: structuredClone(layoutSettings.spacings),
-    })
-  }, [layoutSettings.margins, layoutSettings.spacings])
-
-  const layoutDirty =
-    JSON.stringify(draft) !==
-    JSON.stringify({
-      margins: layoutSettings.margins,
-      spacings: layoutSettings.spacings,
-    })
-
-  const patchMargin = (idx: number, patch: Partial<MarginTier>) => {
-    setDraft((d) => ({
-      ...d,
-      margins: d.margins.map((t, i) => (i === idx ? { ...t, ...patch } : t)),
-    }))
-  }
-  const patchSpacing = (idx: number, patch: Partial<SpacingTier>) => {
-    setDraft((d) => ({
-      ...d,
-      spacings: d.spacings.map((t, i) => (i === idx ? { ...t, ...patch } : t)),
-    }))
-  }
-  const addMargin = () => {
-    setDraft((d) => ({
-      ...d,
-      margins: [...d.margins, { key: newTierKey(), label: '新档位', padding_y: 10, padding_x: 12 }],
-    }))
-  }
-  const addSpacing = () => {
-    setDraft((d) => ({
-      ...d,
-      spacings: [
-        ...d.spacings,
-        { key: newTierKey(), label: '新档位', section_gap: 10, item_gap: 6, detail_gap: 2 },
-      ],
-    }))
-  }
-  const removeMargin = (idx: number) => {
-    setDraft((d) => ({ ...d, margins: d.margins.filter((_, i) => i !== idx) }))
-  }
-  const removeSpacing = (idx: number) => {
-    setDraft((d) => ({ ...d, spacings: d.spacings.filter((_, i) => i !== idx) }))
-  }
-
-  const confirmDeleteTier = () => {
-    if (!deleteTierTarget) return
-    if (deleteTierTarget.type === 'margin') {
-      removeMargin(deleteTierTarget.idx)
-    } else {
-      removeSpacing(deleteTierTarget.idx)
-    }
-    setDeleteTierTarget(null)
-  }
-
-  const handleSaveLayout = async () => {
-    setLayoutStatus('')
-    setLayoutErrorMsg('')
-    setLayoutSaving(true)
-    try {
-      await layoutSettings.save(draft)
-      setLayoutStatus('success')
-      setTimeout(() => setLayoutStatus(''), 3000)
-    } catch (err: any) {
-      setLayoutStatus('error')
-      setLayoutErrorMsg(err?.message || String(err))
-    } finally {
-      setLayoutSaving(false)
-    }
-  }
-
-  const handleResetLayout = async () => {
-    setShowResetConfirm(false)
-    setLayoutStatus('')
-    setLayoutErrorMsg('')
-    setLayoutSaving(true)
-    try {
-      await layoutSettings.reset()
-      setLayoutStatus('success')
-      setTimeout(() => setLayoutStatus(''), 3000)
-    } catch (err: any) {
-      setLayoutStatus('error')
-      setLayoutErrorMsg(err?.message || String(err))
-    } finally {
-      setLayoutSaving(false)
-    }
-  }
 
   // Data directory state
   const [dataDir, setDataDir] = useState('')
@@ -244,7 +143,7 @@ export function SettingsPage() {
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
-      <header className="flex items-center gap-3 px-6 py-4 bg-white border-b border-surface-100">
+      <header className="flex items-center gap-3 px-6 py-4 bg-elev border-b border-surface-100">
         <button
           onClick={() => navigate(-1)}
           className="btn-ghost btn-sm"
@@ -298,6 +197,37 @@ export function SettingsPage() {
           </div>
         </section>
 
+        {/* Appearance: theme mode (follow system / classic / wheat / obsidian) */}
+        <section className="form-section">
+          <div className="form-section-header">
+            <div className="flex items-center gap-2">
+              <Palette className="w-4 h-4 text-surface-400" />
+              <span className="form-section-title">外观</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {themeOptions.map((opt) => (
+              <label
+                key={opt.value}
+                className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50"
+              >
+                <input
+                  type="radio"
+                  name="theme"
+                  value={opt.value}
+                  checked={themeMode === opt.value}
+                  onChange={() => handleThemeChange(opt.value)}
+                  className="accent-primary-600"
+                />
+                <div>
+                  <p className="text-sm font-medium text-surface-700">{opt.title}</p>
+                  <p className="text-xs text-surface-400">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </section>
+
         {/* Auto Save */}
         <section className="form-section">
           <div className="form-section-header">
@@ -318,167 +248,6 @@ export function SettingsPage() {
               className="w-5 h-5 rounded accent-primary-600"
             />
           </label>
-        </section>
-
-        {/* Layout Presets */}
-        <section className="form-section">
-          <div className="form-section-header">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">布局档位</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg border border-surface-200 space-y-4">
-            <p className="text-xs text-surface-400 leading-relaxed">
-              自定义页边距与内容间距的档位数值和数量，保存后对所有简历的布局调整生效。
-              “标准”档为回退选项不可删除；内容间距的“标准”档为模板内置节奏，数值不可修改。
-            </p>
-
-            {/* Margin tiers */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-surface-700">页边距档位（mm）</span>
-                <button onClick={addMargin} className="btn-ghost btn-sm inline-flex items-center gap-1 text-xs">
-                  <Plus className="w-3.5 h-3.5" /> 添加档位
-                </button>
-              </div>
-              <div className="space-y-1.5">
-                {draft.margins.map((tier, idx) => (
-                  <div key={tier.key} className="flex items-center gap-2">
-                    <input
-                      value={tier.label}
-                      onChange={(e) => patchMargin(idx, { label: e.target.value })}
-                      className={labelInputCls}
-                      aria-label="档位名称"
-                    />
-                    <label className="flex items-center gap-1 text-xs text-surface-500">
-                      上下
-                      <input
-                        type="number"
-                        min={5}
-                        max={30}
-                        step={0.5}
-                        value={tier.padding_y}
-                        onChange={(e) => patchMargin(idx, { padding_y: Number(e.target.value) })}
-                        className={inputCls}
-                      />
-                    </label>
-                    <label className="flex items-center gap-1 text-xs text-surface-500">
-                      左右
-                      <input
-                        type="number"
-                        min={5}
-                        max={30}
-                        step={0.5}
-                        value={tier.padding_x}
-                        onChange={(e) => patchMargin(idx, { padding_x: Number(e.target.value) })}
-                        className={inputCls}
-                      />
-                    </label>
-                    <span className="flex-1 text-[11px] text-surface-400 truncate">
-                      {tier.key === 'normal' ? '回退档位，不可删除' : ''}
-                    </span>
-                    {tier.key !== 'normal' && (
-                      <button
-                        onClick={() => setDeleteTierTarget({ type: 'margin', idx, label: tier.label })}
-                        className="p-1 rounded-md text-surface-400 hover:text-red-500 hover:bg-red-50"
-                        title="删除档位"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Spacing tiers */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-surface-700">内容间距档位（pt）</span>
-                <button onClick={addSpacing} className="btn-ghost btn-sm inline-flex items-center gap-1 text-xs">
-                  <Plus className="w-3.5 h-3.5" /> 添加档位
-                </button>
-              </div>
-              <div className="space-y-1.5">
-                {draft.spacings.map((tier, idx) => {
-                  const isNormal = tier.key === 'normal'
-                  return (
-                    <div key={tier.key} className="flex items-center gap-2">
-                      <input
-                        value={tier.label}
-                        onChange={(e) => patchSpacing(idx, { label: e.target.value })}
-                        className={labelInputCls}
-                        aria-label="档位名称"
-                      />
-                      {(['section_gap', 'item_gap', 'detail_gap'] as const).map((field, fi) => (
-                        <label key={field} className="flex items-center gap-1 text-xs text-surface-500">
-                          {['模块', '条目', '细节'][fi]}
-                          <input
-                            type="number"
-                            min={0}
-                            max={40}
-                            step={0.5}
-                            disabled={isNormal}
-                            placeholder={isNormal ? '默认' : ''}
-                            value={tier[field] ?? ''}
-                            onChange={(e) =>
-                              patchSpacing(idx, { [field]: e.target.value === '' ? null : Number(e.target.value) } as Partial<SpacingTier>)
-                            }
-                            className={`${inputCls} ${isNormal ? 'bg-surface-50 text-surface-300' : ''}`}
-                          />
-                        </label>
-                      ))}
-                      <span className="flex-1 text-[11px] text-surface-400 truncate">
-                        {isNormal ? '模板内置节奏，不可修改或删除' : ''}
-                      </span>
-                      {!isNormal && (
-                        <button
-                          onClick={() => setDeleteTierTarget({ type: 'spacing', idx, label: tier.label })}
-                          className="p-1 rounded-md text-surface-400 hover:text-red-500 hover:bg-red-50"
-                          title="删除档位"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={handleSaveLayout}
-                disabled={!layoutDirty || layoutSaving}
-                className="btn-primary btn-sm inline-flex items-center gap-1.5"
-              >
-                {layoutSaving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> 保存中...</>
-                ) : (
-                  '保存设置'
-                )}
-              </button>
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                disabled={layoutSaving}
-                className="btn-secondary btn-sm"
-              >
-                恢复默认
-              </button>
-              {layoutStatus === 'success' && (
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> 已保存
-                </p>
-              )}
-              {layoutStatus === 'error' && (
-                <p className="text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {layoutErrorMsg}
-                </p>
-              )}
-            </div>
-          </div>
         </section>
 
         {/* Data Directory */}
@@ -560,28 +329,6 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
-
-      {/* Delete tier confirmation dialog */}
-      <ConfirmDialog
-        open={!!deleteTierTarget}
-        title="删除档位"
-        description={`确定要删除档位「${deleteTierTarget?.label}」吗？`}
-        confirmText="删除"
-        danger
-        onConfirm={confirmDeleteTier}
-        onCancel={() => setDeleteTierTarget(null)}
-      />
-
-      {/* Reset layout presets confirmation dialog */}
-      <ConfirmDialog
-        open={showResetConfirm}
-        title="恢复默认布局档位"
-        description="页边距与内容间距的所有档位将恢复为内置默认值，自定义档位会被移除。此操作不可撤销。"
-        confirmText="恢复默认"
-        icon={<RotateCcw className="w-5 h-5 text-primary-600" />}
-        onConfirm={handleResetLayout}
-        onCancel={() => setShowResetConfirm(false)}
-      />
 
       {/* Update dialog: pops up when a new version is found; internal state
           machine covers download progress / install / retry. */}

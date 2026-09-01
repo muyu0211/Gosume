@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { TemplateSwitcher } from '../template/TemplateSwitcher'
 import { LayoutPopover } from './LayoutPopover'
+import { Tooltip } from '../ui/Tooltip'
 
 interface ToolbarProps {
   onSave: () => void
@@ -56,41 +57,45 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
   }, [commitName])
 
   return (
-    <div className="h-12 flex items-center gap-1 px-3 bg-white/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
+    <div className="h-12 flex items-center gap-1 px-3 bg-elev/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
       {/* Left */}
       <div className="flex items-center gap-1">
-        <button
-          onClick={() => (onHome ?? (() => navigate('/')))()}
-          className="btn-ghost btn-sm"
-          title="返回首页"
-        >
-          <Home className="w-4 h-4" />
-        </button>
+        <Tooltip label="返回首页">
+          <button
+            onClick={() => (onHome ?? (() => navigate('/')))()}
+            className="btn-ghost btn-sm"
+          >
+            <Home className="w-4 h-4" />
+          </button>
+        </Tooltip>
         <div className="w-px h-5 bg-surface-200 mx-1" />
 
-        <button
-          onClick={onSave}
-          disabled={saveStatus === 'saving'}
-          className="btn-primary btn-sm"
-          title="保存 (Ctrl+S)"
-        >
-          {saveStatus === 'saving' ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : saveStatus === 'saved' ? (
-            <Check className="w-4 h-4" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          <span className="hidden sm:inline">
-            {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : '保存'}
-          </span>
-          {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
-        </button>
+        <Tooltip label="保存 (Ctrl+S)">
+          <button
+            onClick={onSave}
+            disabled={saveStatus === 'saving'}
+            className="btn-primary btn-sm"
+          >
+            {saveStatus === 'saving' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : saveStatus === 'saved' ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">
+              {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : '保存'}
+            </span>
+            {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
+          </button>
+        </Tooltip>
 
-        <button onClick={onExport} className="btn-secondary btn-sm" title="导出 (Ctrl+E)">
-          <FileOutput className="w-4 h-4" />
-          <span className="hidden sm:inline">导出</span>
-        </button>
+        <Tooltip label="导出 (Ctrl+E)">
+          <button onClick={onExport} className="btn-secondary btn-sm">
+            <FileOutput className="w-4 h-4" />
+            <span className="hidden sm:inline">导出</span>
+          </button>
+        </Tooltip>
       </div>
 
       {/* Project Name */}
@@ -106,14 +111,15 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             placeholder="输入项目名称..."
           />
         ) : (
-          <button
-            onClick={startEditing}
-            className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors max-w-[200px] truncate"
-            title="点击编辑项目名称"
-          >
-            <span className="truncate">{projectName || '未命名项目'}</span>
-            <Pencil className="w-3 h-3 flex-shrink-0 opacity-50" />
-          </button>
+          <Tooltip label="点击编辑项目名称">
+            <button
+              onClick={startEditing}
+              className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors max-w-[200px] truncate"
+            >
+              <span className="truncate">{projectName || '未命名项目'}</span>
+              <Pencil className="w-3 h-3 flex-shrink-0 opacity-50" />
+            </button>
+          </Tooltip>
         )}
       </div>
 
@@ -121,18 +127,24 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
           绝对居中脱离 flex 流，不受左侧（保存/导出/项目名）与右侧组宽度变化影响，
           始终稳定在 toolbar 水平正中央。toolbar 容器已设 relative。 */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-        <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs" title="缩小">
-          <ZoomOut className="w-3.5 h-3.5" />
-        </button>
+        <Tooltip label="缩小">
+          <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs">
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
         <span className="text-xs text-surface-500 min-w-[42px] text-center tabular-nums">
           {Math.round(zoom * 100)}%
         </span>
-        <button onClick={() => setZoom(zoom + 0.1)} className="btn-ghost btn-xs" title="放大">
-          <ZoomIn className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={() => setZoom(1.0)} className="btn-ghost btn-xs" title="重置">
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+        <Tooltip label="放大">
+          <button onClick={() => setZoom(zoom + 0.1)} className="btn-ghost btn-xs">
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+        <Tooltip label="重置">
+          <button onClick={() => setZoom(1.0)} className="btn-ghost btn-xs">
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
       </div>
 
       {/* Right — ml-auto 让它独立推到右端（缩放组已脱离 flex 流不再推它） */}

@@ -137,7 +137,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                 {stats.map(({ label, value }) => (
                   <span
                     key={label}
-                    className="px-2 py-0.5 text-[11px] rounded-full bg-white border border-surface-200 text-surface-600"
+                    className="px-2 py-0.5 text-[11px] rounded-full bg-elev border border-surface-200 text-surface-600"
                   >
                     {label} {value}
                   </span>
@@ -250,7 +250,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
           </div>
 
           {/* Footer — 固定在底部，不参与滚动 */}
-          <div className="flex justify-end gap-2.5 px-6 py-3 border-t border-surface-100 flex-shrink-0 bg-white">
+          <div className="flex justify-end gap-2.5 px-6 py-3 border-t border-surface-100 flex-shrink-0 bg-elev">
             <button onClick={() => modalRef.current?.close()} className="btn-secondary" disabled={importing}>
               取消
             </button>

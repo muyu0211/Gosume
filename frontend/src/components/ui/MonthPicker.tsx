@@ -100,7 +100,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
     <div
       ref={popoverRef}
       style={popoverStyle}
-      className="bg-white rounded-lg border border-surface-200 shadow-lg p-3"
+      className="bg-elev rounded-lg border border-surface-200 shadow-lg p-3"
     >
       {/* Year navigation */}
       <div className="flex items-center justify-between mb-2">

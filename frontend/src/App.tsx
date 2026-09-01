@@ -6,8 +6,9 @@ import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { CommunityPage } from './routes/CommunityPage'
-import { useLayoutSettingsStore } from './stores/layoutSettingsStore'
+import { useLayoutStore } from './stores/layoutStore'
 import { useResumeStore } from './stores/resumeStore'
+import { useThemeStore } from './stores/themeStore'
 import { applyPlatformToDocument } from './lib/platform'
 import { isWails, callService } from './services/backend'
 
@@ -31,10 +32,20 @@ export default function App() {
     }
   }, [])
 
-  // Load user-customized layout tiers once so custom presets are available
-  // to the preview, exports and the layout popover from the start.
+  // Load the global layout (page margins + content spacing, px) once so the
+// preview, exports and the toolbar popovers use the persisted values.
   useEffect(() => {
-    useLayoutSettingsStore.getState().ensureLoaded().catch(() => { /* defaults apply */ })
+    useLayoutStore.getState().ensureLoaded().catch(() => { /* defaults apply */ })
+  }, [])
+
+  // 加载持久化主题选项并覆盖启动默认值；选择「跟随系统」时监听系统深浅色
+  // 变化，自动在麦色/深色间切换（PR-10）。
+  useEffect(() => {
+    useThemeStore.getState().ensureLoaded().catch(() => { /* default applies */ })
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => useThemeStore.getState().refreshSystem()
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
   }, [])
 
   // 监听系统关闭请求（标题栏原生 X / Alt+F4 / macOS 红绿灯）：后端在
