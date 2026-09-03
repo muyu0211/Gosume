@@ -146,7 +146,7 @@
             <!-- ═══════════ 个人信息区（header）═══════════
                  由 4 个子块组成，均为 grid/flex 子项，排布由 CSS 控制：
                  双栏 = 侧栏；单栏 = 顶部块（头像右置/居中/左置由各模板决定）。 -->
-            <header class="r-header">
+            <header class="r-header" data-section="personal">
                 {{if .Personal.Avatar}}
                 <div class="r-avatar"><img src="{{safeURL .Personal.Avatar}}" alt="头像" /></div>
                 {{end}}
@@ -185,7 +185,7 @@
                 </div>
 
                 {{if .Languages}}
-                <div class="r-langs">
+                <div class="r-langs" data-section="languages">
                     <div class="r-subtitle">{{i18n .Meta.Language "语言" "Languages"}}</div>
                     {{range .Languages}}
                     <div class="r-lang" data-id="{{.ID}}">{{.Name}}{{if .Level}} · {{.Level}}{{end}}{{if .Proficiency}}
@@ -201,9 +201,9 @@
 
                 <!-- 教育背景 -->
                 {{if .Education}}
-                <div class="section-title">{{i18n .Meta.Language "教育背景" "Education"}}</div>
+                <div class="section-title" data-section="education">{{i18n .Meta.Language "教育背景" "Education"}}</div>
                 {{range .Education}}
-                <div class="education-item" data-id="{{.ID}}">
+                <div class="education-item" data-id="{{.ID}}" data-section="education">
                     <div class="edu-header">
                         <div class="edu-school">{{.School}}{{if .Degree}} · {{.Degree}}{{end}}{{if .Major}} ·
                             {{.Major}}{{end}}{{if .GPA}} · GPA {{.GPA}}{{end}}</div>
@@ -223,9 +223,9 @@
 
                 <!-- 实习经历 -->
                 {{if .Internships}}
-                <div class="section-title">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
+                <div class="section-title" data-section="internships">{{i18n .Meta.Language "实习经历" "Internship"}}</div>
                 {{range .Internships}}
-                <div class="experience-item" data-id="{{.ID}}">
+                <div class="experience-item" data-id="{{.ID}}" data-section="internships">
                     <div class="exp-header">
                         <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> ·
                                 {{.Title}}</span>{{end}}</div>
@@ -244,9 +244,9 @@
 
                 <!-- 工作经历 -->
                 {{if .Jobs}}
-                <div class="section-title">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
+                <div class="section-title" data-section="jobs">{{i18n .Meta.Language "工作经历" "Work Experience"}}</div>
                 {{range .Jobs}}
-                <div class="experience-item" data-id="{{.ID}}">
+                <div class="experience-item" data-id="{{.ID}}" data-section="jobs">
                     <div class="exp-header">
                         <div><span class="company">{{.Company}}</span>{{if .Title}}<span class="title"> ·
                                 {{.Title}}</span>{{end}}</div>
@@ -265,9 +265,9 @@
 
                 <!-- 项目经历 -->
                 {{if .Projects}}
-                <div class="section-title">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
+                <div class="section-title" data-section="projects">{{i18n .Meta.Language "项目经历" "Projects"}}</div>
                 {{range .Projects}}
-                <div class="experience-item" data-id="{{.ID}}">
+                <div class="experience-item" data-id="{{.ID}}" data-section="projects">
                     <div class="exp-header">
                         <div><span class="company">{{.Name}}</span>{{if .Role}}<span class="title"> ·
                                 {{.Role}}</span>{{end}}</div>
@@ -291,9 +291,9 @@
 
                 <!-- 荣誉奖项 -->
                 {{if .Awards}}
-                <div class="section-title">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
+                <div class="section-title" data-section="awards">{{i18n .Meta.Language "荣誉奖项" "Awards"}}</div>
                 {{range .Awards}}
-                <div class="award-item" data-id="{{.ID}}">
+                <div class="award-item" data-id="{{.ID}}" data-section="awards">
                     <div class="award-header">
                         <span class="award-title">{{.Title}}</span>
                         {{if .Date}}<span class="date">{{.Date}}</span>{{end}}
@@ -306,8 +306,8 @@
 
                 <!-- 技能 -->
                 {{if .Skills}}
-                <div class="section-title">{{i18n .Meta.Language "技能" "Skills"}}</div>
-                <div class="skills-grid">
+                <div class="section-title" data-section="skills">{{i18n .Meta.Language "技能" "Skills"}}</div>
+                <div class="skills-grid" data-section="skills">
                     {{range .Skills}}
                     <div class="skill-category" data-id="{{.ID}}">
                         <h4>{{.Category}}</h4>
@@ -324,17 +324,17 @@
 
                 <!-- 个人总结（hidden 由数据层处理：summary 文本被清空则不渲染） -->
                 {{if .PersonalSummary.Summary}}
-                <div class="section-title">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
-                <div class="summary">{{md .PersonalSummary.Summary}}</div>
+                <div class="section-title" data-section="summary">{{i18n .Meta.Language "个人总结" "Summary"}}</div>
+                <div class="summary" data-section="summary">{{md .PersonalSummary.Summary}}</div>
                 {{end}}
 
                 <!-- 自定义区块 -->
                 {{if .Custom}}
                 {{range .Custom}}
-                <div class="section-title">{{.Title}}</div>
+                <div class="section-title" data-section="custom">{{.Title}}</div>
                 {{range .Items}}
-                <div class="custom-item" data-id="{{.ID}}">
-                    <h4>{{.Title}}</h4>
+                <div class="custom-item" data-id="{{.ID}}" data-section="custom">
+                    <h4>{{mdInline .Title}}</h4>
                     {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}{{if .Date}} · {{.Date}}{{end}}</div>{{end}}
                     {{if .Description}}<div class="exp-summary">{{md .Description}}</div>{{end}}
                     {{if .Highlights}}

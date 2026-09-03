@@ -10,6 +10,7 @@ const KIND_LABELS: Record<ItemDeleteKind, string> = {
   project: '项目经历',
   language: '语言能力',
   award: '奖项荣誉',
+  custom: '自定义模块',
 }
 
 /** 待删除目标 → 确认文案主体。 */
@@ -23,6 +24,10 @@ function describeTarget(pending: PendingItemDelete): string {
       return '这条关键亮点'
     case 'extra':
       return '这个扩展字段'
+    case 'customItem':
+      return '这个自定义条目'
+    case 'customHighlight':
+      return '这条关键亮点'
   }
 }
 

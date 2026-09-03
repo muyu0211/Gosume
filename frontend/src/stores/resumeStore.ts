@@ -1,5 +1,5 @@
 import { create, type StoreApi } from 'zustand'
-import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField } from '../types/resume'
+import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField, CustomSection, CustomItem } from '../types/resume'
 import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
 import { callService, isWails } from '../services/backend'
 import { paginateHTMLString } from '../lib/exportHtml'
@@ -13,23 +13,27 @@ import { useLayoutStore } from './layoutStore'
 const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
 
 /** 简历内容条目的种类，用于删除二次确认的文案与分发。 */
-export type ItemDeleteKind = 'internship' | 'job' | 'education' | 'skill' | 'project' | 'language' | 'award'
+export type ItemDeleteKind = 'internship' | 'job' | 'education' | 'skill' | 'project' | 'language' | 'award' | 'custom'
 
 /** 含「关键亮点」子项的顶层条目类型。 */
 export type HighlightSection = 'job' | 'internship' | 'project' | 'education'
 
 /**
  * 待确认的删除目标（顶层条目或二级子项）。
- * - item: 顶层条目（实习/工作/项目/教育/技能分组/语言/奖项）
+ * - item: 顶层条目（实习/工作/项目/教育/技能分组/语言/奖项/自定义模块）
  * - skillItem: 技能分组内的单个技能
  * - highlight: 经历/项目/教育内的「关键亮点」
  * - extra: 项目内的「扩展字段」
+ * - customItem: 自定义模块内的单个条目
+ * - customHighlight: 自定义条目内的「关键亮点」
  */
 export type PendingItemDelete =
   | { type: 'item'; kind: ItemDeleteKind; index: number }
   | { type: 'skillItem'; groupIndex: number; skillIndex: number }
   | { type: 'highlight'; section: HighlightSection; itemIndex: number; highlightIndex: number }
   | { type: 'extra'; projectIndex: number; extraIndex: number }
+  | { type: 'customItem'; sectionIndex: number; itemIndex: number }
+  | { type: 'customHighlight'; sectionIndex: number; itemIndex: number; highlightIndex: number }
 
 interface ResumeState {
   resume: Resume | null
@@ -101,6 +105,15 @@ interface ResumeState {
   updateAward: (index: number, award: Partial<Award>) => void
   removeAward: (index: number) => void
 
+  // 自定义模块（模块级 + 条目级）
+  addCustomSection: () => void
+  updateCustomSection: (index: number, section: Partial<CustomSection>) => void
+  removeCustomSection: (index: number) => void
+  moveCustomSection: (from: number, to: number) => void
+  addCustomItem: (sectionIndex: number) => void
+  updateCustomItem: (sectionIndex: number, itemIndex: number, item: Partial<CustomItem>) => void
+  moveCustomItem: (sectionIndex: number, from: number, to: number) => void
+
   // 条目删除二次确认（会话级，仅内存态，不持久化到后端）
   skipItemDeleteConfirm: boolean
   pendingItemDelete: PendingItemDelete | null
@@ -109,6 +122,8 @@ interface ResumeState {
   requestSkillItemDelete: (groupIndex: number, skillIndex: number) => void
   requestHighlightDelete: (section: HighlightSection, itemIndex: number, highlightIndex: number) => void
   requestExtraDelete: (projectIndex: number, extraIndex: number) => void
+  requestCustomItemDelete: (sectionIndex: number, itemIndex: number) => void
+  requestCustomHighlightDelete: (sectionIndex: number, itemIndex: number, highlightIndex: number) => void
   confirmItemDelete: () => void
   cancelItemDelete: () => void
 }
@@ -509,6 +524,71 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ resume: { ...resume, awards: resume.awards.filter((_, i) => i !== index) }, isDirty: true })
   },
 
+  // ── 自定义模块（模块级 + 条目级） ─────────────────────────────────────────
+  addCustomSection: () => {
+    const resume = get().resume
+    if (!resume) return
+    // 新建模块默认携带一个空条目，避免用户找不到"添加条目"入口
+    const section: CustomSection = { id: generateId(), title: '', items: [{ id: generateId(), title: '' }] }
+    set({ resume: { ...resume, custom: [...(resume.custom || []), section] }, isDirty: true })
+  },
+
+  updateCustomSection: (index, section) => {
+    const resume = get().resume
+    if (!resume?.custom) return
+    const custom = [...resume.custom]
+    custom[index] = { ...custom[index], ...section }
+    set({ resume: { ...resume, custom }, isDirty: true })
+  },
+
+  removeCustomSection: (index) => {
+    const resume = get().resume
+    if (!resume?.custom) return
+    set({ resume: { ...resume, custom: resume.custom.filter((_, i) => i !== index) }, isDirty: true })
+  },
+
+  moveCustomSection: (from, to) => {
+    const resume = get().resume
+    if (!resume?.custom) return
+    const custom = [...resume.custom]
+    const [item] = custom.splice(from, 1)
+    custom.splice(to, 0, item)
+    set({ resume: { ...resume, custom }, isDirty: true })
+  },
+
+  addCustomItem: (sectionIndex) => {
+    const resume = get().resume
+    const section = resume?.custom?.[sectionIndex]
+    if (!resume || !section) return
+    const item: CustomItem = { id: generateId(), title: '' }
+    const custom = [...(resume.custom || [])]
+    custom[sectionIndex] = { ...section, items: [...(section.items || []), item] }
+    set({ resume: { ...resume, custom }, isDirty: true })
+  },
+
+  updateCustomItem: (sectionIndex, itemIndex, item) => {
+    const resume = get().resume
+    const section = resume?.custom?.[sectionIndex]
+    if (!resume || !section) return
+    const items = [...(section.items || [])]
+    items[itemIndex] = { ...items[itemIndex], ...item }
+    const custom = [...(resume.custom || [])]
+    custom[sectionIndex] = { ...section, items }
+    set({ resume: { ...resume, custom }, isDirty: true })
+  },
+
+  moveCustomItem: (sectionIndex, from, to) => {
+    const resume = get().resume
+    const section = resume?.custom?.[sectionIndex]
+    if (!resume || !section) return
+    const items = [...(section.items || [])]
+    const [item] = items.splice(from, 1)
+    items.splice(to, 0, item)
+    const custom = [...(resume.custom || [])]
+    custom[sectionIndex] = { ...section, items }
+    set({ resume: { ...resume, custom }, isDirty: true })
+  },
+
   // 条目删除二次确认（会话级）
   skipItemDeleteConfirm: false,
   pendingItemDelete: null,
@@ -529,6 +609,14 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 
   requestExtraDelete: (projectIndex, extraIndex) => {
     requestPending(get, set, { type: 'extra', projectIndex, extraIndex })
+  },
+
+  requestCustomItemDelete: (sectionIndex, itemIndex) => {
+    requestPending(get, set, { type: 'customItem', sectionIndex, itemIndex })
+  },
+
+  requestCustomHighlightDelete: (sectionIndex, itemIndex, highlightIndex) => {
+    requestPending(get, set, { type: 'customHighlight', sectionIndex, itemIndex, highlightIndex })
   },
 
   confirmItemDelete: () => {
@@ -604,6 +692,12 @@ function applyPendingDelete(state: ResumeState, target: PendingItemDelete): void
     case 'extra':
       removeExtra(state, target.projectIndex, target.extraIndex)
       break
+    case 'customItem':
+      removeCustomItem(state, target.sectionIndex, target.itemIndex)
+      break
+    case 'customHighlight':
+      removeCustomHighlight(state, target.sectionIndex, target.itemIndex, target.highlightIndex)
+      break
   }
 }
 
@@ -630,6 +724,9 @@ function removeItemByKind(state: ResumeState, kind: ItemDeleteKind, index: numbe
       break
     case 'award':
       state.removeAward(index)
+      break
+    case 'custom':
+      state.removeCustomSection(index)
       break
   }
 }
@@ -689,6 +786,27 @@ function removeExtra(state: ResumeState, projectIndex: number, extraIndex: numbe
   const project = state.resume?.projects?.[projectIndex]
   if (!project?.extras) return
   state.updateProjectExtras(projectIndex, project.extras.filter((_, i) => i !== extraIndex))
+}
+
+// removeCustomItem 删除自定义模块内的单个条目。
+function removeCustomItem(state: ResumeState, sectionIndex: number, itemIndex: number): void {
+  const section = state.resume?.custom?.[sectionIndex]
+  if (!section) return
+  state.updateCustomSection(sectionIndex, { items: section.items.filter((_, i) => i !== itemIndex) })
+}
+
+// removeCustomHighlight 删除自定义条目内的关键亮点。
+function removeCustomHighlight(
+  state: ResumeState,
+  sectionIndex: number,
+  itemIndex: number,
+  highlightIndex: number,
+): void {
+  const item = state.resume?.custom?.[sectionIndex]?.items?.[itemIndex]
+  if (!item?.highlights) return
+  state.updateCustomItem(sectionIndex, itemIndex, {
+    highlights: item.highlights.filter((_, i) => i !== highlightIndex),
+  })
 }
 
 function setByPath(obj: Record<string, unknown>, path: string, value: unknown): void {

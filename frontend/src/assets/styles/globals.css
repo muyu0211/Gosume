@@ -457,6 +457,22 @@ body {
   animation: section-enter 0.2s ease-out both;
 }
 
+/* 左侧导航 tab 跳转提醒：预览点击跳转后缓慢闪烁两次（约 1s），随后恢复常驻高亮 */
+@keyframes tab-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.animate-tab-blink {
+  animation: tab-blink 0.5s ease-in-out 2;
+}
+
 /* Loading bar animation */
 @keyframes loading-bar {
   0% {

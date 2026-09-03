@@ -507,6 +507,7 @@ function toGoShape(resume: Resume): Record<string, unknown> {
       return obj
         .map(convert)
         .filter((item) => {
+          if (typeof item === 'string') return item.trim() !== ''
           if (item && typeof item === 'object') {
             const hidden = (item as Record<string, unknown>).Hidden
             if (hidden === true) return false

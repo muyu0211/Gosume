@@ -6,6 +6,7 @@ import { EducationSection } from './EducationSection'
 import { SkillSection } from './SkillSection'
 import { LanguageSection } from './LanguageSection'
 import { AwardSection } from './AwardSection'
+import { CustomSection } from './CustomSection'
 
 export function EditorPanel() {
   const activeSection = useEditorStore((s) => s.activeSection)
@@ -31,13 +32,7 @@ export function EditorPanel() {
       case 'awards':
         return <AwardSection />
       case 'custom':
-        return (
-          <div className="form-section">
-            <div className="text-center py-8 text-surface-400 text-sm">
-              此模块将在后续版本中提供
-            </div>
-          </div>
-        )
+        return <CustomSection />
       default:
         return null
     }
