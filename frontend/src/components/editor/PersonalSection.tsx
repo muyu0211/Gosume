@@ -1,4 +1,5 @@
 import { useResumeStore } from '../../stores/resumeStore'
+import { getSectionTitle } from '../../lib/resumeSections'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -53,6 +54,7 @@ export function PersonalSection() {
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
   const avatarRenderedSize = useResumeStore((s) => s.avatarRenderedSize)
+  const language = resume?.meta?.language
   const p = resume?.personal
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -227,7 +229,7 @@ export function PersonalSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <User className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">个人信息</span>
+          <span className="form-section-title">{getSectionTitle('personal', language)}</span>
         </div>
       </div>
 

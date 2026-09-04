@@ -1,4 +1,6 @@
 import { useEditorStore } from '../../stores/editorStore'
+import { useResumeStore } from '../../stores/resumeStore'
+import { getSectionTitle } from '../../lib/resumeSections'
 import { PersonalSection } from './PersonalSection'
 import { SummarySection } from './SummarySection'
 import { ExperienceSection } from './ExperienceSection'
@@ -10,6 +12,7 @@ import { CustomSection } from './CustomSection'
 
 export function EditorPanel() {
   const activeSection = useEditorStore((s) => s.activeSection)
+  const language = useResumeStore((s) => s.resume?.meta?.language)
 
   const renderSection = () => {
     switch (activeSection) {
@@ -18,15 +21,15 @@ export function EditorPanel() {
       case 'summary':
         return <SummarySection />
       case 'internships':
-        return <ExperienceSection type="internships" title="实习经历" />
+        return <ExperienceSection type="internships" title={getSectionTitle('internships', language)} />
       case 'jobs':
-        return <ExperienceSection type="jobs" title="工作经历" />
+        return <ExperienceSection type="jobs" title={getSectionTitle('jobs', language)} />
       case 'education':
         return <EducationSection />
       case 'skills':
         return <SkillSection />
       case 'projects':
-        return <ExperienceSection type="projects" title="项目经历" />
+        return <ExperienceSection type="projects" title={getSectionTitle('projects', language)} />
       case 'languages':
         return <LanguageSection />
       case 'awards':

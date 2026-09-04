@@ -1,10 +1,12 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, EyeOff } from 'lucide-react'
 import { RichTextField } from '../ui/RichTextField'
+import { getSectionTitle } from '../../lib/resumeSections'
 
 export function SummarySection() {
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
+  const language = resume?.meta?.language
 
   const summary = resume?.personal_summary
   const isHidden = !!summary?.hidden
@@ -14,7 +16,7 @@ export function SummarySection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">个人总结</span>
+          <span className="form-section-title">{getSectionTitle('summary', language)}</span>
           {isHidden && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
               <EyeOff className="w-2.5 h-2.5" />

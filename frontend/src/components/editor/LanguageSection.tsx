@@ -2,6 +2,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { Plus, Trash2, Languages, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
+import { getSectionTitle } from '../../lib/resumeSections'
 
 // 语言熟练程度档位（与模板 skillLevel/语言说明一致）
 const LEVEL_OPTIONS: SelectOption[] = [
@@ -13,6 +14,7 @@ const LEVEL_OPTIONS: SelectOption[] = [
 ]
 
 export function LanguageSection() {
+  const language = useResumeStore((s) => s.resume?.meta?.language)
   const items = useResumeStore((s) => s.resume?.languages) || []
   const addItem = useResumeStore((s) => s.addLanguage)
   const updateItem = useResumeStore((s) => s.updateLanguage)
@@ -26,7 +28,7 @@ export function LanguageSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">语言能力</span>
+          <span className="form-section-title">{getSectionTitle('languages', language)}</span>
           <span className="text-xs text-surface-400">({items.length})</span>
         </div>
         <button onClick={addItem} className="btn-primary btn-xs">

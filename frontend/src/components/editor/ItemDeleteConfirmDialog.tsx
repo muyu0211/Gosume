@@ -1,23 +1,29 @@
 import { useResumeStore, type ItemDeleteKind, type PendingItemDelete } from '../../stores/resumeStore'
+import { getSectionTitle } from '../../lib/resumeSections'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 
-/** 顶层条目类型 → 展示文案。 */
-const KIND_LABELS: Record<ItemDeleteKind, string> = {
-  internship: '实习经历',
-  job: '工作经历',
-  education: '教育经历',
-  skill: '技能分组',
-  project: '项目经历',
-  language: '语言能力',
-  award: '奖项荣誉',
-  custom: '自定义模块',
+/** 删除条目种类 → 板块 id（用于 getSectionTitle 取实际模块标题）。 */
+const KIND_SECTION_ID: Record<ItemDeleteKind, string> = {
+  internship: 'internships',
+  job: 'jobs',
+  education: 'education',
+  skill: 'skills',
+  project: 'projects',
+  language: 'languages',
+  award: 'awards',
+  custom: 'custom',
 }
 
-/** 待删除目标 → 确认文案主体。 */
-function describeTarget(pending: PendingItemDelete): string {
+/** 待删除目标 → 确认文案主体（板块名取自 getSectionTitle，不写死）。 */
+function describeTarget(pending: PendingItemDelete, language?: string): string {
   switch (pending.type) {
-    case 'item':
-      return `这条${KIND_LABELS[pending.kind]}`
+    case 'item': {
+      const base = getSectionTitle(KIND_SECTION_ID[pending.kind], language)
+      const label =
+        pending.kind === 'skill' ? `${base}分组` :
+        pending.kind === 'custom' ? `${base}模块` : base
+      return `这条${label}`
+    }
     case 'skillItem':
       return '这个技能'
     case 'highlight':
@@ -44,12 +50,13 @@ export function ItemDeleteConfirmDialog() {
   const setSkip = useResumeStore((s) => s.setSkipItemDeleteConfirm)
   const confirm = useResumeStore((s) => s.confirmItemDelete)
   const cancel = useResumeStore((s) => s.cancelItemDelete)
+  const language = useResumeStore((s) => s.resume?.meta?.language)
 
   return (
     <ConfirmDialog
       open={!!pending}
       title="确认删除"
-      description={pending ? `确定要删除${describeTarget(pending)}吗？此操作不可撤销。` : ''}
+      description={pending ? `确定要删除${describeTarget(pending, language)}吗？此操作不可撤销。` : ''}
       confirmText="删除"
       cancelText="取消"
       danger

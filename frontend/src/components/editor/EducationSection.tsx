@@ -5,8 +5,10 @@ import { Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, GripVertical, E
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { getSectionTitle } from '../../lib/resumeSections'
 
 export function EducationSection() {
+  const language = useResumeStore((s) => s.resume?.meta?.language)
   const items = useResumeStore((s) => s.resume?.education) || []
   const addItem = useResumeStore((s) => s.addEducation)
   const updateItem = useResumeStore((s) => s.updateEducation)
@@ -24,7 +26,7 @@ export function EducationSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">教育背景</span>
+          <span className="form-section-title">{getSectionTitle('education', language)}</span>
           <span className="text-xs text-surface-400">({items.length})</span>
         </div>
         <button onClick={() => { addItem(); setExpanded({[items.length]: true}) }} className="btn-primary btn-xs">

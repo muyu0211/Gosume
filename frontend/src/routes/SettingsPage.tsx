@@ -7,6 +7,7 @@ import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { useResumeStore } from '../stores/resumeStore'
 import { useThemeStore } from '../stores/themeStore'
 import { callService } from '../services/backend'
+import { getAppVersion } from '../services/systemService'
 import { extractErrorMessage } from '../lib/errorUtils'
 import type { ThemeMode } from '../lib/theme'
 
@@ -41,9 +42,13 @@ export function SettingsPage() {
 
   // 应用版本号来自后端 SystemService.GetAppVersion（编译期嵌入的 app.yaml）
   useEffect(() => {
-    callService<string>('SystemService', 'GetAppVersion')
-      .then((version) => setAppVersion(version || ''))
-      .catch(() => { /* 获取失败静默，不显示版本号 */ })
+    let cancelled = false
+    getAppVersion().then((version) => {
+      if (!cancelled) setAppVersion(version)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Data directory state

@@ -38,7 +38,7 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 
 | 服务                | 可调用方法                                                                                                                                                     |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ResumeService`   | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, ListResumes, UpdateResumeMeta         |
+| `ResumeService`   | NewResume, LoadResume, GetResumeByID, ExplicitSave, AutoSave, DeleteResume, SetResume, GetCurrentID, ListResumes, UpdateResumeMeta                        |
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ValidateForTemplate |
 | `ExportService`   | ExportHTML, ExportBatchHTML                                                                                                                               |
 | `FileService`     | OpenFile, SaveFile, GetRecentFiles                                                                                                                        |
@@ -145,6 +145,7 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 `LayoutPopover`（Toolbar 内）提供「页边距」（上下/左右）与「内容间距」（模块/条目/细节）两组**1px 拖动条**，以 **px 数值**存于全局配置（`lib/layoutPresets.ts` 的 `GlobalLayout`，经 `SystemService.GetLayout/SaveLayout` 读写，运行时经 `stores/layoutStore.ts` 加载），所有简历共享：
 
 * 页边距范围 `MARGIN_PX_MIN..MARGIN_PX_MAX`（1–60px），内容间距 `SPACING_PX_MIN..SPACING_PX_MAX`（1–20px）；范围/默认常量引用 `lib/layoutPresets.ts`，不得硬编码
+
 * 渲染时前端将 px 按 `25.4/96` 换算为 mm 注入（页边距为 `--resume-padding[-y/-x]`，内容间距三层注入 `margin-bottom !important`）
 
 * 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），集合在 `lib/layoutPresets.ts` 的 `buildLayoutCss`
@@ -213,7 +214,25 @@ export function XxxDialog({ onClose }: Props) {
 * 禁止使用：any 类型、var 声明、硬编码魔法值（如直接写 100 代替 MAX\_PAGE\_SIZE）
 
 * **样式须适配 Gosume 主题**：所有界面颜色/背景/边框/阴影一律使用主题令牌（`surface-*`/`primary-*`/`bg-elev` 及 `globals.css` 中的 CSS 变量），禁止在组件里硬编码与主题相关的 hex / `bg-white` / `text-black` 等，确保三套主题（经典/麦色/深色）与"跟随系统"下均可读、一致。
+
 * **下拉/按钮风格一致**：工具栏按钮及点击展开的下拉面板样式必须保持统一——触发器用 `bg-elev`/`surface` 边框 + hover 态，面板用 Portal + `fixed` + `z-[9999]` + `animate-dropdown-enter`（参考 `CustomSelect.tsx` 与 `Tooltip.tsx`）；同一功能的多个入口（如"页边距""内容间距"两个下拉按钮）视觉与交互需完全一致。
+
+### 模块名规范（禁止写死）
+
+简历各板块的**名称一律通过** **`lib/resumeSections.ts`** **获取，禁止在组件或常量中写死**模块名字符串，避免与模板标题 / 本地化文案脱节——后续修改模板 i18n 只需改一处：
+
+* **导航 / 编辑区 / 删除确认等 UI 文案**：用 `getSectionTitle(sectionId, language)` 取本地化标题（单一来源 `SECTION_TITLES`，zh/en），语言取 `resume.meta.language`：
+
+  ```ts
+  const language = useResumeStore((s) => s.resume?.meta?.language)
+  <span>{getSectionTitle('education', language)}</span>   // 教育背景 / Education
+  ```
+
+* **需要展示模板实际渲染标题的场景（如 StatusBar 板块统计）**：解析 `previewHtml` 中 `.r-main .section-title` / `.r-langs .r-subtitle` 的文本（含用户自定义模块名），并用 `sectionTitleId` 把渲染标题映射回板块 id 以配对计数。
+
+* **已知消费方**：Sidebar 导航、EditorPanel 及各编辑组件（Education/Skill/Language/Summary/Personal/Custom）、ItemDeleteConfirmDialog、StatusBar。新增任何需要显示板块名的 UI 都应复用上述逻辑，不要新增写死的模块名。
+
+* **`SECTION_TITLE_FALLBACK`**：仅在模板未带 `data-section`（如运行中 App 的嵌入式模板未更新）时用于推断板块 id，属兼容手段，不应作为新文案的源头。
 
 ### React+TS 专属规则
 

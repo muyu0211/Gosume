@@ -16,12 +16,15 @@ import {
   PAGES_ID,
 } from '../../lib/morphPreview'
 import { LAYOUT_STYLE_ID, AVATAR_STYLE_ID } from '../../lib/layoutPresets'
+import { sectionTitleId } from '../../lib/resumeSections'
 
 /** 预览交互高亮样式 id（模板切换重写 doc 后重建）。 */
 const INTERACT_STYLE_ID = 'preview-section-interact-style'
 
-/** 高亮包围盒外扩（px），避免虚线框贴住内容。 */
+/** 高亮包围盒外扩（px），避免框贴住内容。 */
 const OVERLAY_PAD = 3
+/** 高亮渐入/渐出动画时长（ms），与注入 CSS 的 animation 时长保持一致。 */
+const OVERLAY_FADE_MS = 300
 
 /** 确保预览 iframe 内存在"模块区域可点击"交互样式。 */
 function ensureInteractStyle(doc: Document): void {
@@ -33,54 +36,42 @@ function ensureInteractStyle(doc: Document): void {
     [data-section] { cursor: pointer; }
     /* 让分页后的 .resume-page 作为 overlay 的定位参考 */
     .resume-page { position: relative; }
-    /* 模块整区高亮：单个虚线框包裹标题 + 全部条目（每页各生成一个） */
+    /* 模块整区高亮：单个灰框（外扩阴影描边）包裹标题 + 全部条目（每页各生成一个），渐入渐出 */
+    @keyframes preview-overlay-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes preview-overlay-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
     .preview-section-overlay {
       position: absolute;
       pointer-events: none;
-      border: 1.5px dashed var(--primary-color, #3b82f6);
-      background: rgba(59, 130, 246, 0.08);
-      border-radius: 4px;
+      box-shadow: 0 0 5px 3px #9ca3af;
+      background: rgba(156, 163, 175, 0.12);
+      border-radius: 8px;
       z-index: 10;
+      opacity: 0;
+      animation: preview-overlay-in ${OVERLAY_FADE_MS}ms ease forwards;
+    }
+    .preview-section-overlay.preview-overlay-out {
+      animation: preview-overlay-out ${OVERLAY_FADE_MS}ms ease forwards;
     }
   `
   doc.head.appendChild(style)
+}
+
+/** 让 overlay 淡出后移除；跨板块切换 / 移出预览时用于实现渐出。 */
+function fadeOutOverlay(el: HTMLElement): void {
+  el.classList.add('preview-overlay-out')
+  setTimeout(() => el.remove(), OVERLAY_FADE_MS)
 }
 
 /** 一个逻辑板块（标题 + 全部条目，可跨页）。 */
 interface SectionGroup {
   id: string
   els: Element[]
-}
-
-/**
- * 板块标题文字 → 编辑 tab id 的兜底映射。
- * 仅在模板未带 data-section 时使用（如运行中 App 的嵌入式模板未更新），
- * 按标题文字推断所属板块，保证点击跳转不依赖模板嵌入是否刷新。
- * 无法识别（如自定义模块名）一律归为 custom。
- */
-const SECTION_TITLE_FALLBACK: Record<string, string> = {
-  教育背景: 'education',
-  Education: 'education',
-  实习经历: 'internships',
-  Internship: 'internships',
-  工作经历: 'jobs',
-  'Work Experience': 'jobs',
-  项目经历: 'projects',
-  Projects: 'projects',
-  荣誉奖项: 'awards',
-  Awards: 'awards',
-  技能: 'skills',
-  Skills: 'skills',
-  个人总结: 'summary',
-  Summary: 'summary',
-}
-
-/** 解析板块标题的编辑 tab id：优先取 data-section，缺失时按标题文字兜底。 */
-function sectionTitleId(title: Element): string {
-  const explicit = title.getAttribute('data-section')
-  if (explicit) return explicit
-  const text = (title.textContent ?? '').trim()
-  return SECTION_TITLE_FALLBACK[text] ?? 'custom'
 }
 
 /**
@@ -124,11 +115,12 @@ function findSectionGroup(target: Element, index: SectionGroup[]): SectionGroup 
 }
 
 /**
- * 为板块生成高亮：按页分组，每页计算标题+条目的包围盒，生成一个虚线框 overlay。
+ * 为板块生成高亮：按页分组，每页计算标题+条目的包围盒，生成一个灰框阴影 overlay。
  * 跨页板块在各页各出一个框，实现"同一模块内容一起高亮"。返回新的 overlay 列表。
+ * 旧 overlay 淡出后移除，实现跨板块切换时的渐出。
  */
 function renderOverlays(doc: Document, els: Element[], prev: HTMLElement[]): HTMLElement[] {
-  prev.forEach((o) => o.remove())
+  prev.forEach(fadeOutOverlay)
   const overlays: HTMLElement[] = []
   const byPage = new Map<Element, Element[]>()
   for (const el of els) {
@@ -241,7 +233,7 @@ export function PreviewPanel() {
     //    父页面直接监听 contentDocument；委托在 doc 上，morphdiff 重建内容后仍生效）──
     ensureInteractStyle(doc)
     const clearOverlays = () => {
-      overlaysRef.current.forEach((o) => o.remove())
+      overlaysRef.current.forEach(fadeOutOverlay)
       overlaysRef.current = []
     }
     const isElement = (n: unknown): n is Element =>
@@ -253,8 +245,13 @@ export function PreviewPanel() {
       if (!isElement(target) || !target.closest(`#${PAGES_ID}`)) return
       const group = findSectionGroup(target, sectionIndexRef.current)
       if (group) {
-        currentSectionRef.current = group
-        overlaysRef.current = renderOverlays(doc, group.els, overlaysRef.current)
+        const prev = currentSectionRef.current
+        // 同一板块内移动（标题/条目/子元素之间）：保持现有高亮不重建，
+        // 避免渐入渐出动画导致的高亮闪烁；仅板块切换时才重渲染。
+        if (!prev || prev.els[0] !== group.els[0]) {
+          currentSectionRef.current = group
+          overlaysRef.current = renderOverlays(doc, group.els, overlaysRef.current)
+        }
       }
       // group 为 null：目标落在模块标题↔条目 / 条目↔条目的间距空白区，
       // 该空白区无归属板块。保留当前高亮，避免鼠标经过时闪烁。

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResumeStore } from '../stores/resumeStore'
 import { useEditorStore } from '../stores/editorStore'
+import { useLayoutStore } from '../stores/layoutStore'
 import { Sidebar } from '../components/layout/Sidebar'
 import { Toolbar } from '../components/layout/Toolbar'
 import { StatusBar } from '../components/layout/StatusBar'
@@ -59,6 +60,23 @@ export function EditorPage() {
     mountedMeasureRef.current = true
     useResumeStore.getState().measureContentHeight()
   }, [])
+
+  // 布局（页边距/内容间距）变化会改变内容真实高度，但布局属全局配置、不置位简历
+  // isDirty，因此保存流程不会触发重测，状态栏/单页导出提示会停留在旧值。
+  // 这里订阅布局变化，拖动停止后防抖重新测量（首次进入由上方 entry 测量兜底，跳过）。
+  const layout = useLayoutStore((s) => s.layout)
+  const layoutChangedRef = useRef(false)
+  useEffect(() => {
+    if (!layoutChangedRef.current) {
+      layoutChangedRef.current = true
+      return
+    }
+    if (!useResumeStore.getState().resume) return
+    const timer = setTimeout(() => {
+      useResumeStore.getState().measureContentHeight()
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [layout])
 
   // 返回首页：有未保存更改时先弹二确（保存并继续 / 不保存并继续 / 取消）。
   const handleHome = useCallback(() => {

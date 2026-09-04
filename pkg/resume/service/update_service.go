@@ -41,13 +41,11 @@ var allowedDownloadHosts = []string{
 
 // 更新包形态（appcast 的 artifact_type，决定替换阶段行为）。
 const (
-	artifactNSIS     = "nsis-installer"
-	artifactAppZip   = "app-zip"
-	artifactAppImage = "appimage"
-	updateMetaFile   = "update-meta.json"
-
-	// maxDownloadAttempts 断点续传最大尝试次数（含首次下载）。
-	maxDownloadAttempts = 3
+	artifactNSIS        = "nsis-installer"
+	artifactAppZip      = "app-zip"
+	artifactAppImage    = "appimage"
+	updateMetaFile      = "update-meta.json"
+	maxDownloadAttempts = 3 // maxDownloadAttempts 断点续传最大尝试次数（含首次下载）。
 )
 
 // UpdateService 提供在线更新能力：检查版本、下载更新包、触发静默替换。

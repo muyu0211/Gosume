@@ -5,6 +5,7 @@ import { Plus, Trash2, ChevronDown, ChevronRight, Layers, GripVertical, EyeOff }
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { getSectionTitle } from '../../lib/resumeSections'
 
 /**
  * 自定义模块编辑器（编辑页左侧「自定义」板块）。
@@ -15,6 +16,7 @@ import { useDragReorder } from '../../hooks/useDragReorder'
  * 交互与 ExperienceSection / AwardSection 保持一致（折叠态头部 + 展开表单 + 拖拽排序 + 显示开关 + 删除二确）。
  */
 export function CustomSection() {
+  const language = useResumeStore((s) => s.resume?.meta?.language)
   const sections = useResumeStore((s) => s.resume?.custom) || []
   const addSection = useResumeStore((s) => s.addCustomSection)
   const updateSection = useResumeStore((s) => s.updateCustomSection)
@@ -35,7 +37,7 @@ export function CustomSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">自定义模块</span>
+          <span className="form-section-title">{getSectionTitle('custom', language)}模块</span>
           <span className="text-xs text-surface-400">({sections.length})</span>
         </div>
         <button

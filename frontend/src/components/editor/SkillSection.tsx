@@ -1,8 +1,10 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { Plus, Trash2, Code, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { getSectionTitle } from '../../lib/resumeSections'
 
 export function SkillSection() {
+  const language = useResumeStore((s) => s.resume?.meta?.language)
   const items = useResumeStore((s) => s.resume?.skills) || []
   const addGroup = useResumeStore((s) => s.addSkillGroup)
   const updateGroup = useResumeStore((s) => s.updateSkillGroup)
@@ -30,7 +32,7 @@ export function SkillSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <Code className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">技能</span>
+          <span className="form-section-title">{getSectionTitle('skills', language)}</span>
           <span className="text-xs text-surface-400">({items.length} 组)</span>
         </div>
         <button onClick={addGroup} className="btn-primary btn-xs">

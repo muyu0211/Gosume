@@ -1,18 +1,21 @@
 import { useEditorStore } from '../../stores/editorStore'
+import { useResumeStore } from '../../stores/resumeStore'
+import { getSectionTitle } from '../../lib/resumeSections'
 import { User, Briefcase, GraduationCap, Code, FolderGit2, Languages, Award, Plus, FileOutput, Building } from 'lucide-react'
 import { Tooltip } from '../ui/Tooltip'
 
+/** 导航项：模块 id + 图标；label 由 getSectionTitle 按简历语言生成，不写死。 */
 const sections = [
-  { id: 'personal', label: '个人信息', icon: User },
-  { id: 'education', label: '教育背景', icon: GraduationCap },
-  { id: 'internships', label: '实习经历', icon: Building },
-  { id: 'jobs', label: '工作经历', icon: Briefcase },
-  { id: 'projects', label: '项目经历', icon: FolderGit2 },
-  { id: 'awards', label: '荣誉奖项', icon: Award },
-  { id: 'languages', label: '语言能力', icon: Languages },
-  { id: 'skills', label: '技能', icon: Code },
-  { id: 'summary', label: '个人总结', icon: FileOutput },
-  { id: 'custom', label: '自定义', icon: Plus },
+  { id: 'personal', icon: User },
+  { id: 'education', icon: GraduationCap },
+  { id: 'internships', icon: Building },
+  { id: 'jobs', icon: Briefcase },
+  { id: 'projects', icon: FolderGit2 },
+  { id: 'awards', icon: Award },
+  { id: 'languages', icon: Languages },
+  { id: 'skills', icon: Code },
+  { id: 'summary', icon: FileOutput },
+  { id: 'custom', icon: Plus },
 ]
 
 interface SidebarProps {
@@ -25,10 +28,12 @@ export function Sidebar({ onExport }: SidebarProps) {
   // 预览点击跳转产生的闪烁信号：命中激活 tab 时叠加闪烁动画提醒用户已跳转。
   const flashSection = useEditorStore((s) => s.flashSection)
   const flashNonce = useEditorStore((s) => s.flashNonce)
+  const language = useResumeStore((s) => s.resume?.meta?.language)
 
   return (
     <div className="w-[56px] bg-surface-100 flex flex-col items-center py-3 gap-0.5 flex-shrink-0 border-r border-surface-200">
-      {sections.map(({ id, label, icon: Icon }) => {
+      {sections.map(({ id, icon: Icon }) => {
+        const label = getSectionTitle(id, language)
         const isActive = activeSection === id
         const isFlash = isActive && flashSection === id
         return (
@@ -51,7 +56,8 @@ export function Sidebar({ onExport }: SidebarProps) {
       })}
 
       <div className="mt-auto mb-2 pt-2 border-t border-surface-200">
-        <Tooltip label="导出简历">
+        {/* 导出按钮位于侧边栏最底部，Tooltip 用右侧定位，避免默认 bottom 被窗口底边裁切 */}
+        <Tooltip label="导出简历" side="right">
           <button
             onClick={onExport}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-150 shadow-sm shadow-primary-600/25"

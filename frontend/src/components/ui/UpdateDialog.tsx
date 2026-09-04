@@ -72,7 +72,6 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
   const rows: { key: string; show: boolean; node: React.ReactNode }[] = [
     {
       key: 'notes',
-      // 更新说明全阶段常驻（与原版行为一致），不随 stage 切换折叠
       show: notes.length > 0,
       node: (
         <div>
