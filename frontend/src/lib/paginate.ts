@@ -42,11 +42,15 @@ export function paginateContent(iframe: HTMLIFrameElement, opts: PaginateContent
   body.className = ''
   body.style.background = previewBackdrop()
   body.style.margin = '0'
-  // 第一页顶部不留灰条：顶部 padding 归零，仅保留页间/页尾间隙。
-  body.style.padding = `0 0 ${PAGE_GAP}px`
+  body.style.padding = '0'
   body.style.overflowX = 'hidden'
 
   const { pageCount } = paginateResume(doc, body, {...pageStyle, pageMarginBottom: `${PAGE_GAP}px`,},opts.sourceEl,opts.targetEl)
+
+  // 页尾灰条清理：makePage 给每页统一加 pageMarginBottom（页间间隙所需），
+  // 最后一页的下外边距在页尾形成多余空白栏，清零后信息条紧贴最后一页。
+  const lastPage = body.querySelector('.resume-pages-wrapper .resume-page:last-child') as HTMLElement | null
+  if (lastPage) lastPage.style.marginBottom = '0'
 
   void body.offsetHeight
   iframe.style.height = `${body.scrollHeight}px`

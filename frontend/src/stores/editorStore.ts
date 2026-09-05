@@ -11,9 +11,7 @@ interface EditorState {
   splitRatio: number
   flashSection: string | null
   flashNonce: number
-  /** 右边栏（样式排版面板）是否展开。 */
   stylePanelOpen: boolean
-  /** 右边栏当前宽度（px）。 */
   stylePanelWidth: number
 
   setActiveSection: (section: string) => void

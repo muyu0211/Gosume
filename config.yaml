@@ -17,7 +17,7 @@ client:
  
 app:
   name: Gosume
-  version: 1.2.5
+  version: 1.2.6
   description: 桌面级简历制作工具
   copyright: "© 2026, Muyu"
   identifier: com.muyu.gosume
