@@ -12,10 +12,8 @@ type Personal struct {
 	Website      string `json:"website,omitempty"`
 	LinkedIn     string `json:"linkedin,omitempty"`
 	GitHub       string `json:"github,omitempty"`
-	Avatar       string `json:"avatar,omitempty"`
-	AvatarWidth  int    `json:"avatar_width,omitempty"`
-	AvatarHeight int    `json:"avatar_height,omitempty"`
-	Birthday     string `json:"birthday,omitempty"`
+	Avatar  string `json:"avatar,omitempty"`
+	Birthday     string  `json:"birthday,omitempty"`
 	Gender       string `json:"gender,omitempty"`
 	JobTitle     string `json:"job_title,omitempty"`
 	YearsOfExp   int    `json:"years_of_exp,omitempty"`

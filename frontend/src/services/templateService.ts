@@ -24,6 +24,14 @@ const unifiedHtmlModules = import.meta.glob<string>(
 )
 const unifiedHtml = Object.values(unifiedHtmlModules)[0] ?? ''
 
+// 全局统一样式（Gosume 三期改造）：对所有模板生效，dev 兜底直接载入
+// templates/resume-global.css；生产模式由 Go 后端 GetTemplateContent 返回 global_css。
+const globalCssModules = import.meta.glob<string>(
+  '../../../templates/resume-global.css',
+  { eager: true, query: '?raw', import: 'default' },
+)
+const globalCssRaw = Object.values(globalCssModules)[0] ?? ''
+
 // 尚未迁移模板的 dev 兜底（模板文件全部移除后此 glob 为空，自然回退统一 HTML）
 const htmlModules = import.meta.glob<string>(
   '../../../templates/*/template.html',
@@ -127,7 +135,7 @@ export async function loadTemplateMetas(): Promise<TemplateMeta[]> {
 export async function loadTemplateContent(templateId: string): Promise<TemplateSet> {
   if (isWails()) {
     try {
-      const content = await callService<{ html: string; css: string; paper_size?: string; orientation?: string }>(
+      const content = await callService<{ html: string; css: string; global_css?: string; paper_size?: string; orientation?: string }>(
         'TemplateService',
         'GetTemplateContent',
         templateId,
@@ -136,6 +144,7 @@ export async function loadTemplateContent(templateId: string): Promise<TemplateS
         return {
           html: content.html,
           css: content.css,
+          globalCss: content.global_css || '',
           paperSize: content.paper_size,
           orientation: content.orientation,
         }
@@ -148,6 +157,7 @@ export async function loadTemplateContent(templateId: string): Promise<TemplateS
     return {
       html: entry.html,
       css: entry.css,
+      globalCss: globalCssRaw,
       paperSize: entry.meta.paper_size,
       orientation: entry.meta.orientations?.[0],
     }
@@ -155,7 +165,7 @@ export async function loadTemplateContent(templateId: string): Promise<TemplateS
   // Fallback: return the first available template, or empty
   const first = templateMap.values().next().value
   return first
-    ? { html: first.html, css: first.css, paperSize: first.meta.paper_size, orientation: first.meta.orientations?.[0] }
+    ? { html: first.html, css: first.css, globalCss: globalCssRaw, paperSize: first.meta.paper_size, orientation: first.meta.orientations?.[0] }
     : { html: '', css: '' }
 }
 

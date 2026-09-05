@@ -103,7 +103,7 @@ updateField('jobs[0].company', '某公司')
 
 ### 预览与渲染（统一 HTML）
 
-Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式）。前端 `renderTemplate`（`lib/templateEngine.ts`）在客户端把模板 CSS 内联进统一 HTML 并渲染为完整 HTML，随后 `injectLayoutCss`（`lib/layoutPresets.ts`）注入页边距变量与内容间距规则；`renderTemplate` 还会把模板的 `paper_size`/`orientations` 标注为 `.resume-page` 的 `data-paper-size`/`data-orientation` 属性。
+Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/template.html`）承载，模板只提供 `template.json`（元数据）+ `styles.css`（样式）。前端 `renderTemplate`（`lib/templateEngine.ts`）在客户端把模板 CSS 内联进统一 HTML 并渲染为完整 HTML，随后 `injectGlobalVarsCss`（`lib/layoutPresets.ts`）注入全局样式变量（页边距 `--resume-padding[-y/-x]`、内容间距 `--sp-*`、头像 `--avatar-*`）；静态全局样式集中在 `templates/resume-global.css`（`<style id="resume-base">`）。`renderTemplate` 还会把模板的 `paper_size`/`orientations` 标注为 `.resume-page` 的 `data-paper-size`/`data-orientation` 属性。
 
 `usePreview` hook 以 300ms 防抖生成 `previewHtml` 写入 `resumeStore`。不经过 Go 后端——后端内存仅在显式保存时同步，确保每次按键即时反映。单文件导出（ExportDialog）直接复用 `previewHtml`；批量导出（ResumeListDrawer）对每份简历独立执行相同的渲染 + 注入流程。
 
@@ -148,7 +148,7 @@ Gosume 一期改造后，简历 HTML 由应用内置的统一 HTML（`templates/
 
 * 渲染时前端将 px 按 `25.4/96` 换算为 mm 注入（页边距为 `--resume-padding[-y/-x]`，内容间距三层注入 `margin-bottom !important`）
 
-* 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），集合在 `lib/layoutPresets.ts` 的 `buildLayoutCss`
+* 内容间距分三层注入（模块 ↔ 模块 / 条目 ↔ 条目 / 细节 ↔ 细节），`!important` 覆盖规则由 `lib/customCss.ts` 的 `buildCustomCss` 在数值存在时动态注入（选择器契约见 `templates/resume-global.css` 注释与 `templates/AGENTS.md`）——数值型 `!important` 规则不放进静态全局 CSS，规避「未定义 var() → 属性初始值」导致缩略图/normal 档位塌陷
 
 * 覆盖的选择器清单与模板侧规范见 `templates/AGENTS.md` 的"全局布局"小节，新增参与间距调整的组件需两侧同步
 

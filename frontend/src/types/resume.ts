@@ -23,6 +23,12 @@ export interface Resume {
   languages?: Language[]
   awards?: Award[]
   custom?: CustomSection[]
+  /**
+   * Per-resume custom CSS（样式定制单一承载体，见 lib/customCss.ts）。
+   * 承载页边距/内容间距/头像尺寸/圆角/信息区布局等全部样式调整；为空表示
+   * 无样式定制，渲染时呈现模板原生外观。数据模型不再为单个样式特性新增字段。
+   */
+  custom_css?: string
 }
 
 /**
@@ -63,10 +69,6 @@ export interface Personal {
   linkedin?: string
   github?: string
   avatar?: string
-  /** 简历中头像显示宽度（px）。未设置时使用模板默认尺寸。 */
-  avatar_width?: number
-  /** 简历中头像显示高度（px）。未设置时使用模板默认尺寸。 */
-  avatar_height?: number
   birthday?: string
   gender?: 'male' | 'female' | 'other'
   job_title?: string
@@ -202,7 +204,7 @@ export interface CustomItem {
 
 export function createEmptyResume(templateId: string): Resume {
   return {
-    version: '1.0',
+    version: '1.1',
     meta: {
       template_id: templateId,
       language: 'zh-CN',

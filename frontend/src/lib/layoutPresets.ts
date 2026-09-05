@@ -1,142 +1,98 @@
 /**
- * Global page layout: page margins + content spacing, stored as exact px values.
+ * 渲染注入层：把 per-resume custom_css 注入到渲染 HTML。
  *
- * Values live in global config (shared by all resumes) and are injected as mm
- * during rendering:
- *   mm = px * 25.4 / 96   (same convention as backend util.PxToMm)
+ * 样式定制的生成/解析/剥除见 ./customCss.ts（resume.custom_css 单一承载体）；
+ * 本文件保留模板 CSS 检测（单/双栏、信息区原生布局）、注入工具与常量。
+ * 空 custom_css → 不注入 → 模板原生外观。
  */
 
-// ---------------------------------------------------------------------------
-// Types & constants
-// ---------------------------------------------------------------------------
+import { resolveCustomCss, stripHeaderLayoutCss } from './customCss'
 
-/** 全局布局（px 绝对数值）。 */
-export interface GlobalLayout {
-  pageMarginY: number // px，上下页边距
-  pageMarginX: number // px，左右页边距
-  spacingSection: number // px，模块间距
-  spacingItem: number // px，条目间距
-  spacingDetail: number // px，细节间距
-}
+/** 信息区（头部）布局三态。 */
+export type HeaderLayout = 'center' | 'avatar-left' | 'avatar-right'
+/** 信息区布局全部取值（不含 nil 跟随模板）。 */
+export const HEADER_LAYOUT_VALUES: HeaderLayout[] = ['center', 'avatar-left', 'avatar-right']
 
-/** 页边距可调范围（px）。 */
+/** 页边距可调范围（px）。上限 80 以容纳模板原生边距（如 20mm≈75px），
+ *  避免"跟随模板"时拖动条的默认值被 max 截断。 */
 export const MARGIN_PX_MIN = 1
-export const MARGIN_PX_MAX = 60
-/** 内容间距可调范围（px）。 */
+export const MARGIN_PX_MAX = 80
+/** 内容间距可调范围（px）。上限 40 以容纳模板原生间距（如 16pt≈21px），
+ *  避免未定制时拖动条的默认值被 max 截断。 */
 export const SPACING_PX_MIN = 1
-export const SPACING_PX_MAX = 20
-
-export const DEFAULT_GLOBAL_LAYOUT: GlobalLayout = {
-  pageMarginY: 15,
-  pageMarginX: 20,
-  spacingSection: 12,
-  spacingItem: 8,
-  spacingDetail: 4,
-}
-
-// ---------------------------------------------------------------------------
-// px → mm (96dpi, 与后端 util.PxToMm 同一口径)
-// ---------------------------------------------------------------------------
-
-const PX_TO_MM = 25.4 / 96
-
-function pxToMm(px: number): number {
-  return px * PX_TO_MM
-}
-
-/** 毫米值格式：保留两位小数并带单位。 */
-function fmtMm(mm: number): string {
-  return `${Math.round(mm * 100) / 100}mm`
-}
-
-// ---------------------------------------------------------------------------
-// CSS injection
-// ---------------------------------------------------------------------------
-
-/** 布局注入的固定 style id（iframe 内），供增量更新。 */
-export const LAYOUT_STYLE_ID = 'layout-inject'
-/** 头像尺寸注入的固定 style id。 */
-export const AVATAR_STYLE_ID = 'avatar-inject'
+export const SPACING_PX_MAX = 40
+/** 头像圆角程度可调范围（0=直角矩形，100=圆形）。 */
+export const AVATAR_RADIUS_MIN = 0
+export const AVATAR_RADIUS_MAX = 100
 
 /**
- * Template item-level components (entries inside a module) that share the
- * `item` rhythm. Names follow templates/AGENTS.md; unknown selectors in a
- * given template simply don't match.
+ * 动态注入的固定 style id（iframe 内），供增量更新。
+ * 与静态文件 templates/resume-global.css 区分：本 id 注入的是 per-resume
+ * 的 custom_css（运行时增删），命名取 "custom" 而非 "global"。
  */
-const ITEM_SELECTORS = [
-  '.experience-item',
-  '.education-item',
-  '.award-item',
-  '.custom-item',
-  '.skill-category',
-  '.skill-item',
-  '.sidebar-item',
-].join(', ')
+export const RESUME_CUSTOM_STYLE_ID = 'resume-custom'
 
 /**
- * Intra-item detail elements (rows inside one entry) that share the `detail`
- * rhythm. All templates express these gaps with margin-bottom
- * (enforced by templates/AGENTS.md), so a single injected rule works everywhere.
+ * 判断一段模板 CSS 是否为双栏布局。
+ * 双栏模板 `.resume-container` 必含 `display:grid` + `grid-template-columns`；
+ * 单栏为 `max-width:100%`。用于在注入信息区布局覆盖前决定是否允许覆盖（跨模板
+ * 全局泄漏防护：双栏模板上必须剥除 header-layout 段，避免破坏侧栏结构）。
  */
-const DETAIL_SELECTORS =
-  '.exp-header, .exp-location, .exp-summary, .highlights li, .edu-detail, .edu-courses'
+export function isDoubleColumnCss(css: string): boolean {
+  const blocks = css.match(/\.resume-container\s*\{[^}]*\}/g)
+  if (!blocks) return false
+  return blocks.some((b) => /display\s*:\s*grid/i.test(b) && /grid-template-columns\s*:/i.test(b))
+}
 
 /**
- * 构建布局 CSS 规则（不含 `<style>` 标签）。
+ * 推断单栏模板「信息区原生布局」对应的三态。
+ * 依据 `.r-header` 的 `grid-template-areas`（真正的排布定义）判断头像方向：
+ *   每行单 token（单列）= 居中；头像在每行最右 = 头像居右；头像在每行最左 = 头像居左。
+ * 取首个含 grid-template-areas 的 `.r-header` 主块，避免被媒体查询回退块干扰。
+ * 无法判定时兜底居中。仅对单栏模板有意义（双栏由调用方先排除）。
+ */
+export function detectHeaderLayoutCss(css: string): HeaderLayout {
+  const blocks = css.match(/\.r-header\s*\{[^}]*\}/g) ?? []
+  for (const b of blocks) {
+    if (!/grid-template-areas/i.test(b)) continue
+    const rows = Array.from(b.matchAll(/"([^"]*)"/g), (m) => m[1])
+    if (rows.length === 0) continue
+    const tokenRows = rows.map((r) => r.trim().split(/\s+/).filter(Boolean))
+    // 单列：所有行都只有一个 token
+    if (tokenRows.every((tr) => tr.length <= 1)) return 'center'
+    const avRows = tokenRows.filter((tr) => tr.includes('avatar'))
+    if (avRows.length === 0) return 'center'
+    // 头像跨行且恒在最左 / 最右
+    if (avRows.every((tr) => tr.indexOf('avatar') === 0)) return 'avatar-left'
+    if (avRows.every((tr) => tr[tr.length - 1] === 'avatar')) return 'avatar-right'
+    return 'center'
+  }
+  return 'center'
+}
+
+/** 从渲染 html 中提取模板的私有 CSS（内联在首个 `<style>` 中）。 */
+function extractTemplateCss(html: string): string {
+  return html.match(/<style[^>]*>([\s\S]*?)<\/style>/)?.[1] ?? ''
+}
+
+/**
+ * 注入 per-resume custom_css 为独立的 `<style id="resume-custom">`，
+ * 插到 `</head>` 前（source order 在静态全局样式与模板 css 之后）。
  *
- * 页边距注入为 `--resume-padding[-y/-x]`（mm），模板 `.resume-page` 消费；
- * 内容间距分三层（模块/条目/细节）注入 mm 数值。规则用 `!important` 覆盖
- * 各模板自身的 item 间距（部分模板用更高优先级选择器如 `.resume-main .xxx`）。
- *
- * 供 injectLayoutCss 使用，也供 PreviewPanel 增量更新时直接写入 iframe 内 style。
+ * - custom_css 为空 → 不注入，模板原生外观。
+ * - 双栏模板 → 剥除 header-layout 段（避免破坏持久侧栏）。
  */
-export function buildLayoutCss(layout: GlobalLayout): string {
-  const mmY = pxToMm(layout.pageMarginY)
-  const mmX = pxToMm(layout.pageMarginX)
-  const mmSection = pxToMm(layout.spacingSection)
-  const mmItem = pxToMm(layout.spacingItem)
-  const mmDetail = pxToMm(layout.spacingDetail)
-
-  const marginRule =
-    `:root { --resume-padding: ${fmtMm(mmY)} ${fmtMm(mmX)}; ` +
-    `--resume-padding-y: ${fmtMm(mmY)}; --resume-padding-x: ${fmtMm(mmX)}; }`
-
-  const spacingRule =
-    `\n.section-title { margin-bottom: ${fmtMm(mmItem)} !important; }\n` +
-    `${ITEM_SELECTORS} { margin-bottom: ${fmtMm(mmItem)} !important; }\n` +
-    `${DETAIL_SELECTORS}, .extra-row { margin-bottom: ${fmtMm(mmDetail)} !important; }\n` +
-    `*:has(+ .section-title) { margin-bottom: 0 !important; }\n` +
-    `* + .section-title { margin-top: ${fmtMm(mmSection)} !important; }\n`
-
-  return marginRule + spacingRule
-}
-
-/** 构建头像尺寸 CSS 规则（不含 `<style>` 标签）。无头像尺寸时返回空字符串。 */
-export function buildAvatarCss(personal?: { avatar_width?: number; avatar_height?: number }): string {
-  const w = personal?.avatar_width
-  const h = personal?.avatar_height
-  if (!w || !h) return ''
-  return `.r-avatar img { width: ${w}px !important; height: ${h}px !important; }`
-}
-
-/**
- * 注入布局 CSS（页边距 + 内容间距）为独立的 `<style id="layout-inject">`，
- * 插到 `</head>` 前（source order 在模板 `<style>` 之后）。
- */
-export function injectLayoutCss(html: string, layout: GlobalLayout): string {
-  return injectStyleTag(html, buildLayoutCss(layout), LAYOUT_STYLE_ID)
-}
-
-/**
- * 注入头像尺寸 CSS 到 `<style id="avatar-inject">`。任一维度缺失或非正数时不注入。
- */
-export function injectAvatarSizeCss(
+export function injectGlobalVarsCss(
   html: string,
-  personal?: { avatar_width?: number; avatar_height?: number },
+  resume: { custom_css?: string },
 ): string {
-  const rule = buildAvatarCss(personal)
+  let rule = resolveCustomCss(resume)
   if (!rule) return html
-  return injectStyleTag(html, rule, AVATAR_STYLE_ID)
+  if (isDoubleColumnCss(extractTemplateCss(html))) {
+    rule = stripHeaderLayoutCss(rule)
+    if (!rule) return html
+  }
+  return injectStyleTag(html, rule, RESUME_CUSTOM_STYLE_ID)
 }
 
 /** 把规则包成 `<style id>` 标签插到 `</head>` 前（source order 在模板 style 之后）。 */

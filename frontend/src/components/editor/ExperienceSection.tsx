@@ -131,8 +131,9 @@ export function ExperienceSection({ type, title }: Props) {
               </div>
 
               {/* Expanded form */}
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+              <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
+                <div className="collapse-inner">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   {type === 'jobs' || type === 'internships' ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
@@ -258,7 +259,8 @@ export function ExperienceSection({ type, title }: Props) {
                     </div>
                   )}
                 </div>
-              )}
+                </div>
+              </div>
             </div>
           )
         })}

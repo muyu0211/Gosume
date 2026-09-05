@@ -58,6 +58,13 @@ func New(assets, builtinTemplates embed.FS) *App {
 		tempHTML = []byte{}
 	}
 
+	// 全局统一样式：对所有模板生效（Gosume 三期改造），跟随 template.html 一同内嵌。
+	tempGlobalCSS, err := builtinTemplates.ReadFile("templates/resume-global.css")
+	if err != nil {
+		log.Errorf("[main] read resume-global.css: %v", err)
+		tempGlobalCSS = []byte{}
+	}
+
 	// 导出
 	browserManager := template_export.NewBrowserManager()
 
@@ -89,7 +96,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 	// 依赖注入
 	resumeSvc.Inject(app, resumeStore)
-	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
+	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML), string(tempGlobalCSS))
 	exportSvc.Inject(app, browserManager)
 	systemSvc.Inject(app, userCfgMgr, window)
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
@@ -131,7 +138,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 		// 重新注入依赖
 		resumeSvc.Inject(app, resumeStore)
-		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML))
+		templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML), string(tempGlobalCSS))
 		fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 
 		app.Event.Emit("config:datadir-changed", newDir)

@@ -50,9 +50,8 @@ func IsValidTheme(theme string) bool {
 // 数据目录内的完整配置，以及锚点目录内的定位指针
 // （此时仅 DataDir 有值）。旧版把两者合并存放在锚点目录，字段因此保持兼容。
 type UserConfig struct {
-	DataDir string        `json:"data_dir,omitempty"`
-	Theme   string        `json:"theme,omitempty"`
-	Layout  *GlobalLayout `json:"layout,omitempty"`
+	DataDir string `json:"data_dir,omitempty"`
+	Theme   string `json:"theme,omitempty"`
 }
 
 // InitConfigManager 初始化配置管理器
@@ -208,29 +207,6 @@ func (m *Manager) SetTheme(theme string) error {
 	m.config.Theme = theme
 	if err := m.saveConfigLocked(); err != nil {
 		m.config.Theme = ""
-		return fmt.Errorf("save config: %w", err)
-	}
-	return nil
-}
-
-// GetLayout 返回当前的全局布局；用户未设置时回退到默认值。
-func (m *Manager) GetLayout() GlobalLayout {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.config.Layout != nil {
-		return *m.config.Layout
-	}
-	return DefaultGlobalLayout()
-}
-
-// SetLayout 持久化全局布局（数值校验在服务层完成）。
-// 落盘失败时把内存中的布局置空，使下次启动重新从文件加载已持久化的状态。
-func (m *Manager) SetLayout(l GlobalLayout) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.config.Layout = &l
-	if err := m.saveConfigLocked(); err != nil {
-		m.config.Layout = nil
 		return fmt.Errorf("save config: %w", err)
 	}
 	return nil

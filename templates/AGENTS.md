@@ -214,10 +214,15 @@ templates/
 
 ### 全局布局（页边距与内容间距）
 
-布局以 **px 数值**存于全局配置（`frontend/src/lib/layoutPresets.ts` 的 `GlobalLayout`），
-渲染时前端按 `25.4/96` 换算为 mm 注入 CSS（页边距为 `--resume-padding[-y/-x]`，内容间距按下列选择器注入 `margin-bottom !important`）。
+样式定制以 **per-resume custom\_css**（`resume.custom_css`）承载，px 数值由前端生成器 `buildCustomCss` 生成，
+渲染时前端按 `25.4/96` 换算为 mm 注入（页边距为 `--resume-padding[-y/-x]`，内容间距/头像尺寸的 `!important` 覆盖规则由前端 customCss.buildCustomCss 在数值存在时动态注入 `<style id="resume-custom">`）。
+**`templates/resume-global.css`** **是对所有模板生效的静态全局样式**（Markdown 列表收敛，且为内容间距选择器契约的唯一文档源）——Gosume 三期改造。
 
-**内容间距的三层注入规则**：
+> 数值型 `!important` 覆盖规则不放进静态全局 CSS：写成 `var(--sp-item)` 且变量未注入时，按 CSS 规范会计算为属性初始值（margin-bottom:0 / 头像 auto）而非被丢弃，导致缩略图与 normal/nil 档位间距塌陷、默认头像失控；故改由运行时 gated 注入。
+
+> **页边距消费的单栏 / 双栏差异**：单栏页边距落在 `.resume-page` 的 `padding: var(--resume-padding, …)`；双栏 `.resume-page` 无 padding，页边距由 `.r-header`（侧栏，通高出血）与 `.r-main` 各自的 `padding: var(--resume-padding-y) var(--resume-padding-x, …)` 分栏消费。全局 CSS 只承担两条路径都要的公共逻辑，**不接管** `.r-header`/`.r-main` 的 padding（模板私有）。
+
+**内容间距的三层注入规则**（选择器契约见 `templates/resume-global.css`，数值由前端 customCss.buildCustomCss 在存在时注入）：
 
 | 层级      | 覆盖选择器                                                                                                             | 说明                                              |
 | ------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |

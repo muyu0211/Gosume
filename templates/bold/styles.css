@@ -27,7 +27,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: var(--resume-padding, 12mm 16mm);
+    padding: var(--resume-padding, 8mm 10mm);
     background: #fff;
 }
 
@@ -151,7 +151,7 @@ body {
 
 /* Print */
 @media print {
-    .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 12mm 16mm); }
+    .resume-page { width: 100%; margin: 0; padding: var(--resume-padding, 8mm 10mm); }
     @page { size: A4; margin: 0; }
 }
 

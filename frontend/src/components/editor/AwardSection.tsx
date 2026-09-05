@@ -86,8 +86,9 @@ export function AwardSection() {
                 </button>
               </div>
 
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+              <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
+                <div className="collapse-inner">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">奖项名称 *</label>
@@ -107,7 +108,8 @@ export function AwardSection() {
                     <RichTextField value={award.summary || ''} onChange={(v) => updateItem(idx, { summary: v })} placeholder="简要描述获奖原因或背景" maxLength={500} />
                   </div>
                 </div>
-              )}
+                </div>
+              </div>
             </div>
           )
         })}

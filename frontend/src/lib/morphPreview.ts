@@ -12,40 +12,37 @@
  */
 
 import morphdomSource from 'morphdom/dist/morphdom-umd.min.js?raw'
-import { LAYOUT_STYLE_ID, AVATAR_STYLE_ID } from './layoutPresets'
+import { RESUME_CUSTOM_STYLE_ID } from './layoutPresets'
 
 /** iframe 内隐藏源容器（未分页内容，diff 对象）的 id。 */
 export const SOURCE_ID = 'r-source'
 /** iframe 内展示层（分页结果）的 id。 */
 export const PAGES_ID = 'r-pages'
 
-/** 从完整渲染 HTML 一次解析出的三部分（内容 / 布局规则 / 头像规则）。 */
+/** 从完整渲染 HTML 一次解析出的两部分（内容 / custom 样式覆盖）。 */
 export interface PreviewParts {
   /** `.resume-container` 的 innerHTML（内容片段，供 diff）。 */
   contentHtml: string
-  /** 布局档位规则（`layout-inject` 的 textContent）。 */
-  layoutRule: string
-  /** 头像尺寸规则（`avatar-inject` 的 textContent）。 */
-  avatarRule: string
+  /** per-resume custom_css 规则（`resume-custom` 的 textContent）。 */
+  customCssRule: string
 }
 
 /**
- * 从完整渲染 HTML 中解析出内容、布局规则、头像规则三部分。
- * 完整 HTML 仍走 previewHtml 供导出使用；这里一次性抽取增量更新所需的三样，
+ * 从完整渲染 HTML 中解析出内容、custom 样式覆盖两部分。
+ * 完整 HTML 仍走 previewHtml 供导出使用；这里一次性抽取增量更新所需的，
  * 避免对同一 HTML 做多次 DOMParser 解析。
  */
 export function parsePreviewHtml(renderedHtml: string): PreviewParts {
   const doc = new DOMParser().parseFromString(renderedHtml, 'text/html')
   return {
     contentHtml: doc.querySelector('.resume-container')?.innerHTML ?? '',
-    layoutRule: doc.getElementById(LAYOUT_STYLE_ID)?.textContent ?? '',
-    avatarRule: doc.getElementById(AVATAR_STYLE_ID)?.textContent ?? '',
+    customCssRule: doc.getElementById(RESUME_CUSTOM_STYLE_ID)?.textContent ?? '',
   }
 }
 
 /**
  * 更新 iframe 内固定 `<style id>` 的规则：规则非空则更新（不存在则创建），
- * 规则为空则移除该 style。用于布局档位 / 头像尺寸变化时只改 style、不重写文档。
+ * 规则为空则移除该 style。用于 custom_css 样式变化时只改 style、不重写文档。
  */
 export function updateStyleById(doc: Document, id: string, rule: string): void {
   let el = doc.getElementById(id)

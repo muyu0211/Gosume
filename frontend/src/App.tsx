@@ -6,7 +6,6 @@ import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { CommunityPage } from './routes/CommunityPage'
-import { useLayoutStore } from './stores/layoutStore'
 import { useResumeStore } from './stores/resumeStore'
 import { useThemeStore } from './stores/themeStore'
 import { applyPlatformToDocument } from './lib/platform'
@@ -30,12 +29,6 @@ export default function App() {
         }
       } catch { /* non-Wails environment */ }
     }
-  }, [])
-
-  // Load the global layout (page margins + content spacing, px) once so the
-// preview, exports and the toolbar popovers use the persisted values.
-  useEffect(() => {
-    useLayoutStore.getState().ensureLoaded().catch(() => { /* defaults apply */ })
   }, [])
 
   // 加载持久化主题选项并覆盖启动默认值；选择「跟随系统」时监听系统深浅色

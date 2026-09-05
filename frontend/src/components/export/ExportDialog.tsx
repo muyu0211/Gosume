@@ -7,8 +7,7 @@ import { extractErrorMessage } from '../../lib/errorUtils'
 import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
-import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
-import { useLayoutStore } from '../../stores/layoutStore'
+import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
 import { Expandable } from '../ui/Expandable'
 import { Modal, type ModalHandle } from '../ui/Modal'
@@ -59,21 +58,17 @@ export function ExportDialog({ onClose }: Props) {
       let filePath: string | null = null
 
       if (selectedFormat === 'gosume') {
-        // 中间态导出不经过 HTML 渲染/分页管线：后端直接序列化当前简历
-        // 数据为 .gosume 文件（含布局档位剥离），本地瞬时完成。
         filePath = await callService<string>('FileService', 'ExportFile')
       } else {
         // 现场渲染当前 resume（与批量导出、内容高度测量同一渲染链路：
-        // renderTemplate → 布局 CSS → 头像尺寸 CSS → 分页），不依赖可能滞后的
-        // previewHtml（预览是 300ms 防抖异步），保证导出内容与当前状态严格一致。
+        // renderTemplate 含全局样式 → custom_css 注入 → 分页），不依赖可能滞后的
         const templateId = resume.meta.template_id || DEFAULT_TEMPLATE_ID
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
-        const htmlWithLayout = injectLayoutCss(rendered, useLayoutStore.getState().layout)
-        const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
+        const htmlWithVars = injectGlobalVarsCss(rendered, resume)
 
         const pageMode = selectedFormat === 'png' || selectedFormat === '单页pdf' ? 'continuous' : 'paged'
-        const paginatedHtml = await paginateHTMLString(htmlWithAvatar,pageMode)
+        const paginatedHtml = await paginateHTMLString(htmlWithVars,pageMode)
 
         const resumeName = resume.meta.name || ''
 
@@ -91,7 +86,6 @@ export function ExportDialog({ onClose }: Props) {
       }
 
       if (!filePath) {
-        // User cancelled the save dialog — just close silently.
         modalRef.current?.close()
         return
       }

@@ -6,8 +6,7 @@ import { callService, isWails } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
-import { injectLayoutCss, injectAvatarSizeCss } from '../../lib/layoutPresets'
-import { useLayoutStore } from '../../stores/layoutStore'
+import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
@@ -167,10 +166,6 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     setBatchExporting(true)
     setExportProgress(0)
     try {
-      // 全局布局（px）存储于 config.json，确保已加载后再用于批量导出。
-      await useLayoutStore.getState().ensureLoaded()
-      const layout = useLayoutStore.getState().layout
-
       const ids = Array.from(selectedIds)
       const items: { name: string; html: string }[] = []
 
@@ -182,11 +177,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
-        // 注入全局布局 CSS（页边距 + 内容间距，px→mm）。
-        const htmlWithLayout = injectLayoutCss(rendered, layout)
-        // Apply user-controlled avatar display size (consistent with preview).
-        const htmlWithAvatar = injectAvatarSizeCss(htmlWithLayout, resume.personal)
-        const paginatedHtml = await paginateHTMLString(htmlWithAvatar, batchExportFormat === 'png' ? 'continuous' : 'paged')
+        // 注入 per-resume custom_css（空则不注入 → 模板原生外观）。
+        const htmlWithVars = injectGlobalVarsCss(rendered, resume)
+        const paginatedHtml = await paginateHTMLString(htmlWithVars, batchExportFormat === 'png' ? 'continuous' : 'paged')
         items.push({ name, html: paginatedHtml })
       }
 

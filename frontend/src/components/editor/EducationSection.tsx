@@ -90,8 +90,9 @@ export function EducationSection() {
                 </button>
               </div>
 
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+              <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
+                <div className="collapse-inner">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">学校 *</label>
@@ -142,7 +143,8 @@ export function EducationSection() {
                     />
                   </div>
                 </div>
-              )}
+                </div>
+              </div>
             </div>
           )
         })}

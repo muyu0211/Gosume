@@ -26,7 +26,7 @@ body {
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: var(--resume-padding, 14mm 18mm);
+    padding: var(--resume-padding, 8mm 10mm);
     background: #fff;
 }
 

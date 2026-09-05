@@ -2,7 +2,6 @@ import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { useTemplateStore } from '../../stores/templateStore'
-import { useLayoutStore } from '../../stores/layoutStore'
 import { paginateContent } from '../../lib/paginate'
 import { DEFAULT_PAPER, type PaperSpec } from '../../lib/paper'
 import { waitForDocumentReady } from '../../lib/paginationCore'
@@ -15,7 +14,7 @@ import {
   SOURCE_ID,
   PAGES_ID,
 } from '../../lib/morphPreview'
-import { LAYOUT_STYLE_ID, AVATAR_STYLE_ID } from '../../lib/layoutPresets'
+import { RESUME_CUSTOM_STYLE_ID } from '../../lib/layoutPresets'
 import { sectionTitleId } from '../../lib/resumeSections'
 
 /** 预览交互高亮样式 id（模板切换重写 doc 后重建）。 */
@@ -169,11 +168,11 @@ export function PreviewPanel() {
   const overlaysRef = useRef<HTMLElement[]>([])
   /** 最近一次 hover 命中的板块；鼠标停在模块间距空白区时回退使用，避免闪烁/点击失效。 */
   const currentSectionRef = useRef<SectionGroup | null>(null)
-  // 三个独立签名，区分「切模板（全量重写）」「切布局档位（只改 style）」
-  // 「改头像尺寸（只改 style）」「纯内容编辑（diff）」四种更新路径。
+  // 三个独立签名，区分「切模板（全量重写）」「样式定制变化（只改 style）」
+  // 「纯内容编辑（diff）」三种更新路径。样式定制（页边距/间距/头像/布局）由
+  // resume.custom_css 唯一承载，故只用一个 style key。
   const lastTemplateIdRef = useRef<string | null>(null)
-  const lastLayoutKeyRef = useRef<string | null>(null)
-  const lastAvatarKeyRef = useRef<string | null>(null)
+  const lastStyleKeyRef = useRef<string | null>(null)
   const [pageCount, setPageCount] = useState(1)
   const [paper, setPaper] = useState<PaperSpec>(DEFAULT_PAPER)
   const [containerHeight, setContainerHeight] = useState(DEFAULT_PAPER.pxH)
@@ -192,17 +191,14 @@ export function PreviewPanel() {
     const doc = iframe.contentDocument
     if (!doc) return
 
-    // 四种更新路径：切模板（全量重写）、全局布局变化（只改 style）、改头像尺寸（只改 style）、
-    // 纯内容编辑（diff）。head/CSS 只在切模板时重写，布局/头像走 style 增量更新。
+    // 三种更新路径：切模板（全量重写）、样式定制变化（只改 style）、
+    // 纯内容编辑（diff）。head/CSS 只在切模板时重写，样式走 style 增量更新。
     const resume = useResumeStore.getState().resume
     const templateId = useTemplateStore.getState().activeTemplateId
-    const l = useLayoutStore.getState().layout
-    const layoutKey = [l.pageMarginY, l.pageMarginX, l.spacingSection, l.spacingItem, l.spacingDetail].join('|')
-    const avatarKey = [String(resume?.personal?.avatar_width ?? ''), String(resume?.personal?.avatar_height ?? '')].join('|')
+    const styleKey = String(resume?.custom_css ?? '')
 
     const isTemplateChange = lastTemplateIdRef.current !== templateId
-    const isLayoutChange = lastLayoutKeyRef.current !== layoutKey
-    const isAvatarChange = lastAvatarKeyRef.current !== avatarKey
+    const isStyleChange = lastStyleKeyRef.current !== styleKey
 
     if (isTemplateChange) {
       // 全量：重写 iframe 文档（含 head/CSS），改造成「源容器 + 展示层」，注入 morphdom
@@ -212,20 +208,17 @@ export function PreviewPanel() {
       setupSourceShell(iframe)
       injectMorphdom(iframe)
       lastTemplateIdRef.current = templateId
-      lastLayoutKeyRef.current = layoutKey
-      lastAvatarKeyRef.current = avatarKey
+      lastStyleKeyRef.current = styleKey
     } else {
-      // 增量：内容始终 diff（未变时 morphdom 为 no-op）；布局档位 / 头像尺寸变化时
-      // 只更新对应 <style>，不重写 head/CSS，避免调档位时的白屏跳变。
+      // 增量：内容始终 diff（未变时 morphdom 为 no-op）；样式定制（页边距/间距/
+      // 头像/布局）变化时只更新 custom_css 的 <style id="resume-custom">
+      // （静态规则 <style id="resume-base"> 属于模板内容，全量时带出），
+      // 不重写 head/CSS，避免调样式时的白屏跳变。
       const parts = parsePreviewHtml(previewHtml)
       morphSourceContent(iframe, parts.contentHtml)
-      if (isLayoutChange) {
-        updateStyleById(doc, LAYOUT_STYLE_ID, parts.layoutRule)
-        lastLayoutKeyRef.current = layoutKey
-      }
-      if (isAvatarChange) {
-        updateStyleById(doc, AVATAR_STYLE_ID, parts.avatarRule)
-        lastAvatarKeyRef.current = avatarKey
+      if (isStyleChange) {
+        updateStyleById(doc, RESUME_CUSTOM_STYLE_ID, parts.customCssRule)
+        lastStyleKeyRef.current = styleKey
       }
     }
 
@@ -308,8 +301,8 @@ export function PreviewPanel() {
       sectionIndexRef.current = buildSectionIndex(doc)
 
       // 测量头像实际渲染尺寸，回传 store 供编辑器 slider 初始值使用：
-      // 无 avatar_width/height 时反映模板默认渲染值，避免硬编码 100px。
-      // 值比较后再写入，避免每次编辑分页都触发编辑器的同步 effect。
+      // 未设置头像尺寸（custom_css 无 avatarWidth/Height）时反映模板默认渲染值，
+      // 避免硬编码 100px。值比较后再写入，避免每次编辑分页都触发编辑器的同步 effect。
       const avatarImg = doc.querySelector('.r-avatar img') as HTMLImageElement | null
       const measured = avatarImg && avatarImg.offsetWidth > 0
         ? { width: avatarImg.offsetWidth, height: avatarImg.offsetHeight }
@@ -317,6 +310,90 @@ export function PreviewPanel() {
       const prevSize = useResumeStore.getState().avatarRenderedSize
       if ((measured?.width ?? 0) !== (prevSize?.width ?? 0) || (measured?.height ?? 0) !== (prevSize?.height ?? 0)) {
         useResumeStore.getState().setAvatarRenderedSize(measured)
+      }
+
+      // 测量模板原生布局（页边距 + 内容间距，CSS px），回传 store 供拖动条默认值使用：
+      // 样式未定制（custom_css 无对应段）时，拖动条应从"当前实际渲染值"起步，而非硬编码
+      // 默认值，避免一拖就从占位值跳到模板原生值（如 14px→30px）。
+      // 直接从渲染结果读计算样式，天然兼容模板用 calc(var(...) * n) 缩放的情况。
+      // 页边距消费的单栏/双栏差异：单栏 `.resume-page` 的 padding；双栏 `.resume-page` 无
+      // padding，页边距经 `--resume-padding-y/x` 由 `.r-main`（主栏）与 `.r-header`（侧栏）
+      // 分栏消费——故回退优先取 `.r-main`（反映页面真实留白），再退 `.r-header`。
+      const measurePageMargins = () => {
+        const page = doc.querySelector(`#${PAGES_ID} .resume-page, .resume-page`)
+        let mY = 0
+        let mX = 0
+        if (page) {
+          const cs = getComputedStyle(page)
+          mY = parseFloat(cs.paddingTop) || 0
+          mX = parseFloat(cs.paddingLeft) || 0
+        }
+        if (!(mY > 0 && mX > 0)) {
+          const main = doc.querySelector('.r-main')
+          if (main) {
+            const cs = getComputedStyle(main)
+            const y = parseFloat(cs.paddingTop) || 0
+            const x = parseFloat(cs.paddingLeft) || 0
+            if (y > 0 && x > 0) {
+              mY = y
+              mX = x
+            }
+          }
+        }
+        if (!(mY > 0 && mX > 0)) {
+          const header = doc.querySelector('.r-header')
+          if (header) {
+            const cs = getComputedStyle(header)
+            mY = parseFloat(cs.paddingTop) || 0
+            mX = parseFloat(cs.paddingLeft) || 0
+          }
+        }
+        return mY > 0 && mX > 0
+          ? { pageMarginY: Math.round(mY), pageMarginX: Math.round(mX) }
+          : null
+      }
+      const nativeMargins = measurePageMargins()
+
+      // 内容间距（与注入选择器契约对应，见 resume-global.css）：
+      // 模块=`* + .section-title{margin-top}`（取真实板块边界的前元素下边距/标题上边距；
+      // 跳过首位 section-title——它挂在 .r-main 顶部、前任为空，取值会退化为 0）
+      // 条目=条目元素 margin-bottom / 细节=`.highlights li` 行 margin-bottom。
+      const titles = doc.querySelectorAll('.section-title')
+      let sSection = 0
+      for (const t of Array.from(titles)) {
+        const prev = t.previousElementSibling
+        if (!prev) continue
+        const gap = Math.max(
+          parseFloat(getComputedStyle(prev).marginBottom) || 0,
+          parseFloat(getComputedStyle(t).marginTop) || 0,
+        )
+        if (gap > 0) {
+          sSection = gap
+          break
+        }
+      }
+      const itemEl = doc.querySelector('.experience-item, .education-item, .award-item, .skill-category, .skill-item, .sidebar-item, .custom-item')
+      const detailEl = doc.querySelector('.highlights li') ?? doc.querySelector('.exp-location, .exp-header, .edu-detail, .extra-row')
+      const sItem = itemEl ? parseFloat(getComputedStyle(itemEl).marginBottom) || 0 : 0
+      const sDetail = detailEl ? parseFloat(getComputedStyle(detailEl).marginBottom) || 0 : 0
+
+      const nativeLayout = nativeMargins
+        ? {
+            ...nativeMargins,
+            spacingSection: Math.round(sSection),
+            spacingItem: Math.round(sItem),
+            spacingDetail: Math.round(sDetail),
+          }
+        : null
+      const prevLayout = useResumeStore.getState().nativeLayout
+      if (
+        (nativeLayout?.pageMarginY ?? 0) !== (prevLayout?.pageMarginY ?? 0) ||
+        (nativeLayout?.pageMarginX ?? 0) !== (prevLayout?.pageMarginX ?? 0) ||
+        (nativeLayout?.spacingSection ?? 0) !== (prevLayout?.spacingSection ?? 0) ||
+        (nativeLayout?.spacingItem ?? 0) !== (prevLayout?.spacingItem ?? 0) ||
+        (nativeLayout?.spacingDetail ?? 0) !== (prevLayout?.spacingDetail ?? 0)
+      ) {
+        useResumeStore.getState().setNativeLayout(nativeLayout)
       }
 
       const onWheel = (e: WheelEvent) => {

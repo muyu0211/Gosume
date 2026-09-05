@@ -1,0 +1,138 @@
+/**
+ * 全局样式（对所有模板生效）—— Gosume 三期改造
+ * ===================================================================
+ * 与 templates/template.html（统一 HTML）并列的全局资产。
+ * 本文件只承载"与单/双栏无关"的跨模板公共**静态**样式（不含变量，天然安全）：
+ *   Markdown 列表 marker 收敛（原内嵌于 template.html）。
+ * 不接管 .resume-page / .r-header / .r-main 的 padding（单栏/双栏页边距
+ * 分发属模板私有样式，见 templates/AGENTS.md「全局布局」）。
+ *
+ * ── 为什么内容间距 / 头像尺寸的覆盖规则不放在这里 ──
+ * 它们需要覆盖模板的 `margin-bottom` / 头像尺寸，声明为 `!important`；
+ * 若写成 `var(--sp-item)` 且变量未注入，按 CSS 规范该声明会计算为属性初始值
+ * （margin-bottom:0 / 头像 width:auto），而非"被丢弃、回落模板规则"，
+ * 会导致未注入路径（缩略图、normal/nil 档位）间距塌陷或头像失控。
+ * 因此这些数值型 `!important` 覆盖规则由运行时
+ * （<style id="resume-custom">，见 frontend customCss.buildCustomCss）
+ * **仅在对应数值存在时**动态注入。选择器契约由本文件下方注释维护，
+ * 与 templates/AGENTS.md「全局布局」结对。
+ * ===================================================================
+ */
+
+/* ── 内容间距：选择器契约（数值覆盖规则由 resume-custom 动态注入） ──
+ * 条目 ↔ 条目（含 .section-title 自身 margin-bottom）：
+ *   .section-title
+ *   .experience-item .education-item .award-item .custom-item
+ *   .skill-category .skill-item .sidebar-item
+ * 细节 ↔ 细节：
+ *   .exp-header .exp-location .exp-summary .highlights li
+ *   .edu-detail .edu-courses .extra-row
+ * 模块 ↔ 模块：
+ *   *:has(+ .section-title) { margin-bottom: 0 !important; }
+ *   * + .section-title     { margin-top: 模块间距 !important; }
+ */
+
+/* ── 头像样式：选择器契约（数值覆盖规则由 resume-custom 动态注入） ──
+ * 目标选择器：.r-avatar img
+ * 尺寸覆盖：width / height（来自 per-resume custom_css，设置后注入）
+ * 圆角覆盖：border-radius: {v/2}%（来自 per-resume custom_css，0~100，0=直角矩形 100=圆形）
+ * 均仅在对应数值存在时注入；未设置时模板自身 .r-avatar img 样式原样生效。
+ */
+
+/* ── Markdown 列表 marker 收敛（原 template.html 内嵌）──────────────── */
+/* markdown 生成的列表落在 .exp-summary/.summary/.extra-value 内，模板的
+ .highlights 样式不命中；这里统一收敛列表样式：marker 用 li::before 绝对
+ 定位到 padding 区左端，任何环境左空隙一致（margin 遵循"只用 margin-bottom"）。 */
+.exp-summary ul,
+.summary ul,
+.extra-value ul,
+.exp-summary ol,
+.summary ol,
+.extra-value ol {
+    list-style: none;
+    padding-left: 1.3em;
+}
+
+.exp-summary li,
+.summary li,
+.extra-value li {
+    position: relative;
+}
+
+.exp-summary ul>li::before,
+.summary ul>li::before,
+.extra-value ul>li::before {
+    content: '•';
+    position: absolute;
+    left: -1.3em;
+}
+
+.exp-summary ol>li::before,
+.summary ol>li::before,
+.extra-value ol>li::before {
+    content: counter(list-item) '.';
+    position: absolute;
+    left: -1.3em;
+}
+
+/* 无序变体 */
+.exp-summary ul[data-marker='square']>li::before,
+.summary ul[data-marker='square']>li::before,
+.extra-value ul[data-marker='square']>li::before {
+    content: '■';
+}
+
+.exp-summary ul[data-marker='arrow']>li::before,
+.summary ul[data-marker='arrow']>li::before,
+.extra-value ul[data-marker='arrow']>li::before {
+    content: '→';
+}
+
+.exp-summary ul[data-marker='dash']>li::before,
+.summary ul[data-marker='dash']>li::before,
+.extra-value ul[data-marker='dash']>li::before {
+    content: '—';
+}
+
+.exp-summary ul[data-marker='check']>li::before,
+.summary ul[data-marker='check']>li::before,
+.extra-value ul[data-marker='check']>li::before {
+    content: '✓';
+}
+
+/* 有序变体：编号由 counter 自动从 1 连续生成（删项自动递补） */
+.exp-summary ol[data-marker='lower_roman']>li::before,
+.summary ol[data-marker='lower_roman']>li::before,
+.extra-value ol[data-marker='lower_roman']>li::before {
+    content: counter(list-item, lower-roman) '.';
+}
+
+.exp-summary ol[data-marker='upper_roman']>li::before,
+.summary ol[data-marker='upper_roman']>li::before,
+.extra-value ol[data-marker='upper_roman']>li::before {
+    content: counter(list-item, upper-roman) '.';
+}
+
+.exp-summary ol[data-marker='lower_alpha']>li::before,
+.summary ol[data-marker='lower_alpha']>li::before,
+.extra-value ol[data-marker='lower_alpha']>li::before {
+    content: counter(list-item, lower-alpha) '.';
+}
+
+.exp-summary ol[data-marker='upper_alpha']>li::before,
+.summary ol[data-marker='upper_alpha']>li::before,
+.extra-value ol[data-marker='upper_alpha']>li::before {
+    content: counter(list-item, upper-alpha) '.';
+}
+
+.exp-summary ol[data-marker='paren']>li::before,
+.summary ol[data-marker='paren']>li::before,
+.extra-value ol[data-marker='paren']>li::before {
+    content: '(' counter(list-item) ')';
+}
+
+.exp-summary ol[data-marker='bracket']>li::before,
+.summary ol[data-marker='bracket']>li::before,
+.extra-value ol[data-marker='bracket']>li::before {
+    content: '[' counter(list-item) ']';
+}

@@ -27,11 +27,10 @@ body {
     background: #fff;
 }
 
-/* 页边距统一在 .resume-page（与分页/导出管线约定一致） */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: var(--resume-padding, 12mm 14mm);
+    padding: var(--resume-padding, 8mm 10mm);
     background: #fff;
 }
 

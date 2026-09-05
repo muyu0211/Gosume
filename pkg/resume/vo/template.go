@@ -48,6 +48,7 @@ type ImportLog struct {
 type TemplateContent struct {
 	HTML        string `json:"html"`
 	CSS         string `json:"css"`
+	GlobalCSS   string `json:"global_css,omitempty"` // 全局统一样式（resume-global.css），对所有模板生效
 	PaperSize   string `json:"paper_size"`
 	Orientation string `json:"orientation"`
 }

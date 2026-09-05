@@ -1,11 +1,17 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { AVATAR_RADIUS_MIN, AVATAR_RADIUS_MAX, type HeaderLayout, isDoubleColumnCss, detectHeaderLayoutCss } from '../../lib/layoutPresets'
+import { parseCustomCss } from '../../lib/customCss'
+import { loadTemplateContent } from '../../services/templateService'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Tooltip } from '../ui/Tooltip'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
 const PHOTO_QUALITY = 0.8 // JPEG compression quality
+/** 双栏模板由持久侧栏固定头像位置，不支持切换信息区布局。 */
+const HINT_DOUBLE_COLUMN = '双栏模板由侧栏固定，不支持切换布局'
 
 // 证件照标准比例预设（宽 / 高）。custom 表示自由调整。
 const RATIO_PRESETS = [
@@ -14,6 +20,43 @@ const RATIO_PRESETS = [
   { key: '1inch', label: '一寸（25×35）', ratio: 25 / 35 },
   { key: '2inch', label: '二寸（35×53）', ratio: 35 / 53 },
 ]
+
+// 个人信息区布局预设：头像与文字信息的排布方式。
+// 目前仅前端样式与选中态；切换渲染逻辑后续接入（接入时替换本地 state）。
+const HEADER_LAYOUT_PRESETS = [
+  { key: 'center', label: '居中' },
+  { key: 'avatar-left', label: '头像居左' },
+  { key: 'avatar-right', label: '头像居右' },
+] as const
+
+type HeaderLayoutKey = (typeof HEADER_LAYOUT_PRESETS)[number]['key']
+
+/** 布局按钮内的迷你示意（纯图形，无文字）：圆形=头像，两条不等长横条=文字信息（姓名/职位）。三种布局使用同规格图形，保证按钮大小一致。 */
+function LayoutMiniPreview({ layout, active }: { layout: HeaderLayoutKey; active: boolean }) {
+  const circle = (
+    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${active ? 'bg-primary-500' : 'bg-surface-400 group-hover:bg-surface-500'}`} />
+  )
+  const lines = (
+    <span className="flex flex-col items-start gap-0.5">
+      <span className={`h-1 w-4 rounded ${active ? 'bg-primary-400' : 'bg-surface-300 group-hover:bg-surface-500'}`} />
+      <span className={`h-1 w-2.5 rounded ${active ? 'bg-primary-300' : 'bg-surface-300 group-hover:bg-surface-500'}`} />
+    </span>
+  )
+  if (layout === 'center') {
+    return (
+      <span className="flex flex-col items-center gap-0.5">
+        {circle}
+        {lines}
+      </span>
+    )
+  }
+  return (
+    <span className={`flex items-center gap-1 ${layout === 'avatar-right' ? 'flex-row-reverse' : ''}`}>
+      {circle}
+      {lines}
+    </span>
+  )
+}
 
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -53,20 +96,51 @@ function compressImage(file: File): Promise<string> {
 export function PersonalSection() {
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
+  const updateCustomCss = useResumeStore((s) => s.updateCustomCss)
   const avatarRenderedSize = useResumeStore((s) => s.avatarRenderedSize)
   const language = resume?.meta?.language
   const p = resume?.personal
+  // 样式定制统一从 custom_css 解析（头像尺寸/圆角/信息区布局）。
+  const styleState = parseCustomCss(resume?.custom_css ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
-  const [avatarW, setAvatarW] = useState<number>(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
-  const [avatarH, setAvatarH] = useState<number>(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
+  const [avatarW, setAvatarW] = useState<number>(styleState.avatarWidth ?? avatarRenderedSize?.width ?? 100)
+  const [avatarH, setAvatarH] = useState<number>(styleState.avatarHeight ?? avatarRenderedSize?.height ?? 100)
   const [lockRatio, setLockRatio] = useState(true)
   const [ratioPreset, setRatioPreset] = useState<string>('custom')
+  // 是否双栏模板：双栏时 .r-header 为持久侧栏，不支持切换布局。
+  const [isDoubleColumn, setIsDoubleColumn] = useState(false)
+  // 当前单栏模板的原生布局（用于默认高亮对应的布局按钮）。
+  const [nativeLayout, setNativeLayout] = useState<HeaderLayout>('center')
+  const templateId = resume?.meta?.template_id
+  useEffect(() => {
+    if (!templateId) return
+    let alive = true
+    loadTemplateContent(templateId)
+      .then((t) => {
+        if (!alive) return
+        setIsDoubleColumn(isDoubleColumnCss(t.css))
+        setNativeLayout(detectHeaderLayoutCss(t.css))
+      })
+      .catch(() => {
+        /* 加载失败保守视为单栏且居中 */
+      })
+    return () => {
+      alive = false
+    }
+  }, [templateId])
+  // 有效选中态：未手动设置（nil=跟随模板原生布局）时高亮模板原生对应的按钮；双栏禁用态不高亮原生。
+  const effectiveLayout: HeaderLayout | null = styleState.headerLayout ?? (isDoubleColumn ? null : nativeLayout)
+  const onSelectHeaderLayout = (v: HeaderLayout) => {
+    // 默认即模板原生布局，无需写入（避免覆盖造成与原生细微差异或污染制作方数据）。
+    if (styleState.headerLayout == null && v === nativeLayout) return
+    updateCustomCss({ headerLayout: v })
+  }
   const ratioRef = useRef(1)
   // 动画状态：追踪当前显示值 + rAF 句柄，用于从默认值平滑过渡到实际渲染值。
-  const animWRef = useRef(p.avatar_width ?? avatarRenderedSize?.width ?? 100)
-  const animHRef = useRef(p.avatar_height ?? avatarRenderedSize?.height ?? 100)
+  const animWRef = useRef(styleState.avatarWidth ?? avatarRenderedSize?.width ?? 100)
+  const animHRef = useRef(styleState.avatarHeight ?? avatarRenderedSize?.height ?? 100)
   const rafRef = useRef<number | null>(null)
 
   // 立即设置宽高（用户拖动 / 选择预设），取消进行中的动画。
@@ -110,10 +184,10 @@ export function PersonalSection() {
   // 用动画从旧值过渡到新值，避免从默认值直接跳变。
   useEffect(() => {
     animateTo(
-      p.avatar_width ?? avatarRenderedSize?.width ?? 100,
-      p.avatar_height ?? avatarRenderedSize?.height ?? 100,
+      styleState.avatarWidth ?? avatarRenderedSize?.width ?? 100,
+      styleState.avatarHeight ?? avatarRenderedSize?.height ?? 100,
     )
-  }, [p.avatar_width, p.avatar_height, avatarRenderedSize, animateTo])
+  }, [styleState.avatarWidth, styleState.avatarHeight, avatarRenderedSize, animateTo])
 
   // 维护宽高比例（固定比例 checkbox 开启时用）。存 ref 避免触发额外渲染。
   useEffect(() => {
@@ -193,8 +267,7 @@ export function PersonalSection() {
       setRatioPreset('custom')
     }
     setAvatarDims(w, newH)
-    updateField('personal.avatar_width', w)
-    updateField('personal.avatar_height', newH)
+    updateCustomCss({ avatarWidth: w, avatarHeight: newH })
   }
 
   const handleHeightChange = (h: number) => {
@@ -205,8 +278,7 @@ export function PersonalSection() {
       setRatioPreset('custom')
     }
     setAvatarDims(newW, h)
-    updateField('personal.avatar_height', h)
-    updateField('personal.avatar_width', newW)
+    updateCustomCss({ avatarHeight: h, avatarWidth: newW })
   }
 
   // 选择比例预设（1:1/一寸/二寸）时：锁定比例、按预设比例调整高度（保持当前宽度），
@@ -220,8 +292,7 @@ export function PersonalSection() {
     const w = animWRef.current
     const newH = clampDim(Math.round(w / preset.ratio))
     setAvatarDims(w, newH)
-    updateField('personal.avatar_width', w)
-    updateField('personal.avatar_height', newH)
+    updateCustomCss({ avatarWidth: w, avatarHeight: newH })
   }
 
   return (
@@ -286,10 +357,11 @@ export function PersonalSection() {
         </div>
       </div>
 
-      {/* 简历中头像显示尺寸（宽/高 px） */}
+      {/* 简历中头像显示尺寸（宽/高 px）+ 信息区布局（4:1 同行等高） */}
       {p.avatar && (
-        <div className="mb-4 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2.5">
-          <div className="flex items-center justify-between">
+        <div className="flex items-stretch gap-3 mb-4">
+          <div className="flex-[4] min-w-0 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2.5">
+            <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-surface-600">简历中显示尺寸</span>
             <div className="flex items-center gap-2">
               <select
@@ -346,6 +418,62 @@ export function PersonalSection() {
                 onChange={(e) => handleHeightChange(Number(e.target.value))}
                 className="w-full accent-primary-600"
               />
+            </div>
+          </div>
+
+          {/* 头像圆角（仅当前简历；0=直角矩形，100=圆形） */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+              <span className="flex items-center gap-1">
+                <span>圆角</span>
+                {styleState.avatarRadius == null && <span className="text-surface-400">（跟随模板）</span>}
+              </span>
+              <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? 0}</span>
+            </div>
+            <input
+              type="range"
+              min={AVATAR_RADIUS_MIN}
+              max={AVATAR_RADIUS_MAX}
+              step={1}
+              value={styleState.avatarRadius ?? 0}
+              onChange={(e) => updateCustomCss({ avatarRadius: Number(e.target.value) })}
+              className="w-full accent-primary-600"
+            />
+            <p className="text-[10px] text-surface-400 mt-1">0=直角矩形 · 100=圆形，仅作用于当前简历。</p>
+          </div>
+          </div>
+
+          {/* 信息区布局：切换头像与文字排布；仅当前简历，双栏模板禁用。 */}
+          <div className="flex-1 p-3 rounded-lg border border-surface-200 bg-surface-50/60 flex flex-col">
+            <p className="text-xs font-medium text-surface-600 mb-2">信息区布局</p>
+            <div className="flex flex-col justify-between gap-1.5 flex-1">
+              {HEADER_LAYOUT_PRESETS.map((preset) => {
+                const active = effectiveLayout === preset.key
+                return (
+                  <Tooltip
+                    key={preset.key}
+                    label={isDoubleColumn ? HINT_DOUBLE_COLUMN : preset.label}
+                    className="flex-1 min-h-0"
+                  >
+                    <button
+                      type="button"
+                      disabled={isDoubleColumn}
+                      onClick={() => onSelectHeaderLayout(preset.key)}
+                      className={`group h-full w-full flex items-center justify-center rounded-md transition-all duration-200 ease-out hover:scale-105 active:scale-95 ${
+                        isDoubleColumn ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${
+                        active
+                          ? 'bg-primary-100'
+                          : 'bg-surface-200/80 hover:bg-surface-300'
+                      }`}
+                    >
+                      <span className="group-hover:animate-[jelly_0.5s_ease-out]">
+                        <LayoutMiniPreview layout={preset.key} active={active} />
+                      </span>
+                    </button>
+                  </Tooltip>
+                )
+              })}
             </div>
           </div>
         </div>

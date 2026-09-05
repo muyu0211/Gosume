@@ -6,11 +6,16 @@ type TemplateFunc = (...args: string[]) => string
 export interface TemplateSet {
   html: string
   css: string
+  /** 全局统一样式（resume-global.css），对所有模板生效，注入为 <style id="resume-base">。 */
+  globalCss?: string
   /** Template paper size (e.g. "A4" / "Letter"); attached to the page DOM. */
   paperSize?: string
   /** Template orientation ("portrait" / "landscape"). */
   orientation?: string
 }
+
+/** 全局统一样式注入用的固定 style id（Gosume 三期改造）。 */
+export const GLOBAL_STYLE_ID = 'resume-base'
 
 /**
  * Renders a Go-style template ({{.Field}}, {{if}}, {{range}}, {{template "name"}})
@@ -55,8 +60,22 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
   // Evaluate the template, then tag the page with its paper spec so the
   // pagination core and export pipeline can size pages from the template's
   // metadata instead of a hardcoded A4 assumption.
-  const rendered = evaluate(merged, data, funcs)
-  return attachPaperMeta(rendered, tmpl.paperSize, tmpl.orientation)
+  const rendered = attachPaperMeta(evaluate(merged, data, funcs), tmpl.paperSize, tmpl.orientation)
+  // 注入全局统一样式（renderTemplate 之后、动态变量注入之前）：
+  // 渲染后再注入，不经过 Go-style 求值，规避 CSS 中 {{ 被误解析；
+  // 插到 </head> 前，source order 晚于模板 styles.css，保证覆盖优先级。
+  return injectGlobalStyleTag(rendered, tmpl.globalCss)
+}
+
+/** 把全局统一样式包成 <style id="resume-base"> 插到 </head> 前（为空时原样返回）。 */
+function injectGlobalStyleTag(html: string, globalCss?: string): string {
+  if (!globalCss) return html
+  const style = `<style id="${GLOBAL_STYLE_ID}">${globalCss}</style>`
+  const headCloseIdx = html.indexOf('</head>')
+  if (headCloseIdx !== -1) {
+    return html.slice(0, headCloseIdx) + style + html.slice(headCloseIdx)
+  }
+  return style + html
 }
 
 /**

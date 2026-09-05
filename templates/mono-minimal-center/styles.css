@@ -24,11 +24,10 @@ body {
     background: #fff;
 }
 
-/* ── 单页单元（页边距经变量消费）── */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
-    padding: var(--resume-padding, 16mm 20mm);
+    padding: var(--resume-padding, 8mm 10mm);
     background: #fff;
 }
 

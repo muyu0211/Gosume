@@ -142,26 +142,6 @@ func (s *SystemService) SetTheme(theme string) *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", nil)
 }
 
-// GetLayout 返回当前的全局布局（页边距 + 内容间距，px）。
-func (s *SystemService) GetLayout() *util.Response {
-	return util.DoRsp(util.SuccCode, "成功", s.configMgr.GetLayout())
-}
-
-// SaveLayout 校验并持久化全局布局（px 数值）。
-func (s *SystemService) SaveLayout(l user_config.GlobalLayout) *util.Response {
-	if err := user_config.ValidateGlobalLayout(l); err != nil {
-		log.Errorf("[system_service] SaveLayout: 参数校验失败: %v", err)
-		return util.DoRsp(util.ErrCode, err.Error(), nil)
-	}
-	if err := s.configMgr.SetLayout(l); err != nil {
-		log.Errorf("[system_service] SaveLayout: 持久化失败: %v", err)
-		return util.DoRsp(util.ErrCode, err.Error(), nil)
-	}
-	log.Infof("[system_service] SaveLayout: 已保存全局布局 边距(%d/%d) 间距(%d/%d/%d)",
-		l.PageMarginY, l.PageMarginX, l.SpacingSection, l.SpacingItem, l.SpacingDetail)
-	return util.DoRsp(util.SuccCode, "成功", nil)
-}
-
 // GetOS 返回当前操作系统标识（如 windows、darwin、linux）。
 func (s *SystemService) GetOS() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", runtime.GOOS)

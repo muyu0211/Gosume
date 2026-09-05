@@ -66,6 +66,10 @@ func PxToMm(px int) float64 {
 	return float64(px) * 25.4 / 96
 }
 
+func MmToPx(mm float64) int {
+	return int(mm * 96 / 25.4)
+}
+
 // AppVersion 返回应用版本号（config.yaml 的 app.version）；配置未加载时回退空串。
 func AppVersion() string {
 	if config.GlobalConfig == nil {

@@ -116,11 +116,13 @@ export function CustomSection() {
               </div>
 
               {/* 展开态：条目列表 */}
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+              <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
+                <div className="collapse-inner">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <CustomEntryList sectionIndex={idx} section={section} />
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )
         })}
@@ -239,8 +241,9 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
               </div>
 
               {/* 条目展开表单：标题 / 副标题+日期 / 内容 / 亮点 */}
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+              <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
+                <div className="collapse-inner">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div>
                     <label className="form-label">条目标题</label>
                     <RichTextField
@@ -289,8 +292,9 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                       onRequestRemove={(subIdx) => requestHighlightDelete(sectionIndex, idx, subIdx)}
                     />
                   </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )
         })}

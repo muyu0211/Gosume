@@ -5,9 +5,18 @@ import { callService, isWails } from '../services/backend'
 import { paginateHTMLString } from '../lib/exportHtml'
 import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
-import { injectLayoutCss, injectAvatarSizeCss } from '../lib/layoutPresets'
+import { injectGlobalVarsCss } from '../lib/layoutPresets'
+import { buildCustomCss, parseCustomCss, type ResumeStyleState } from '../lib/customCss'
 import { useTemplateStore } from './templateStore'
-import { useLayoutStore } from './layoutStore'
+
+/** 模板原生布局测量结果（CSS px），供拖动条作"未定制时"的显示起点。 */
+interface NativeLayout {
+  pageMarginY: number
+  pageMarginX: number
+  spacingSection: number
+  spacingItem: number
+  spacingDetail: number
+}
 
 /** 回退模板 ID（与 usePreview / templateStore 默认值一致）。 */
 const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
@@ -44,6 +53,8 @@ interface ResumeState {
   resumeList: ResumeListItem[]
   currentId: string | null
   avatarRenderedSize: { width: number; height: number } | null
+  /** 最近一次分页后测量的模板原生布局（页边距 + 内容间距，CSS px）；null 表示尚未测量。 */
+  nativeLayout: NativeLayout | null
   /** 最近一次保存后测量的内容真实高度（CSS px）；null 表示尚未测量。 */
   contentHeight: number | null
 
@@ -51,10 +62,13 @@ interface ResumeState {
   newResume: (templateId: string) => Promise<void>
   setResume: (resume: Resume) => void
   updateField: (path: string, value: unknown) => void
+  /** 以补丁方式更新当前简历的样式定制（custom_css），其余字段保持。 */
+  updateCustomCss: (patch: Partial<ResumeStyleState>) => void
   markSaved: (filePath?: string) => void
   setPreviewHtml: (html: string) => void
   setPreviewLoading: (loading: boolean) => void
   setAvatarRenderedSize: (size: { width: number; height: number } | null) => void
+  setNativeLayout: (layout: NativeLayout | null) => void
   setResumeList: (list: ResumeListItem[]) => void
   loadResume: (id: string) => Promise<Resume | null>
   saveCurrent: () => Promise<boolean>
@@ -137,11 +151,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   resumeList: [],
   currentId: null,
   avatarRenderedSize: null,
+  nativeLayout: null,
   contentHeight: null,
   pendingLeave: null,
   savingOnLeave: false,
 
-  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null, avatarRenderedSize: null, contentHeight: null }),
+  clearResume: () => set({ resume: null, isDirty: false, filePath: null, previewHtml: '', currentId: null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
 
   newResume: async (templateId) => {
     try {
@@ -149,16 +164,16 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       if (resume) {
         const id = await callService<string>('ResumeService', 'GetTemplateID')
         console.log('[resumeStore] newResume: backend OK, currentId =', id || '(empty)')
-        set({ resume, isDirty: false, filePath: null, currentId: id || null, contentHeight: null })
+        set({ resume, isDirty: false, filePath: null, currentId: id || null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return
       }
     } catch (err) {
       console.error('[resumeStore] newResume: backend failed, using local fallback:', err)
     }
-    set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null, contentHeight: null })
+    set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
   },
 
-  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null, contentHeight: null }),
+  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
 
   updateField: (path, value) => {
     const resume = get().resume
@@ -168,11 +183,22 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ resume: { ...resume }, isDirty: true })
   },
 
+  // 样式定制统一写 custom_css：解析现有状态 → 合并补丁 → 重新生成整段 CSS。
+  // 生成器/解析器对已知段互为逆变换，保证合并后其它段不被破坏。
+  updateCustomCss: (patch) => {
+    const resume = get().resume
+    if (!resume) return
+    const current = parseCustomCss(resume.custom_css ?? '')
+    const next = buildCustomCss({ ...current, ...patch })
+    get().updateField('custom_css', next)
+  },
+
   markSaved: (filePath) => set((s) => ({ isDirty: false, filePath: filePath || s.filePath })),
 
   setPreviewHtml: (html) => set({ previewHtml: html }),
   setPreviewLoading: (loading) => set({ isPreviewLoading: loading }),
   setAvatarRenderedSize: (size) => set({ avatarRenderedSize: size }),
+  setNativeLayout: (layout) => set({ nativeLayout: layout }),
 
   setResumeList: (list) => set({ resumeList: list }),
 
@@ -181,7 +207,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
         const migrated = migratePersonalSummary(resume)
-        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null, contentHeight: null })
+        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return migrated
       }
     } catch (err) {
@@ -225,22 +251,16 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resume = get().resume
       if (!resume) return null
 
-      // 测量前确保全局布局已加载（页边距/内容间距影响内容高度），
-      // 保证首次进入编辑页的测量与保存后的测量口径一致。
-      await useLayoutStore.getState().ensureLoaded()
-
       // 关键：不能用滞后的 previewHtml——预览渲染是 300ms 防抖异步
       // （usePreview.debouncedRefresh），快速编辑后立即保存时 previewHtml
       // 可能还是旧内容，导致测量结果与当前 resume 不一致（如取消隐藏后
       // 仍测出隐藏前的高度）。这里用当前 resume 现场渲染（与预览同一渲染
-      // 链路：renderTemplate → 布局 CSS → 头像尺寸 CSS），保证测量内容
-      // 与保存内容严格一致。
+      // 链路：renderTemplate → custom_css 注入），保证测量内容与保存内容严格一致。
       const templateId = useTemplateStore.getState().activeTemplateId || DEFAULT_TEMPLATE_ID
       const tmpl = await loadTemplateContent(templateId)
       const rendered = renderTemplate(tmpl, resume)
-      const html = injectLayoutCss(rendered, useLayoutStore.getState().layout)
-      const htmlWithAvatar = injectAvatarSizeCss(html, resume.personal)
-      const paginated = await paginateHTMLString(htmlWithAvatar, 'continuous')
+      const html = injectGlobalVarsCss(rendered, resume)
+      const paginated = await paginateHTMLString(html, 'continuous')
       const h = await callService<number>(
         'ExportService',
         'GetResumeContentHeight',

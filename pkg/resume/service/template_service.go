@@ -18,10 +18,11 @@ import (
 
 // TemplateService 管理模板的查询、增删改与导入。
 type TemplateService struct {
-	App      *application.App
-	loader   *template.Loader // 模板加载器
-	tempRepo *repo.TemplateRepo
-	HTML     string
+	App        *application.App
+	loader     *template.Loader // 模板加载器
+	tempRepo   *repo.TemplateRepo
+	HTML       string
+	GlobalCSS string
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
@@ -29,12 +30,13 @@ func (s *TemplateService) ServiceName() string {
 	return "TemplateService"
 }
 
-// Inject 注入依赖。unifiedHTML 为应用内置的统一简历 HTML 骨架。
-func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *repo.TemplateRepo, unifiedHTML string) {
+// Inject 注入依赖。unifiedHTML 为应用内置的统一简历 HTML 骨架，globalCSS 为全局统一样式。
+func (s *TemplateService) Inject(app *application.App, loader *template.Loader, store *repo.TemplateRepo, unifiedHTML string, globalCSS string) {
 	s.App = app
 	s.loader = loader
 	s.tempRepo = store
 	s.HTML = unifiedHTML
+	s.GlobalCSS = globalCSS
 }
 
 // ListTemplates 返回所有可用模板的元数据（内置 + 用户模板）。
@@ -87,6 +89,7 @@ func (s *TemplateService) GetTemplateContent(id string) *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", &vo.TemplateContent{
 		HTML:        s.effectiveHTML(t),
 		CSS:         t.CSS,
+		GlobalCSS:   s.GlobalCSS,
 		PaperSize:   t.Meta.PaperSize,
 		Orientation: orientation,
 	})

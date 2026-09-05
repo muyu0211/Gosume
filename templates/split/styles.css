@@ -27,7 +27,6 @@ body {
     background: #fff;
 }
 
-/* ── 单页单元 ── */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
@@ -48,7 +47,7 @@ body {
     grid-area: header;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
-    padding: calc(var(--resume-padding-y, 14mm) * 0.75) calc(var(--resume-padding-x, 12pt) * 0.75);
+    padding: var(--resume-padding-y, 8mm) var(--resume-padding-x, 8mm);
     display: grid;
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -117,7 +116,7 @@ body {
 /* ── 主内容区（右栏） ── */
 .r-main {
     grid-area: main;
-    padding: 10pt calc(var(--resume-padding-x, 14mm) * 0.75) calc(var(--resume-padding-y, 12mm) * 0.75);
+    padding: var(--resume-padding-y, 8mm) var(--resume-padding-x, 8mm);
 }
 
 /* Section Titles */
