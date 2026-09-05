@@ -1,10 +1,9 @@
 import { useEditorStore } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
-import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pencil } from 'lucide-react'
+import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pencil, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { TemplateSwitcher } from '../template/TemplateSwitcher'
-import { LayoutPopover } from './LayoutPopover'
 import { Tooltip } from '../ui/Tooltip'
 
 interface ToolbarProps {
@@ -19,6 +18,8 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
   const navigate = useNavigate()
   const zoom = useEditorStore((s) => s.zoom)
   const setZoom = useEditorStore((s) => s.setZoom)
+  const stylePanelOpen = useEditorStore((s) => s.stylePanelOpen)
+  const toggleStylePanel = useEditorStore((s) => s.toggleStylePanel)
   const isDirty = useResumeStore((s) => s.isDirty)
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
@@ -149,8 +150,16 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
 
       {/* Right — ml-auto 让它独立推到右端（缩放组已脱离 flex 流不再推它） */}
       <div className="flex items-center gap-1 ml-auto">
-        <LayoutPopover />
         <TemplateSwitcher />
+        {/* 样式排版：呼出/隐藏右侧边栏（页边距、内容间距等收纳其中），置于模板切换右侧 */}
+        <Tooltip label={stylePanelOpen ? '收起样式面板' : '展开样式面板'}>
+          <button
+            onClick={toggleStylePanel}
+            className={`btn-ghost btn-sm ${stylePanelOpen ? 'bg-surface-100 text-primary-600' : ''}`}
+          >
+            {stylePanelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+          </button>
+        </Tooltip>
       </div>
     </div>
   )

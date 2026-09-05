@@ -114,11 +114,11 @@ export function CustomSelect({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg border bg-elev transition-all duration-150 ${
+        className={`custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left rounded-lg border bg-elev transition-all duration-150 ${
           open
             ? 'border-primary-400 ring-2 ring-primary-500/20'
             : 'border-surface-200 hover:border-surface-300'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} text-left`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className={`truncate ${selected ? 'text-surface-700' : 'text-surface-400'}`}>
           {selected ? selected.label : placeholder}
@@ -146,7 +146,7 @@ export function CustomSelect({
                     onChange(opt.value)
                     close()
                   }}
-                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm transition-colors ${
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${
                     opt.value === value
                       ? 'bg-primary-50/60 text-primary-700'
                       : 'text-surface-600 hover:bg-surface-100'

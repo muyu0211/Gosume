@@ -4,6 +4,7 @@ import { useResumeStore } from '../stores/resumeStore'
 import { useEditorStore } from '../stores/editorStore'
 import { Sidebar } from '../components/layout/Sidebar'
 import { Toolbar } from '../components/layout/Toolbar'
+import { StylePanel } from '../components/layout/StylePanel'
 import { StatusBar } from '../components/layout/StatusBar'
 import { EditorPanel } from '../components/editor/EditorPanel'
 import { ItemDeleteConfirmDialog } from '../components/editor/ItemDeleteConfirmDialog'
@@ -37,6 +38,8 @@ export function EditorPage() {
   const setSplitRatio = useEditorStore((s) => s.setSplitRatio)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  // 编辑器/预览分栏容器 ref：拖拽分栏比例时以实际容器宽度计算，右侧边栏展开时也能准确换算。
+  const splitRef = useRef<HTMLDivElement>(null)
 
   const { refreshPreview } = usePreview()
   useAutoSave(30000)
@@ -156,7 +159,7 @@ export function EditorPage() {
         <Sidebar onExport={handleExport} />
 
         {/* Editor + Preview Split */}
-        <div className="flex-1 flex overflow-hidden">
+        <div ref={splitRef} className="flex-1 flex overflow-hidden">
           {/* Editor Panel */}
           <div style={{ width: `${splitRatio * 100}%` }} className="overflow-auto border-r border-surface-200">
             <div className="p-4">
@@ -170,9 +173,9 @@ export function EditorPage() {
             onMouseDown={(e) => {
               const startX = e.clientX
               const startRatio = splitRatio
+              const containerWidth = splitRef.current?.clientWidth ?? window.innerWidth
               const onMove = (ev: MouseEvent) => {
                 const dx = ev.clientX - startX
-                const containerWidth = window.innerWidth - 200
                 setSplitRatio(startRatio + dx / containerWidth)
               }
               const onUp = () => {
@@ -189,6 +192,9 @@ export function EditorPage() {
             <PreviewPanel />
           </div>
         </div>
+
+        {/* 样式排版右边栏（展开时推开预览区；宽度可拖拽调节） */}
+        <StylePanel />
       </div>
 
       {/* Status Bar */}

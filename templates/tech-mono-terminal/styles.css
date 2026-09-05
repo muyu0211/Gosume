@@ -4,7 +4,7 @@
  * 等宽字体用于日期/联系方式/英文名，营造极客/终端质感。 */
 :root {
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-    --mono-font: 'JetBrains Mono', 'Consolas', 'SFMono-Regular', 'Microsoft YaHei', monospace;
+    --mono-font: 'JetBrains Mono', 'SFMono-Regular', 'Microsoft YaHei', monospace;
     --font-size-base: 10pt;
     --line-height: 1.55;
     --primary-color: #111827;

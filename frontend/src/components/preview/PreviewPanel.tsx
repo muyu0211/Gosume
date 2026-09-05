@@ -16,9 +16,164 @@ import {
 } from '../../lib/morphPreview'
 import { RESUME_CUSTOM_STYLE_ID } from '../../lib/layoutPresets'
 import { sectionTitleId } from '../../lib/resumeSections'
+import { parseCustomCss } from '../../lib/customCss'
 
 /** 预览交互高亮样式 id（模板切换重写 doc 后重建）。 */
 const INTERACT_STYLE_ID = 'preview-section-interact-style'
+
+/** 布局切换 FLIP 动画关注的头部子块（个人信息区四组件）。 */
+const HEADER_FLIP_CLASSES = ['r-avatar', 'r-header-text', 'r-contact', 'r-langs'] as const
+
+/**
+ * 布局切换 FLIP 前快照：记录展示层头部各子块的视口位置。
+ * 布局由 grid-template-areas 驱动（CSS 不可过渡），组件是瞬间换位的；
+ * 记录旧位置后，分页重建完成时用 transform 从旧位置平滑滑到新位置。
+ */
+function captureHeaderRects(doc: Document): { cls: string; left: number; top: number }[] | null {
+  const header = doc.querySelector(`#${PAGES_ID} .r-header`)
+  if (!header) return null
+  const out: { cls: string; left: number; top: number }[] = []
+  for (const cls of HEADER_FLIP_CLASSES) {
+    const el = header.querySelector(`.${cls}`)
+    if (el) {
+      const r = el.getBoundingClientRect()
+      out.push({ cls, left: r.left, top: r.top })
+    }
+  }
+  return out.length > 0 ? out : null
+}
+
+/**
+ * FLIP 播放：分页重建后头部子块已位于新位置，先把它们平移到旧位置（无过渡），
+ * 再开过渡滑回原位，形成"组件随布局切换平滑滑动"的效果。
+ * transform 不占布局流，动画期间不影响分页与导出测量；返回清理函数用于提前中断。
+ */
+function playHeaderFlip(doc: Document, from: { cls: string; left: number; top: number }[]): () => void {
+  const header = doc.querySelector(`#${PAGES_ID} .r-header`)
+  if (!header) return () => {}
+  const targets: { el: HTMLElement; dx: number; dy: number }[] = []
+  for (const f of from) {
+    const el = header.querySelector<HTMLElement>(`.${f.cls}`)
+    if (!el) continue
+    const r = el.getBoundingClientRect()
+    const dx = f.left - r.left
+    const dy = f.top - r.top
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue
+    targets.push({ el, dx, dy })
+  }
+  if (targets.length === 0) return () => {}
+
+  targets.forEach(({ el, dx, dy }) => {
+    el.style.transition = 'none'
+    el.style.transform = `translate(${dx}px, ${dy}px)`
+  })
+  // 强制回流后再开过渡，下一帧起从旧位置平滑滑到新位置
+  void header.offsetHeight
+  targets.forEach(({ el }) => {
+    el.style.transition = 'transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)'
+    el.style.transform = 'translate(0, 0)'
+  })
+  const cleanup = () => {
+    targets.forEach(({ el }) => {
+      el.style.transition = ''
+      el.style.transform = ''
+    })
+  }
+  window.setTimeout(cleanup, 360)
+  return cleanup
+}
+
+// ── 内容结构变化（增删模块/条目/显隐）补位 FLIP ───────────────────────────
+/** 参与补位动画的块：带 data-id 的条目 + 带 data-section 的模块标题/总结。 */
+const REFLOW_SELECTOR = `#${PAGES_ID} [data-id], #${PAGES_ID} .section-title[data-section], #${PAGES_ID} .summary[data-section]`
+
+/**
+ * 块的稳定 key：条目用 data-id（全局唯一）；标题/总结用 data-section + 同段出现序号。
+ * 用于跨分页重建（cloneNode）匹配新旧元素。
+ */
+function reflowBlockKey(el: Element, seen: Map<string, number>): string {
+  const id = el.getAttribute('data-id')
+  if (id) return `id:${id}`
+  const sec = el.getAttribute('data-section') ?? ''
+  const n = seen.get(sec) ?? 0
+  seen.set(sec, n + 1)
+  return `sec:${sec}:${n}`
+}
+
+/** 收集当前展示层的结构签名与各块位置（分页重建前调用，记录旧布局）。 */
+function collectReflowState(doc: Document): { keys: string[]; rects: Map<string, { left: number; top: number }> } {
+  const keys: string[] = []
+  const rects = new Map<string, { left: number; top: number }>()
+  const seen = new Map<string, number>()
+  for (const el of Array.from(doc.querySelectorAll(REFLOW_SELECTOR))) {
+    const key = reflowBlockKey(el, seen)
+    keys.push(key)
+    const r = el.getBoundingClientRect()
+    rects.set(key, { left: r.left, top: r.top })
+  }
+  return { keys, rects }
+}
+
+/**
+ * 补位 FLIP 播放：结构变化（如删除模块后后续模块上移）后，幸存块从旧位置
+ * 平滑滑到新位置；新增块淡入。返回清理函数。
+ */
+function playReflowFlip(
+  doc: Document,
+  oldRects: Map<string, { left: number; top: number }>,
+  oldKeySet: Set<string>,
+): () => void {
+  const targets: { el: HTMLElement; dx: number; dy: number }[] = []
+  const appeared: HTMLElement[] = []
+  const seen = new Map<string, number>()
+  for (const el of Array.from(doc.querySelectorAll(REFLOW_SELECTOR))) {
+    const key = reflowBlockKey(el, seen)
+    const h = el as HTMLElement
+    if (oldKeySet.has(key)) {
+      const old = oldRects.get(key)
+      if (old) {
+        const r = el.getBoundingClientRect()
+        const dx = old.left - r.left
+        const dy = old.top - r.top
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) targets.push({ el: h, dx, dy })
+      }
+    } else {
+      appeared.push(h)
+    }
+  }
+  if (targets.length === 0 && appeared.length === 0) return () => {}
+
+  targets.forEach(({ el, dx, dy }) => {
+    el.style.transition = 'none'
+    el.style.transform = `translate(${dx}px, ${dy}px)`
+  })
+  appeared.forEach((el) => {
+    el.style.transition = 'none'
+    el.style.opacity = '0'
+  })
+  // 强制回流后开过渡：幸存块滑回新位置，新增块淡入
+  void doc.body.offsetHeight
+  targets.forEach(({ el }) => {
+    el.style.transition = 'transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1)'
+    el.style.transform = 'translate(0, 0)'
+  })
+  appeared.forEach((el) => {
+    el.style.transition = 'opacity 280ms ease'
+    el.style.opacity = '1'
+  })
+  const cleanup = () => {
+    targets.forEach(({ el }) => {
+      el.style.transition = ''
+      el.style.transform = ''
+    })
+    appeared.forEach((el) => {
+      el.style.transition = ''
+      el.style.opacity = ''
+    })
+  }
+  window.setTimeout(cleanup, 320)
+  return cleanup
+}
 
 /** 高亮包围盒外扩（px），避免框贴住内容。 */
 const OVERLAY_PAD = 3
@@ -161,6 +316,8 @@ export function PreviewPanel() {
   const setZoom = useEditorStore((s) => s.setZoom)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  /** 缩放纸张容器：切模板后重播淡入动画的宿主。 */
+  const paperDivRef = useRef<HTMLDivElement>(null)
   const wheelCleanupRef = useRef<(() => void) | null>(null)
   /** 分页后的全局板块索引（跨页续接合并），hover/click 共用。 */
   const sectionIndexRef = useRef<SectionGroup[]>([])
@@ -173,6 +330,10 @@ export function PreviewPanel() {
   // resume.custom_css 唯一承载，故只用一个 style key。
   const lastTemplateIdRef = useRef<string | null>(null)
   const lastStyleKeyRef = useRef<string | null>(null)
+  /** 上一次布局切换 FLIP 的清理函数（新动画/卸载时先清除，避免残留 transform）。 */
+  const flipCleanupRef = useRef<(() => void) | null>(null)
+  /** 上一次内容补位 FLIP 的清理函数（同上）。 */
+  const reflowCleanupRef = useRef<(() => void) | null>(null)
   const [pageCount, setPageCount] = useState(1)
   const [paper, setPaper] = useState<PaperSpec>(DEFAULT_PAPER)
   const [containerHeight, setContainerHeight] = useState(DEFAULT_PAPER.pxH)
@@ -200,6 +361,17 @@ export function PreviewPanel() {
     const isTemplateChange = lastTemplateIdRef.current !== templateId
     const isStyleChange = lastStyleKeyRef.current !== styleKey
 
+    // 布局切换（header-layout）时记录旧位置，分页重建完成后做 FLIP 滑动动画
+    let layoutFlipFrom: { cls: string; left: number; top: number }[] | null = null
+
+    // 内容结构补位 FLIP：在改动展示层前记录各块 key 与位置（分页重建后幸存块据此
+    // 做位移动画）。先清掉上一次动画的内联样式，保证记录的是干净布局位置。
+    if (reflowCleanupRef.current) {
+      reflowCleanupRef.current()
+      reflowCleanupRef.current = null
+    }
+    const oldReflow = collectReflowState(doc)
+
     if (isTemplateChange) {
       // 全量：重写 iframe 文档（含 head/CSS），改造成「源容器 + 展示层」，注入 morphdom
       doc.open()
@@ -217,6 +389,13 @@ export function PreviewPanel() {
       const parts = parsePreviewHtml(previewHtml)
       morphSourceContent(iframe, parts.contentHtml)
       if (isStyleChange) {
+        // 仅 header-layout 变化才触发 FLIP（旧样式 key 在 lastStyleKeyRef 中），
+        // 需在 style 更新前记录旧位置。
+        const prevLayout = parseCustomCss(lastStyleKeyRef.current ?? '').headerLayout ?? null
+        const nextLayout = parseCustomCss(styleKey).headerLayout ?? null
+        if (prevLayout !== nextLayout) {
+          layoutFlipFrom = captureHeaderRects(doc)
+        }
         updateStyleById(doc, RESUME_CUSTOM_STYLE_ID, parts.customCssRule)
         lastStyleKeyRef.current = styleKey
       }
@@ -299,6 +478,41 @@ export function PreviewPanel() {
 
       // 分页完成后重建板块索引（跨页续接合并），供 hover/click 定位。
       sectionIndexRef.current = buildSectionIndex(doc)
+
+      // 布局切换 FLIP：头部子块从旧布局位置平滑滑动到新布局位置
+      // （transform 不影响 offsetWidth/getComputedStyle，置于测量之前不影响后续取值）。
+      if (layoutFlipFrom && !cancelled) {
+        if (flipCleanupRef.current) {
+          flipCleanupRef.current()
+          flipCleanupRef.current = null
+        }
+        flipCleanupRef.current = playHeaderFlip(doc, layoutFlipFrom)
+      }
+
+      // 模板切换：新模板内容分页就位后重播淡入动画（remove→回流→add 重启同一 keyframe），
+      // 从透明淡入，掩蔽整篇 doc 重写的瞬间。仅切模板触发，内容编辑/样式调整不重播。
+      if (isTemplateChange && !cancelled) {
+        const paperEl = paperDivRef.current
+        if (paperEl) {
+          paperEl.classList.remove('animate-preview-enter')
+          void paperEl.offsetWidth
+          paperEl.classList.add('animate-preview-enter')
+        }
+      }
+
+      // 内容结构补位 FLIP：结构签名变化（增删模块/条目/显隐）时，幸存块从旧位置
+      // 滑到新位置、新增块淡入。纯文本编辑不改结构签名，不触发（避免打字抖动）。
+      if (!isTemplateChange && !cancelled) {
+        const newReflow = collectReflowState(doc)
+        const structureChanged = oldReflow.keys.join('\n') !== newReflow.keys.join('\n')
+        if (structureChanged) {
+          if (reflowCleanupRef.current) {
+            reflowCleanupRef.current()
+            reflowCleanupRef.current = null
+          }
+          reflowCleanupRef.current = playReflowFlip(doc, oldReflow.rects, new Set(oldReflow.keys))
+        }
+      }
 
       // 测量头像实际渲染尺寸，回传 store 供编辑器 slider 初始值使用：
       // 未设置头像尺寸（custom_css 无 avatarWidth/Height）时反映模板默认渲染值，
@@ -432,6 +646,14 @@ export function PreviewPanel() {
 
     return () => {
       cancelled = true
+      if (flipCleanupRef.current) {
+        flipCleanupRef.current()
+        flipCleanupRef.current = null
+      }
+      if (reflowCleanupRef.current) {
+        reflowCleanupRef.current()
+        reflowCleanupRef.current = null
+      }
       if (wheelCleanupRef.current) {
         wheelCleanupRef.current()
         wheelCleanupRef.current = null
@@ -477,6 +699,7 @@ export function PreviewPanel() {
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden mr-1">
       <div
+        ref={paperDivRef}
         className="animate-preview-enter"
         style={{
           width: `${paper.pxW * effectiveScale}px`,

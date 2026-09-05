@@ -46,8 +46,7 @@ body {
     grid-area: header;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
-    /* 与主栏一致：直接消费 --resume-padding-y/x（不再 0.75 缩放） */
-    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 14mm);
+    padding: var(--resume-padding-y, 8mm) var(--resume-padding-x, 8mm);
     display: grid;
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -117,8 +116,7 @@ body {
 /* ── 主内容区（右栏） ── */
 .r-main {
     grid-area: main;
-    /* 与侧栏一致：直接消费 --resume-padding-y/x（顶部不再是字面量 10pt，且不再 0.75 缩放） */
-    padding: var(--resume-padding-y, 14mm) var(--resume-padding-x, 14mm);
+    padding: var(--resume-padding-y, 8mm) var(--resume-padding-x, 8mm);
 }
 
 .summary {

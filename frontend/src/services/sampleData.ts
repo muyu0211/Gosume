@@ -1,6 +1,6 @@
 import type { Resume } from '../types/resume'
 import { generateId, DEFAULT_FONT_SIZE } from '../types/resume'
-import avatarUrl from '../assets/svg/identity.svg'
+import { DEFAULT_AVATAR_DATA_URI } from '../lib/defaultAvatar'
 
 export function createSampleResume(templateId: string): Resume {
   return {
@@ -21,7 +21,7 @@ export function createSampleResume(templateId: string): Resume {
       phone: '138-0000-1234',
       wechat: 'zhangsan_dev',
       location: '上海市浦东新区',
-      avatar: avatarUrl,
+      avatar: DEFAULT_AVATAR_DATA_URI,
       github: 'github.com/san-zhang',
       job_title: '高级前端工程师',
       years_of_exp: 6,

@@ -13,14 +13,17 @@ export type HeaderLayout = 'center' | 'avatar-left' | 'avatar-right'
 /** 信息区布局全部取值（不含 nil 跟随模板）。 */
 export const HEADER_LAYOUT_VALUES: HeaderLayout[] = ['center', 'avatar-left', 'avatar-right']
 
-/** 页边距可调范围（px）。上限 80 以容纳模板原生边距（如 20mm≈75px），
- *  避免"跟随模板"时拖动条的默认值被 max 截断。 */
-export const MARGIN_PX_MIN = 1
+/** 页边距可调范围（px） */
+export const MARGIN_PX_MIN = 0
 export const MARGIN_PX_MAX = 80
-/** 内容间距可调范围（px）。上限 40 以容纳模板原生间距（如 16pt≈21px），
- *  避免未定制时拖动条的默认值被 max 截断。 */
-export const SPACING_PX_MIN = 1
-export const SPACING_PX_MAX = 40
+
+/** 内容间距可调范围（px） */
+export const SPACING_PX_MIN = 0
+export const SPACING_PX_MAX = 20
+
+export const DETIAL_SPACING_PX_MIN = 0
+export const DETIAL_SPACING_PX_MAX = 15
+
 /** 头像圆角程度可调范围（0=直角矩形，100=圆形）。 */
 export const AVATAR_RADIUS_MIN = 0
 export const AVATAR_RADIUS_MAX = 100
@@ -58,11 +61,9 @@ export function detectHeaderLayoutCss(css: string): HeaderLayout {
     const rows = Array.from(b.matchAll(/"([^"]*)"/g), (m) => m[1])
     if (rows.length === 0) continue
     const tokenRows = rows.map((r) => r.trim().split(/\s+/).filter(Boolean))
-    // 单列：所有行都只有一个 token
     if (tokenRows.every((tr) => tr.length <= 1)) return 'center'
     const avRows = tokenRows.filter((tr) => tr.includes('avatar'))
     if (avRows.length === 0) return 'center'
-    // 头像跨行且恒在最左 / 最右
     if (avRows.every((tr) => tr.indexOf('avatar') === 0)) return 'avatar-left'
     if (avRows.every((tr) => tr[tr.length - 1] === 'avatar')) return 'avatar-right'
     return 'center'

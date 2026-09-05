@@ -224,7 +224,9 @@ body {
 /* 输入框 hover 效果：轻微放大（不影响布局，transform 不占布局流）+ 带扩散的柔和阴影。
    统一覆盖所有文本类输入框（form-input / 搜索框 / 项目名重命名 / 设置项 / 下拉 / 文本域等）。
    type 白名单覆盖原生 input；.form-input 覆盖复用该样式的非原生控件（如日期选择 MonthPicker）；
-   .rich-editor 覆盖 contentEditable 富文本编辑区（亮点/概述）。均不影响 checkbox / radio / range / color / file 等控件。 */
+   .rich-editor 覆盖 contentEditable 富文本编辑区（亮点/概述）；
+   .custom-select-trigger 覆盖自定义下拉触发器（CustomSelect，组件类上标注）。
+   均不影响 checkbox / radio / range / color / file 等控件。 */
 input[type='text'],
 input[type='email'],
 input[type='number'],
@@ -234,7 +236,8 @@ input[type='password'],
 input[type='tel'],
 input:not([type]),
 textarea,
-select {
+select,
+.custom-select-trigger {
   transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 
@@ -249,7 +252,8 @@ input:not([type]):hover,
 textarea:hover,
 select:hover,
 .form-input:hover,
-.rich-editor:hover {
+.rich-editor:hover,
+.custom-select-trigger:hover {
   transform: scale(1.01);
   box-shadow: 0 2px 10px 3px rgb(var(--primary-500) / 0.14);
 }

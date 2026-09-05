@@ -1,5 +1,6 @@
 import type { Resume } from '../types/resume'
 import { markdownToHtml } from './markdown'
+import { resolveAvatar } from './defaultAvatar'
 
 type TemplateFunc = (...args: string[]) => string
 
@@ -506,6 +507,12 @@ function toGoShape(resume: Resume): Record<string, unknown> {
   const shaped: Resume = { ...resume }
   if (shaped.personal_summary?.hidden) {
     shaped.personal_summary = { ...shaped.personal_summary, summary: '' }
+  }
+  // 头像归一化：历史数据里可能存着依赖源站的相对路径（如 /assets/identity-xxx.svg），
+  // 预览（Wails 托管）能显示但导出（rod 无源站）会裂图；统一在渲染前替换为自包含
+  // 的默认灰色头像 data URI（已设置的自包含 data URI 原样保留；未设置/已删除保持为空）。
+  if (shaped.personal && shaped.personal.avatar !== undefined) {
+    shaped.personal = { ...shaped.personal, avatar: resolveAvatar(shaped.personal.avatar) }
   }
   // Convert the snake_case frontend data to PascalCase for Go template compatibility.
   // Arrays of entries with a Hidden flag are filtered here so that:
