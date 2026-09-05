@@ -2,6 +2,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { Plus, Trash2, Languages, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
+import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
 
 // 语言熟练程度档位（与模板 skillLevel/语言说明一致）
@@ -85,19 +86,12 @@ export function LanguageSection() {
                   已隐藏
                 </span>
               )}
-              <label
-                className="flex items-center gap-1 px-1.5 py-1 text-xs text-surface-500 hover:text-surface-700 cursor-pointer select-none flex-shrink-0 self-start mt-5"
-                title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此项（不在简历中显示）'}
-              >
-                <input
-                  type="checkbox"
-                  className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
-                  checked={!isHidden}
-                  onChange={(e) => updateItem(idx, { hidden: !e.target.checked })}
-                />
-                <span className="hidden sm:inline">显示</span>
-              </label>
-              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-surface-400 hover:text-red-500 flex-shrink-0 self-start mt-5">
+              <VisibilityToggle
+                hidden={isHidden}
+                onToggle={() => updateItem(idx, { hidden: !isHidden })}
+                className="flex-shrink-0 self-start mt-5"
+              />
+              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0 self-start mt-5">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

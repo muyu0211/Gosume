@@ -363,6 +363,9 @@ export function PreviewPanel() {
 
     // 布局切换（header-layout）时记录旧位置，分页重建完成后做 FLIP 滑动动画
     let layoutFlipFrom: { cls: string; left: number; top: number }[] | null = null
+    // 字体/字号离散变化（下拉框选择）会引发内容整体重排 → 触发补位动画。
+    // 与滑杆类连续调整（页边距/间距/头像）区分：连续拖动逐帧刷新，动画会追赶不上。
+    let fontReflow = false
 
     // 内容结构补位 FLIP：在改动展示层前记录各块 key 与位置（分页重建后幸存块据此
     // 做位移动画）。先清掉上一次动画的内联样式，保证记录的是干净布局位置。
@@ -389,13 +392,20 @@ export function PreviewPanel() {
       const parts = parsePreviewHtml(previewHtml)
       morphSourceContent(iframe, parts.contentHtml)
       if (isStyleChange) {
-        // 仅 header-layout 变化才触发 FLIP（旧样式 key 在 lastStyleKeyRef 中），
-        // 需在 style 更新前记录旧位置。
-        const prevLayout = parseCustomCss(lastStyleKeyRef.current ?? '').headerLayout ?? null
-        const nextLayout = parseCustomCss(styleKey).headerLayout ?? null
-        if (prevLayout !== nextLayout) {
+        // 需在 style 更新前读取旧样式（旧 key 在 lastStyleKeyRef 中）并记录旧位置。
+        const prevStyle = parseCustomCss(lastStyleKeyRef.current ?? '')
+        const nextStyle = parseCustomCss(styleKey)
+        // 布局切换：头部四组件滑动 FLIP
+        if ((prevStyle.headerLayout ?? null) !== (nextStyle.headerLayout ?? null)) {
           layoutFlipFrom = captureHeaderRects(doc)
         }
+        // 字体/字号变化：内容整体重排，块位置移动 → 补位 FLIP
+        fontReflow =
+          prevStyle.fontKey !== nextStyle.fontKey ||
+          prevStyle.fontSizeName !== nextStyle.fontSizeName ||
+          prevStyle.fontSizeTitle !== nextStyle.fontSizeTitle ||
+          prevStyle.fontSizeBody !== nextStyle.fontSizeBody ||
+          prevStyle.fontSizeDetail !== nextStyle.fontSizeDetail
         updateStyleById(doc, RESUME_CUSTOM_STYLE_ID, parts.customCssRule)
         lastStyleKeyRef.current = styleKey
       }
@@ -500,12 +510,13 @@ export function PreviewPanel() {
         }
       }
 
-      // 内容结构补位 FLIP：结构签名变化（增删模块/条目/显隐）时，幸存块从旧位置
-      // 滑到新位置、新增块淡入。纯文本编辑不改结构签名，不触发（避免打字抖动）。
+      // 内容补位 FLIP：结构签名变化（增删模块/条目/显隐）或字体/字号离散变化
+      // （内容整体重排）时，幸存块从旧位置滑到新位置、新增块淡入。
+      // 纯文本编辑不改结构签名、滑杆类连续调整逐帧刷新，均不触发（避免抖动/追赶）。
       if (!isTemplateChange && !cancelled) {
         const newReflow = collectReflowState(doc)
         const structureChanged = oldReflow.keys.join('\n') !== newReflow.keys.join('\n')
-        if (structureChanged) {
+        if (structureChanged || fontReflow) {
           if (reflowCleanupRef.current) {
             reflowCleanupRef.current()
             reflowCleanupRef.current = null

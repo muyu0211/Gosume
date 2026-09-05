@@ -685,7 +685,7 @@ export function RichTextField({
             <div className="mt-2 pt-2 border-t border-surface-100 flex items-center justify-end">
               <button
                 type="button"
-                className="text-[11px] text-surface-500 hover:text-red-600"
+                className="text-[12px] text-surface-500 hover:text-red-600"
                 onClick={clearColor}
               >
                 无颜色

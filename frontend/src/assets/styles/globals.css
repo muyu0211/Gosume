@@ -144,26 +144,6 @@ html[data-theme='obsidian'] {
   color: var(--selection-fg);
 }
 
-/* 主题切换过渡：短暂覆盖一层当前主题背景并淡出，营造平滑换肤动画。
-   由工具栏主题切换按钮触发（临时挂载，动画结束即移除）。 */
-@keyframes theme-flash {
-  from {
-    opacity: 0.75;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-.theme-flash-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background: var(--app-bg);
-  animation: theme-flash 0.32s ease-out both;
-}
-
 html,
 body,
 #root {

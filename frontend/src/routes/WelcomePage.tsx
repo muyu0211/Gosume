@@ -4,7 +4,7 @@ import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
 import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2, Heart, Download, Star, PackageOpen, Globe, Moon, Palette, Sun } from 'lucide-react'
 import { useThemeStore } from '../stores/themeStore'
-import { nextExplicitTheme, type AppliedTheme } from '../lib/theme'
+import { nextExplicitTheme } from '../lib/theme'
 import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
@@ -35,16 +35,13 @@ export function WelcomePage() {
   const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
   const [showDrawer, setShowDrawer] = useState(false)
 
-  // 主题切换按钮：点击在三套显式主题间轮换（经典→麦色→深色→经典），带淡入换肤动画。
+  // 主题切换按钮：点击在三套显式主题间轮换（经典→麦色→深色→经典）。
   const appliedTheme = useThemeStore((s) => s.applied)
   const themeMode = useThemeStore((s) => s.mode)
-  // flashKey 变化会重建 flash 遮罩层，触发 theme-flash 动画（结束即复位移除）。
-  const [flashKey, setFlashKey] = useState(0)
   const ThemeIcon = appliedTheme === 'obsidian' ? Moon : appliedTheme === 'wheat' ? Palette : Sun
   const themeTitle = appliedTheme === 'obsidian' ? '当前：深色' : appliedTheme === 'wheat' ? '当前：麦色' : '当前：经典'
   const handleCycleTheme = () => {
     useThemeStore.getState().setMode(nextExplicitTheme(themeMode))
-    setFlashKey((k) => k + 1)
   }
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [importingTemplate, setImportingTemplate] = useState(false)
@@ -597,7 +594,6 @@ export function WelcomePage() {
         />
       )}
 
-      {/* 新版本更新对话框：与设置页检查更新共用同一组件与流程 */}
       {showUpdateDialog && updateInfo && (
         <UpdateDialog
           info={updateInfo}
@@ -616,7 +612,7 @@ export function WelcomePage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* 模板导入记录（模板市场能力整合到主页） */}
+      {/* 模板导入记录 */}
       {showImportLogs && (
         <ImportLogsDialog
           logs={importLogs}
@@ -637,15 +633,6 @@ export function WelcomePage() {
         onCancel={() => setDeleteLogTarget(null)}
       />
     </AnimatedPage>
-
-      {/* 主题切换过渡遮罩：flashKey 每次点击自增，重建后播一次淡出动画，结束即移除 */}
-      {flashKey > 0 && (
-        <div
-          key={flashKey}
-          className="theme-flash-overlay"
-          onAnimationEnd={() => setFlashKey(0)}
-        />
-      )}
     </>
   )
 }
@@ -887,7 +874,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                       {log.source === 'share' ? '分享包' : log.source === 'community' ? '社区' : '本地'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-surface-400 mt-0.5">
+                  <p className="text-[12px] text-surface-400 mt-0.5">
                     {new Date(log.imported_at).toLocaleString('zh-CN')}
                   </p>
                 </div>

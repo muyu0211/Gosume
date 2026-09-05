@@ -151,7 +151,7 @@ export function TemplateSwitcher() {
 
       {visible && (
         <div className={`absolute right-0 top-full mt-1 w-72 bg-elev rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
-          <div className="px-3 py-1.5 text-[11px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
+          <div className="px-3 py-1.5 text-[12px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
             <Layout className="w-3 h-3" />
             切换模板风格
           </div>
@@ -205,7 +205,7 @@ export function TemplateSwitcher() {
                       </button>
                     )}
                   </div>
-                  <p className="text-[11px] text-surface-400 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-[12px] text-surface-400 mt-1 line-clamp-2 leading-relaxed">
                     {tmpl.description}
                   </p>
                 </div>
@@ -215,7 +215,7 @@ export function TemplateSwitcher() {
           </div>
           <div className="border-t border-surface-100 p-2">
             {importError && (
-              <div className="mb-2 px-2 py-1.5 rounded-md bg-red-50 text-[11px] text-red-600 leading-relaxed">
+              <div className="mb-2 px-2 py-1.5 rounded-md bg-red-50 text-[12px] text-red-600 leading-relaxed">
                 {importError}
               </div>
             )}

@@ -190,7 +190,7 @@ export function CommunityPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-surface-800 leading-tight">模板社区</h1>
-            <p className="text-[11px] text-surface-400">在线模板市场 · 需联网访问，下载后可离线使用</p>
+            <p className="text-[12px] text-surface-400">在线模板市场 · 需联网访问，下载后可离线使用</p>
           </div>
         </div>
 
@@ -415,7 +415,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
       <div className="p-3.5">
         <h3 className="text-sm font-semibold text-surface-800 truncate">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-1">{template.description}</p>
-        <div className="flex items-center gap-3 mt-2.5 text-[11px] text-surface-400">
+        <div className="flex items-center gap-3 mt-2.5 text-[12px] text-surface-400">
           <span className="flex items-center gap-1">
             <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
             {template.rating > 0 ? template.rating.toFixed(1) : '暂无'}
@@ -429,7 +429,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
             <button
               onClick={(e) => { e.stopPropagation(); onDownload() }}
               disabled={downloading}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-600 text-white text-[11px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               下载

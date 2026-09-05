@@ -137,7 +137,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                 {stats.map(({ label, value }) => (
                   <span
                     key={label}
-                    className="px-2 py-0.5 text-[11px] rounded-full bg-elev border border-surface-200 text-surface-600"
+                    className="px-2 py-0.5 text-[12px] rounded-full bg-elev border border-surface-200 text-surface-600"
                   >
                     {label} {value}
                   </span>

@@ -58,7 +58,7 @@ function FontSizeRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-2 mb-2 last:mb-0">
-      <span className="text-[11px] font-medium text-surface-600">{label}</span>
+      <span className="text-[12px] font-medium text-surface-600">{label}</span>
       <div className="w-[108px] flex-shrink-0">
         <CustomSelect
           value={value == null ? '' : String(value)}
@@ -88,8 +88,8 @@ function SliderRow({
   return (
     <div className="mb-2.5 last:mb-0">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-medium text-surface-600">{label}</span>
-        <span className="text-[11px] font-mono text-surface-500">{value}px</span>
+        <span className="text-[12px] font-medium text-surface-600">{label}</span>
+        <span className="text-[12px] font-mono text-surface-500">{value}px</span>
       </div>
       <input
         type="range"
@@ -109,11 +109,11 @@ function PanelCard({ title, icon, summary, children }: { title: string; icon: Re
   return (
     <div className="rounded-lg border border-surface-200 bg-surface-50/60 px-3 py-3">
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[11px] font-medium text-surface-600 flex items-center gap-1.5">
+        <span className="text-[12px] font-medium text-surface-600 flex items-center gap-1.5">
           {icon}
           {title}
         </span>
-        {summary != null && <span className="text-[11px] font-mono text-surface-500">{summary}</span>}
+        {summary != null && <span className="text-[12px] font-mono text-surface-500">{summary}</span>}
       </div>
       {children}
     </div>

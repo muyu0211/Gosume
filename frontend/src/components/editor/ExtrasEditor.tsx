@@ -80,7 +80,7 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             placeholder="字段值（如：React, Go，可加粗）"
             maxLength={300}
           />
-          <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-surface-400 hover:text-red-500 flex-shrink-0" title="删除">
+          <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0" title="删除">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

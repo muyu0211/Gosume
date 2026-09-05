@@ -1,6 +1,7 @@
 import { useResumeStore } from '../../stores/resumeStore'
 import { FileText, EyeOff } from 'lucide-react'
 import { RichTextField } from '../ui/RichTextField'
+import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
 
 export function SummarySection() {
@@ -24,18 +25,11 @@ export function SummarySection() {
             </span>
           )}
         </div>
-        <label
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-surface-500 hover:text-surface-700 cursor-pointer select-none"
+        <VisibilityToggle
+          hidden={isHidden}
+          onToggle={() => updateField('personal_summary.hidden', !isHidden)}
           title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此段（不在简历中显示）'}
-        >
-          <input
-            type="checkbox"
-            className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
-            checked={!isHidden}
-            onChange={(e) => updateField('personal_summary.hidden', !e.target.checked)}
-          />
-          <span>在简历中显示</span>
-        </label>
+        />
       </div>
       <div>
         <label className="form-label">求职意向 / 个人简介</label>

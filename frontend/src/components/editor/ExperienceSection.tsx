@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
 import type { Job, Project, Internship } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical, EyeOff } from 'lucide-react'
+import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
@@ -109,22 +110,13 @@ export function ExperienceSection({ type, title }: Props) {
                     </span>
                   )}
                 </div>
-                <label
-                  className="flex items-center gap-1 px-1.5 py-1 text-xs text-surface-500 hover:text-surface-700 cursor-pointer select-none"
-                  title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此项（不在简历中显示）'}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <input
-                    type="checkbox"
-                    className="w-3.5 h-3.5 rounded border-surface-300 accent-primary-600 focus:ring-primary-500 cursor-pointer"
-                    checked={!isHidden}
-                    onChange={(e) => updateItem(idx, { hidden: !e.target.checked } as Partial<Entry>)}
-                  />
-                  <span className="hidden sm:inline">在简历中显示</span>
-                </label>
+                <VisibilityToggle
+                  hidden={isHidden}
+                  onToggle={() => updateItem(idx, { hidden: !isHidden } as Partial<Entry>)}
+                />
                 <button
                   onClick={(e) => { e.stopPropagation(); requestDelete(type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project', idx) }}
-                  className="p-1 text-surface-400 hover:text-red-500 transition-colors"
+                  className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -305,7 +297,7 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
             placeholder={`亮点 ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-surface-400 hover:text-red-500 flex-shrink-0">
+          <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

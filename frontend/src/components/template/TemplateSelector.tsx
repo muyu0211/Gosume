@@ -56,7 +56,6 @@ function TemplateCard({ template, isActive, onSelect }: { template: TemplateMeta
         </div>
       )}
       <div className="flex gap-3">
-        {/* Mini preview */}
         <div className="w-14 h-20 rounded border border-surface-200 overflow-hidden flex-shrink-0" style={{ background: colors.background }}>
           <div className="p-1.5 scale-[0.55] origin-top-left w-[180%]">
             <div className="h-0.5 w-8 rounded mb-1" style={{ background: colors.primary }} />
@@ -66,7 +65,7 @@ function TemplateCard({ template, isActive, onSelect }: { template: TemplateMeta
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold text-surface-800">{template.name}</h4>
-          <p className="text-[11px] text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
+          <p className="text-[12px] text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
         </div>
       </div>
       {/* Color dots */}

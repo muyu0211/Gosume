@@ -18,6 +18,8 @@ interface Props {
   disabled?: boolean
   /** 外层宽度控制（默认 w-full）。 */
   className?: string
+  /** 追加到触发按钮上的样式（可覆盖内置 padding 等，用 !important 修饰符）。 */
+  triggerClassName?: string
 }
 
 /** 面板最大高度（与 max-h-56 一致），用于展开方向自适应估算。 */
@@ -42,6 +44,7 @@ export function CustomSelect({
   emptyText = '暂无可用选项',
   disabled = false,
   className = '',
+  triggerClassName = '',
 }: Props) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -52,17 +55,13 @@ export function CustomSelect({
 
   const close = useCallback(() => setOpen(false), [])
 
-  // 基于触发按钮的屏幕坐标计算面板位置（fixed 定位）
-  //
-  // 始终向下展开：底部空间不足时压缩面板 max-h 自适应，绝不上飘到远处
-  // （避免 trigger 接近视口底部时面板跳到对话框上半部这种"飞走了"的视觉错位）。
   const updatePos = useCallback(() => {
     const btn = triggerRef.current
     if (!btn) return
     const rect = btn.getBoundingClientRect()
     const top = rect.bottom + 6
     const left = rect.left
-    const width = rect.width
+    const width = btn.offsetWidth
     const availableBelow = Math.max(80, window.innerHeight - rect.bottom - 14)
     const maxHeight = Math.min(PANEL_MAX_HEIGHT, availableBelow)
     setPos({ top, left, width, maxHeight })
@@ -72,9 +71,6 @@ export function CustomSelect({
     if (open) updatePos()
   }, [open, updatePos])
 
-  // 面板打开期间的滚动处理：
-  // - 面板内部滚动（滚轮浏览选项）→ 忽略，保持打开；
-  // - 外部滚动（对话框/页面内容滚动）→ 重新定位面板跟随触发按钮，避免 fixed 漂移。
   useEffect(() => {
     if (!open) return
     const onScroll = (e: Event) => {
@@ -118,7 +114,7 @@ export function CustomSelect({
           open
             ? 'border-primary-400 ring-2 ring-primary-500/20'
             : 'border-surface-200 hover:border-surface-300'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
       >
         <span className={`truncate ${selected ? 'text-surface-700' : 'text-surface-400'}`}>
           {selected ? selected.label : placeholder}
@@ -154,7 +150,7 @@ export function CustomSelect({
                 >
                   <span className="flex flex-col min-w-0">
                     <span className="truncate font-medium">{opt.label}</span>
-                    {opt.hint && <span className="text-[11px] text-surface-400 truncate">{opt.hint}</span>}
+                    {opt.hint && <span className="text-[12px] text-surface-400 truncate">{opt.hint}</span>}
                   </span>
                   {opt.value === value && <Check className="w-4 h-4 shrink-0 text-primary-600" />}
                 </button>

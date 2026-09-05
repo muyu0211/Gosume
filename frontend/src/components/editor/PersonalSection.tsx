@@ -6,6 +6,7 @@ import { loadTemplateContent } from '../../services/templateService'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
+import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
@@ -364,16 +365,14 @@ export function PersonalSection() {
             <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-surface-600">简历中显示尺寸</span>
             <div className="flex items-center gap-2">
-              <select
-                value={ratioPreset}
-                onChange={(e) => handlePresetChange(e.target.value)}
-                className="text-xs border border-surface-200 rounded-md px-1.5 py-0.5 bg-elev text-surface-600 focus:outline-none focus:border-primary-500"
-                title="选择标准证件照比例"
-              >
-                {RATIO_PRESETS.map((pr) => (
-                  <option key={pr.key} value={pr.key}>{pr.label}</option>
-                ))}
-              </select>
+              <div className="w-[128px] flex-shrink-0">
+                <CustomSelect
+                  value={ratioPreset}
+                  onChange={handlePresetChange}
+                  options={RATIO_PRESETS.map((pr) => ({ value: pr.key, label: pr.label }) as SelectOption)}
+                  triggerClassName="!px-2 !py-0.5"
+                />
+              </div>
               <label className="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -390,7 +389,7 @@ export function PersonalSection() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+              <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
                 <span>宽</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarW}px</span>
               </div>
@@ -405,7 +404,7 @@ export function PersonalSection() {
               />
             </div>
             <div>
-              <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+              <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
                 <span>高</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarH}px</span>
               </div>
@@ -423,7 +422,7 @@ export function PersonalSection() {
 
           {/* 头像圆角（仅当前简历；0=直角矩形，100=圆形） */}
           <div className="mt-3">
-            <div className="flex items-center justify-between text-[11px] text-surface-500 mb-1">
+            <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
               <span className="flex items-center gap-1">
                 <span>圆角</span>
                 {styleState.avatarRadius == null && <span className="text-surface-400">（跟随模板）</span>}
