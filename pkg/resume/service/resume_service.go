@@ -179,9 +179,6 @@ func (s *ResumeService) LoadResume(id string) *util.Response {
 }
 
 // ExplicitSave 是唯一对外暴露的持久化入口。
-//
-// 仅由前端在用户显式保存（Ctrl+S 或保存按钮）时调用；真正的写库逻辑位于
-// 未导出的 saveResume，前端无法通过 Wails 绑定直接触达。
 func (s *ResumeService) ExplicitSave() *util.Response {
 	log.Infof("[resume_service] ExplicitSave: user-initiated save")
 	if err := s.saveResume(); err != nil {
@@ -193,9 +190,6 @@ func (s *ResumeService) ExplicitSave() *util.Response {
 }
 
 // saveResume 把当前简历持久化到 SQLite。
-//
-// 首次保存创建新记录，后续保存更新已有记录。
-// 该方法为未导出方法，前端无法直接调用。
 func (s *ResumeService) saveResume() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

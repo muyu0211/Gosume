@@ -18,10 +18,10 @@ import (
 
 // TemplateService 管理模板的查询、增删改与导入。
 type TemplateService struct {
-	App        *application.App
-	loader     *template.Loader // 模板加载器
-	tempRepo   *repo.TemplateRepo
-	HTML       string
+	App       *application.App
+	loader    *template.Loader
+	tempRepo  *repo.TemplateRepo
+	HTML      string
 	GlobalCSS string
 }
 
