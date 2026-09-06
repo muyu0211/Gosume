@@ -24,7 +24,8 @@ const INTERACT_STYLE_ID = 'preview-section-interact-style'
 // ── 统一布局 FLIP（组件位置变化动画）───────────────────────────────────────
 /**
  * 参与位置动画的块（页内选择器）：头部子块（个人信息区四组件）+ 正文块
- * （带 data-id 的条目、带 data-section 的模块标题/总结）。
+ * （带 data-id 的条目、带 data-section 的模块标题/总结、带 data-cont-of 的
+ * 条目续接部分克隆——M1 组件级分页把拆分的条目续接部分打上该标记）。
  * 任何会导致这些块位置/大小变化的更新（增删/显隐、字体字号、头部布局切换、
  * 内容长短变化）都走同一套动画——动画跟着组件走，而非按场景定制。
  */
@@ -34,6 +35,7 @@ const LAYOUT_IN_PAGE_SELECTOR = [
   '.r-header .r-contact',
   '.r-header .r-langs',
   '[data-id]',
+  '[data-cont-of]',
   '.section-title[data-section]',
   '.summary[data-section]',
 ].join(', ')
@@ -42,6 +44,7 @@ const LAYOUT_IN_PAGE_SELECTOR = [
  * 块的稳定 key，用于跨分页重建（cloneNode）匹配新旧元素：
  * - 头部子块：按页索引 + 组件类（双栏侧栏每页各一份，页索引消歧）
  * - 条目：data-id（全局唯一，跨页移动仍能匹配）
+ * - 条目续接部分：data-cont-of + 页索引（同一条目每页至多一个续接部分，页索引消歧）
  * - 标题/总结：data-section + 同段出现序号
  */
 function layoutBlockKey(el: Element, pageIdx: number, seen: Map<string, number>): string {
@@ -49,6 +52,8 @@ function layoutBlockKey(el: Element, pageIdx: number, seen: Map<string, number>)
   if (el.classList.contains('r-header-text')) return `header:${pageIdx}:text`
   if (el.classList.contains('r-contact')) return `header:${pageIdx}:contact`
   if (el.classList.contains('r-langs')) return `header:${pageIdx}:langs`
+  const cont = el.getAttribute('data-cont-of')
+  if (cont) return `cont:${cont}:${pageIdx}`
   const id = el.getAttribute('data-id')
   if (id) return `id:${id}`
   const sec = el.getAttribute('data-section') ?? ''
@@ -527,22 +532,17 @@ export function PreviewPanel() {
       const nativeMargins = measurePageMargins()
 
       // 内容间距（与注入选择器契约对应，见 resume-global.css）：
-      // 模块=`* + .section-title{margin-top}`（取真实板块边界的前元素下边距/标题上边距；
-      // 跳过首位 section-title——它挂在 .r-main 顶部、前任为空，取值会退化为 0）
+      // 模块=`* + .section-title{margin-top}`（只读 section-title 自身 margin-top，
+      // 恰好对应模块滑块唯一的覆盖属性）。不能取前一个条目的 margin-bottom 作为模块回退：
+      // 条目定制会以 !important 覆盖条目 margin-bottom，若并入模块测量会把「模块滑块」
+      // 与「条目滑块」耦合（拖条目连带模块跳动）。模板原生 section-title 多为 margin-top:0，
+      // 此时返回 undefined，由 StylePanel 回退到 DISPLAY_DEFAULT 作为稳定默认值。
       // 条目=条目元素 margin-bottom / 细节=`.highlights li` 行 margin-bottom。
       const titles = doc.querySelectorAll('.section-title')
       let sSection = 0
       for (const t of Array.from(titles)) {
-        const prev = t.previousElementSibling
-        if (!prev) continue
-        const gap = Math.max(
-          parseFloat(getComputedStyle(prev).marginBottom) || 0,
-          parseFloat(getComputedStyle(t).marginTop) || 0,
-        )
-        if (gap > 0) {
-          sSection = gap
-          break
-        }
+        const mt = parseFloat(getComputedStyle(t).marginTop) || 0
+        if (mt > sSection) sSection = mt
       }
       const itemEl = doc.querySelector('.experience-item, .education-item, .award-item, .skill-category, .skill-item, .sidebar-item, .custom-item')
       const detailEl = doc.querySelector('.highlights li') ?? doc.querySelector('.exp-location, .exp-header, .edu-detail, .extra-row')
@@ -552,9 +552,13 @@ export function PreviewPanel() {
       const nativeLayout = nativeMargins
         ? {
             ...nativeMargins,
-            spacingSection: Math.round(sSection),
-            spacingItem: Math.round(sItem),
-            spacingDetail: Math.round(sDetail),
+            // sSection 为 0（模板原生无独立模块间距）时置 undefined，让 StylePanel
+            // 走 DISPLAY_DEFAULT 回退，避免滑块显示 0px；>0 时为已注入/模板自带的真实模块间距。
+            spacingSection: sSection > 0 ? Math.round(sSection) : undefined,
+            // 条目/细节同理：无对应元素（空简历/空块）时置 undefined，回退 DISPLAY_DEFAULT，
+            // 与模块保持一致，避免「0 被 ?? 当作真实值」造成三栏初始值不对称。
+            spacingItem: sItem > 0 ? Math.round(sItem) : undefined,
+            spacingDetail: sDetail > 0 ? Math.round(sDetail) : undefined,
           }
         : null
       const prevLayout = useResumeStore.getState().nativeLayout

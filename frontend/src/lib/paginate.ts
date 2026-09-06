@@ -20,6 +20,11 @@ export interface PaginateContentOptions {
   targetEl?: HTMLElement
 }
 
+export interface PaginateContentResult {
+  pageCount: number
+  paper: PaperSpec
+}
+
 /**
  * Paginates the content inside a resume iframe into separate pages.
  * Returns the number of pages created plus the resolved paper spec.

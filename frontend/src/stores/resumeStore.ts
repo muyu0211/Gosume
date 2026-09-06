@@ -13,9 +13,11 @@ import { useTemplateStore } from './templateStore'
 interface NativeLayout {
   pageMarginY: number
   pageMarginX: number
-  spacingSection: number
-  spacingItem: number
-  spacingDetail: number
+  /** 内容间距：模板原生无对应独立间距/无对应元素（空块）时为 undefined，滑块回退 DISPLAY_DEFAULT；
+   *  模块尤其如此——原生常无独立模块间距，仅由条目间距撑起板块边界。 */
+  spacingSection?: number
+  spacingItem?: number
+  spacingDetail?: number
 }
 
 /** 回退模板 ID（与 usePreview / templateStore 默认值一致）。 */

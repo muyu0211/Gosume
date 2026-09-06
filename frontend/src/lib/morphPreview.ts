@@ -59,12 +59,21 @@ export function updateStyleById(doc: Document, id: string, rule: string): void {
 }
 
 /**
+ * iframe 的 contentWindow 类型：TS 的 `Window` 本身不含 `eval`（`eval` 来自
+ * `typeof globalThis`），因此必须交叉 `typeof globalThis` 才能调用 `win.eval`。
+ */
+type MorphWindow = Window &
+  typeof globalThis & {
+    morphdom?: (from: Node, to: Node, opts?: object) => void
+  }
+
+/**
  * 把 morphdom 注入 iframe 的 contentWindow（幂等）。
  * 必须在 doc.write 之后调用一次；doc.write 只替换 contentDocument，
  * contentWindow 不变，故注入结果在后续 diff 中持续有效。
  */
 export function injectMorphdom(iframe: HTMLIFrameElement): void {
-  const win = iframe.contentWindow as (Window & { morphdom?: unknown }) | null
+  const win = iframe.contentWindow as MorphWindow | null
   if (win && !win.morphdom) {
     win.eval(morphdomSource)
   }
@@ -76,7 +85,7 @@ export function injectMorphdom(iframe: HTMLIFrameElement): void {
  */
 export function morphSourceContent(iframe: HTMLIFrameElement, contentHtml: string): void {
   const doc = iframe.contentDocument
-  const win = iframe.contentWindow as (Window & { morphdom?: (from: Node, to: Node, opts?: object) => void }) | null
+  const win = iframe.contentWindow as MorphWindow | null
   if (!doc || !win?.morphdom) return
 
   const sourceContainer = doc.querySelector(`#${SOURCE_ID} .resume-container`)
