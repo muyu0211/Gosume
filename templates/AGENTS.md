@@ -107,6 +107,8 @@ templates/
 </body>
 ```
 
+> **分页产物契约（M1 组件级 + M2 行级分页）**：分页核心（`frontend/src/lib/paginationCore.ts`）把放不下当前页剩余空间的条目按内部组件拆分跨页。拆分产物为「头部部分克隆（保留 `data-id`，留在当前页）」+「续接部分克隆（去掉 `data-id`、改打 `data-cont-of="<原data-id>"`，位于续页）」；两类克隆**均复用条目原有类名与** **`data-section`**，模板 CSS 的间距/字体注入规则自动生效，模板无需感知拆分。分页核心对组件的拆分/保留判定采用**通用结构规则**：叶子文本块（无块级子元素）按行断页、含块级子元素的容器按子组件拆分；仅少数「语义整体」组件（`.section-title`、`.exp-header`、`.edu-header`、`.skill-item`、`.skill-dots`）在引擎内登记为整体保留。新增模板组件沿用统一 HTML 的类名契约即可自动接入分页，无需改引擎（除非是「含块级子元素的一行式语义单元」，才需在 `KEEP_WHOLE` 中追加）。
+
 ### 模板 CSS 的职责（关键约定）
 
 1. **单栏/双栏完全由 CSS 决定**（分页核心按 `.resume-container` 的 computed `display` 区分）：

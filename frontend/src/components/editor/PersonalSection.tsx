@@ -7,6 +7,7 @@ import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
+import { AnimatedRange } from '../ui/AnimatedRange'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
@@ -427,15 +428,13 @@ export function PersonalSection() {
                 <span>圆角</span>
                 {styleState.avatarRadius == null && <span className="text-surface-400">（跟随模板）</span>}
               </span>
-              <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? 0}</span>
+              <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? avatarRenderedSize?.radius ?? 0}</span>
             </div>
-            <input
-              type="range"
+            <AnimatedRange
+              value={styleState.avatarRadius ?? avatarRenderedSize?.radius ?? 0}
               min={AVATAR_RADIUS_MIN}
               max={AVATAR_RADIUS_MAX}
-              step={1}
-              value={styleState.avatarRadius ?? 0}
-              onChange={(e) => updateCustomCss({ avatarRadius: Number(e.target.value) })}
+              onChange={(v) => updateCustomCss({ avatarRadius: v })}
               className="w-full accent-primary-600"
             />
             <p className="text-[10px] text-surface-400 mt-1">0=直角矩形 · 100=圆形，仅作用于当前简历。</p>

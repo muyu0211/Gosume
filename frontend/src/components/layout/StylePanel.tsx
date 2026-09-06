@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useEditorStore, STYLE_PANEL_MIN_WIDTH, STYLE_PANEL_MAX_WIDTH } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
+import { AnimatedRange } from '../ui/AnimatedRange'
 import {
   MARGIN_PX_MIN,
   MARGIN_PX_MAX,
@@ -71,7 +72,7 @@ function FontSizeRow({
   )
 }
 
-/** 单条拖动条：label + 数值（px）+ range。 */
+/** 单条拖动条：label + 数值（px）+ range（动画/量程映射见 AnimatedRange）。 */
 function SliderRow({
   label,
   value,
@@ -91,15 +92,7 @@ function SliderRow({
         <span className="text-[12px] font-medium text-surface-600">{label}</span>
         <span className="text-[12px] font-mono text-surface-500">{value}px</span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="w-full margin-range-slider"
-      />
+      <AnimatedRange value={value} min={min} max={max} onChange={onChange} className="w-full margin-range-slider" />
     </div>
   )
 }

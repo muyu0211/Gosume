@@ -13,9 +13,11 @@ import { useTemplateStore } from './templateStore'
 interface NativeLayout {
   pageMarginY: number
   pageMarginX: number
-  spacingSection: number
-  spacingItem: number
-  spacingDetail: number
+  /** 内容间距：模板原生无对应独立间距/无对应元素（空块）时为 undefined，滑块回退 DISPLAY_DEFAULT；
+   *  模块尤其如此——原生常无独立模块间距，仅由条目间距撑起板块边界。 */
+  spacingSection?: number
+  spacingItem?: number
+  spacingDetail?: number
 }
 
 /** 回退模板 ID（与 usePreview / templateStore 默认值一致）。 */
@@ -52,7 +54,8 @@ interface ResumeState {
   isPreviewLoading: boolean
   resumeList: ResumeListItem[]
   currentId: string | null
-  avatarRenderedSize: { width: number; height: number } | null
+  /** 最近一次分页后测量的头像实际渲染几何；radius 为反推的圆角档位（0–100），未定制时供圆角滑块作起点。 */
+  avatarRenderedSize: { width: number; height: number; radius?: number } | null
   /** 最近一次分页后测量的模板原生布局（页边距 + 内容间距，CSS px）；null 表示尚未测量。 */
   nativeLayout: NativeLayout | null
   /** 最近一次保存后测量的内容真实高度（CSS px）；null 表示尚未测量。 */
@@ -67,7 +70,7 @@ interface ResumeState {
   markSaved: (filePath?: string) => void
   setPreviewHtml: (html: string) => void
   setPreviewLoading: (loading: boolean) => void
-  setAvatarRenderedSize: (size: { width: number; height: number } | null) => void
+  setAvatarRenderedSize: (size: { width: number; height: number; radius?: number } | null) => void
   setNativeLayout: (layout: NativeLayout | null) => void
   setResumeList: (list: ResumeListItem[]) => void
   loadResume: (id: string) => Promise<Resume | null>

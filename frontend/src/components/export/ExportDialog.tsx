@@ -23,7 +23,7 @@ interface Props {
 const formats = [
   { id: 'pdf' as const, label: 'PDF 文档', desc: '适合打印和投递，保留完整排版和超链接', icon: FileText },
   { id: 'png' as const, label: 'PNG 图片', desc: '高清截图，用于在线预览和分享', icon: Image },
-  { id: '单页pdf' as const, label: '单页 PDF', desc: '将全部内容压缩为单页，内容超高时字体会缩小', icon: FileText },
+  { id: '单页pdf' as const, label: '单页 PDF', desc: '将全部内容压缩为单页，内容超高时字体会缩小, 适合内容略微超出一页的场景', icon: FileText },
   { id: 'gosume' as const, label: '可编辑简历 (.gosume)', desc: '保存为可继续编辑的简历，可暂存备份、发送他人或换设备继续编辑', icon: FileJson },
 ]
 

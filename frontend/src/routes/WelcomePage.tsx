@@ -73,8 +73,6 @@ export function WelcomePage() {
   const setResumeList = useResumeStore((s) => s.setResumeList)
   const setResume = useResumeStore((s) => s.setResume)
   const clearResume = useResumeStore((s) => s.clearResume)
-
-  // 未分类模板统一归入 custom，与后端 ListCategories 语义一致
   const categoryOf = (t: TemplateMeta) => (t.category && t.category.trim()) || 'custom'
 
   // 按分类/收藏过滤后的模板列表（本地筛选，模板体量小无需后端分页）
@@ -402,7 +400,7 @@ export function WelcomePage() {
             onClick={handleOpenImportLogs}
             className="btn-secondary btn-sm"
           >
-            <Clock className="w-4 h-4" />
+            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             导入记录
           </button>
           <button

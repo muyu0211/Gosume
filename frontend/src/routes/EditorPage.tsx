@@ -38,7 +38,6 @@ export function EditorPage() {
   const setSplitRatio = useEditorStore((s) => s.setSplitRatio)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  // 编辑器/预览分栏容器 ref：拖拽分栏比例时以实际容器宽度计算，右侧边栏展开时也能准确换算。
   const splitRef = useRef<HTMLDivElement>(null)
 
   const { refreshPreview } = usePreview()
