@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useEditorStore, STYLE_PANEL_MIN_WIDTH, STYLE_PANEL_MAX_WIDTH } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
+import { AnimatedRange } from '../ui/AnimatedRange'
 import {
   MARGIN_PX_MIN,
   MARGIN_PX_MAX,
@@ -71,7 +72,7 @@ function FontSizeRow({
   )
 }
 
-/** 单条拖动条：label + 数值（px）+ range。 */
+/** 单条拖动条：label + 数值（px）+ range（动画/量程映射见 AnimatedRange）。 */
 function SliderRow({
   label,
   value,
@@ -85,95 +86,13 @@ function SliderRow({
   max: number
   onChange: (v: number) => void
 }) {
-  // 进入编辑页/外部值变化（nativeLayout 实测值回填等）时，用 rAF 从"当前实际显示值"
-  // 平滑缓动到目标值，避免滑块直接跳变（同头像尺寸调节的 animateTo 手法）。
-  // 关键点：起始值用 ref 实时读取，而非渲染闭包——否则连续 re-target 会从旧值重启，
-  // 造成橡皮筋式回弹/顿挫；re-target 一律从当前 ref 值续接，保证丝滑。
-  const [cur, setCur] = useState<number>(() => min)
-  const curRef = useRef<number>(min)
-  const rafRef = useRef<number | null>(null)
-  const draggingRef = useRef(false)
-
-  // 立即设置显示值（用户拖动时用，取消进行中的动画）。
-  const setValInstant = useCallback((v: number) => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-    }
-    curRef.current = v
-    setCur(v)
-  }, [])
-
-  useEffect(() => {
-    if (draggingRef.current) {
-      setValInstant(value)
-      return
-    }
-    const from = curRef.current
-    const to = value
-    if (to === from) return
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    const DURATION = 400
-    const start = performance.now()
-    const ease = (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
-    const step = (now: number) => {
-      const t = Math.min(1, (now - start) / DURATION)
-      const v = Math.round(from + (to - from) * ease(t))
-      curRef.current = v
-      setCur(v)
-      if (t < 1) rafRef.current = requestAnimationFrame(step)
-      else rafRef.current = null
-    }
-    rafRef.current = requestAnimationFrame(step)
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
-    }
-  }, [value, setValInstant])
-
-  // 卸载时清理 rAF。
-  useEffect(() => {
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
-    }
-  }, [])
-
   return (
     <div className="mb-2.5 last:mb-0">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[12px] font-medium text-surface-600">{label}</span>
-        <span className="text-[12px] font-mono text-surface-500">{cur}px</span>
+        <span className="text-[12px] font-mono text-surface-500">{value}px</span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={cur}
-        onPointerDown={() => {
-          draggingRef.current = true
-          setValInstant(value)
-        }}
-        onPointerUp={() => {
-          draggingRef.current = false
-          setValInstant(value)
-        }}
-        onPointerCancel={() => {
-          draggingRef.current = false
-          setValInstant(value)
-        }}
-        onChange={(e) => {
-          const v = parseInt(e.target.value, 10)
-          setValInstant(v)
-          onChange(v)
-        }}
-        className="w-full margin-range-slider"
-      />
+      <AnimatedRange value={value} min={min} max={max} onChange={onChange} className="w-full margin-range-slider" />
     </div>
   )
 }

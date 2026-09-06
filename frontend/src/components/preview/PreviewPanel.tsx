@@ -480,12 +480,35 @@ export function PreviewPanel() {
       // 测量头像实际渲染尺寸，回传 store 供编辑器 slider 初始值使用：
       // 未设置头像尺寸（custom_css 无 avatarWidth/Height）时反映模板默认渲染值，
       // 避免硬编码 100px。值比较后再写入，避免每次编辑分页都触发编辑器的同步 effect。
+      // 同时测 border-radius 反推圆角（0–100 档位，映射自定义 scale：border-radius=r/2 %；
+      // px 值按头像宽折算成 %，便于"未定制"时圆角滑块反映模板原生外观而非 0）。
       const avatarImg = doc.querySelector('.r-avatar img') as HTMLImageElement | null
-      const measured = avatarImg && avatarImg.offsetWidth > 0
-        ? { width: avatarImg.offsetWidth, height: avatarImg.offsetHeight }
-        : null
+      let measured: { width: number; height: number; radius?: number } | null = null
+      if (avatarImg && avatarImg.offsetWidth > 0) {
+        const br = getComputedStyle(avatarImg).borderRadius
+        const m = br.match(/^([\d.]+)(%|px)/)
+        const radius =
+          m == null
+            ? 0
+            : Math.round(
+                Math.min(
+                  100,
+                  Math.max(
+                    0,
+                    m[2] === '%'
+                      ? parseFloat(m[1]) * 2
+                      : (parseFloat(m[1]) / avatarImg.offsetWidth) * 200,
+                  ),
+                ),
+              )
+        measured = { width: avatarImg.offsetWidth, height: avatarImg.offsetHeight, radius }
+      }
       const prevSize = useResumeStore.getState().avatarRenderedSize
-      if ((measured?.width ?? 0) !== (prevSize?.width ?? 0) || (measured?.height ?? 0) !== (prevSize?.height ?? 0)) {
+      if (
+        (measured?.width ?? 0) !== (prevSize?.width ?? 0) ||
+        (measured?.height ?? 0) !== (prevSize?.height ?? 0) ||
+        (measured?.radius ?? 0) !== (prevSize?.radius ?? 0)
+      ) {
         useResumeStore.getState().setAvatarRenderedSize(measured)
       }
 

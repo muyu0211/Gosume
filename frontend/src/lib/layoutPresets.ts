@@ -19,7 +19,7 @@ export const MARGIN_PX_MAX = 80
 
 /** 内容间距可调范围（px） */
 export const SPACING_PX_MIN = 0
-export const SPACING_PX_MAX = 20
+export const SPACING_PX_MAX = 40
 
 export const DETIAL_SPACING_PX_MIN = 0
 export const DETIAL_SPACING_PX_MAX = 15
