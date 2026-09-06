@@ -28,7 +28,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   splitRatio: 0.4,
   flashSection: null,
   flashNonce: 0,
-  stylePanelOpen: false,
+  // 默认展开右边栏，避免新用户发现不了样式排版功能；用户可手动收起。
+  stylePanelOpen: true,
   stylePanelWidth: STYLE_PANEL_DEFAULT_WIDTH,
 
   setActiveSection: (section) => set({ activeSection: section }),

@@ -49,15 +49,11 @@ export function WelcomePage() {
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  // 中间态导入（.gosume）
   const [importingGosume, setImportingGosume] = useState(false)
   const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
   const [importSuccess, setImportSuccess] = useState('')
-  // 启动更新检查：有新版本时 logo 显示 NEW 角标，点击角标弹出更新对话框。
-  // 初始值取自模块级缓存，路由切走再回来角标直接恢复。
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
-  // 模板市场能力整合到主页：分类筛选 / 收藏 / 分享 / 导入记录
   const [marketCategories, setMarketCategories] = useState<TemplateCategory[]>([])
   const [activeCategory, setActiveCategory] = useState('')
   const [favoriteOnly, setFavoriteOnly] = useState(false)
@@ -404,7 +400,7 @@ export function WelcomePage() {
           </button>
           <button
             onClick={handleOpenImportLogs}
-            className="btn-ghost btn-sm"
+            className="btn-secondary btn-sm"
           >
             <Clock className="w-4 h-4" />
             导入记录
