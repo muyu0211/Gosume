@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import ReactCrop, { type Crop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 import {
-  Upload, Download, ArrowLeft, Check, Image as ImageIcon, Camera, Crop as CropIcon,
+  Upload, Download, ArrowLeft, Check, Image as ImageIcon, Camera, Crop as CropIcon, Loader2, FolderOpen, AlertCircle,
 } from 'lucide-react'
 import { AnimatedRange } from '../ui/AnimatedRange'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { callService, isWails } from '../../services/backend'
+import { extractErrorMessage } from '../../lib/errorUtils'
 import {
   SIZE_PRESETS, BG_PRESETS, mmToPx, replaceBackground, centerCropToSize,
   canvasByteSize, downloadCanvas, formatBytes, cropCanvas, centeredAspectBox,
@@ -25,57 +30,9 @@ function canvasFrom(img: HTMLImageElement): HTMLCanvasElement {
   return c
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, v))
-}
-
-/** 拖拽模式：move=移动裁剪框；其余为四个角的缩放。 */
-type DragMode = 'move' | 'nw' | 'ne' | 'sw' | 'se'
-
-/** 由固定对角 + 光标位置 + 可选比例锁定，计算新的裁剪框（归一化坐标）。 */
-function resizeFromCorner(
-  o: NormRect,
-  mode: DragMode,
-  nx: number,
-  ny: number,
-  aspect: number | null,
-): NormRect {
-  const MIN = 0.02
-  // 固定对角（不动的那只角）
-  let ox: number
-  let oy: number
-  if (mode === 'se') { ox = o.x; oy = o.y }
-  else if (mode === 'nw') { ox = o.x + o.w; oy = o.y + o.h }
-  else if (mode === 'ne') { ox = o.x; oy = o.y + o.h }
-  else { ox = o.x + o.w; oy = o.y } // sw
-
-  if (aspect) {
-    const dirX = nx >= ox ? 1 : -1
-    const dirY = ny >= oy ? 1 : -1
-    let dw = Math.max(MIN, Math.abs(ox - nx))
-    let dh = Math.max(MIN, Math.abs(oy - ny))
-    if (dw / dh > aspect) dh = dw / aspect
-    else dw = dh * aspect
-    let w = Math.min(dw, dirX > 0 ? 1 - ox : ox)
-    let h = Math.min(dh, dirY > 0 ? 1 - oy : oy)
-    if (w / h > aspect) h = w / aspect
-    else w = h * aspect
-    w = Math.max(MIN, Math.min(w, dirX > 0 ? 1 - ox : ox))
-    h = Math.max(MIN, Math.min(h, dirY > 0 ? 1 - oy : oy))
-    return { x: dirX > 0 ? ox : ox - w, y: dirY > 0 ? oy : oy - h, w, h }
-  }
-
-  const x = Math.min(ox, nx)
-  const y = Math.min(oy, ny)
-  let w = Math.abs(ox - nx)
-  let h = Math.abs(oy - ny)
-  w = Math.max(MIN, Math.min(w, 1 - x))
-  h = Math.max(MIN, Math.min(h, 1 - y))
-  return { x, y, w, h }
-}
-
 export function IdPhotoTool({ onBack }: Props) {
   const [sourceImg, setSourceImg] = useState<HTMLImageElement | null>(null)
+  const [sourceUrl, setSourceUrl] = useState('')
   const [sourceName, setSourceName] = useState('')
   const [sourceBytes, setSourceBytes] = useState(0)
 
@@ -89,30 +46,55 @@ export function IdPhotoTool({ onBack }: Props) {
     tolerance: 35,
     feather: 20,
   })
+
   // 裁剪框（归一化 0..1，相对原图宽高）。默认铺满整张图。
-  const [crop, setCrop] = useState<NormRect>({ x: 0, y: 0, w: 1, h: 1 })
-  // 源图预览画布的像素尺寸（按预览区宽度等比缩放，保证 1:1 显示、裁剪框与画布对齐）。
+  // ReactCrop 负责拖拽/手柄/比例锁定，这里仅保存其 px 裁剪映射来的归一化矩形。
+  const [cropNorm, setCropNorm] = useState<NormRect>({ x: 0, y: 0, w: 1, h: 1 })
+  // 源图预览画布的渲染尺寸（按预览区宽度等比缩放）
   const [preview, setPreview] = useState<{ w: number; h: number } | null>(null)
 
   const srcCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  // resultCanvasRef 存「合成结果 canvas」（离屏，仅供编码/下载/字节统计）；
-  // previewRef 是挂载在 DOM 的结果预览 canvas，recompute 时把合成结果画入其中而非替换 ref。
+  // resultCanvasRef 存「合成结果 canvas」（离屏，仅供编码/下载）；previewRef 是结果预览画布。
   const resultCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const previewRef = useRef<HTMLCanvasElement | null>(null)
   const cellRef = useRef<HTMLDivElement | null>(null)
-  const boxRef = useRef<HTMLDivElement | null>(null)
-  const dragRef = useRef<{ mode: DragMode; startX: number; startY: number; orig: NormRect } | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const byteTimerRef = useRef<number | null>(null)
 
   const [resultBytes, setResultBytes] = useState(0)
   const [resultLabel, setResultLabel] = useState('')
+  // 保存状态（走原生对话框 + 应用内结果弹窗，不使用浏览器下载栏）
+  const [saving, setSaving] = useState(false)
+  const [savedPath, setSavedPath] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState('')
 
-  // 当前输出编码参数
   const mime = keepAlpha ? 'image/png' : 'image/jpeg'
 
   const preset = SIZE_PRESETS.find((p) => p.id === presetId)
   const presetAspect = preset ? preset.widthMm / preset.heightMm : null
 
-  // 计算源图预览画布尺寸（等比适应预览区）
+  // 归一化裁剪框 → ReactCrop 的 px 裁剪（渲染尺寸空间）
+  const cropPx: Crop | undefined = preview
+    ? {
+        x: cropNorm.x * preview.w,
+        y: cropNorm.y * preview.h,
+        width: cropNorm.w * preview.w,
+        height: cropNorm.h * preview.h,
+        unit: 'px',
+      }
+    : undefined
+
+  const onCropChange = (px: Crop) => {
+    if (!preview) return
+    setCropNorm({
+      x: px.x / preview.w,
+      y: px.y / preview.h,
+      w: px.width / preview.w,
+      h: px.height / preview.h,
+    })
+  }
+
+  // 计算源图预览渲染尺寸（等比适应预览区）
   const measurePreview = useCallback((img: HTMLImageElement) => {
     const cell = cellRef.current
     if (!cell) {
@@ -131,7 +113,6 @@ export function IdPhotoTool({ onBack }: Props) {
     setPreview({ w, h })
   }, [])
 
-  // 源图加载 / 预览区尺寸变化时重算预览画布尺寸
   useEffect(() => {
     const cell = cellRef.current
     if (!cell || !sourceImg) return
@@ -143,30 +124,36 @@ export function IdPhotoTool({ onBack }: Props) {
     return () => ro.disconnect()
   }, [sourceImg, measurePreview])
 
-  // 选择证件照尺寸预设时，把裁剪框吸附到目标比例（居中内接框）
+  // 选择证件照尺寸预设时，裁剪框吸附到目标比例（居中内接框）
   useEffect(() => {
-    if (presetAspect) setCrop(centeredAspectBox(presetAspect))
-    // 仅在 preset 变化时触发；不依赖 presetAspect 之外的状态
+    if (presetAspect) setCropNorm(centeredAspectBox(presetAspect))
+    // 仅在 preset 变化时触发
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetId])
 
-  // 绘制原图预览（缩放到 preview 像素尺寸，1:1 显示）
-  const drawSource = useCallback(
-    (img: HTMLImageElement) => {
-      const c = srcCanvasRef.current
-      if (!c || !preview) return
-      c.width = preview.w
-      c.height = preview.h
-      c.getContext('2d')!.drawImage(img, 0, 0, preview.w, preview.h)
-    },
-    [preview],
-  )
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setSourceName(file.name)
+    setSourceBytes(file.size)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = reader.result as string
+      const img = new Image()
+      img.onload = () => {
+        setSourceUrl(url)
+        setSourceImg(img)
+        setCropNorm({ x: 0, y: 0, w: 1, h: 1 })
+      }
+      img.src = url
+    }
+    reader.readAsDataURL(file)
+  }
 
-  // 绘制结果：自由裁剪 → 换底 → 尺寸预设
-  const recompute = useCallback(
+  // 重建结果。单独抽出，供 rAF 节流调用。
+  const rebuild = useCallback(
     (img: HTMLImageElement, bgParams: BgParams, pid: string, d: number, cr: NormRect) => {
       let cur = canvasFrom(img)
-      // 自由裁剪：裁剪框 ⇒ 源图像素矩形；铺满全图则跳过
       const nearFull = cr.x <= 0.001 && cr.y <= 0.001 && cr.w >= 0.999 && cr.h >= 0.999
       if (!nearFull) {
         const nw = img.naturalWidth
@@ -176,13 +163,12 @@ export function IdPhotoTool({ onBack }: Props) {
       }
       if (bgParams.enabled) cur = replaceBackground(cur, bgParams)
       const p = SIZE_PRESETS.find((x) => x.id === pid)
-      if (p) {
+      if (p && preview) {
         const w = mmToPx(p.widthMm, d)
         const h = mmToPx(p.heightMm, d)
         cur = centerCropToSize(cur, w, h)
       }
       resultCanvasRef.current = cur
-      // 把合成结果绘制到挂载的结果预览 canvas（而不是替换它的 ref）
       const el = previewRef.current
       if (el) {
         el.width = cur.width
@@ -190,100 +176,73 @@ export function IdPhotoTool({ onBack }: Props) {
         el.getContext('2d')!.drawImage(cur, 0, 0)
       }
       setResultLabel(`${cur.width} × ${cur.height} px · `)
-      setResultBytes(0) // 占位，由下一 effect 重新编码
     },
-    [],
+    [preview],
   )
 
-  // 每次状态变化重建结果
+  // 像素重建用 rAF 节流：高频拖动（裁剪框/DIP 条）时同帧内只执行一次，避免每帧重算。
   useEffect(() => {
     if (!sourceImg) return
-    drawSource(sourceImg)
-    recompute(sourceImg, bg, presetId, dpi, crop)
-  }, [sourceImg, bg, presetId, dpi, crop, drawSource, recompute])
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      rebuild(sourceImg, bg, presetId, dpi, cropNorm)
+    })
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+  }, [sourceImg, bg, presetId, dpi, cropNorm, rebuild])
 
-  // 编码字节数（随质量 / 编码格式 / 结果变化）
+  // 字节数 / 压缩率用防抖：不在每次拖动时实时 toBlob 编码，停止操作 350ms 后再算。
   useEffect(() => {
     const c = resultCanvasRef.current
     if (!c) return
-    canvasByteSize(c, mime, quality / 100).then((b) => setResultBytes(b))
-  }, [sourceImg, bg, presetId, dpi, crop, quality, mime])
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setSourceName(file.name)
-    setSourceBytes(file.size)
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      setSourceImg(img)
-      setCrop({ x: 0, y: 0, w: 1, h: 1 })
-      URL.revokeObjectURL(url)
+    setResultBytes(0) // 立即清零，避免显示过期值
+    if (byteTimerRef.current !== null) window.clearTimeout(byteTimerRef.current)
+    byteTimerRef.current = window.setTimeout(() => {
+      canvasByteSize(c, mime, quality / 100).then((b) => setResultBytes(b))
+    }, 350)
+    return () => {
+      if (byteTimerRef.current !== null) window.clearTimeout(byteTimerRef.current)
+      byteTimerRef.current = null
     }
-    img.onerror = () => URL.revokeObjectURL(url)
-    img.src = url
-  }
+  }, [sourceImg, bg, presetId, dpi, cropNorm, quality, mime])
 
-  // ---- 裁剪框交互 ----
-  const startDrag = (e: React.PointerEvent<HTMLDivElement>, mode: DragMode) => {
-    e.preventDefault()
-    e.stopPropagation()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    dragRef.current = { mode, startX: e.clientX, startY: e.clientY, orig: { ...crop } }
-  }
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    if (byteTimerRef.current !== null) window.clearTimeout(byteTimerRef.current)
+  }, [])
 
-  const onDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const d = dragRef.current
-    if (!d || !preview || !boxRef.current) return
-    const box = boxRef.current.getBoundingClientRect()
-    if (box.width === 0 || box.height === 0) return
-    const nx = (e.clientX - box.left) / box.width
-    const ny = (e.clientY - box.top) / box.height
-    const o = d.orig
-    if (d.mode === 'move') {
-      const dx = nx - (d.startX - box.left) / box.width
-      const dy = ny - (d.startY - box.top) / box.height
-      setCrop({
-        x: clamp(o.x + dx, 0, 1 - o.w),
-        y: clamp(o.y + dy, 0, 1 - o.h),
-        w: o.w,
-        h: o.h,
-      })
-    } else {
-      setCrop(resizeFromCorner(o, d.mode, nx, ny, presetAspect))
-    }
-  }
-
-  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    dragRef.current = null
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    }
-  }
-
-  const clearCrop = () => {
-    setCrop(presetAspect ? centeredAspectBox(presetAspect) : { x: 0, y: 0, w: 1, h: 1 })
-  }
-
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const c = resultCanvasRef.current
     if (!c) return
     const dot = sourceName.lastIndexOf('.')
     const base = dot > 0 ? sourceName.slice(0, dot) : 'resume-photo'
     const ext = mime === 'image/png' ? 'png' : 'jpg'
-    downloadCanvas(c, mime, `${base}-output.${ext}`, quality / 100)
+
+    // 纯浏览器开发模式（无 Wails）下退化为 blob 下载；桌面端走原生保存对话框
+    if (!isWails()) {
+      downloadCanvas(c, mime, `${base}-output.${ext}`, quality / 100)
+      return
+    }
+
+    setSaving(true)
+    setSaveError('')
+    try {
+      const dataUrl = c.toDataURL(mime, quality / 100)
+      const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+      const path = await callService<string>('ToolService', 'SaveImage', b64, ext, base)
+      // path 为空 = 用户取消，不做任何提示
+      if (path) setSavedPath(path)
+    } catch (err) {
+      setSaveError(extractErrorMessage(err, '保存图片失败'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const empty = !sourceImg
-  const cropActive = crop.w < 0.999 || crop.h < 0.999 || crop.x > 0.001 || crop.y > 0.001
-
-  const cornerHandles: Array<{ mode: DragMode; cls: string }> = [
-    { mode: 'nw', cls: 'left-0 top-0 cursor-nwse-resize' },
-    { mode: 'ne', cls: 'right-0 top-0 cursor-nesw-resize' },
-    { mode: 'sw', cls: 'left-0 bottom-0 cursor-nesw-resize' },
-    { mode: 'se', cls: 'right-0 bottom-0 cursor-nwse-resize' },
-  ]
+  const cropActive = cropNorm.w < 0.999 || cropNorm.h < 0.999 || cropNorm.x > 0.001 || cropNorm.y > 0.001
 
   return (
     <div className="space-y-4 animate-page-enter">
@@ -338,12 +297,12 @@ export function IdPhotoTool({ onBack }: Props) {
                   </div>
                   <div className="p-2 rounded bg-surface-50 border border-surface-200">
                     <p className="text-surface-400">输出</p>
-                    <p className="font-medium">{formatBytes(resultBytes)}</p>
+                    <p className="font-medium">{resultBytes > 0 ? formatBytes(resultBytes) : '计算中…'}</p>
                   </div>
                   <div className="p-2 rounded bg-surface-50 border border-surface-200">
                     <p className="text-surface-400">压缩率</p>
                     <p className="font-medium">
-                      {sourceBytes > 0 ? `${Math.max(0, Math.round((1 - resultBytes / sourceBytes) * 100))}%` : '—'}
+                      {resultBytes > 0 && sourceBytes > 0 ? `${Math.max(0, Math.round((1 - resultBytes / sourceBytes) * 100))}%` : '—'}
                     </p>
                   </div>
                 </div>
@@ -387,11 +346,14 @@ export function IdPhotoTool({ onBack }: Props) {
                   className="w-full"
                 />
               </div>
-              {preset && (
-                <p className="text-xs text-surface-500">
-                  目标：{preset.widthMm} × {preset.heightMm} mm → {mmToPx(preset.widthMm, dpi)} × {mmToPx(preset.heightMm, dpi)} px（{dpi} dpi）
-                </p>
-              )}
+              {/* 目标尺寸提示：选中预设时展开、取消时收起（0fr→1fr 高度渐变） */}
+              <div className={`grid transition-all duration-200 ${preset ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                <div className="overflow-hidden">
+                  <p className="text-xs text-surface-500 pt-1">
+                    目标：{preset ? `${preset.widthMm} × ${preset.heightMm} mm → ${mmToPx(preset.widthMm, dpi)} × ${mmToPx(preset.heightMm, dpi)} px（${dpi} dpi）` : ''}
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -407,7 +369,7 @@ export function IdPhotoTool({ onBack }: Props) {
               <p>在左侧预览图上拖动选框调整保留区域：拖框体移动，拖四角缩放。</p>
               <p className="text-surface-400">选择证件照尺寸后，选框将锁定为对应比例。</p>
               <button
-                onClick={clearCrop}
+                onClick={() => setCropNorm(presetAspect ? centeredAspectBox(presetAspect) : { x: 0, y: 0, w: 1, h: 1 })}
                 disabled={!cropActive}
                 className="btn-secondary btn-sm inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -427,7 +389,6 @@ export function IdPhotoTool({ onBack }: Props) {
                 className="w-4 h-4 rounded accent-primary-600"
               />
             </div>
-            {/* 折叠面板：关闭换底时用 0fr→1fr 网格动画收起/展开 */}
             <div className={`grid transition-all duration-200 ${bg.enabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
               <div className="overflow-hidden">
                 <div className="space-y-3 pt-1">
@@ -505,11 +466,20 @@ export function IdPhotoTool({ onBack }: Props) {
             </label>
             <button
               onClick={handleDownload}
-              disabled={empty}
+              disabled={empty || saving}
               className="btn-primary w-full mt-3 inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Download className="w-4 h-4" /> 下载图片{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}
+              {saving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> 保存中…</>
+              ) : (
+                <><Download className="w-4 h-4" /> 保存图片{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}</>
+              )}
             </button>
+            {saveError && (
+              <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 shrink-0" /> {saveError}
+              </p>
+            )}
           </section>
         </div>
 
@@ -530,41 +500,22 @@ export function IdPhotoTool({ onBack }: Props) {
                   <ImageIcon className="w-8 h-8" />
                   <span className="text-xs">请选择照片</span>
                 </div>
-              ) : preview ? (
-                <div ref={boxRef} className="relative" style={{ width: preview.w, height: preview.h }}>
-                  <canvas
-                    ref={srcCanvasRef}
-                    width={preview.w}
-                    height={preview.h}
-                    className="block rounded-md animate-preview-enter"
+              ) : preview && sourceUrl ? (
+                <ReactCrop
+                  crop={cropPx}
+                  onChange={onCropChange}
+                  aspect={presetAspect ?? undefined}
+                  minWidth={20}
+                  minHeight={20}
+                  keepSelection
+                >
+                  <img
+                    src={sourceUrl}
+                    className="block"
                     style={{ width: preview.w, height: preview.h }}
+                    draggable={false}
                   />
-                  {/* 裁剪框 */}
-                  <div
-                    className="absolute border-2 border-primary-500 bg-primary-500/10 cursor-move touch-none"
-                    style={{
-                      left: `${crop.x * 100}%`,
-                      top: `${crop.y * 100}%`,
-                      width: `${crop.w * 100}%`,
-                      height: `${crop.h * 100}%`,
-                    }}
-                    onPointerDown={(e) => startDrag(e, 'move')}
-                    onPointerMove={onDragMove}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
-                  >
-                    {cornerHandles.map(({ mode, cls }) => (
-                      <div
-                        key={mode}
-                        className={`absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-primary-500 border border-white touch-none ${cls}`}
-                        onPointerDown={(e) => startDrag(e, mode)}
-                        onPointerMove={onDragMove}
-                        onPointerUp={endDrag}
-                        onPointerCancel={endDrag}
-                      />
-                    ))}
-                  </div>
-                </div>
+                </ReactCrop>
               ) : (
                 <span className="text-xs text-surface-300 py-10">正在加载…</span>
               )}
@@ -586,11 +537,22 @@ export function IdPhotoTool({ onBack }: Props) {
               )}
             </div>
             {!empty && (
-              <p className="text-xs text-surface-400 mt-2">{resultLabel}{formatBytes(resultBytes)}</p>
+              <p className="text-xs text-surface-400 mt-2">{resultLabel}{resultBytes > 0 ? formatBytes(resultBytes) : '计算中…'}</p>
             )}
           </div>
         </div>
       </div>
+
+      {/* 保存结果弹窗（应用内自实现，替代浏览器原生下载栏） */}
+      <ConfirmDialog
+        open={!!savedPath}
+        title="已保存"
+        description={`图片已保存到：\n${savedPath ?? ''}`}
+        confirmText="好的"
+        icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
+        onConfirm={() => setSavedPath(null)}
+        onCancel={() => setSavedPath(null)}
+      />
     </div>
   )
 }

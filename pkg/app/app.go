@@ -16,6 +16,7 @@ import (
 	rsvc "gosume/pkg/resume/service"
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_export"
+	tsvc "gosume/pkg/tool/service"
 	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
@@ -93,6 +94,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		return nil
 	})
 	autofillSvc := &asvc.AutofillService{}
+	toolSvc := &tsvc.ToolService{}
 
 	// 服务列表
 	svcs := []application.Service{
@@ -104,6 +106,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(updateSvc),
 		application.NewService(communitySvc),
 		application.NewService(autofillSvc),
+		application.NewService(toolSvc),
 	}
 
 	// Wails 应用与窗口
@@ -118,6 +121,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	updateSvc.Inject(app, userCfgMgr)
 	communitySvc.Inject(app, templateLoader, templateStore)
 	autofillSvc.Inject(app, autofillBridge)
+	toolSvc.Inject(app)
 
 	// 随应用启动本地桥。
 	if err := autofillBridge.Start(); err != nil {

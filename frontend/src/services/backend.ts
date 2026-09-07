@@ -104,6 +104,7 @@ const DEFAULT_SERVICE_PACKAGE = 'gosume/pkg/resume/service'
 /** 例外服务 → 其所在 Go 包路径。AUTOFILL 有且仅在不默认包时登记在此。 */
 const SERVICE_PACKAGE_OVERRIDES: Record<string, string> = {
   AutofillService: 'gosume/pkg/autofill/service',
+  ToolService: 'gosume/pkg/tool/service',
 }
 
 /** 运行时追加服务包映射（新增服务目录时调用，避免改动硬编码表）。 */
