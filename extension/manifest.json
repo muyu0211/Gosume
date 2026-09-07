@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Gosume 一键填入",
+  "version": "0.1.0",
+  "description": "把 Gosume 桌面端当前简历，一键填入招聘网站表单。数据只在你的本机流转。",
+  "permissions": ["storage", "activeTab", "clipboardRead"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gosume 一键填入"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

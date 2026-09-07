@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <span class="mark">G</span>
+      <div class="brand-text">
+        <span class="brand-title">Gosume 一键填入</span>
+        <span class="brand-sub">简历直达招聘网</span>
+      </div>
+    </div>
+    <span class="pill" id="statusPill" data-state="idle">
+      <span class="dot"></span>
+      <span id="statusText">未连接</span>
+    </span>
+  </header>
+
+  <!-- 连接 -->
+  <section id="connectView" class="view">
+    <div class="card">
+      <p class="desc">把当前简历从 Gosume 填进这个页面。数据只在你的本机流转。</p>
+      <button id="pastePairBtn" class="btn primary block" type="button">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        粘贴配对码并连接
+      </button>
+      <div class="divider"><span>或手动填写</span></div>
+      <div class="row">
+        <input id="portInput" class="input" placeholder="端口" inputmode="numeric" />
+        <input id="tokenInput" class="input grow" placeholder="配对 token" />
+      </div>
+      <button id="connectBtn" class="btn secondary block" type="button">连接</button>
+      <p id="connectMsg" class="msg"></p>
+    </div>
+    <p class="footnote">配对码在「设置 → 一键填入招聘网站」里复制</p>
+  </section>
+
+  <!-- 主面板 -->
+  <section id="mainView" class="view" hidden>
+    <div class="card">
+      <div class="resume-head">
+        <div class="resume-avatar">&#128100;</div>
+        <div class="resume-meta">
+          <div class="resume-name" id="resumeName">加载中…</div>
+          <div class="resume-sub" id="resumeSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="step-head">
+        <span class="step-num">1</span>
+        <span class="step-title">检测本页表单</span>
+        <button id="scanBtn" class="btn primary sm" type="button">开始检测</button>
+      </div>
+      <p id="scanMsg" class="msg"></p>
+      <div id="scanHint" class="hint-block" hidden>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span>点击「开始检测」扫描当前页面，自动匹配可填写字段。</span>
+      </div>
+      <div id="mapList" class="maplist"></div>
+    </div>
+
+    <div id="fillArea" class="card" hidden>
+      <button id="fillBtn" class="btn fill block" type="button">写入表单</button>
+      <p id="fillMsg" class="msg"></p>
+      <div id="resultSummary" class="result-summary" hidden></div>
+      <div id="resultList" class="resultlist"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    数据不离开本机 · 只写入当前页面
+  </footer>
+
+  <script src="mapping.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

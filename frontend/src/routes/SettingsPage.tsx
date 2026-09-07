@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download } from 'lucide-react'
+import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download, Plug, Copy, Check, Wrench } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
+import { ToolsPanel } from '../components/tools/ToolsPanel'
 import { useResumeStore } from '../stores/resumeStore'
 import { useThemeStore } from '../stores/themeStore'
 import { callService } from '../services/backend'
@@ -12,6 +13,16 @@ import { extractErrorMessage } from '../lib/errorUtils'
 import type { ThemeMode } from '../lib/theme'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
+
+/** 左右分栏宽度（%）持久化键与范围。 */
+const SPLIT_KEY = 'gosume-settings-split'
+const SPLIT_RANGE = { min: 28, max: 72 }
+
+function readSplit(): number {
+  const v = Number(localStorage.getItem(SPLIT_KEY))
+  if (!Number.isFinite(v)) return 42
+  return Math.min(SPLIT_RANGE.max, Math.max(SPLIT_RANGE.min, v))
+}
 
 function getAutoSavePref(): boolean {
   const v = localStorage.getItem(AUTOSAVE_PREF_KEY)
@@ -25,6 +36,19 @@ export function SettingsPage() {
   const updateField = useResumeStore((s) => s.updateField)
   const language = resume?.meta?.language || 'zh-CN'
   const [autoSave, setAutoSave] = useState(getAutoSavePref)
+
+  // 左右分栏拖拽：根据指针在容器内的横向偏移换算百分比，钳制在 SPLIT_RANGE 内并持久化。
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [split, setSplit] = useState(readSplit)
+  const handleSplitDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = containerRef.current
+    if (!box) return
+    const rect = box.getBoundingClientRect()
+    if (rect.width === 0) return
+    const pct = Math.min(SPLIT_RANGE.max, Math.max(SPLIT_RANGE.min, ((e.clientX - rect.left) / rect.width) * 100))
+    setSplit(pct)
+    localStorage.setItem(SPLIT_KEY, String(pct))
+  }
 
   // 主题选项（跟随系统/经典/麦色/深色），切换即时生效并持久化。
   const themeMode = useThemeStore((s) => s.mode)
@@ -99,6 +123,32 @@ export function SettingsPage() {
       .catch(() => { })
   }, [])
 
+  // ---- 一键填入本地桥：展示配对码供浏览器扩展使用 ----
+  type AutofillStatus = { running: boolean; port: number; token: string; resume_name?: string }
+  const [autofill, setAutofill] = useState<AutofillStatus | null>(null)
+  const [pairCopied, setPairCopied] = useState(false)
+
+  useEffect(() => {
+    callService<AutofillStatus>('AutofillService', 'GetStatus')
+      .then((s) => s && setAutofill(s))
+      .catch(() => { })
+  }, [])
+
+  const pairingCode = autofill?.port && autofill?.token
+    ? `gosume://autofill?port=${autofill.port}&token=${autofill.token}`
+    : ''
+
+  const handleCopyPair = async () => {
+    if (!pairingCode) return
+    try {
+      await navigator.clipboard.writeText(pairingCode)
+      setPairCopied(true)
+      setTimeout(() => setPairCopied(false), 1500)
+    } catch {
+      /* clipboard 不可用时静默失败 */
+    }
+  }
+
   const handleLanguageChange = (lang: string) => {
     updateField('meta.language', lang)
   }
@@ -160,9 +210,10 @@ export function SettingsPage() {
         <h1 className="text-lg font-semibold text-surface-800">设置</h1>
       </header>
 
-      {/* Settings Content */}
-      <div className="flex-1 overflow-auto p-6 max-w-2xl">
-        {/* Language */}
+      {/* Settings Content: left = base settings, right = toolbox, split is draggable */}
+      <div ref={containerRef} className="flex-1 flex overflow-hidden">
+        <div className="min-w-0 overflow-y-auto p-6" style={{ flexBasis: `${split}%`, flexShrink: 0 }}>
+          {/* Language */}
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
@@ -292,6 +343,44 @@ export function SettingsPage() {
           </div>
         </section>
 
+        {/* One-click autofill: local bridge pairing code for the browser extension */}
+        <section className="form-section">
+          <div className="form-section-header">
+            <div className="flex items-center gap-2">
+              <Plug className="w-4 h-4 text-surface-400" />
+              <span className="form-section-title">一键填入招聘网站</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-lg border border-surface-200 space-y-3">
+            <p className="text-xs text-surface-400">
+              在浏览器扩展里提供配对码，即可把当前简历填入招聘网站表单。数据全程在你本机流转。
+            </p>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${autofill?.running ? 'bg-green-500' : 'bg-surface-300'}`} />
+              <span className="text-xs text-surface-500">
+                {autofill?.running
+                  ? `本地桥已启动（端口 ${autofill.port}）`
+                  : '本地桥未启动'}
+              </span>
+            </div>
+            {pairingCode && (
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-[11px] font-mono text-surface-600 break-all bg-surface-50 px-2 py-1.5 rounded">
+                  {pairingCode}
+                </code>
+                <button
+                  onClick={handleCopyPair}
+                  className="btn-secondary btn-sm inline-flex items-center gap-1 shrink-0"
+                  title="复制配对码"
+                >
+                  {pairCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {pairCopied ? '已复制' : '复制'}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* About */}
         <section className="form-section">
           <div className="form-section-header">
@@ -333,6 +422,25 @@ export function SettingsPage() {
             </div>
           </div>
         </section>
+        </div>
+
+        {/* 分栏拖拽手柄：捕获指针后按 e.buttons>0 跟随拖拽，抬起自动放掉捕获 */}
+        <div
+          className="w-1.5 shrink-0 cursor-col-resize bg-transparent hover:bg-primary-200/70 active:bg-primary-300 transition-colors touch-none"
+          onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+          onPointerMove={(e) => { if (e.buttons > 0) handleSplitDrag(e) }}
+        />
+
+        {/* Right column: toolbox */}
+        <div className="flex-1 min-w-0 overflow-y-auto p-6 border-l border-surface-100">
+          <div className="form-section-header mb-4">
+            <div className="flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-surface-400" />
+              <span className="form-section-title">工具箱</span>
+            </div>
+          </div>
+          <ToolsPanel />
+        </div>
       </div>
 
       {/* Update dialog: pops up when a new version is found; internal state

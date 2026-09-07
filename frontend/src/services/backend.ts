@@ -13,6 +13,12 @@
  *   - code === 0        → resolve data（data 为 null/undefined 时返回 null）
  *   - code !== 0        → reject ApiError（携带后端 message）
  *   - 返回体不含 code 字段 → 原值透传（兼容尚未迁移为 *Response 的旧式方法签名）
+ *
+ * ── 服务包路径探测 ──────────────────────────────────────────────────────────
+ * Wails 绑定名为 `package.Struct.Method`，而后端 service 分散在多个 Go 包下
+ * （pkg/resume/service、pkg/autofill/service …）。callService 不写死单一路径，
+ * 而是按 SERVICE_PACKAGES 顺序探测，命中后缓存；仅「方法不在该包」的
+ * ReferenceError 会继续探测下一个包，真实业务错误立即抛出。
  */
 
 import { Call } from '@wailsio/runtime'
@@ -81,6 +87,58 @@ function isApiResponse(raw: unknown): raw is ApiResponse {
   )
 }
 
+/**
+ * 后端 service 的 Go 包路径解析（Wails 绑定全名格式 `package.Struct.Method`）。
+ *
+ * 绝大多数服务都在 `pkg/resume/service`，个别服务分散在其他包（例如
+ * `AutofillService` 位于 `pkg/autofill/service`）。这里用**确定性映射**直接拿到
+ * 每个服务的包路径，而不是靠「尝试多个候选包 + 解析错误文本」的运行时探测——
+ * 后者会在每次首次调用时对不存在的包发起一次绑定请求，既产生误导性的
+ * `Binding call failed` 日志，也依赖 Wails 的错误措辞。
+ *
+ * 注意：绑定全名第三段是「结构体名」而非 ServiceName() 的返回值（Wails 取
+ * reflect 的 NamedType.Name()），因此 Go 侧结构体名必须与 ServiceName() 一致。
+ */
+const DEFAULT_SERVICE_PACKAGE = 'gosume/pkg/resume/service'
+
+/** 例外服务 → 其所在 Go 包路径。AUTOFILL 有且仅在不默认包时登记在此。 */
+const SERVICE_PACKAGE_OVERRIDES: Record<string, string> = {
+  AutofillService: 'gosume/pkg/autofill/service',
+}
+
+/** 运行时追加服务包映射（新增服务目录时调用，避免改动硬编码表）。 */
+export function registerServicePackage(serviceName: string, pkg: string): void {
+  if (serviceName && pkg) SERVICE_PACKAGE_OVERRIDES[serviceName] = pkg
+}
+
+/** 拿到某服务对应的绑定包路径。 */
+function packageForService(serviceName: string): string {
+  return SERVICE_PACKAGE_OVERRIDES[serviceName] ?? DEFAULT_SERVICE_PACKAGE
+}
+
+/** 解包 Wails 返回值：统一响应按 code 处理，旧式裸值原样透传。 */
+function unwrapResponse<T>(raw: unknown, serviceName: string, methodName: string): T | null {
+  if (isApiResponse(raw)) {
+    if (raw.code !== RspCode.Succ) {
+      throw new ApiError(raw.code, raw.message || `${serviceName}.${methodName} 调用失败`)
+    }
+    return (raw.data as T | undefined) ?? null
+  }
+  // 兼容旧式签名（方法尚未迁移为 *Response）：返回裸值或 undefined，原样透传
+  return raw as T
+}
+
+/** 按服务名解析出的绑定全名直接调用，不再做多包探测。 */
+async function callBoundMethod<T>(
+  serviceName: string,
+  methodName: string,
+  args: unknown[],
+): Promise<T | null> {
+  const fullName = `${packageForService(serviceName)}.${serviceName}.${methodName}`
+  const raw: unknown = await Call.ByName(fullName, ...args)
+  return unwrapResponse<T>(raw, serviceName, methodName)
+}
+
 export async function callService<T>(
   serviceName: string,
   methodName: string,
@@ -96,19 +154,7 @@ export async function callService<T>(
 
   if (isWails()) {
     try {
-      const fullName = `gosume/pkg/resume/service.${serviceName}.${methodName}`
-      const raw: unknown = await Call.ByName(fullName, ...args)
-
-      // 统一响应（新约定）：code === 0 解包 data；非 0 抛 ApiError
-      if (isApiResponse(raw)) {
-        if (raw.code !== RspCode.Succ) {
-          throw new ApiError(raw.code, raw.message || `${serviceName}.${methodName} 调用失败`)
-        }
-        return (raw.data as T | undefined) ?? null
-      }
-
-      // 兼容旧式签名（方法尚未迁移为 *Response）：返回裸值或 undefined，原样透传
-      return raw as T
+      return await callBoundMethod<T>(serviceName, methodName, args)
     } catch (err) {
       console.error(`[Backend] ${serviceName}.${methodName} failed:`, err)
       throw err

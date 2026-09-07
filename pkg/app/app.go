@@ -6,11 +6,14 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"gosume/pkg/autofill"
+	asvc "gosume/pkg/autofill/service"
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
+	"gosume/pkg/resume/model"
 	"gosume/pkg/resume/repo"
-	"gosume/pkg/resume/service"
+	rsvc "gosume/pkg/resume/service"
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_export"
 	"gosume/pkg/user_config"
@@ -72,13 +75,24 @@ func New(assets, builtinTemplates embed.FS) *App {
 	projectStore := repo.NewProjectRepo(dataDir)
 
 	// 服务
-	resumeSvc := &service.ResumeService{}
-	templateSvc := &service.TemplateService{}
-	exportSvc := &service.ExportService{}
-	systemSvc := &service.SystemService{}
-	fileSvc := &service.FileService{}
-	updateSvc := &service.UpdateService{}
-	communitySvc := &service.CommunityService{}
+	resumeSvc := &rsvc.ResumeService{}
+	templateSvc := &rsvc.TemplateService{}
+	exportSvc := &rsvc.ExportService{}
+	systemSvc := &rsvc.SystemService{}
+	fileSvc := &rsvc.FileService{}
+	updateSvc := &rsvc.UpdateService{}
+	communitySvc := &rsvc.CommunityService{}
+
+	// 一键填入本地桥：当前简历数据经 127.0.0.1 暴露给浏览器扩展。
+	autofillBridge := autofill.NewBridge(dataDir, config.GlobalConfig.App.Version, func() *model.Resume {
+		if r := resumeSvc.GetResume(); r != nil {
+			if m, ok := r.Data.(*model.Resume); ok {
+				return m
+			}
+		}
+		return nil
+	})
+	autofillSvc := &asvc.AutofillService{}
 
 	// 服务列表
 	svcs := []application.Service{
@@ -89,6 +103,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(fileSvc),
 		application.NewService(updateSvc),
 		application.NewService(communitySvc),
+		application.NewService(autofillSvc),
 	}
 
 	// Wails 应用与窗口
@@ -102,6 +117,12 @@ func New(assets, builtinTemplates embed.FS) *App {
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 	updateSvc.Inject(app, userCfgMgr)
 	communitySvc.Inject(app, templateLoader, templateStore)
+	autofillSvc.Inject(app, autofillBridge)
+
+	// 随应用启动本地桥。
+	if err := autofillBridge.Start(); err != nil {
+		log.Errorf("[main] start autofill bridge: %v", err)
+	}
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
