@@ -64,6 +64,13 @@ const (
 	renderStableTimeout = 100 * time.Millisecond // renderStableTimeout 用于渲染前/截图前的稳定等待窗口。
 )
 
+// fallbackDebugPort 是 leakless 降级路径使用的固定 CDP 调试端口。
+//
+// 固定端口让 rod 能复用上次残留的浏览器实例（见 openBrowser），代价是本机其它进程
+// 可预测地连上它。可接受：Chromium 的 --remote-debugging-port 只监听 127.0.0.1，
+// 该实例仅渲染本地简历 HTML、不持有任何登录态或凭据，且仅在降级路径才启用。
+const fallbackDebugPort = 32717
+
 // BrowserManager 管理共享的无头 Chromium 实例，用于 PDF 与 PNG 渲染。
 // 浏览器在首次使用时惰性启动，并在多次导出之间复用。
 type BrowserManager struct {
@@ -113,18 +120,77 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 		return nil, fmt.Errorf("未找到兼容的 Chromium 浏览器，请安装 Chrome 或 Edge 后重试")
 	}
 
-	// 启动无头浏览器
-	l := launcher.New().Bin(path).Headless(true).NoSandbox(true).Set("disable-gpu").Set("disable-software-rasterizer")
-
-	url, err := l.Launch()
+	l, browser, err := openBrowser(path)
 	if err != nil {
 		return nil, fmt.Errorf("启动浏览器失败: %w", err)
 	}
-
-	browser := rod.New().ControlURL(url).MustConnect()
 	m.browser = browser
 	m.launcher = l
 	return browser, nil
+}
+
+// newLauncher 构造无头浏览器启动器（不含 leakless 与端口设置）。
+func newLauncher(bin string) *launcher.Launcher {
+	return launcher.New().Bin(bin).Headless(true).NoSandbox(true).
+		Set("disable-gpu").Set("disable-software-rasterizer")
+}
+
+// openBrowser 按降级链启动并连接无头浏览器：
+//
+//  1. 默认使用 rod 的 leakless。它把内置守护进程解压到 %TEMP% 执行，保证本进程被
+//     强杀后浏览器不残留。但该 exe 在 Windows 上常被安全软件误杀（HackTool 误报）
+//     或被组策略禁止从 %TEMP% 执行，表现为 "fork/exec ...\leakless.exe" 失败。
+//  2. leakless 不可用时禁用它，并改用固定调试端口。rod 在无 leakless 时会先尝试连接
+//     该端口上已存在的浏览器，于是上次强杀留下的残留进程会被复用而不是不断累积。
+//  3. 固定端口被其它程序占用时（连不上或拿到非 CDP 响应）回退随机端口，
+//     保证导出功能始终可用。
+func openBrowser(bin string) (*launcher.Launcher, *rod.Browser, error) {
+	l, browser, err := tryLaunch(newLauncher(bin))
+	if err == nil {
+		return l, browser, nil
+	}
+	// 非 leakless 引起的失败直接上报，避免重试掩盖真实原因（如浏览器本身起不来）
+	if !isLeaklessErr(err) {
+		return nil, nil, err
+	}
+
+	log.Warnf("[browser] leakless 守护进程不可用（可能被安全软件拦截），降级为直接启动: %v", err)
+	l, browser, err = tryLaunch(newLauncher(bin).Leakless(false).RemoteDebuggingPort(fallbackDebugPort))
+	if err == nil {
+		return l, browser, nil
+	}
+
+	log.Warnf("[browser] 固定调试端口 %d 不可用，回退随机端口: %v", fallbackDebugPort, err)
+	return tryLaunch(newLauncher(bin).Leakless(false))
+}
+
+// tryLaunch 启动并连接浏览器；任一步失败都回收已产生的进程，避免残留。
+func tryLaunch(l *launcher.Launcher) (*launcher.Launcher, *rod.Browser, error) {
+	url, err := l.Launch()
+	if err != nil {
+		killLauncher(l)
+		return nil, nil, err
+	}
+
+	browser := rod.New().ControlURL(url)
+	if err := browser.Connect(); err != nil {
+		killLauncher(l)
+		return nil, nil, fmt.Errorf("连接浏览器失败: %w", err)
+	}
+	return l, browser, nil
+}
+
+// killLauncher 仅在确有进程时强杀。launcher.Kill 内含 1s 固定等待，
+// 而启动阶段失败（或复用已有实例）时 PID 为 0，跳过可避免无谓延迟。
+func killLauncher(l *launcher.Launcher) {
+	if l.PID() != 0 {
+		l.Kill()
+	}
+}
+
+// isLeaklessErr 判断启动失败是否由 leakless 守护进程引起。
+func isLeaklessErr(err error) bool {
+	return strings.Contains(strings.ToLower(err.Error()), "leakless")
 }
 
 // resetBrowser 清理缓存的 browser 与 page。
@@ -134,10 +200,15 @@ func (m *BrowserManager) resetBrowser() {
 		m.page = nil
 	}
 	if m.browser != nil {
-		_ = m.browser.Close()
+		err := m.browser.Close()
 		m.browser = nil
-		m.launcher = nil
+		// browser.Close 靠 CDP 连接下发关闭命令；连接已断时命令送不到，进程可能僵死。
+		// 此时才用 launcher 兜底强杀（Kill 含 1s 等待，故只在失败路径付这个代价）。
+		if err != nil && m.launcher != nil {
+			killLauncher(m.launcher)
+		}
 	}
+	m.launcher = nil
 }
 
 // RenderPDF 把已分页的 HTML 渲染为 PDF 字节流。
