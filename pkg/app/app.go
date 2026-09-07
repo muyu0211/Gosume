@@ -25,8 +25,9 @@ import (
 
 // App 持有已初始化的各组件，并负责应用的生命周期管理。
 type App struct {
-	wailsApp  *application.App
-	stopWatch chan struct{}
+	wailsApp       *application.App
+	stopWatch      chan struct{}
+	browserManager *template_export.BrowserManager
 }
 
 // New 初始化全部组件并返回可运行的 App。
@@ -174,16 +175,22 @@ func New(assets, builtinTemplates embed.FS) *App {
 	log.Infof(" ============ [main] data dir: %s ============ ", dataDir)
 	log.Infof(" ============ [main] app version: %s ============ ", config.GlobalConfig.App.Version)
 
-	return &App{wailsApp: app, stopWatch: stopWatch}
+	return &App{wailsApp: app, stopWatch: stopWatch, browserManager: browserManager}
 }
 
-// Run 启动应用事件循环，并在退出时停止模板监听与关闭日志。
+// Run 启动应用事件循环，并在退出时停止模板监听、释放无头浏览器与关闭日志。
 func (a *App) Run() {
 	if a.stopWatch != nil {
 		defer close(a.stopWatch)
 	}
 	defer log.Close()
+	// 注册在 log.Close 之后（defer 后进先出），保证释放过程仍能写日志。
+	// leakless 被安全软件拦截而降级时，无头 Chromium 的回收完全依赖这里。
+	defer a.browserManager.Close()
+
 	if err := a.wailsApp.Run(); err != nil {
+		// zap 的 Fatalf 内部会 os.Exit，defer 不再执行，故先手动释放浏览器
+		a.browserManager.Close()
 		log.Fatalf("%v", err)
 	}
 }
