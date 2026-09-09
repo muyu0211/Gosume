@@ -184,13 +184,9 @@ func (a *App) Run() {
 		defer close(a.stopWatch)
 	}
 	defer log.Close()
-	// 注册在 log.Close 之后（defer 后进先出），保证释放过程仍能写日志。
-	// rod 的 leakless 默认关闭（见 template_export.newLauncher），无头 Chromium
-	// 的回收完全依赖这里；进程被强杀时残留实例由固定调试端口在下次启动时复用。
 	defer a.browserManager.Close()
 
 	if err := a.wailsApp.Run(); err != nil {
-		// zap 的 Fatalf 内部会 os.Exit，defer 不再执行，故先手动释放浏览器
 		a.browserManager.Close()
 		log.Fatalf("%v", err)
 	}

@@ -107,6 +107,9 @@ tasks:
     summary: Generates Windows `.syso` file
     dir: build
     cmds:
+      # 从 build/config.yml 读取版本号，同步写入 info.json / wails.exe.manifest /
+      # wails_tools.nsh，保证 exe 文件版本、清单版本、NSIS 安装器版本唯一来源于 config.yml
+      - powershell -NoProfile -ExecutionPolicy Bypass -File windows/sync_version.ps1
       - wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_{{.ARCH}}.syso
     vars:
       ARCH: '{{.ARCH | default ARCH}}'

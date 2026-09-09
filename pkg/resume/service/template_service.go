@@ -149,7 +149,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath, source string)
 	pkg, err := template.LoadPackageFromZip(filePath)
 	if err != nil {
 		log.Errorf("[template_service] importTemplatePackageFromPath: 解析模板包失败 %s: %v", filePath, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("解析模板包失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("解析模板包失败, 请确认zip为合法模板包", err), nil)
 	}
 
 	// 检查模板 ID 是否已经存在，存在则判断version
@@ -161,7 +161,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath, source string)
 
 	if err := s.tempRepo.Create(pkg.Meta, pkg.CSS); err != nil {
 		log.Errorf("[template_service] importTemplatePackageFromPath: 保存模板失败 id=%s: %v", pkg.Meta.ID, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("保存模板失败: %v", err), nil)
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("保存模板失败", err), nil)
 	}
 
 	// 记录导入历史（本地导入/分享包导入），失败仅告警不阻断导入流程
