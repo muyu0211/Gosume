@@ -46,6 +46,13 @@ Desktop.ini
 .env.local
 .env.*.local
 
+# --- Code signing (private keys must never be committed) ---
+*.pfx
+*.p12
+*.pvk
+*.spc
+build/windows/cert/
+
 # --- Claude Code ---
 .claude/
 

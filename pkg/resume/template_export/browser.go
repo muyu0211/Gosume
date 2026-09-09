@@ -2,6 +2,8 @@ package template_export
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"gosume/pkg/log"
 	"gosume/pkg/util"
@@ -9,6 +11,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -62,14 +65,23 @@ const (
 	pageProbeTimeout    = 150 * time.Millisecond
 	browserProbeTimeout = 150 * time.Millisecond
 	renderStableTimeout = 100 * time.Millisecond // renderStableTimeout 用于渲染前/截图前的稳定等待窗口。
+	// browserLaunchTimeout 限制单次「启动并连接浏览器」的耗时。
+	// 浏览器起来后若始终不输出 DevTools 地址，rod 会一直等；而调用方持有
+	// BrowserManager 的锁，会把后续所有导出请求一起拖死，故必须设上限。
+	browserLaunchTimeout = 20 * time.Second
 )
 
-// fallbackDebugPort 是 leakless 降级路径使用的固定 CDP 调试端口。
+// browserDebugPort 是无头 Chromium 使用的固定 CDP 调试端口。
 //
-// 固定端口让 rod 能复用上次残留的浏览器实例（见 openBrowser），代价是本机其它进程
-// 可预测地连上它。可接受：Chromium 的 --remote-debugging-port 只监听 127.0.0.1，
-// 该实例仅渲染本地简历 HTML、不持有任何登录态或凭据，且仅在降级路径才启用。
-const fallbackDebugPort = 32717
+// 禁用 leakless 后浏览器不再随主进程强杀，进程被强制结束时可能残留。固定端口让
+// rod 优先复用该端口上已存在的实例（见 openBrowser），把残留数收敛到 1 个，
+// 而不是每次启动都新增一个。代价是本机其它进程可预测地连上它。可接受：
+// Chromium 的 --remote-debugging-port 只监听 127.0.0.1，该实例仅渲染本地简历
+// HTML、不持有任何登录态或凭据。
+const browserDebugPort = 32717
+
+// leaklessEnv 是开启 rod leakless 守护进程的环境变量开关（值为 "1" 时开启）。
+const leaklessEnv = "GOSUME_ENABLE_LEAKLESS"
 
 // BrowserManager 管理共享的无头 Chromium 实例，用于 PDF 与 PNG 渲染。
 // 浏览器在首次使用时惰性启动，并在多次导出之间复用。
@@ -117,56 +129,100 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 
 	path := findBrowser()
 	if path == "" {
-		return nil, fmt.Errorf("未找到兼容的 Chromium 浏览器，请安装 Chrome 或 Edge 后重试")
+		return nil, &BrowserLaunchError{
+			Message: "未找到兼容的 Chromium 浏览器，请安装 Chrome 或 Edge 后重试",
+			Err:     errors.New("no chromium browser found"),
+		}
 	}
 
 	l, browser, err := openBrowser(path)
 	if err != nil {
-		return nil, fmt.Errorf("启动浏览器失败: %w", err)
+		return nil, &BrowserLaunchError{Message: launchHint(err), Err: err}
 	}
 	m.browser = browser
 	m.launcher = l
 	return browser, nil
 }
 
-// newLauncher 构造无头浏览器启动器（不含 leakless 与端口设置）。
-func newLauncher(bin string) *launcher.Launcher {
-	return launcher.New().Bin(bin).Headless(true).NoSandbox(true).
-		Set("disable-gpu").Set("disable-software-rasterizer")
+// newLauncher 构造无头浏览器启动器。
+//
+// port 为 0 时使用随机调试端口；非 0 时固定端口（见 browserDebugPort）。
+func newLauncher(bin string, port int) *launcher.Launcher {
+	l := launcher.New().Bin(bin).Headless(true).NoSandbox(true).
+		Set("disable-gpu").Set("disable-software-rasterizer").
+		UserDataDir(chromiumProfileDir())
+	if port > 0 {
+		l = l.RemoteDebuggingPort(port)
+	}
+	if !leaklessEnabled() {
+		l = l.Leakless(false)
+	}
+	return l
+}
+
+// leaklessEnabled 判断是否启用 rod 的 leakless 守护进程。
+//
+// leakless 会把内置守护 exe 释放到 %TEMP% 后执行，用于父进程被强杀时回收浏览器。
+// 该行为与黑客工具高度相似，Windows Defender、火绒、360 等常把它判为 HackTool 或
+// PUA 并直接拦截执行，错误形如 "fork/exec ...\leakless.exe: ... contains a virus
+// or potentially unwanted software"，一旦被拦导出功能就完全不可用。
+//
+// 它不是渲染必需能力：退出时由 BrowserManager.Close 回收浏览器，并配合固定调试
+// 端口复用残留实例。因此默认关闭，仅调试时用 GOSUME_ENABLE_LEAKLESS=1 打开。
+func leaklessEnabled() bool {
+	return os.Getenv(leaklessEnv) == "1"
+}
+
+// chromiumProfileDir 返回无头 Chromium 的固定 profile 目录；不可用时返回空串，
+// 交给 rod 回落到默认位置。
+//
+// 不使用 rod 默认的 %TEMP%/rod/user-data/<随机>：一是 %TEMP% 常被企业策略
+// （AppLocker / SRP）禁止写入或执行，与 leakless 同属一个雷区；二是每次启动都新建
+// 随机目录会持续堆积。改用系统缓存目录下的固定路径，稳定且可复用。
+func chromiumProfileDir() string {
+	base, err := os.UserCacheDir()
+	if err != nil || base == "" {
+		return ""
+	}
+	dir := filepath.Join(base, "Gosume", "chromium-profile")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Warnf("[browser] 创建浏览器 profile 目录失败，回退默认位置: %v", err)
+		return ""
+	}
+	return dir
 }
 
 // openBrowser 按降级链启动并连接无头浏览器：
 //
-//  1. 默认使用 rod 的 leakless。它把内置守护进程解压到 %TEMP% 执行，保证本进程被
-//     强杀后浏览器不残留。但该 exe 在 Windows 上常被安全软件误杀（HackTool 误报）
-//     或被组策略禁止从 %TEMP% 执行，表现为 "fork/exec ...\leakless.exe" 失败。
-//  2. leakless 不可用时禁用它，并改用固定调试端口。rod 在无 leakless 时会先尝试连接
-//     该端口上已存在的浏览器，于是上次强杀留下的残留进程会被复用而不是不断累积。
-//  3. 固定端口被其它程序占用时（连不上或拿到非 CDP 响应）回退随机端口，
+//  1. 固定调试端口。rod 在禁用 leakless 时会先尝试连接该端口上已存在的浏览器，
+//     于是上次强杀留下的残留进程会被复用而不是不断累积。
+//  2. 固定端口被其它程序占用时（连不上或拿到非 CDP 响应）回退随机端口，
 //     保证导出功能始终可用。
+//
+// 任一级失败都继续尝试下一级，不再按错误信息判断原因：杀软可能先把 leakless.exe
+// 隔离再报 "The system cannot find the file specified"，或直接 "Access is denied"，
+// 这类文案不含任何可识别关键字，字符串匹配会漏判并把错误原样抛给用户。
 func openBrowser(bin string) (*launcher.Launcher, *rod.Browser, error) {
-	l, browser, err := tryLaunch(newLauncher(bin))
+	l, browser, err := tryLaunch(newLauncher(bin, browserDebugPort))
 	if err == nil {
 		return l, browser, nil
 	}
-	// 非 leakless 引起的失败直接上报，避免重试掩盖真实原因（如浏览器本身起不来）
-	if !isLeaklessErr(err) {
-		return nil, nil, err
-	}
+	log.Warnf("[browser] 固定调试端口 %d 不可用，回退随机端口: %v", browserDebugPort, err)
 
-	log.Warnf("[browser] leakless 守护进程不可用（可能被安全软件拦截），降级为直接启动: %v", err)
-	l, browser, err = tryLaunch(newLauncher(bin).Leakless(false).RemoteDebuggingPort(fallbackDebugPort))
-	if err == nil {
+	l, browser, randErr := tryLaunch(newLauncher(bin, 0))
+	if randErr == nil {
 		return l, browser, nil
 	}
-
-	log.Warnf("[browser] 固定调试端口 %d 不可用，回退随机端口: %v", fallbackDebugPort, err)
-	return tryLaunch(newLauncher(bin).Leakless(false))
+	// 两个候选都失败：合并上报，便于一次看到两种原因。
+	return nil, nil, errors.Join(err, randErr)
 }
 
 // tryLaunch 启动并连接浏览器；任一步失败都回收已产生的进程，避免残留。
 func tryLaunch(l *launcher.Launcher) (*launcher.Launcher, *rod.Browser, error) {
-	url, err := l.Launch()
+	ctx, cancel := context.WithTimeout(context.Background(), browserLaunchTimeout)
+	defer cancel()
+
+	url, err := l.Context(ctx).Launch()
 	if err != nil {
 		killLauncher(l)
 		return nil, nil, err
@@ -188,9 +244,52 @@ func killLauncher(l *launcher.Launcher) {
 	}
 }
 
-// isLeaklessErr 判断启动失败是否由 leakless 守护进程引起。
-func isLeaklessErr(err error) bool {
-	return strings.Contains(strings.ToLower(err.Error()), "leakless")
+// BrowserLaunchError 表示无头浏览器启动或连接失败。
+//
+// Message 是面向用户的可操作提示（中文、不含技术细节），Err 为底层错误；
+// 上层（ExportService）用 errors.As 取出 Message 直接透传给前端。
+// Message 为空表示无法归类，此时 Error() 退化为普通的技术性报错。
+type BrowserLaunchError struct {
+	Message string
+	Err     error
+}
+
+// Error 实现 error 接口。
+func (e *BrowserLaunchError) Error() string {
+	if e.Message == "" {
+		return "启动浏览器失败: " + e.Err.Error()
+	}
+	return e.Message + "（" + e.Err.Error() + "）"
+}
+
+// Unwrap 暴露底层错误，便于 errors.Is / errors.As 继续下探。
+func (e *BrowserLaunchError) Unwrap() error { return e.Err }
+
+// launchHint 把浏览器启动/连接的底层错误翻译为面向用户的可操作提示，
+// 无法归类时返回空串。
+//
+// 最常见的失败原因是 Windows 安全软件把无头浏览器（或其守护进程）判为病毒/PUA
+// 后拦截执行，而原始错误只有 "fork/exec ..." 这类技术细节，用户无从下手。
+func launchHint(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "virus"),
+		strings.Contains(msg, "unwanted software"),
+		strings.Contains(msg, "leakless"),
+		strings.Contains(msg, "operation did not complete successfully"),
+		strings.Contains(msg, "access is denied"),
+		strings.Contains(msg, "permission denied"):
+		return "被安全软件拦截，请把 Gosume 加入杀毒软件白名单（或关闭「可能不需要的应用」防护）后重试"
+	case strings.Contains(msg, "deadline exceeded"),
+		strings.Contains(msg, "i/o timeout"),
+		strings.Contains(msg, "timed out"):
+		return "被安全软件拦截或系统资源不足，请检查后重试"
+	default:
+		return ""
+	}
 }
 
 // resetBrowser 清理缓存的 browser 与 page。
@@ -354,6 +453,11 @@ func (m *BrowserManager) RenderSinglePDF(htmlContent string, scale float64) ([]b
 	// }
 
 	png, err := m.RenderPNG(htmlContent, scale)
+	if err != nil {
+		// 直接透传：渲染阶段（含浏览器启动失败）的错误需要原样上抛，
+		// 否则会被下面的 DecodeConfig 覆盖成误导性的「解析 PNG 失败」。
+		return nil, err
+	}
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(png))
 	if err != nil {
 		log.Errorf("解析 PNG 失败: %v", err)
@@ -417,7 +521,9 @@ func (m *BrowserManager) MeasureContentHeight(htmlContent string, scale float64)
 	// 先以纸张尺寸初始化视口：宽度决定文字折行位置，必须与前端分页宽度一致
 	// 后才能测量出正确的内容高度。
 	page.MustSetViewport(paper.PxW, paper.PxH, scale, false)
-	page.WaitStable(time.Millisecond * 100)
+	if err := page.WaitStable(renderStableTimeout); err != nil {
+		return 0, fmt.Errorf("等待页面稳定失败: %w", err)
+	}
 
 	// 内容实际高度, 保底为纸张高度
 	cssHeight, err := m.calContentHeight(page)

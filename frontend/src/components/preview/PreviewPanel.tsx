@@ -281,6 +281,7 @@ export function PreviewPanel() {
   const previewHtml = useResumeStore((s) => s.previewHtml)
   const zoom = useEditorStore((s) => s.zoom)
   const setZoom = useEditorStore((s) => s.setZoom)
+  const grayscale = useEditorStore((s) => s.grayscale)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   /** 缩放纸张容器：切模板后重播淡入动画的宿主。 */
@@ -700,7 +701,14 @@ export function PreviewPanel() {
             <iframe
               ref={iframeRef}
               className="w-full border-none"
-              style={{ height: `${containerHeight}px`, overflow: 'hidden' }}
+              style={{
+                height: `${containerHeight}px`,
+                overflow: 'hidden',
+                // 黑白打印预览：对 iframe 整体施加灰阶滤镜，模拟无彩打印效果。
+                // （放在 iframe 元素上，规避 iframe 内部 doc.write 重建导致的样式被清。）
+                filter: grayscale ? 'grayscale(1)' : 'none',
+                transition: 'filter 0.2s ease',
+              }}
               title="简历预览"
               sandbox="allow-same-origin"
             />

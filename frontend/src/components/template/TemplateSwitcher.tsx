@@ -4,6 +4,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumbnailService'
 import { importTemplatePackage, loadTemplateMetas, deleteTemplate } from '../../services/templateService'
 import { extractErrorMessage } from '../../lib/errorUtils'
+import { useT } from '../../lib/i18n'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { Check, ChevronDown, Layout, Loader2, Upload, Trash2 } from 'lucide-react'
 
@@ -17,6 +18,7 @@ const FALLBACK_COLORS: Record<string, string> = {
 }
 
 export function TemplateSwitcher() {
+  const t = useT()
   const templates = useTemplateStore((s) => s.templates)
   const activeTemplateId = useTemplateStore((s) => s.activeTemplateId)
   const thumbnails = useTemplateStore((s) => s.thumbnails)
@@ -98,11 +100,11 @@ export function TemplateSwitcher() {
       generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
     } catch (err) {
       console.error('Import template failed:', err)
-      setImportError(extractErrorMessage(err, '模板导入失败'))
+      setImportError(extractErrorMessage(err, t('importTemplateFailed')))
     } finally {
       setImporting(false)
     }
-  }, [setActiveTemplate, setTemplates, setThumbnails, updateField])
+  }, [setActiveTemplate, setTemplates, setThumbnails, updateField, t])
 
   const handleDeleteClick = useCallback((e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation()
@@ -128,12 +130,12 @@ export function TemplateSwitcher() {
       generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
     } catch (err) {
       console.error('Delete template failed:', err)
-      setImportError(extractErrorMessage(err, '模板删除失败'))
+      setImportError(extractErrorMessage(err, t('deleteTemplateFailed')))
     } finally {
       setDeletingId(null)
       setDeleteTarget(null)
     }
-  }, [deleteTarget, activeTemplateId, setTemplates, setActiveTemplate, updateField, setThumbnails])
+  }, [deleteTarget, activeTemplateId, setTemplates, setActiveTemplate, updateField, setThumbnails, t])
 
   return (
     <div ref={ref} className="relative">
@@ -145,7 +147,7 @@ export function TemplateSwitcher() {
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: activeColor }}
         />
-        <span className="max-w-[80px] truncate">{activeTemplate?.name || '模板'}</span>
+        <span className="max-w-[80px] truncate">{activeTemplate?.name || t('template')}</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -153,7 +155,7 @@ export function TemplateSwitcher() {
         <div className={`absolute right-0 top-full mt-1 w-72 bg-elev rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
           <div className="px-3 py-1.5 text-[12px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
             <Layout className="w-3 h-3" />
-            切换模板风格
+            {t('switchStyle')}
           </div>
           <div className="max-h-[380px] overflow-y-auto py-1">
           {templates.map((tmpl) => {
@@ -199,7 +201,7 @@ export function TemplateSwitcher() {
                         onClick={(e) => handleDeleteClick(e, tmpl.id, tmpl.name)}
                         disabled={isDeleting}
                         className="ml-auto flex-shrink-0 p-1 rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        title="删除模板"
+                        title={t('deleteTemplate')}
                       >
                         {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                       </button>
@@ -225,7 +227,7 @@ export function TemplateSwitcher() {
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-60"
             >
               {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              导入模板包
+              {t('importPackage')}
             </button>
           </div>
         </div>
@@ -233,9 +235,9 @@ export function TemplateSwitcher() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="删除模板"
-        description={`确定要删除模板「${deleteTarget?.name}」吗？此操作不可恢复。`}
-        confirmText="删除"
+        title={t('deleteTemplate')}
+        description={t('deleteTemplateConfirm').replace('{name}', deleteTarget?.name || '')}
+        confirmText={t('delete')}
         danger
         loading={!!deletingId}
         onConfirm={handleDeleteConfirm}

@@ -7,6 +7,8 @@ import { paginateHTMLString } from '../../lib/exportHtml'
 import { renderTemplate } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
 import { injectGlobalVarsCss } from '../../lib/layoutPresets'
+import { useT } from '../../lib/i18n'
+import { useAppStore } from '../../stores/appStore'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
@@ -18,6 +20,8 @@ interface Props {
 type Phase = 'closed' | 'entering' | 'open' | 'exiting'
 
 export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
+  const t = useT()
+  const lang = useAppStore((s) => s.language)
   const resumeList = useResumeStore((s) => s.resumeList)
   const setResumeList = useResumeStore((s) => s.setResumeList)
   const deleteResume = useResumeStore((s) => s.deleteResume)
@@ -99,7 +103,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     setDeletingId(null)
     setConfirmDeleteId(null)
     await refreshList()
-  }, [confirmDeleteId, deleteResume])
+  }, [confirmDeleteId, deleteResume, t])
 
   const handleCancelDelete = useCallback(() => {
     setConfirmDeleteId(null)
@@ -144,7 +148,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     setShowBatchConfirm(false)
     setSelectedIds(new Set())
     await refreshList()
-  }, [selectedIds, deleteResume])
+  }, [selectedIds, deleteResume, t])
 
   const handleCancelBatchDelete = useCallback(() => {
     setShowBatchConfirm(false)
@@ -173,7 +177,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         const resume = await callService<Resume>('ResumeService', 'GetResumeByID', id)
         if (!resume) continue
 
-        const name = resume.personal.full_name || resume.meta.name || '未命名简历'
+        const name = resume.personal.full_name || resume.meta.name || t('resumeTitlePlaceholder')
         const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
         const tmpl = await loadTemplateContent(templateId)
         const rendered = renderTemplate(tmpl, resume)
@@ -194,7 +198,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     } catch { /* user cancelled or error */ }
     setBatchExporting(false)
     setBatchExportDone(true)
-  }, [selectedIds, batchExportFormat, batchExportScale, batchExportDone])
+  }, [selectedIds, batchExportFormat, batchExportScale, batchExportDone, t])
 
   const handleCancelBatchExport = useCallback(() => {
     if (!batchExporting) {
@@ -239,7 +243,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-200 shrink-0">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-surface-800">全部简历</h2>
+            <h2 className="text-lg font-semibold text-surface-800">{t('allResumes')}</h2>
             <span className="text-xs text-surface-400 bg-surface-100 px-2 py-0.5 rounded-full">
               {resumeList.length}
             </span>
@@ -250,7 +254,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 onClick={handleSelectAll}
                 className="px-2.5 py-1.5 text-xs font-medium text-surface-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                {allSelected ? '取消全选' : '全选'}
+                {allSelected ? t('deselectAll') : t('selectAll')}
               </button>
             )}
             <button
@@ -267,8 +271,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           {resumeList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-surface-400 gap-3">
               <Inbox className="w-12 h-12" />
-              <p className="text-sm">暂无保存的简历</p>
-              <p className="text-xs">创建新简历后将在此显示</p>
+              <p className="text-sm">{t('noSavedResumes')}</p>
+              <p className="text-xs">{t('savedResumesWillShow')}</p>
             </div>
           ) : (
             <div className="py-2">
@@ -288,7 +292,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                           ? 'text-primary-600'
                           : 'text-surface-300 opacity-0 group-hover:opacity-100'
                       }`}
-                      title={isSelected ? '取消选择' : '选择'}
+                      title={isSelected ? t('deselectItem') : t('selectItem')}
                     >
                       {isSelected ? (
                         <CheckSquare className="w-5 h-5" />
@@ -302,12 +306,12 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-surface-700 truncate">
-                        {item.name || '未命名简历'}
+                        {item.name || t('resumeTitlePlaceholder')}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <Clock className="w-3 h-3 text-surface-400" />
                         <span className="text-xs text-surface-400">
-                          {new Date(item.updated_at).toLocaleString('zh-CN')}
+                          {new Date(item.updated_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                         </span>
                       </div>
                     </div>
@@ -315,7 +319,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                     <button
                       onClick={(e) => handleDeleteClick(e, item.id)}
                       className="p-1.5 text-surface-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
-                      title="删除简历"
+                      title={t('deleteResume')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -341,10 +345,10 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                   onClick={handleSelectAll}
                   className="text-xs font-medium text-primary-700 hover:text-primary-900 transition-colors"
                 >
-                  {allSelected ? '取消全选' : '全选'}
+                  {allSelected ? t('deselectAll') : t('selectAll')}
                 </button>
                 <span className="text-xs text-primary-600">
-                  已选 <span className="font-semibold">{batchCount}</span> 份
+                  {t('selectedNPieces').replace('{count}', String(batchCount))}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -353,14 +357,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  批量导出
+                  {t('batchExport')}
                 </button>
                 <button
                   onClick={handleBatchDeleteClick}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  批量删除
+                  {t('batchDelete')}
                 </button>
               </div>
             </div>
@@ -369,7 +373,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           {/* Regular footer */}
           <div className="px-5 py-3">
             <p className="text-xs text-surface-400 text-center">
-              共 {resumeList.length} 份简历
+              {t('totalNPieces').replace('{count}', String(resumeList.length))}
             </p>
           </div>
         </div>
@@ -390,9 +394,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-surface-800">确认删除</h3>
+                <h3 className="text-base font-semibold text-surface-800">{t('deleteConfirmTitle')}</h3>
                 <p className="text-sm text-surface-500 mt-1">
-                  确定要删除「{targetItem?.name || '未命名简历'}」吗？此操作不可撤销。
+                  {t('deleteConfirmPrefix')}「{targetItem?.name || t('resumeTitlePlaceholder')}」{t('deleteConfirmSuffix')}
                 </p>
               </div>
             </div>
@@ -402,7 +406,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 disabled={!!deletingId}
                 className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
@@ -412,10 +416,10 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 {deletingId ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    删除中...
+                    {t('deletingElipsis')}
                   </>
                 ) : (
-                  '确认删除'
+                  t('deleteConfirmTitle')
                 )}
               </button>
             </div>
@@ -438,9 +442,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-surface-800">批量删除确认</h3>
+                <h3 className="text-base font-semibold text-surface-800">{t('batchDeleteConfirmTitle')}</h3>
                 <p className="text-sm text-surface-500 mt-1">
-                  确定要删除选中的 <span className="font-semibold text-red-600">{batchCount}</span> 份简历吗？此操作不可撤销。
+                  {t('batchDeleteConfirm').replace('{count}', String(batchCount))}
                 </p>
               </div>
             </div>
@@ -450,7 +454,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 disabled={batchDeleting}
                 className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleBatchConfirmDelete}
@@ -460,10 +464,10 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 {batchDeleting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    删除中...
+                    {t('deletingElipsis')}
                   </>
                 ) : (
-                  `删除 ${batchCount} 份`
+                  t('deleteNPieces').replace('{count}', String(batchCount))
                 )}
               </button>
             </div>
@@ -486,10 +490,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <Download className="w-5 h-5 text-primary-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-surface-800">批量导出</h3>
+                <h3 className="text-base font-semibold text-surface-800">{t('batchExportTitle')}</h3>
                 <p className="text-sm text-surface-500 mt-1">
-                  将选中的 <span className="font-semibold text-primary-600">{batchCount}</span> 份简历导出，
-                  首次选择保存位置后，其余将自动保存至同一目录。
+                  {t('batchExportDesc').replace('{count}', String(batchCount))}
                 </p>
               </div>
             </div>
@@ -497,7 +500,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             <div className="space-y-4">
               {/* Format selection */}
               <div>
-                <label className="text-sm font-medium text-surface-600 mb-2 block">选择格式</label>
+                <label className="text-sm font-medium text-surface-600 mb-2 block">{t('chooseFormat')}</label>
                 <div className="flex gap-2">
                   {[
                     { id: 'pdf' as const, label: 'PDF', icon: FileText },
@@ -522,7 +525,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
 
               {batchExportFormat === 'png' && (
                 <div>
-                  <label className="text-sm font-medium text-surface-600 mb-2 block">清晰度</label>
+                  <label className="text-sm font-medium text-surface-600 mb-2 block">{t('clarity')}</label>
                   <div className="flex gap-2">
                     {[
                       { value: 1, label: '1x' },
@@ -558,8 +561,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                     ) : (
                       <Check className="w-3.5 h-3.5 text-emerald-500" />
                     )}
-                    {batchExporting ? '正在导出' : '导出完成'}{' '}
-                    {Math.min(Math.round((exportProgress / 100) * batchCount), batchCount)}/{batchCount} 份
+                    {batchExporting ? t('exportingStatus') : t('exportFinishedStatus')}{' '}
+                    {t('piecesCount')
+                      .replace('{n}', `${Math.min(Math.round((exportProgress / 100) * batchCount), batchCount)}/${batchCount}`)}
                   </span>
                   <span className="tabular-nums font-medium text-surface-600">{exportProgress}%</span>
                 </div>
@@ -578,7 +582,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 disabled={batchExporting}
                 className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleBatchExport}
@@ -588,12 +592,12 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 {batchExporting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    导出中...
+                    {t('exportingElipsis')}
                   </>
                 ) : batchExportDone ? (
-                  '完成'
+                  t('exportDoneLabel')
                 ) : (
-                  `导出 ${batchExportFormat.toUpperCase()}`
+                  t('exportFormat').replace('{format}', batchExportFormat.toUpperCase())
                 )}
               </button>
             </div>

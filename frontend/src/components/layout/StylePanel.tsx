@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useEditorStore, STYLE_PANEL_MIN_WIDTH, STYLE_PANEL_MAX_WIDTH } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
 import { AnimatedRange } from '../ui/AnimatedRange'
@@ -13,6 +13,7 @@ import {
 import { parseCustomCss, DISPLAY_DEFAULT_LAYOUT } from '../../lib/customCss'
 import { FONT_OPTIONS, findFontOption } from '../../lib/fontOptions'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
+import { useT } from '../../lib/i18n'
 import { ChevronsLeftRight, Rows3, AlignVerticalJustifyStart, Type } from 'lucide-react'
 
 /**
@@ -24,14 +25,16 @@ import { ChevronsLeftRight, Rows3, AlignVerticalJustifyStart, Type } from 'lucid
  */
 
 /** 字体下拉选项：首项「跟随模板」，其余为商用安全字体（hint 标注分类）。 */
-const FONT_SELECT_OPTIONS: SelectOption[] = [
-  { value: '', label: '跟随模板' },
-  ...FONT_OPTIONS.map((o) => ({
-    value: o.key,
-    label: o.label,
-    hint: o.category === 'system' ? '系统内置' : '开源免费 · 可商用',
-  })),
-]
+function buildFontOptions(t: (k: string) => string): SelectOption[] {
+  return [
+    { value: '', label: t('followTemplate') },
+    ...FONT_OPTIONS.map((o) => ({
+      value: o.key,
+      label: o.label,
+      hint: o.category === 'system' ? t('fontSystem') : t('fontOpenSource'),
+    })),
+  ]
+}
 
 /** 字号档位（px）：姓名 18–40（步长2）、标题 12–22、正文 10–18、细节 9–16。 */
 function pxOptions(min: number, max: number, step = 1): SelectOption[] {
@@ -57,15 +60,17 @@ function FontSizeRow({
   options: SelectOption[]
   onChange: (v: number | null) => void
 }) {
+  const t = useT()
   return (
     <div className="flex items-center justify-between gap-2 mb-2 last:mb-0">
-      <span className="text-[12px] font-medium text-surface-600">{label}</span>
-      <div className="w-[108px] flex-shrink-0">
+      <span className="text-[12px] font-medium text-surface-600 min-w-0 truncate">{label}</span>
+      {/* 下拉宽度跟随面板：面板宽时撑到 max-w 显示完整文本，窄时收缩省略 */}
+      <div className="flex-1 min-w-0 max-w-[240px]">
         <CustomSelect
           value={value == null ? '' : String(value)}
           onChange={(v) => onChange(v ? parseInt(v, 10) : null)}
-          options={[{ value: '', label: '跟随模板' }, ...options]}
-          placeholder="跟随模板"
+          options={[{ value: '', label: t('followTemplate') }, ...options]}
+          placeholder={t('followTemplate')}
         />
       </div>
     </div>
@@ -114,6 +119,7 @@ function PanelCard({ title, icon, summary, children }: { title: string; icon: Re
 }
 
 export function StylePanel() {
+  const t = useT()
   const open = useEditorStore((s) => s.stylePanelOpen)
   const width = useEditorStore((s) => s.stylePanelWidth)
   const setStylePanelWidth = useEditorStore((s) => s.setStylePanelWidth)
@@ -140,24 +146,36 @@ export function StylePanel() {
   const spacingItem = style.spacingItem ?? nativeLayout?.spacingItem ?? DISPLAY_DEFAULT_LAYOUT.spacingItem
   const spacingDetail = style.spacingDetail ?? nativeLayout?.spacingDetail ?? DISPLAY_DEFAULT_LAYOUT.spacingDetail
 
+  // 字体下拉选项随语言动态构建（模块级常量无法取 t）。
+  const fontOptions = useMemo(() => buildFontOptions(t), [t])
+
   // 拖拽左缘调宽：向右拖动加宽，向左收窄；实时写入 store（setStylePanelWidth 内部限制范围）。
+  // 用 Pointer Events + 指针捕获：拖拽中鼠标滑入预览 iframe 时事件不丢失，
+  // 松开必定触发 pointerup；再以 buttons 检查兜底窗口外松开的极端情况，避免监听残留。
   const startResize = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.PointerEvent<HTMLDivElement>) => {
       e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
       setDragging(true)
       const startX = e.clientX
       const startWidth = useEditorStore.getState().stylePanelWidth
-      const onMove = (ev: MouseEvent) => {
+      const onMove = (ev: PointerEvent) => {
+        if (ev.buttons === 0) {
+          onUp()
+          return
+        }
         // 面板锚定在右侧：抓住左缘往左拖（dx<0）应加宽，往右拖应收窄，故用「减」。
         setStylePanelWidth(startWidth - (ev.clientX - startX))
       }
       const onUp = () => {
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('mouseup', onUp)
+        document.removeEventListener('pointermove', onMove)
+        document.removeEventListener('pointerup', onUp)
+        document.removeEventListener('pointercancel', onUp)
         setDragging(false)
       }
-      document.addEventListener('mousemove', onMove)
-      document.addEventListener('mouseup', onUp)
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', onUp)
+      document.addEventListener('pointercancel', onUp)
     },
     [setStylePanelWidth],
   )
@@ -183,113 +201,115 @@ export function StylePanel() {
       >
         {/* 拖拽调宽手柄（面板展开时可见） */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors"
-          onMouseDown={startResize}
-          title="拖拽调整面板宽度"
+          className="absolute left-0 top-0 bottom-0 w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors touch-none"
+          onPointerDown={startResize}
+          title={t('resizeHandleTitle')}
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
-          <div className="text-xs font-semibold text-surface-700 px-1 pt-0.5">样式排版</div>
+        {/* 滚动容器右缘留 4px（mr-1）：滚动条整体离开面板右缘，避免阻碍窗口大小调节。
+            与简历预览页 PreviewPanel 的滚动容器同一方案。 */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 mr-1">
+          <div className="text-xs font-semibold text-surface-700 px-1 pt-0.5">{t('layoutStyle')}</div>
 
-          <PanelCard title="页边距" icon={<ChevronsLeftRight className="w-3 h-3" />} summary={`${marginY}×${marginX}px`}>
+          <PanelCard title={t('pageMargin')} icon={<ChevronsLeftRight className="w-3 h-3" />} summary={`${marginY}×${marginX}px`}>
             <SliderRow
-              label="上下"
+              label={t('marginVertical')}
               value={marginY}
               min={MARGIN_PX_MIN}
               max={MARGIN_PX_MAX}
               onChange={(v) => setMargins({ pageMarginY: v })}
             />
             <SliderRow
-              label="左右"
+              label={t('marginHorizontal')}
               value={marginX}
               min={MARGIN_PX_MIN}
               max={MARGIN_PX_MAX}
               onChange={(v) => setMargins({ pageMarginX: v })}
             />
-            <p className="text-[10px] text-surface-400 mt-2 leading-relaxed">控制页面四周的留白，仅作用于当前简历。</p>
+            <p className="text-[10px] text-surface-400 mt-2 leading-relaxed">{t('pageMarginHint')}</p>
           </PanelCard>
 
           <PanelCard
-            title="内容间距"
+            title={t('contentSpacing')}
             icon={<Rows3 className="w-3 h-3" />}
             summary={`${spacingSection}·${spacingItem}·${spacingDetail}px`}
           >
             <SliderRow
-              label="模块"
+              label={t('spacingSection')}
               value={spacingSection}
               min={SPACING_PX_MIN}
               max={SPACING_PX_MAX}
               onChange={(v) => updateCustomCss({ spacingSection: v })}
             />
             <SliderRow
-              label="条目"
+              label={t('spacingItem')}
               value={spacingItem}
               min={SPACING_PX_MIN}
               max={SPACING_PX_MAX}
               onChange={(v) => updateCustomCss({ spacingItem: v })}
             />
             <SliderRow
-              label="细节"
+              label={t('spacingDetail')}
               value={spacingDetail}
               min={SPACING_PX_MIN}
               max={DETIAL_SPACING_PX_MAX}
               onChange={(v) => updateCustomCss({ spacingDetail: v })}
             />
             <p className="text-[10px] text-surface-400 mt-2 leading-relaxed">
-              模块=板块之间；条目=板块内单项之间；细节=单项内各行之间。
+              {t('contentSpacingHint')}
             </p>
           </PanelCard>
 
           <PanelCard
-            title="字体"
+            title={t('fontSection')}
             icon={<Type className="w-3 h-3" />}
-            summary={style.fontKey ? (findFontOption(style.fontKey)?.label ?? '跟随模板') : '跟随模板'}
+            summary={style.fontKey ? (findFontOption(style.fontKey)?.label ?? t('followTemplate')) : t('followTemplate')}
           >
             <CustomSelect
               value={style.fontKey ?? ''}
               onChange={(v) => updateCustomCss({ fontKey: v ? v : null })}
-              options={FONT_SELECT_OPTIONS}
-              placeholder="跟随模板"
+              options={fontOptions}
+              placeholder={t('followTemplate')}
             />
             <p className="text-[10px] text-surface-400 mt-2 leading-relaxed">
-              均含中英文回退栈；开源字体未安装时自动回退到系统字体。
+              {t('fontHint')}
             </p>
           </PanelCard>
 
-          <PanelCard title="字号" icon={<Type className="w-3 h-3" />}>
+          <PanelCard title={t('fontSizeSection')} icon={<Type className="w-3 h-3" />}>
             <FontSizeRow
-              label="姓名"
+              label={t('fontSizeName')}
               value={style.fontSizeName}
               options={NAME_SIZE_OPTIONS}
               onChange={(v) => updateCustomCss({ fontSizeName: v })}
             />
             <FontSizeRow
-              label="标题"
+              label={t('fontSizeTitle')}
               value={style.fontSizeTitle}
               options={TITLE_SIZE_OPTIONS}
               onChange={(v) => updateCustomCss({ fontSizeTitle: v })}
             />
             <FontSizeRow
-              label="正文"
+              label={t('fontSizeBody')}
               value={style.fontSizeBody}
               options={BODY_SIZE_OPTIONS}
               onChange={(v) => updateCustomCss({ fontSizeBody: v })}
             />
             <FontSizeRow
-              label="细节"
+              label={t('fontSizeDetail')}
               value={style.fontSizeDetail}
               options={DETAIL_SIZE_OPTIONS}
               onChange={(v) => updateCustomCss({ fontSizeDetail: v })}
             />
             <p className="text-[10px] text-surface-400 mt-2 leading-relaxed">
-              姓名=最大标题；标题=章节/条目标题；正文=主要文本；细节=日期/地点等次要信息。
+              {t('fontSizeHint')}
             </p>
           </PanelCard>
 
           <div className="flex items-center justify-between px-1 pt-1">
             <span className="text-[10px] text-surface-400 flex items-center gap-1.5">
               <AlignVerticalJustifyStart className="w-3 h-3" />
-              拖拽面板左缘可调整宽度（{STYLE_PANEL_MIN_WIDTH}–{STYLE_PANEL_MAX_WIDTH}px）
+              {t('resizePanelHint').replace('{min}', String(STYLE_PANEL_MIN_WIDTH)).replace('{max}', String(STYLE_PANEL_MAX_WIDTH))}
             </span>
           </div>
         </div>

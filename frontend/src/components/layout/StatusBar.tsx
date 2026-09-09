@@ -6,6 +6,7 @@ import { Circle, Ruler } from 'lucide-react'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
 import { sectionTitleId } from '../../lib/resumeSections'
 import { getAppVersion } from '../../services/systemService'
+import { useT } from '../../lib/i18n'
 
 interface StatusBarProps {
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error'
@@ -82,6 +83,7 @@ function computeSectionStats(
 }
 
 export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
+  const t = useT()
   const isDirty = useResumeStore((s) => s.isDirty)
   const resume = useResumeStore((s) => s.resume)
   const previewHtml = useResumeStore((s) => s.previewHtml)
@@ -117,19 +119,20 @@ export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
     level === 'over' ? 'text-red-500' :
     level === 'ok' ? 'text-amber-500' : 'text-emerald-500'
 
+  const pct = heightRatio == null ? '' : Math.round(heightRatio * 100)
   const heightTip =
     heightRatio == null ? '' :
     level === 'over'
-      ? `当前内容高度 ${contentHeight}px，约一页纸的 ${Math.round(heightRatio * 100)}%，超出较多，导出为一页 PDF 会使内容过小`
+      ? t('contentOver').replace('{px}', String(contentHeight)).replace('{pct}', String(pct))
       : level === 'ok'
-      ? `当前内容高度 ${contentHeight}px，约一页纸的 ${Math.round(heightRatio * 100)}%，略超一页，仍适合导出为一页 PDF`
-      : `当前内容高度 ${contentHeight}px，约一页纸的 ${Math.round(heightRatio * 100)}%，一页即可完整放下`
+      ? t('contentOk').replace('{px}', String(contentHeight)).replace('{pct}', String(pct))
+      : t('contentFit').replace('{px}', String(contentHeight)).replace('{pct}', String(pct))
 
   const statusText =
-    saveStatus === 'saving' ? '保存中...' :
-    saveStatus === 'saved' ? '已保存' :
-    saveStatus === 'error' ? '保存失败' :
-    isDirty ? '未保存' : '已保存'
+    saveStatus === 'saving' ? t('saving') :
+    saveStatus === 'saved' ? t('saved') :
+    saveStatus === 'error' ? t('saveError') :
+    isDirty ? t('notSaved') : t('saved')
 
   const statusColor =
     saveStatus === 'saving' ? 'text-blue-500 fill-blue-500' :
@@ -145,25 +148,29 @@ export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
           <span className="text-surface-500">{statusText}</span>
         </div>
         <span className="text-surface-300">|</span>
-        <span className="text-surface-500">{activeTemplate?.name || '现代专业风'}</span>
+        <span className="text-surface-500">{activeTemplate?.name || t('templateDefaultName')}</span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
         {heightRatio != null && (
           <span
-            className={`flex items-center gap-1 ${heightColor}`}
+            className={`flex items-center gap-1 shrink-0 ${heightColor}`}
             title={heightTip}
           >
             <Ruler className="w-3 h-3" />
-            实际内容高度 {Math.round(heightRatio * 100)}%
+            {t('contentHeightShown').replace('{pct}', String(pct))}
           </span>
         )}
         {sectionStats.map((s) => (
-          <span key={`${s.title}:${s.count}`} className="text-surface-500">
+          <span
+            key={`${s.title}:${s.count}`}
+            className="text-surface-500 truncate min-w-0 max-w-[160px]"
+            title={s.title}
+          >
             {s.title} {s.count}
           </span>
         ))}
-        <span className="text-surface-300">|</span>
-        <span className="text-surface-500">Gosume{appVersion ? ` v${appVersion}` : ''}</span>
+        <span className="text-surface-300 shrink-0">|</span>
+        <span className="text-surface-500 shrink-0">Gosume{appVersion ? ` v${appVersion}` : ''}</span>
       </div>
     </div>
   )

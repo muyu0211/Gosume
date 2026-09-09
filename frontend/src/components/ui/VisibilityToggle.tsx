@@ -1,4 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react'
+import { useT } from '../../lib/i18n'
 
 interface VisibilityToggleProps {
   /** 当前是否隐藏。 */
@@ -13,6 +14,7 @@ interface VisibilityToggleProps {
 /** 隐藏/显示切换按钮（眼睛图标，替代旧复选框）：显示状态=Eye，隐藏状态=EyeOff。
    点按切换隐藏状态，未隐藏时悬停加深提示可隐藏，隐藏时高亮底纹提示可恢复。 */
 export function VisibilityToggle({ hidden, onToggle, title, className = '' }: VisibilityToggleProps) {
+  const t = useT()
   return (
     <button
       type="button"
@@ -20,7 +22,7 @@ export function VisibilityToggle({ hidden, onToggle, title, className = '' }: Vi
         e.stopPropagation()
         onToggle()
       }}
-      title={title ?? (hidden ? '取消隐藏（在简历中显示）' : '隐藏（不在简历中显示）')}
+      title={title ?? (hidden ? t('unhideHint') : t('hideNotShow'))}
       className={`inline-flex items-center justify-center p-1 rounded-md transition-colors ${
         hidden
           ? 'text-surface-500 hover:text-surface-700 bg-surface-200'

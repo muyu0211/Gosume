@@ -1,11 +1,14 @@
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { Plus, Trash2, Code, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { useT } from '../../lib/i18n'
 
 export function SkillSection() {
-  const language = useResumeStore((s) => s.resume?.meta?.language)
+  const t = useT()
+  const language = useAppStore((s) => s.language)
   const items = useResumeStore((s) => s.resume?.skills) || []
   const addGroup = useResumeStore((s) => s.addSkillGroup)
   const updateGroup = useResumeStore((s) => s.updateSkillGroup)
@@ -34,11 +37,11 @@ export function SkillSection() {
         <div className="flex items-center gap-2">
           <Code className="w-4 h-4 text-primary-600" />
           <span className="form-section-title">{getSectionTitle('skills', language)}</span>
-          <span className="text-xs text-surface-400">({items.length} 组)</span>
+          <span className="text-xs text-surface-400">({items.length}{t('groupCountSuffix')})</span>
         </div>
         <button onClick={addGroup} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
-          添加分组
+          {t('addGroup')}
         </button>
       </div>
 
@@ -67,13 +70,13 @@ export function SkillSection() {
                 className={`form-input flex-1 font-medium ${isGroupHidden ? 'text-surface-400 line-through' : ''}`}
                 value={group.category || ''}
                 onChange={(e) => updateGroup(gIdx, { category: e.target.value })}
-                placeholder="分类名，如：前端技术"
+                placeholder={t('categoryPlaceholder')}
                 maxLength={100}
               />
               {isGroupHidden && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
                   <EyeOff className="w-2.5 h-2.5" />
-                  已隐藏
+                  {t('hidden')}
                 </span>
               )}
               <VisibilityToggle
@@ -94,7 +97,7 @@ export function SkillSection() {
                     className={`form-input flex-1 ${isSkillHidden ? 'text-surface-400 line-through' : ''}`}
                     value={skill.name || ''}
                     onChange={(e) => updateSkill(gIdx, sIdx, e.target.value, skill.level)}
-                    placeholder="技能名，如：React"
+                    placeholder={t('skillNamePlaceholder')}
                     maxLength={100}
                   />
                   <div className="flex gap-0.5">
@@ -127,7 +130,7 @@ export function SkillSection() {
               })}
               <button onClick={() => addSkill(gIdx)} className="btn-ghost btn-xs text-primary-600 mt-1">
                 <Plus className="w-3 h-3" />
-                添加技能
+                {t('addSkill')}
               </button>
             </div>
           </div>
@@ -136,7 +139,7 @@ export function SkillSection() {
 
         {items.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">
-            暂无内容，点击上方"添加分组"按钮开始
+            {t('emptyAddGroup')}
           </div>
         )}
       </div>

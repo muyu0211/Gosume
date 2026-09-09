@@ -23,6 +23,8 @@ import type { TemplateMeta, TemplateCategory, ImportLog } from '../types/templat
 import type { ResumeListItem } from '../types/resume'
 import type { FileParseResult, FileImportResponse } from '../types/gosume_file'
 import { migratePersonalSummary } from '../types/resume'
+import { useT } from '../lib/i18n'
+import { useAppStore } from '../stores/appStore'
 
 // 本次会话是否已做过启动更新检查（避免从编辑器返回首页时重复请求）
 let updateCheckedThisSession = false
@@ -32,6 +34,8 @@ let sessionUpdateInfo: UpdateInfo | null = null
 
 export function WelcomePage() {
   const navigate = useNavigate()
+  const t = useT()
+  const lang = useAppStore((s) => s.language)
   const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
   const [showDrawer, setShowDrawer] = useState(false)
 
@@ -39,7 +43,9 @@ export function WelcomePage() {
   const appliedTheme = useThemeStore((s) => s.applied)
   const themeMode = useThemeStore((s) => s.mode)
   const ThemeIcon = appliedTheme === 'obsidian' ? Moon : appliedTheme === 'wheat' ? Palette : Sun
-  const themeTitle = appliedTheme === 'obsidian' ? '当前：深色' : appliedTheme === 'wheat' ? '当前：麦色' : '当前：经典'
+  const themeTitle = t('currentTheme') + (
+    appliedTheme === 'obsidian' ? t('themeObsidian') : appliedTheme === 'wheat' ? t('themeWheat') : t('themeClassic')
+  )
   const handleCycleTheme = () => {
     useThemeStore.getState().setMode(nextExplicitTheme(themeMode))
   }
@@ -220,7 +226,7 @@ export function WelcomePage() {
       }
     } catch (err) {
       console.error('Import template failed:', err)
-      setImportError(extractErrorMessage(err, '模板导入失败，请检查模板包格式'))
+      setImportError(extractErrorMessage(err, t('importTemplateFailedCheck')))
     } finally {
       setImportingTemplate(false)
     }
@@ -236,7 +242,7 @@ export function WelcomePage() {
       setImportPreview(result)
     } catch (err) {
       console.error('Parse gosume file failed:', err)
-      setImportError(extractErrorMessage(err, '导入失败，请检查文件'))
+      setImportError(extractErrorMessage(err, t('importFailedCheckFile')))
     } finally {
       setImportingGosume(false)
     }
@@ -248,7 +254,7 @@ export function WelcomePage() {
     setImportPreview(null)
 
     if (result.mode === 'overwrite') {
-      setImportSuccess('已覆盖导入')
+      setImportSuccess(t('overwriteImported'))
       // 刷新简历列表（覆盖改变了 name/updated_at）
       try {
         const list = await callService<ResumeListItem[]>('ResumeService', 'ListResumes')
@@ -290,7 +296,7 @@ export function WelcomePage() {
       await loadData()
     } catch (err) {
       console.error('Delete template failed:', err)
-      setImportError(extractErrorMessage(err, '模板删除失败'))
+      setImportError(extractErrorMessage(err, t('deleteTemplateFailed')))
     } finally {
       setDeletingTemplateId(null)
       setDeleteTarget(null)
@@ -306,7 +312,7 @@ export function WelcomePage() {
       setTemplates(templates.map((t) => (t.id === id ? { ...t, is_favorite: favorite } : t)))
     } catch (err) {
       console.error('Toggle favorite failed:', err)
-      setImportError(extractErrorMessage(err, favorite ? '收藏失败' : '取消收藏失败'))
+      setImportError(extractErrorMessage(err, favorite ? t('favoriteFailed') : t('unfavoriteFailed')))
     } finally {
       setFavLoadingId(null)
     }
@@ -319,10 +325,10 @@ export function WelcomePage() {
     setImportSuccess('')
     try {
       const path = await exportTemplatePackage(id)
-      if (path) setImportSuccess(`分享包已导出：${path}`)
+      if (path) setImportSuccess(t('shareExported').replace('{path}', path))
     } catch (err) {
       console.error('Export template failed:', err)
-      setImportError(extractErrorMessage(err, '导出分享包失败'))
+      setImportError(extractErrorMessage(err, t('exportShareFailed')))
     } finally {
       setExportingId(null)
     }
@@ -348,7 +354,7 @@ export function WelcomePage() {
       setImportLogs((prev) => prev.filter((l) => l.id !== deleteLogTarget.id))
     } catch (err) {
       console.error('Delete import log failed:', err)
-      setImportError(extractErrorMessage(err, '删除导入记录失败'))
+      setImportError(extractErrorMessage(err, t('deleteImportLogFailed')))
     } finally {
       setDeletingLogId(null)
       setDeleteLogTarget(null)
@@ -377,7 +383,7 @@ export function WelcomePage() {
               <button
                 onClick={() => setShowUpdateDialog(true)}
                 className="absolute -top-1.5 -right-2.5 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold tracking-wider shadow-md shadow-red-500/30 animate-badge-pop hover:bg-red-600 active:scale-95 transition-colors"
-                title={`发现新版本 v${updateInfo.latest_version}，点击查看`}
+                title={t('newVersionTip').replace('{v}', updateInfo.latest_version)}
               >
                 NEW
               </button>
@@ -385,46 +391,46 @@ export function WelcomePage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-surface-800 tracking-tight">Gosume</h1>
-            <p className="text-xs text-surface-400 mt-0.5">桌面级简历制作工具</p>
+            <p className="text-xs text-surface-400 mt-0.5">{t('desktopResumeTool')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => navigate('/community')}
             className="btn-primary btn-sm"
           >
-            <Globe className="w-4 h-4" />
-            模板社区
+            <Globe className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline">{t('templateCommunity')}</span>
           </button>
           <button
             onClick={handleOpenImportLogs}
             className="btn-secondary btn-sm"
           >
-            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            导入记录
+            <Clock className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline">{t('importLogs')}</span>
           </button>
           <button
             onClick={handleImportTemplate}
             disabled={importingTemplate}
             className="btn-secondary btn-sm"
           >
-            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            导入模板
+            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 shrink-0" />}
+            <span className="hidden md:inline">{t('importTemplate')}</span>
           </button>
           <button
             onClick={handleImportGosume}
             disabled={importingGosume}
             className="btn-secondary btn-sm"
           >
-            {importingGosume ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
-            导入简历
+            {importingGosume ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4 shrink-0" />}
+            <span className="hidden md:inline">{t('importResume')}</span>
           </button>
           <button
             onClick={() => setShowDrawer(true)}
             className="btn-secondary btn-sm"
           >
-            <List className="w-4 h-4" />
-            全部简历
+            <List className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline">{t('allResumes')}</span>
           </button>
           <Tooltip label={themeTitle}>
             <button
@@ -434,7 +440,7 @@ export function WelcomePage() {
               <ThemeIcon className="w-4 h-4" />
             </button>
           </Tooltip>
-          <Tooltip label="设置">
+          <Tooltip label={t('settings')}>
             <button
               onClick={() => navigate('/settings')}
               className="btn-ghost btn-sm"
@@ -449,7 +455,7 @@ export function WelcomePage() {
         <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between gap-3">
           <span>{importError}</span>
           <button onClick={() => setImportError('')} className="text-red-500 hover:text-red-700 text-xs font-medium">
-            关闭
+            {t('close')}
           </button>
         </div>
       )}
@@ -461,7 +467,7 @@ export function WelcomePage() {
             {importSuccess}
           </span>
           <button onClick={() => setImportSuccess('')} className="text-emerald-500 hover:text-emerald-700 text-xs font-medium">
-            关闭
+            {t('close')}
           </button>
         </div>
       )}
@@ -472,7 +478,7 @@ export function WelcomePage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-5">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
-              选择模板开始创建
+              {t('chooseTemplateToStart')}
             </h2>
             <div className="flex-1 h-px bg-surface-200" />
           </div>
@@ -482,7 +488,7 @@ export function WelcomePage() {
               active={!activeCategory && !favoriteOnly}
               onClick={() => { setActiveCategory(''); setFavoriteOnly(false); setCurrentPage(1) }}
             >
-              全部
+              {t('all')}
             </FilterChip>
             {marketCategories.map((cat) => (
               <FilterChip
@@ -490,7 +496,7 @@ export function WelcomePage() {
                 active={activeCategory === cat.name && !favoriteOnly}
                 onClick={() => handleSelectCategory(cat.name)}
               >
-                {cat.name === 'custom' ? '未分类' : cat.name}
+                {cat.name === 'custom' ? t('uncategorized') : cat.name}
                 <span className="opacity-60">{categoryCounts.get(cat.name) ?? cat.count}</span>
               </FilterChip>
             ))}
@@ -500,7 +506,7 @@ export function WelcomePage() {
               onClick={() => { setFavoriteOnly(!favoriteOnly); setCurrentPage(1) }}
             >
               <Star className="w-3.5 h-3.5" />
-              我的收藏
+              {t('myFavorites')}
               {templates.filter((t) => t.is_favorite).length > 0 && (
                 <span className="opacity-60">{templates.filter((t) => t.is_favorite).length}</span>
               )}
@@ -509,7 +515,7 @@ export function WelcomePage() {
           {paginatedTemplates.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-surface-300">
               <Star className="w-9 h-9 mb-2" />
-              <p className="text-sm">当前分类下没有模板</p>
+              <p className="text-sm">{t('noTemplateInCategory')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-4 gap-5" key={currentPage}>
@@ -546,7 +552,7 @@ export function WelcomePage() {
           <section>
             <div className="flex items-center gap-2 mb-5">
               <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
-                最近打开
+                {t('recentOpened')}
               </h2>
               <div className="flex-1 h-px bg-surface-200" />
             </div>
@@ -563,7 +569,7 @@ export function WelcomePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-surface-700 truncate">{file.name}</p>
                     <p className="text-xs text-surface-400 mt-0.5">
-                      {new Date(file.updated_at).toLocaleString('zh-CN')}
+                      {new Date(file.updated_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                     </p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-surface-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all" />
@@ -597,9 +603,9 @@ export function WelcomePage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="删除模板"
-        description={`确定要删除模板「${deleteTarget?.name}」吗？此操作不可恢复。`}
-        confirmText="删除"
+        title={t('deleteTemplate')}
+        description={t('deleteTemplateConfirm').replace('{name}', deleteTarget?.name || '')}
+        confirmText={t('delete')}
         danger
         loading={!!deletingTemplateId}
         onConfirm={handleDeleteConfirm}
@@ -618,9 +624,9 @@ export function WelcomePage() {
 
       <ConfirmDialog
         open={!!deleteLogTarget}
-        title="删除导入记录"
-        description={`确定要删除「${deleteLogTarget?.template_name}」的导入记录吗？仅删除记录，不会移除已安装的模板。`}
-        confirmText="删除"
+        title={t('deleteImportLog')}
+        description={t('deleteImportLogConfirm').replace('{name}', deleteLogTarget?.template_name || '')}
+        confirmText={t('delete')}
         danger
         loading={!!deletingLogId}
         onConfirm={handleDeleteLog}
@@ -636,13 +642,14 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
   totalPages: number
   onPageChange: (page: number) => void
 }) {
+  const t = useT()
   return (
     <div className="flex items-center justify-center gap-1 mt-6">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
         className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label="上一页"
+        aria-label={t('prevPage')}
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -662,7 +669,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
         className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label="下一页"
+        aria-label={t('nextPage')}
       >
         <ChevronRight className="w-4 h-4" />
       </button>
@@ -684,6 +691,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
   onShare?: () => void
   index?: number
 }) {
+  const t = useT()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.16)
   const [isHovered, setIsHovered] = useState(false)
@@ -735,7 +743,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
 
         {/* 收藏星标（点击独立于卡片选中；置于左上角，避免被右侧 hover 面板遮挡） */}
         {onToggleFavorite && (
-          <Tooltip label={favorite ? '取消收藏' : '收藏'} className="absolute top-2.5 left-2.5">
+          <Tooltip label={favorite ? t('unfavorite') : t('favorite')} className="absolute top-2.5 left-2.5">
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
               disabled={favLoading}
@@ -751,7 +759,11 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-center transition-transform duration-300 ease-out"
           style={{
-            width: '33.333%',
+            // 宽度自适应内容（≥1/3 卡片宽），避免英文按钮文本比面板宽导致溢出露边；
+            // translateX(100%) 按自身宽度移动，内容不超出时即可完全移出卡片。
+            width: 'max-content',
+            minWidth: '33.333%',
+            maxWidth: '75%',
             transform: isHovered ? 'translateX(0)' : 'translateX(100%)',
           }}
           onClick={(e) => e.stopPropagation()}
@@ -769,30 +781,30 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           <div className="relative z-10 flex flex-col items-center gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); onPreview() }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-surface-800 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+              className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-surface-800 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
             >
               <Eye className="w-4 h-4 shrink-0" />
-              <span className="preview-label">预览</span>
+              <span className="preview-label truncate min-w-0">{t('preview')}</span>
             </button>
             {onShare && (
               <button
                 onClick={(e) => { e.stopPropagation(); onShare() }}
                 disabled={sharing}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
-                title="导出为模板分享包 (.zip)"
+                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+                title={t('exportShareTitle')}
               >
                 {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
-                <span className="preview-label">导出</span>
+                <span className="preview-label truncate min-w-0">{t('export')}</span>
               </button>
             )}
             {!template.is_builtin && onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
                 disabled={isDeleting}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-elev/70 backdrop-blur-sm text-red-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-red-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-red-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-red-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
-                <span className="preview-label">删除</span>
+                <span className="preview-label truncate min-w-0">{t('delete')}</span>
               </button>
             )}
           </div>
@@ -837,6 +849,8 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
   onClose: () => void
 }) {
   const modalRef = useRef<ModalHandle>(null)
+  const t = useT()
+  const lang = useAppStore((s) => s.language)
 
   return (
     <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="flex flex-col overflow-hidden">
@@ -844,13 +858,13 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <Clock className="w-4 h-4 text-primary-600" />
         </div>
-        <span className="text-base font-semibold text-surface-700">模板导入记录</span>
+        <span className="text-base font-semibold text-surface-700">{t('importLogsTitle')}</span>
       </div>
       <div className="flex-1 overflow-auto px-6 py-3">
         {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-surface-300">
             <Clock className="w-9 h-9 mb-2" />
-            <p className="text-sm">暂无导入记录</p>
+            <p className="text-sm">{t('noImportLogs')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -865,18 +879,18 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                     <span className="text-sm font-medium text-surface-700 truncate">{log.template_name}</span>
                     <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-medium flex-shrink-0 ${log.source === 'share' ? 'bg-primary-50 text-primary-600' : log.source === 'community' ? 'bg-emerald-50 text-emerald-600' : 'bg-surface-100 text-surface-500'
                       }`}>
-                      {log.source === 'share' ? '分享包' : log.source === 'community' ? '社区' : '本地'}
+                      {log.source === 'share' ? t('sourceShare') : log.source === 'community' ? t('sourceCommunity') : t('sourceLocal')}
                     </span>
                   </div>
                   <p className="text-[12px] text-surface-400 mt-0.5">
-                    {new Date(log.imported_at).toLocaleString('zh-CN')}
+                    {new Date(log.imported_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                   </p>
                 </div>
                 <button
                   onClick={() => onDelete(log)}
                   disabled={deletingId === log.id}
                   className="p-1.5 rounded-lg text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
-                  title="删除记录"
+                  title={t('deleteRecord')}
                 >
                   {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>

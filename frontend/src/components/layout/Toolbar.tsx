@@ -1,10 +1,11 @@
 import { useEditorStore } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
-import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pencil, PanelRightOpen, PanelRightClose } from 'lucide-react'
+import { Save, FileOutput, ZoomIn, ZoomOut, RotateCcw, Home, Loader2, Check, Pencil, PanelRightOpen, PanelRightClose, Palette, Contrast, Languages } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { TemplateSwitcher } from '../template/TemplateSwitcher'
 import { Tooltip } from '../ui/Tooltip'
+import { useT } from '../../lib/i18n'
 
 interface ToolbarProps {
   onSave: () => void
@@ -20,9 +21,12 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
   const setZoom = useEditorStore((s) => s.setZoom)
   const stylePanelOpen = useEditorStore((s) => s.stylePanelOpen)
   const toggleStylePanel = useEditorStore((s) => s.toggleStylePanel)
+  const grayscale = useEditorStore((s) => s.grayscale)
+  const toggleGrayscale = useEditorStore((s) => s.toggleGrayscale)
   const isDirty = useResumeStore((s) => s.isDirty)
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
+  const t = useT()
 
   const projectName = resume?.meta?.name || ''
   const [editingName, setEditingName] = useState(false)
@@ -61,7 +65,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
     <div className="h-12 flex items-center gap-1 px-3 bg-elev/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
       {/* Left */}
       <div className="flex items-center gap-1">
-        <Tooltip label="返回首页">
+        <Tooltip label={t('backHome')}>
           <button
             onClick={() => (onHome ?? (() => navigate('/')))()}
             className="btn-ghost btn-sm"
@@ -71,7 +75,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
         </Tooltip>
         <div className="w-px h-5 bg-surface-200 mx-1" />
 
-        <Tooltip label="保存 (Ctrl+S)">
+        <Tooltip label={t('saveWith')}>
           <button
             onClick={onSave}
             disabled={saveStatus === 'saving'}
@@ -85,16 +89,16 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
               <Save className="w-4 h-4" />
             )}
             <span className="hidden sm:inline">
-              {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : '保存'}
+              {saveStatus === 'saving' ? t('saving') : saveStatus === 'saved' ? t('saved') : saveStatus === 'error' ? t('saveError') : t('save')}
             </span>
             {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
           </button>
         </Tooltip>
 
-        <Tooltip label="导出 (Ctrl+E)">
+        <Tooltip label={t('exportWith')}>
           <button onClick={onExport} className="btn-secondary btn-sm">
             <FileOutput className="w-4 h-4" />
-            <span className="hidden sm:inline">导出</span>
+            <span className="hidden sm:inline">{t('export')}</span>
           </button>
         </Tooltip>
       </div>
@@ -109,15 +113,15 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             onBlur={commitName}
             onKeyDown={handleNameKeyDown}
             className="text-xs font-medium text-surface-700 bg-surface-100 border border-primary-300 rounded px-2 py-1 w-48 outline-none focus:border-primary-500"
-            placeholder="输入项目名称..."
+            placeholder={t('namePlaceholder')}
           />
         ) : (
-          <Tooltip label="点击编辑项目名称">
+          <Tooltip label={t('editName')}>
             <button
               onClick={startEditing}
               className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors max-w-[200px] truncate"
             >
-              <span className="truncate">{projectName || '未命名项目'}</span>
+              <span className="truncate">{projectName || t('untitledProject')}</span>
               <Pencil className="w-3 h-3 flex-shrink-0 opacity-50" />
             </button>
           </Tooltip>
@@ -128,7 +132,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
           绝对居中脱离 flex 流，不受左侧（保存/导出/项目名）与右侧组宽度变化影响，
           始终稳定在 toolbar 水平正中央。toolbar 容器已设 relative。 */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-        <Tooltip label="缩小">
+        <Tooltip label={t('zoomOut')}>
           <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs">
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -136,12 +140,12 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
         <span className="text-xs text-surface-500 min-w-[42px] text-center tabular-nums">
           {Math.round(zoom * 100)}%
         </span>
-        <Tooltip label="放大">
+        <Tooltip label={t('zoomIn')}>
           <button onClick={() => setZoom(zoom + 0.1)} className="btn-ghost btn-xs">
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
         </Tooltip>
-        <Tooltip label="重置">
+        <Tooltip label={t('zoomReset')}>
           <button onClick={() => setZoom(1.0)} className="btn-ghost btn-xs">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -151,8 +155,25 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
       {/* Right — ml-auto 让它独立推到右端（缩放组已脱离 flex 流不再推它） */}
       <div className="flex items-center gap-1 ml-auto">
         <TemplateSwitcher />
-        {/* 样式排版：呼出/隐藏右侧边栏（页边距、内容间距等收纳其中），置于模板切换右侧 */}
-        <Tooltip label={stylePanelOpen ? '收起样式面板' : '展开样式面板'}>
+        {/* 中英一键切换：翻转简历语言，模板章节标题与编辑器板块名随 .Meta.Language 本地化 */}
+        <button
+          onClick={() => updateField('meta.language', (resume?.meta?.language || 'zh-CN') === 'zh-CN' ? 'en-US' : 'zh-CN')}
+          className="btn-ghost btn-sm inline-flex items-center gap-1"
+          title={t('toggleLanguage')}
+        >
+          <Languages className="w-4 h-4" />
+          <span className="text-xs">{resume?.meta?.language === 'en-US' ? 'English' : '中文'}</span>
+        </button>
+        <Tooltip label={grayscale ? t('grayscaleOff') : t('grayscaleOn')}>
+          <button
+            onClick={toggleGrayscale}
+            className={`btn-ghost btn-sm ${grayscale ? 'bg-surface-100 text-primary-600' : ''}`}
+            title={t('grayscaleOn')}
+          >
+            {grayscale ? <Contrast className="w-4 h-4" /> : <Palette className="w-4 h-4" />}
+          </button>
+        </Tooltip>
+        <Tooltip label={stylePanelOpen ? t('panelCollapse') : t('panelExpand')}>
           <button
             onClick={toggleStylePanel}
             className={`btn-ghost btn-sm ${stylePanelOpen ? 'bg-surface-100 text-primary-600' : ''}`}

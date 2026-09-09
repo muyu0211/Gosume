@@ -1,5 +1,7 @@
 import { useResumeStore, type ItemDeleteKind, type PendingItemDelete } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { useT } from '../../lib/i18n'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 /** 删除条目种类 → 板块 id（用于 getSectionTitle 取实际模块标题）。 */
@@ -14,26 +16,26 @@ const KIND_SECTION_ID: Record<ItemDeleteKind, string> = {
   custom: 'custom',
 }
 
-/** 待删除目标 → 确认文案主体（板块名取自 getSectionTitle，不写死）。 */
-function describeTarget(pending: PendingItemDelete, language?: string): string {
+/** 待删除目标 → 确认文案主体（板块名取自 getSectionTitle，不写死；语言用应用语言）。 */
+function describeTarget(pending: PendingItemDelete, language: string, tt: (k: string) => string): string {
   switch (pending.type) {
     case 'item': {
       const base = getSectionTitle(KIND_SECTION_ID[pending.kind], language)
       const label =
-        pending.kind === 'skill' ? `${base}分组` :
-        pending.kind === 'custom' ? `${base}模块` : base
-      return `这条${label}`
+        pending.kind === 'skill' ? `${base}${tt('groupSuffix')}` :
+        pending.kind === 'custom' ? `${base}${tt('moduleSuffix')}` : base
+      return `${tt('thisItem')}${label}`
     }
     case 'skillItem':
-      return '这个技能'
+      return tt('thisSkill')
     case 'highlight':
-      return '这条关键亮点'
+      return tt('thisHighlight')
     case 'extra':
-      return '这个扩展字段'
+      return tt('thisExtra')
     case 'customItem':
-      return '这个自定义条目'
+      return tt('thisCustomItem')
     case 'customHighlight':
-      return '这条关键亮点'
+      return tt('thisHighlight')
   }
 }
 
@@ -50,15 +52,16 @@ export function ItemDeleteConfirmDialog() {
   const setSkip = useResumeStore((s) => s.setSkipItemDeleteConfirm)
   const confirm = useResumeStore((s) => s.confirmItemDelete)
   const cancel = useResumeStore((s) => s.cancelItemDelete)
-  const language = useResumeStore((s) => s.resume?.meta?.language)
+  const language = useAppStore((s) => s.language)
+  const t = useT()
 
   return (
     <ConfirmDialog
       open={!!pending}
-      title="确认删除"
-      description={pending ? `确定要删除${describeTarget(pending, language)}吗？此操作不可撤销。` : ''}
-      confirmText="删除"
-      cancelText="取消"
+      title={t('deleteConfirmTitle')}
+      description={pending ? `${t('deleteConfirmPrefix')}${describeTarget(pending, language, t)}${t('deleteConfirmSuffix')}` : ''}
+      confirmText={t('delete')}
+      cancelText={t('cancel')}
       danger
       showDontAskAgain
       dontAskAgain={skip}

@@ -1,8 +1,10 @@
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { AVATAR_RADIUS_MIN, AVATAR_RADIUS_MAX, type HeaderLayout, isDoubleColumnCss, detectHeaderLayoutCss } from '../../lib/layoutPresets'
 import { parseCustomCss } from '../../lib/customCss'
 import { loadTemplateContent } from '../../services/templateService'
+import { useT } from '../../lib/i18n'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
@@ -17,18 +19,18 @@ const HINT_DOUBLE_COLUMN = '双栏模板由侧栏固定，不支持切换布局'
 
 // 证件照标准比例预设（宽 / 高）。custom 表示自由调整。
 const RATIO_PRESETS = [
-  { key: 'custom', label: '自定义', ratio: null as number | null },
-  { key: '1x1', label: '1:1（正方形）', ratio: 1 },
-  { key: '1inch', label: '一寸（25×35）', ratio: 25 / 35 },
-  { key: '2inch', label: '二寸（35×53）', ratio: 35 / 53 },
+  { key: 'custom', labelKey: 'ratioCustom', ratio: null as number | null },
+  { key: '1x1', labelKey: 'ratioSquare', ratio: 1 },
+  { key: '1inch', labelKey: 'ratioOneInch', ratio: 25 / 35 },
+  { key: '2inch', labelKey: 'ratioTwoInch', ratio: 35 / 53 },
 ]
 
 // 个人信息区布局预设：头像与文字信息的排布方式。
 // 目前仅前端样式与选中态；切换渲染逻辑后续接入（接入时替换本地 state）。
 const HEADER_LAYOUT_PRESETS = [
-  { key: 'center', label: '居中' },
-  { key: 'avatar-left', label: '头像居左' },
-  { key: 'avatar-right', label: '头像居右' },
+  { key: 'center', labelKey: 'layoutCenter' },
+  { key: 'avatar-left', labelKey: 'layoutAvatarLeft' },
+  { key: 'avatar-right', labelKey: 'layoutAvatarRight' },
 ] as const
 
 type HeaderLayoutKey = (typeof HEADER_LAYOUT_PRESETS)[number]['key']
@@ -96,11 +98,12 @@ function compressImage(file: File): Promise<string> {
 }
 
 export function PersonalSection() {
+  const t = useT()
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
   const updateCustomCss = useResumeStore((s) => s.updateCustomCss)
   const avatarRenderedSize = useResumeStore((s) => s.avatarRenderedSize)
-  const language = resume?.meta?.language
+  const language = useAppStore((s) => s.language)
   const p = resume?.personal
   // 样式定制统一从 custom_css 解析（头像尺寸/圆角/信息区布局）。
   const styleState = parseCustomCss(resume?.custom_css ?? '')
@@ -215,18 +218,18 @@ export function PersonalSection() {
   const readFile = async (file: File) => {
     setPhotoError(null)
     if (!file.type.startsWith('image/')) {
-      setPhotoError('仅支持 JPG/PNG 格式的图片')
+      setPhotoError(t('avatarErrType'))
       return
     }
     if (file.size > MAX_PHOTO_SIZE) {
-      setPhotoError('照片大小不能超过 3MB，请压缩后重试')
+      setPhotoError(t('avatarErrSize'))
       return
     }
     try {
       const compressed = await compressImage(file)
       updateField('personal.avatar', compressed)
     } catch {
-      setPhotoError('照片处理失败，请重试')
+      setPhotoError(t('avatarErrProcess'))
     }
   }
 
@@ -318,11 +321,11 @@ export function PersonalSection() {
         >
           {p.avatar ? (
             <>
-              <img src={p.avatar} alt="头像" className="w-full h-full object-cover" />
+              <img src={p.avatar} alt={t('avatarAlt')} className="w-full h-full object-cover" />
               <button
                 onClick={removeAvatar}
                 className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                title="移除照片"
+                title={t('removePhoto')}
               >
                 <Trash2 className="w-5 h-5 text-white" />
               </button>
@@ -331,18 +334,16 @@ export function PersonalSection() {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex flex-col items-center gap-0.5 text-surface-400 hover:text-primary-500 transition-colors"
-              title="上传照片"
+              title={t('uploadPhoto')}
             >
               <Camera className="w-5 h-5" />
-              <span className="text-[9px]">照片</span>
+              <span className="text-[9px]">{t('photo')}</span>
             </button>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-surface-700">个人照片</p>
-          <p className="text-xs text-surface-400 mt-0.5">
-            点击或拖拽上传证件照，支持 JPG/PNG 格式，最大 3MB
-          </p>
+          <p className="text-sm font-medium text-surface-700">{t('personalPhoto')}</p>
+          <p className="text-xs text-surface-400 mt-0.5">{t('photoHint')}</p>
           {photoError && (
             <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
@@ -364,13 +365,13 @@ export function PersonalSection() {
         <div className="flex items-stretch gap-3 mb-4">
           <div className="flex-[4] min-w-0 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2.5">
             <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-surface-600">简历中显示尺寸</span>
+            <span className="text-xs font-medium text-surface-600">{t('displaySize')}</span>
             <div className="flex items-center gap-2">
               <div className="w-[128px] flex-shrink-0">
                 <CustomSelect
                   value={ratioPreset}
                   onChange={handlePresetChange}
-                  options={RATIO_PRESETS.map((pr) => ({ value: pr.key, label: pr.label }) as SelectOption)}
+                  options={RATIO_PRESETS.map((pr) => ({ value: pr.key, label: t(pr.labelKey) }) as SelectOption)}
                   triggerClassName="!px-2 !py-0.5"
                 />
               </div>
@@ -384,14 +385,14 @@ export function PersonalSection() {
                   }}
                   className="w-3.5 h-3.5 rounded accent-primary-600"
                 />
-                固定比例
+                {t('lockRatio')}
               </label>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
-                <span>宽</span>
+                <span>{t('width')}</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarW}px</span>
               </div>
               <input
@@ -406,7 +407,7 @@ export function PersonalSection() {
             </div>
             <div>
               <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
-                <span>高</span>
+                <span>{t('height')}</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarH}px</span>
               </div>
               <input
@@ -425,8 +426,8 @@ export function PersonalSection() {
           <div className="mt-3">
             <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
               <span className="flex items-center gap-1">
-                <span>圆角</span>
-                {styleState.avatarRadius == null && <span className="text-surface-400">（跟随模板）</span>}
+                <span>{t('cornerRadius')}</span>
+                {styleState.avatarRadius == null && <span className="text-surface-400">{t('followTemplate')}</span>}
               </span>
               <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? avatarRenderedSize?.radius ?? 0}</span>
             </div>
@@ -437,20 +438,20 @@ export function PersonalSection() {
               onChange={(v) => updateCustomCss({ avatarRadius: v })}
               className="w-full accent-primary-600"
             />
-            <p className="text-[10px] text-surface-400 mt-1">0=直角矩形 · 100=圆形，仅作用于当前简历。</p>
+            <p className="text-[10px] text-surface-400 mt-1">{t('radiusHint')}</p>
           </div>
           </div>
 
           {/* 信息区布局：切换头像与文字排布；仅当前简历，双栏模板禁用。 */}
           <div className="flex-1 p-3 rounded-lg border border-surface-200 bg-surface-50/60 flex flex-col">
-            <p className="text-xs font-medium text-surface-600 mb-2">信息区布局</p>
+            <p className="text-xs font-medium text-surface-600 mb-2">{t('headerLayout')}</p>
             <div className="flex flex-col justify-between gap-1.5 flex-1">
               {HEADER_LAYOUT_PRESETS.map((preset) => {
                 const active = effectiveLayout === preset.key
                 return (
                   <Tooltip
                     key={preset.key}
-                    label={isDoubleColumn ? HINT_DOUBLE_COLUMN : preset.label}
+                    label={isDoubleColumn ? t('hintDoubleColumn') : t(preset.labelKey)}
                     className="flex-1 min-h-0"
                   >
                     <button
@@ -479,31 +480,31 @@ export function PersonalSection() {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="form-label">姓名 *</label>
+          <label className="form-label">{t('fullName')}</label>
           <input className="form-input" value={p.full_name || ''} onChange={handleChange('full_name')} placeholder="张三" maxLength={50} />
         </div>
         <div>
-          <label className="form-label">英文名</label>
+          <label className="form-label">{t('englishName')}</label>
           <input className="form-input" value={p.english_name || ''} onChange={handleChange('english_name')} placeholder="San Zhang" maxLength={100} />
         </div>
         <div>
-          <label className="form-label">职位</label>
+          <label className="form-label">{t('jobTitle')}</label>
           <input className="form-input" value={p.job_title || ''} onChange={handleChange('job_title')} placeholder="高级前端工程师" maxLength={100} />
         </div>
         <div>
-          <label className="form-label">邮箱</label>
+          <label className="form-label">{t('email')}</label>
           <input className="form-input" value={p.email || ''} onChange={handleChange('email')} type="email" placeholder="zhangsan@example.com" maxLength={100} />
         </div>
         <div>
-          <label className="form-label">手机</label>
+          <label className="form-label">{t('phone')}</label>
           <input className="form-input" value={p.phone || ''} onChange={handleChange('phone')} placeholder="138-0000-0000" maxLength={30} />
         </div>
         <div>
-          <label className="form-label">所在城市</label>
+          <label className="form-label">{t('location')}</label>
           <input className="form-input" value={p.location || ''} onChange={handleChange('location')} placeholder="北京" maxLength={100} />
         </div>
         <div>
-          <label className="form-label">个人网站</label>
+          <label className="form-label">{t('website')}</label>
           <input className="form-input" value={p.website || ''} onChange={handleChange('website')} placeholder="https://zhangsan.dev" maxLength={200} />
         </div>
         <div>
@@ -515,11 +516,11 @@ export function PersonalSection() {
           <input className="form-input" value={p.linkedin || ''} onChange={handleChange('linkedin')} placeholder="https://linkedin.com/in/zhangsan" maxLength={200} />
         </div>
         <div>
-          <label className="form-label">微信</label>
-          <input className="form-input" value={p.wechat || ''} onChange={handleChange('wechat')} placeholder="微信号" maxLength={50} />
+          <label className="form-label">{t('wechat')}</label>
+          <input className="form-input" value={p.wechat || ''} onChange={handleChange('wechat')} placeholder={t('wechatPlaceholder')} maxLength={50} />
         </div>
         <div className="col-span-2">
-          <label className="form-label">工作年限</label>
+          <label className="form-label">{t('yearsOfExp')}</label>
           <input className="form-input" value={p.years_of_exp || ''} onChange={(e) => updateField('personal.years_of_exp', parseInt(e.target.value) || 0)} type="number" min={0} max={50} placeholder="5" />
         </div>
       </div>

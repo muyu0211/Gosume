@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import type { CustomSection as CustomSectionModel, CustomItem } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, Layers, GripVertical, EyeOff } from 'lucide-react'
 import { MonthPicker } from '../ui/MonthPicker'
@@ -7,6 +8,7 @@ import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { useT } from '../../lib/i18n'
 
 /**
  * 自定义模块编辑器（编辑页左侧「自定义」板块）。
@@ -17,7 +19,8 @@ import { getSectionTitle } from '../../lib/resumeSections'
  * 交互与 ExperienceSection / AwardSection 保持一致（折叠态头部 + 展开表单 + 拖拽排序 + 显示开关 + 删除二确）。
  */
 export function CustomSection() {
-  const language = useResumeStore((s) => s.resume?.meta?.language)
+  const t = useT()
+  const language = useAppStore((s) => s.language)
   const sections = useResumeStore((s) => s.resume?.custom) || []
   const addSection = useResumeStore((s) => s.addCustomSection)
   const updateSection = useResumeStore((s) => s.updateCustomSection)
@@ -38,7 +41,7 @@ export function CustomSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">{getSectionTitle('custom', language)}模块</span>
+          <span className="form-section-title">{getSectionTitle('custom', language)}{t('moduleSuffix')}</span>
           <span className="text-xs text-surface-400">({sections.length})</span>
         </div>
         <button
@@ -49,7 +52,7 @@ export function CustomSection() {
           className="btn-primary btn-xs"
         >
           <Plus className="w-3 h-3" />
-          添加模块
+          {t('addModule')}
         </button>
       </div>
 
@@ -89,7 +92,7 @@ export function CustomSection() {
                   value={section.title || ''}
                   onChange={(e) => updateSection(idx, { title: e.target.value })}
                   onClick={(e) => e.stopPropagation()}
-                  placeholder="未命名模块"
+                  placeholder={t('unnamedModule')}
                   maxLength={50}
                 />
                 <VisibilityToggle
@@ -121,7 +124,7 @@ export function CustomSection() {
 
         {sections.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">
-            暂无模块，点击上方"添加模块"按钮开始
+            {t('emptyAddModule')}
           </div>
         )}
       </div>
@@ -131,6 +134,7 @@ export function CustomSection() {
 
 /** 单个自定义模块下的条目列表（模块内拖拽排序，每模块一份独立的拖拽状态）。 */
 function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; section: CustomSectionModel }) {
+  const t = useT()
   const addItem = useResumeStore((s) => s.addCustomItem)
   const updateItem = useResumeStore((s) => s.updateCustomItem)
   const moveItem = useResumeStore((s) => s.moveCustomItem)
@@ -152,7 +156,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-surface-400">条目 ({items.length})</span>
+        <span className="text-xs text-surface-400">{t('entry')} ({items.length})</span>
         <button
           onClick={() => {
             addItem(sectionIndex)
@@ -161,7 +165,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
           className="btn-ghost btn-xs text-primary-600"
         >
           <Plus className="w-3 h-3" />
-          添加条目
+          {t('addEntry')}
         </button>
       </div>
 
@@ -199,12 +203,12 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
-                    {titleText || '未命名条目'}
+                    {titleText || t('unnamedEntry')}
                   </span>
                   {isHidden && (
                     <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
                       <EyeOff className="w-2.5 h-2.5" />
-                      已隐藏
+                      {t('hidden')}
                     </span>
                   )}
                 </div>
@@ -228,47 +232,47 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                 <div className="collapse-inner">
                   <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div>
-                    <label className="form-label">条目标题</label>
+                    <label className="form-label">{t('entryTitle')}</label>
                     <RichTextField
                       variant="inline"
                       minHeight={36}
                       value={item.title || ''}
                       onChange={(v) => updateItem(sectionIndex, idx, { title: v })}
-                      placeholder="条目标题，支持加粗/斜体/链接/颜色"
+                      placeholder={t('entryTitlePlaceholder')}
                       maxLength={100}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="form-label">副标题</label>
+                      <label className="form-label">{t('subtitle')}</label>
                       <input
                         className="form-input"
                         value={item.subtitle || ''}
                         onChange={(e) => updateItem(sectionIndex, idx, { subtitle: e.target.value })}
-                        placeholder="如：公司 / 机构 / 出版方"
+                        placeholder={t('subtitlePlaceholder')}
                         maxLength={100}
                       />
                     </div>
                     <div>
-                      <label className="form-label">日期</label>
+                      <label className="form-label">{t('date')}</label>
                       <MonthPicker
                         value={item.date || ''}
                         onChange={(v) => updateItem(sectionIndex, idx, { date: v })}
-                        placeholder="选择日期"
+                        placeholder={t('datePlaceholder')}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">条目内容</label>
+                    <label className="form-label">{t('entryContent')}</label>
                     <RichTextField
                       value={item.description || ''}
                       onChange={(v) => updateItem(sectionIndex, idx, { description: v })}
-                      placeholder="详细描述该条目的内容..."
+                      placeholder={t('entryContentPlaceholder')}
                       maxLength={1000}
                     />
                   </div>
                   <div>
-                    <label className="form-label">关键亮点</label>
+                    <label className="form-label">{t('keyHighlights')}</label>
                     <HighlightsEditor
                       highlights={item.highlights || []}
                       onChange={(highlights) => updateItem(sectionIndex, idx, { highlights })}
@@ -284,7 +288,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
 
         {items.length === 0 && (
           <div className="text-center py-4 text-sm text-surface-400">
-            暂无条目，点击上方"添加条目"按钮开始
+            {t('emptyAddEntry')}
           </div>
         )}
       </div>
@@ -302,6 +306,7 @@ function HighlightsEditor({
   onChange: (h: string[]) => void
   onRequestRemove: (highlightIndex: number) => void
 }) {
+  const t = useT()
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
     const updated = [...highlights]
@@ -322,7 +327,7 @@ function HighlightsEditor({
             minHeight={36}
             value={h}
             onChange={(v) => updateHighlight(i, v)}
-            placeholder={`亮点 ${i + 1}`}
+            placeholder={`${t('highlights')} ${i + 1}`}
             maxLength={500}
           />
           <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
@@ -332,7 +337,7 @@ function HighlightsEditor({
       ))}
       <button onClick={addHighlight} className="btn-ghost btn-xs text-primary-600">
         <Plus className="w-3 h-3" />
-        添加亮点
+        {t('addHighlight')}
       </button>
     </div>
   )

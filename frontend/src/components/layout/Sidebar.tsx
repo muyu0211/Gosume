@@ -1,5 +1,6 @@
 import { useEditorStore } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { User, Briefcase, GraduationCap, Code, FolderGit2, Languages, Award, Plus, FileOutput, Building } from 'lucide-react'
 import { Tooltip } from '../ui/Tooltip'
@@ -28,7 +29,7 @@ export function Sidebar({ onExport }: SidebarProps) {
   // 预览点击跳转产生的闪烁信号：命中激活 tab 时叠加闪烁动画提醒用户已跳转。
   const flashSection = useEditorStore((s) => s.flashSection)
   const flashNonce = useEditorStore((s) => s.flashNonce)
-  const language = useResumeStore((s) => s.resume?.meta?.language)
+  const language = useAppStore((s) => s.language)
 
   return (
     <div className="w-[56px] bg-surface-100 flex flex-col items-center py-3 gap-0.5 flex-shrink-0 border-r border-surface-200">

@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -109,7 +110,7 @@ func (s *ExportService) GetResumeContentHeight(htmlContent string, scale float64
 	h, err := s.browserManager.MeasureContentHeight(htmlContent, scale)
 	if err != nil {
 		log.Errorf("[export_service] GetResumeContentHeight: 测量内容高度失败: %v", err)
-		return util.DoRsp(util.ErrCode, "测量内容高度失败", err)
+		return util.DoRsp(util.ErrCode, browserFailMsg(err, "测量内容高度失败"), nil)
 	}
 	log.Infof("[export_service] GetResumeContentHeight: 内容高度=%d", h)
 	return util.DoRsp(util.SuccCode, "测量内容高度成功", h)
@@ -152,10 +153,23 @@ func (s *ExportService) renderOne(htmlContent string, opts template_export.Expor
 
 	if err != nil {
 		log.Errorf("导出失败, err: %v", err)
-		return nil, util.DoRsp(util.ErrCode, "导出失败", nil)
+		return nil, util.DoRsp(util.ErrCode, browserFailMsg(err, "导出失败"), nil)
 	}
 
 	return data, nil
+}
+
+// browserFailMsg 生成渲染/测量失败时面向用户的提示。
+//
+// 无头浏览器启动或连接失败时，底层错误已带出可操作建议（见
+// template_export.BrowserLaunchError），直接透传；其余情况回退通用文案，
+// 避免把 "fork/exec ..." 之类的技术细节抛给用户。
+func browserFailMsg(err error, fallback string) string {
+	var launchErr *template_export.BrowserLaunchError
+	if errors.As(err, &launchErr) && launchErr.Message != "" {
+		return launchErr.Message
+	}
+	return fallback
 }
 
 // showSaveDialog 弹出保存对话框让用户选择保存位置。

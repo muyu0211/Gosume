@@ -11,6 +11,7 @@ import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
 import { Expandable } from '../ui/Expandable'
 import { Modal, type ModalHandle } from '../ui/Modal'
+import { useT } from '../../lib/i18n'
 
 const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
 /** 一页 PDF 的 PNG 渲染像素密度（固定，不向用户暴露清晰度选项）。 */
@@ -21,10 +22,10 @@ interface Props {
 }
 
 const formats = [
-  { id: 'pdf' as const, label: 'PDF 文档', desc: '适合打印和投递，保留完整排版和超链接', icon: FileText },
-  { id: 'png' as const, label: 'PNG 图片', desc: '高清截图，用于在线预览和分享', icon: Image },
-  { id: '单页pdf' as const, label: '单页 PDF', desc: '将全部内容压缩为单页，内容超高时字体会缩小, 适合内容略微超出一页的场景', icon: FileText },
-  { id: 'gosume' as const, label: '可编辑简历 (.gosume)', desc: '保存为可继续编辑的简历，可暂存备份、发送他人或换设备继续编辑', icon: FileJson },
+  { id: 'pdf' as const, labelKey: 'fmtPdf', descKey: 'fmtPdfDesc', icon: FileText },
+  { id: 'png' as const, labelKey: 'fmtPng', descKey: 'fmtPngDesc', icon: Image },
+  { id: '单页pdf' as const, labelKey: 'fmtSinglePdf', descKey: 'fmtSinglePdfDesc', icon: FileText },
+  { id: 'gosume' as const, labelKey: 'fmtGosume', descKey: 'fmtGosumeDesc', icon: FileJson },
 ]
 
 type ExportFormat = (typeof formats)[number]['id']
@@ -32,6 +33,7 @@ type ExportFormat = (typeof formats)[number]['id']
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
 
 export function ExportDialog({ onClose }: Props) {
+  const t = useT()
   const resume = useResumeStore((s) => s.resume)
   const contentHeight = useResumeStore((s) => s.contentHeight)
   const templates = useTemplateStore((s) => s.templates)
@@ -94,10 +96,10 @@ export function ExportDialog({ onClose }: Props) {
       setTimeout(() => modalRef.current?.close(), 800)
     } catch (err) {
       console.error('Export failed:', err)
-      setErrorMsg(extractErrorMessage(err, '导出失败，请重试'))
+      setErrorMsg(extractErrorMessage(err, t('exportFailedRetry')))
       setStatus('error')
     }
-  }, [resume, selectedFormat, scale])
+  }, [resume, selectedFormat, scale, t])
 
   return (
     <Modal ref={modalRef} onClose={onClose} width="w-[480px]" cardClassName="overflow-auto">
@@ -107,7 +109,7 @@ export function ExportDialog({ onClose }: Props) {
           <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
             <Download className="w-5 h-5 text-primary-600" />
           </div>
-          <h2 className="text-lg font-semibold text-surface-800">导出简历</h2>
+          <h2 className="text-lg font-semibold text-surface-800">{t('exportResume')}</h2>
         </div>
         <button onClick={() => modalRef.current?.close()} className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors">
           <X className="w-5 h-5" />
@@ -117,9 +119,9 @@ export function ExportDialog({ onClose }: Props) {
       {/* Content */}
       <div className="p-6 space-y-5">
           <div>
-            <label className="text-sm font-medium text-surface-600 mb-3 block">选择格式</label>
+            <label className="text-sm font-medium text-surface-600 mb-3 block">{t('chooseFormat')}</label>
             <div className="space-y-2">
-              {formats.map(({ id, label, desc, icon: Icon }) => (
+              {formats.map(({ id, labelKey, descKey, icon: Icon }) => (
                 <label
                   key={id}
                   className={`flex items-start gap-3.5 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
@@ -138,8 +140,8 @@ export function ExportDialog({ onClose }: Props) {
                   />
                   <Icon className={`w-5 h-5 mt-0.5 ${selectedFormat === id ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div>
-                    <p className="text-sm font-medium text-surface-700">{label}</p>
-                    <p className="text-xs text-surface-400 mt-0.5">{desc}</p>
+                    <p className="text-sm font-medium text-surface-700">{t(labelKey)}</p>
+                    <p className="text-xs text-surface-400 mt-0.5">{t(descKey)}</p>
                   </div>
                 </label>
               ))}
@@ -148,7 +150,7 @@ export function ExportDialog({ onClose }: Props) {
 
           <Expandable show={selectedFormat === 'png'} gapTop={20}>
             <div>
-              <label className="text-sm font-medium text-surface-600 mb-3 block">清晰度</label>
+              <label className="text-sm font-medium text-surface-600 mb-3 block">{t('clarity')}</label>
               <div className="flex gap-2">
                 {[
                   { value: 1, label: '1x' },
@@ -174,10 +176,10 @@ export function ExportDialog({ onClose }: Props) {
           {/* 一页 PDF：内容高度提示（由导出入口的保存动作更新 contentHeight，130% 仅为建议阈值不阻止导出） */}
           <Expandable show={selectedFormat === '单页pdf'} gapTop={20}>
             <div>
-              <label className="text-sm font-medium text-surface-600 mb-2 block">内容高度参考</label>
+              <label className="text-sm font-medium text-surface-600 mb-2 block">{t('heightRef')}</label>
               {heightLevel == null ? (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-100 text-surface-500 text-sm">
-                  保存简历后自动计算内容高度，用于判断一页导出的观感
+                  {t('heightNeedSave')}
                 </div>
               ) : (
                 <div
@@ -192,10 +194,10 @@ export function ExportDialog({ onClose }: Props) {
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>
                     {heightLevel === 'over'
-                      ? `当前内容约为一页的 ${heightPercent}%，超出较多。单页导出会按比例缩小宽度，字体/内容明显变小，建议使用普通 PDF 导出。`
+                      ? t('heightOver').replace('{pct}', String(heightPercent))
                       : heightLevel === 'ok'
-                      ? `当前内容约为一页的 ${heightPercent}%，仅轻微超出，一页导出观感良好，推荐使用。`
-                      : `当前内容约为一页的 ${heightPercent}%，一页内完整放下，一页导出不会压缩。`}
+                      ? t('heightOk').replace('{pct}', String(heightPercent))
+                      : t('heightFit').replace('{pct}', String(heightPercent))}
                   </span>
                 </div>
               )}
@@ -206,14 +208,14 @@ export function ExportDialog({ onClose }: Props) {
             {status === 'exporting' && (
               <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
                 <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                <span className="text-sm text-blue-700">正在导出 {selectedFormat.toUpperCase()}...</span>
+                <span className="text-sm text-blue-700">{t('exportingFmt').replace('{fmt}', selectedFormat.toUpperCase())}</span>
               </div>
             )}
 
             {status === 'done' && (
               <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
                 <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm text-emerald-700">导出完成！</span>
+                <span className="text-sm text-emerald-700">{t('exportDone')}</span>
               </div>
             )}
 
@@ -229,7 +231,7 @@ export function ExportDialog({ onClose }: Props) {
         {/* Footer */}
         <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-surface-100">
           <button onClick={() => modalRef.current?.close()} className="btn-secondary" disabled={status === 'exporting'}>
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handleExport}
@@ -243,7 +245,7 @@ export function ExportDialog({ onClose }: Props) {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            {status === 'exporting' ? '导出中...' : status === 'done' ? '已完成' : selectedFormat === 'gosume' ? '导出可编辑简历' : `导出${selectedFormat.toUpperCase()}`}
+            {status === 'exporting' ? t('exporting') : status === 'done' ? t('done') : selectedFormat === 'gosume' ? t('exportEditable') : t('exportFmt').replace('{fmt}', selectedFormat.toUpperCase())}
           </button>
         </div>
     </Modal>

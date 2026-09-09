@@ -1,0 +1,70 @@
+Gosume — Proprietary Software License
+
+Copyright (c) 2026 Muyu. All rights reserved.
+
+Gosume is proprietary, closed-source software. The source code is not
+publicly available and is not licensed under any open source license.
+
+No permission is granted, expressly or implied, to:
+
+  1. copy, reproduce, modify, adapt or create derivative works of this
+     software or any part of it;
+  2. distribute, publish, sublicense, sell, rent, lease or lend copies of
+     this software, in whole or in part;
+  3. reverse engineer, decompile or disassemble this software, except to
+     the extent such restriction is prohibited by applicable law;
+  4. remove or alter any copyright, trademark or other proprietary notices
+     contained in this software.
+
+You may use the distributed binary of Gosume solely in accordance with the
+end user license agreement (EULA) accompanying the release, if any.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Written permission from the copyright holder is required for any use not
+expressly permitted above. Contact: see the project repository.
+
+---
+
+Third-party components
+
+This software incorporates third-party components distributed under their own
+open source licenses (including MIT, BSD and Apache-2.0). Those components
+remain subject to their respective licenses, and the terms above apply only to
+the Gosume source code itself, not to such third-party components. Required
+attribution and license texts are listed in THIRD_PARTY_NOTICES.md.
+
+---
+
+Gosume — 专有软件许可
+
+版权所有 (c) 2026 Muyu。保留所有权利。
+
+Gosume 为专有闭源软件，源码不对外公开，亦不适用任何开源许可证。
+
+未经著作权人事先书面许可，不得进行下列行为：
+
+  1. 复制、修改、改编本软件之全部或部分，或创作其衍生作品；
+  2. 分发、发布、再许可、销售、出租、出借本软件之全部或部分；
+  3. 对本软件进行逆向工程、反编译或反汇编，但适用法律禁止该限制的除外；
+  4. 移除或更改本软件中的任何著作权、商标或其他权利声明。
+
+你可以依据随发行版本提供的最终用户许可协议（EULA，如有）使用本软件的二进制
+发行版本。
+
+本软件按「现状」提供，不附有任何明示或默示的担保，包括但不限于对适销性、
+特定用途适用性和非侵权性的担保。在任何情况下，著作权人均不对因本软件或本
+软件的使用或其他交易而产生或与之相关的任何索赔、损害或其他责任负责。
+
+上述未明确许可的任何使用，均须取得著作权人的书面许可。
+
+第三方组件
+
+本软件包含依其各自开源许可证（含 MIT、BSD、Apache-2.0）分发的第三方组件。
+该等组件仍受其各自许可证约束，上述条款仅适用于 Gosume 自身源码，不适用于
+该等第三方组件。所需的署名与许可证文本见 THIRD_PARTY_NOTICES.md。

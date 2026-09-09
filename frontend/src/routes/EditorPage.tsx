@@ -168,21 +168,32 @@ export function EditorPage() {
 
           {/* Resize handle */}
           <div
-            className="w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors flex-shrink-0"
-            onMouseDown={(e) => {
+            className="w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors flex-shrink-0 touch-none"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              // 指针捕获：拖拽期间鼠标滑入预览 iframe/其他区域时，pointermove/pointerup
+              // 仍派发给本元素，避免 mouseup 被 iframe 吃掉导致监听残留（松开后边栏仍跟随鼠标漂移）。
+              e.currentTarget.setPointerCapture(e.pointerId)
               const startX = e.clientX
               const startRatio = splitRatio
               const containerWidth = splitRef.current?.clientWidth ?? window.innerWidth
-              const onMove = (ev: MouseEvent) => {
+              const onMove = (ev: PointerEvent) => {
+                // 兜底：窗口外松开时可能收不到 pointerup，靠 buttons 判断避免残留拖动。
+                if (ev.buttons === 0) {
+                  onUp()
+                  return
+                }
                 const dx = ev.clientX - startX
                 setSplitRatio(startRatio + dx / containerWidth)
               }
               const onUp = () => {
-                document.removeEventListener('mousemove', onMove)
-                document.removeEventListener('mouseup', onUp)
+                document.removeEventListener('pointermove', onMove)
+                document.removeEventListener('pointerup', onUp)
+                document.removeEventListener('pointercancel', onUp)
               }
-              document.addEventListener('mousemove', onMove)
-              document.addEventListener('mouseup', onUp)
+              document.addEventListener('pointermove', onMove)
+              document.addEventListener('pointerup', onUp)
+              document.addEventListener('pointercancel', onUp)
             }}
           />
 

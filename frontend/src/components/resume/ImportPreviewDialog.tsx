@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import { X, Loader2, Check, AlertTriangle, FileJson, FilePlus2, RefreshCw } from 'lucide-react'
 import { callService } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
+import { useT } from '../../lib/i18n'
+import { useAppStore } from '../../stores/appStore'
 import { useResumeStore } from '../../stores/resumeStore'
 import { useTemplateStore } from '../../stores/templateStore'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
@@ -28,6 +30,8 @@ type ImportMode = 'new' | 'overwrite'
  * - 导入方式：新建（默认）/ 覆盖已有简历（二次确认，危险操作）。
  */
 export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
+  const t = useT()
+  const lang = useAppStore((s) => s.language)
   const resumeList = useResumeStore((s) => s.resumeList)
   const templates = useTemplateStore((s) => s.templates)
 
@@ -75,7 +79,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
       }
     } catch (err) {
       console.error('Import gosume file failed:', err)
-      setError(extractErrorMessage(err, '导入失败，请重试'))
+      setError(extractErrorMessage(err, t('importFailedRetry')))
     } finally {
       setImporting(false)
       setConfirmOverwrite(false)
@@ -94,12 +98,12 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
 
   const summary = preview.summary
   const stats = [
-    { label: '工作', value: summary.jobs },
-    { label: '教育', value: summary.education },
-    { label: '项目', value: summary.projects },
-    { label: '技能', value: summary.skills },
-    { label: '语言', value: summary.languages },
-    { label: '证书', value: summary.awards },
+    { label: t('statJobs'), value: summary.jobs },
+    { label: t('statEducation'), value: summary.education },
+    { label: t('statProjects'), value: summary.projects },
+    { label: t('statSkills'), value: summary.skills },
+    { label: t('statLanguages'), value: summary.languages },
+    { label: t('statAwards'), value: summary.awards },
   ]
 
   return (
@@ -111,7 +115,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
               <FileJson className="w-4 h-4 text-primary-600" />
             </div>
-            <h2 className="text-base font-semibold text-surface-800">导入简历</h2>
+            <h2 className="text-base font-semibold text-surface-800">{t('importResume')}</h2>
           </div>
           <button
             onClick={() => modalRef.current?.close()}
@@ -127,10 +131,10 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
           {/* 预览摘要 */}
           <div className="rounded-xl border border-surface-200 bg-surface-50/50 p-4">
             <p className="text-base font-semibold text-surface-800 truncate">
-              {summary.name || '未命名简历'}
+              {summary.name || t('resumeTitlePlaceholder')}
             </p>
             <p className="text-xs text-surface-400 mt-1">
-                {new Date(preview.exported_at).toLocaleString('zh-CN')}
+                {new Date(preview.exported_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                 {preview.app_version ? ` · Gosume v${preview.app_version}` : ''}
               </p>
               <div className="flex flex-wrap gap-1.5 mt-3">
@@ -147,31 +151,30 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
 
             {/* 模板区 */}
             <div>
-              <label className="text-sm font-medium text-surface-600 mb-2 block">模板</label>
+              <label className="text-sm font-medium text-surface-600 mb-2 block">{t('template')}</label>
               {templateMatched ? (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-sm text-emerald-700">
                   <Check className="w-4 h-4 shrink-0" />
-                  <span>原模板可用：{matchedTemplateName}</span>
+                  <span>{t('originalTemplateAvailable').replace('{name}', matchedTemplateName)}</span>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-sm text-amber-700">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>
-                      原模板「{preview.template.referenced_name || '未知'}」在当前环境不可用。
-                      数据不受影响，请选择替代模板（仅样式变化，内容完整保留）。
+                      {t('originalTemplateMissing').replace('{name}', preview.template.referenced_name || t('unknownTemplate'))}
                     </span>
                   </div>
                   <CustomSelect
                     value={chosenTemplateId}
                     onChange={setChosenTemplateId}
-                    options={preview.template.available.map((t) => ({
-                      value: t.id,
-                      label: t.name,
-                      hint: t.is_builtin ? '内置模板' : `用户模板 · v${t.version || ''}`,
+                    options={preview.template.available.map((av) => ({
+                      value: av.id,
+                      label: av.name,
+                      hint: av.is_builtin ? t('builtinTemplate') : t('userTemplateVersion').replace('{version}', av.version || ''),
                     }))}
-                    placeholder="请选择替代模板"
-                    emptyText="当前没有可用模板，请先导入模板"
+                    placeholder={t('selectReplacementTemplate')}
+                    emptyText={t('noAvailableTemplates')}
                   />
                 </div>
               )}
@@ -179,7 +182,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
 
             {/* 导入方式 */}
             <div>
-              <label className="text-sm font-medium text-surface-600 mb-2 block">导入方式</label>
+              <label className="text-sm font-medium text-surface-600 mb-2 block">{t('importMethod')}</label>
               <div className="space-y-2">
                 <label
                   className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
@@ -195,8 +198,8 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                   />
                   <FilePlus2 className={`w-5 h-5 mt-0.5 ${mode === 'new' ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div>
-                    <p className="text-sm font-medium text-surface-700">新建简历</p>
-                    <p className="text-xs text-surface-400 mt-0.5">导入为一份全新的简历，保留现有简历不变（推荐）</p>
+                    <p className="text-sm font-medium text-surface-700">{t('newResumeOption')}</p>
+                    <p className="text-xs text-surface-400 mt-0.5">{t('newResumeDesc')}</p>
                   </div>
                 </label>
 
@@ -214,8 +217,8 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                   />
                   <RefreshCw className={`w-5 h-5 mt-0.5 ${mode === 'overwrite' ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-surface-700">覆盖已有简历</p>
-                    <p className="text-xs text-surface-400 mt-0.5">用导入内容替换所选简历的全部数据（危险操作）</p>
+                    <p className="text-sm font-medium text-surface-700">{t('overwriteResumeOption')}</p>
+                    <p className="text-xs text-surface-400 mt-0.5">{t('overwriteResumeDesc')}</p>
                   </div>
                 </label>
                 <Expandable show={mode === 'overwrite'} className="pl-8" gapTop={8}>
@@ -224,11 +227,11 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                     onChange={setTargetId}
                     options={resumeList.map((r) => ({
                       value: r.id,
-                      label: r.name || '未命名简历',
-                      hint: new Date(r.updated_at).toLocaleString('zh-CN'),
+                      label: r.name || t('resumeTitlePlaceholder'),
+                      hint: new Date(r.updated_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN'),
                     }))}
-                    placeholder="请选择要覆盖的简历"
-                    emptyText="暂无简历可覆盖，请先创建简历"
+                    placeholder={t('selectTargetResume')}
+                    emptyText={t('noResumeToOverwrite')}
                   />
                 </Expandable>
               </div>
@@ -244,7 +247,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             <Expandable show={importing} gapTop={20}>
               <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
                 <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                <span className="text-sm text-blue-700">正在导入...</span>
+                <span className="text-sm text-blue-700">{t('importingElipsis')}</span>
               </div>
             </Expandable>
           </div>
@@ -252,7 +255,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
           {/* Footer — 固定在底部，不参与滚动 */}
           <div className="flex justify-end gap-2.5 px-6 py-3 border-t border-surface-100 flex-shrink-0 bg-elev">
             <button onClick={() => modalRef.current?.close()} className="btn-secondary" disabled={importing}>
-              取消
+              {t('cancel')}
             </button>
             <button
               onClick={handleImport}
@@ -260,7 +263,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
               className="btn-primary gap-2"
             >
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'overwrite' ? <RefreshCw className="w-4 h-4" /> : <FilePlus2 className="w-4 h-4" />}
-              {mode === 'overwrite' ? '覆盖导入' : '新建导入'}
+              {mode === 'overwrite' ? t('overwriteImportBtn') : t('newImportBtn')}
             </button>
           </div>
       </Modal>
@@ -268,9 +271,9 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
       {/* 覆盖二次确认（危险操作） */}
       <ConfirmDialog
         open={confirmOverwrite}
-        title="覆盖已有简历"
-        description={`将用导入内容覆盖「${targetName}」的全部现有数据，此操作不可恢复。确定继续吗？`}
-        confirmText="确认覆盖"
+        title={t('overwriteResumeOption')}
+        description={t('overwriteConfirmDesc').replace('{name}', targetName)}
+        confirmText={t('confirmOverwriteBtn')}
         danger
         loading={importing}
         onConfirm={() => void doImport()}

@@ -13,6 +13,8 @@ interface EditorState {
   flashNonce: number
   stylePanelOpen: boolean
   stylePanelWidth: number
+  /** 黑白打印预览：为 true 时预览内容以灰度展示，模拟无彩打印效果。 */
+  grayscale: boolean
 
   setActiveSection: (section: string) => void
   jumpToSection: (section: string) => void
@@ -20,6 +22,7 @@ interface EditorState {
   setSplitRatio: (ratio: number) => void
   toggleStylePanel: () => void
   setStylePanelWidth: (width: number) => void
+  toggleGrayscale: () => void
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -31,6 +34,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   // 默认展开右边栏，避免新用户发现不了样式排版功能；用户可手动收起。
   stylePanelOpen: true,
   stylePanelWidth: STYLE_PANEL_DEFAULT_WIDTH,
+  grayscale: false,
 
   setActiveSection: (section) => set({ activeSection: section }),
   jumpToSection: (section) =>
@@ -40,4 +44,5 @@ export const useEditorStore = create<EditorState>((set) => ({
   toggleStylePanel: () => set((s) => ({ stylePanelOpen: !s.stylePanelOpen })),
   setStylePanelWidth: (width) =>
     set({ stylePanelWidth: Math.max(STYLE_PANEL_MIN_WIDTH, Math.min(STYLE_PANEL_MAX_WIDTH, width)) }),
+  toggleGrayscale: () => set((s) => ({ grayscale: !s.grayscale })),
 }))

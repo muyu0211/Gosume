@@ -1,6 +1,7 @@
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { RichTextField } from '../ui/RichTextField'
+import { useT } from '../../lib/i18n'
 import type { ExtraField } from '../../types/resume'
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
  * Each extra has a label (the key) and a multi-line value. Supports drag-to-reorder.
  */
 export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
+  const t = useT()
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
 
   function moveItem(from: number, to: number) {
@@ -58,7 +60,7 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             onDragStart={() => onDragStart(i)}
             onDragEnd={onDragEnd}
             className="cursor-grab active:cursor-grabbing p-1 mt-1.5 text-surface-300 hover:text-primary-500 flex-shrink-0"
-            title="拖拽排序"
+            title={t('dragReorder')}
           >
             <GripVertical className="w-3.5 h-3.5" />
           </div>
@@ -66,7 +68,7 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             className="form-input text-sm !w-24 !flex-shrink-0 h-[2.25rem] min-h-[2.25rem]"
             value={extra.label}
             onChange={(e) => updateExtra(i, { label: e.target.value })}
-            placeholder="字段名"
+            placeholder={t('fieldName')}
             maxLength={30}
           />
           <RichTextField
@@ -77,17 +79,17 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             showCount={false}
             value={extra.value}
             onChange={(v) => updateExtra(i, { value: v })}
-            placeholder="字段值（如：React, Go，可加粗）"
+            placeholder={t('fieldValuePlaceholder')}
             maxLength={300}
           />
-          <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0" title="删除">
+          <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0" title={t('delete')}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ))}
       <button onClick={addExtra} className="btn-ghost btn-xs text-primary-600">
         <Plus className="w-3 h-3" />
-        添加扩展项
+        {t('addExtraField')}
       </button>
     </div>
   )

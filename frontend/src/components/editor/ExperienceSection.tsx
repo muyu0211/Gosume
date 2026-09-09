@@ -7,6 +7,7 @@ import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { ExtrasEditor } from './ExtrasEditor'
+import { useT } from '../../lib/i18n'
 
 interface Props {
   type: 'jobs' | 'projects' | 'internships'
@@ -16,6 +17,7 @@ interface Props {
 type Entry = Job | Project | Internship
 
 export function ExperienceSection({ type, title }: Props) {
+  const t = useT()
   const items = useResumeStore((s) => {
     if (type === 'jobs') return s.resume?.jobs
     if (type === 'internships') return s.resume?.internships
@@ -63,7 +65,7 @@ export function ExperienceSection({ type, title }: Props) {
         </div>
         <button onClick={() => { addItem(); setExpanded({[items?.length || 0]: true}) }} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
-          添加
+          {t('add')}
         </button>
       </div>
 
@@ -100,13 +102,13 @@ export function ExperienceSection({ type, title }: Props) {
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
-                    {name || `未命名${type === 'jobs' ? '公司' : '项目'}`}
+                    {name || `${t('unnamed')}${type === 'projects' ? t('projectNoun') : t('companyNoun')}`}
                   </span>
                   {role && <span className="text-xs text-surface-400 ml-2">{role}</span>}
                   {isHidden && (
                     <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
                       <EyeOff className="w-2.5 h-2.5" />
-                      已隐藏
+                      {t('hidden')}
                     </span>
                   )}
                 </div>
@@ -130,25 +132,25 @@ export function ExperienceSection({ type, title }: Props) {
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="form-label">公司名称 *</label>
-                          <input className="form-input" value={(item as Job).company || ''} onChange={(e) => updateItem(idx, { company: e.target.value } as Partial<Job>)} placeholder="字节跳动" maxLength={100} />
+                          <label className="form-label">{t('company')}</label>
+                          <input className="form-input" value={(item as Job).company || ''} onChange={(e) => updateItem(idx, { company: e.target.value } as Partial<Job>)} placeholder={t('companyPlaceholder')} maxLength={100} />
                         </div>
                         <div>
-                          <label className="form-label">职位 *</label>
-                          <input className="form-input" value={(item as Job).title || ''} onChange={(e) => updateItem(idx, { title: e.target.value } as Partial<Job>)} placeholder="高级前端工程师" maxLength={100} />
+                          <label className="form-label">{t('position')}</label>
+                          <input className="form-input" value={(item as Job).title || ''} onChange={(e) => updateItem(idx, { title: e.target.value } as Partial<Job>)} placeholder={t('positionPlaceholder')} maxLength={100} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="form-label">开始日期</label>
-                          <MonthPicker value={(item as Job).start_date || ''} onChange={(v) => updateItem(idx, { start_date: v } as Partial<Job>)} placeholder="选择开始日期" />
+                          <label className="form-label">{t('startDate')}</label>
+                          <MonthPicker value={(item as Job).start_date || ''} onChange={(v) => updateItem(idx, { start_date: v } as Partial<Job>)} placeholder={t('startDatePlaceholder')} />
                         </div>
                         <div>
-                          <label className="form-label">结束日期</label>
+                          <label className="form-label">{t('endDate')}</label>
                           <MonthPicker
                             value={(item as Job).end_date || ''}
                             onChange={(v) => updateItem(idx, { end_date: v } as Partial<Job>)}
-                            placeholder="选择结束日期"
+                            placeholder={t('endDatePlaceholder')}
                             showPresent
                             minValue={(item as Job).start_date || undefined}
                             disabled={(item as Job).is_current}
@@ -162,18 +164,18 @@ export function ExperienceSection({ type, title }: Props) {
                           onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Job).end_date } as Partial<Job>)}
                           className="accent-primary-600"
                         />
-                        当前在职
+                        {t('currentEmployed')}
                       </label>
                       <div>
-                        <label className="form-label">工作地点</label>
+                        <label className="form-label">{t('workLocation')}</label>
                         <input className="form-input" value={(item as Job).location || ''} onChange={(e) => updateItem(idx, { location: e.target.value } as Partial<Job>)} placeholder="北京" maxLength={100} />
                       </div>
                       <div>
-                        <label className="form-label">工作概述</label>
+                        <label className="form-label">{t('workSummary')}</label>
                         <RichTextField
                           value={(item as Job).summary || ''}
                           onChange={(v) => updateItem(idx, { summary: v } as Partial<Job>)}
-                          placeholder="工作经历概述..."
+                          placeholder={t('workSummaryPlaceholder')}
                           maxLength={500}
                         />
                       </div>
@@ -182,25 +184,25 @@ export function ExperienceSection({ type, title }: Props) {
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="form-label">项目名称 *</label>
-                          <input className="form-input" value={(item as Project).name || ''} onChange={(e) => updateItem(idx, { name: e.target.value } as Partial<Project>)} placeholder="电商平台重构" maxLength={100} />
+                          <label className="form-label">{t('projectName')}</label>
+                          <input className="form-input" value={(item as Project).name || ''} onChange={(e) => updateItem(idx, { name: e.target.value } as Partial<Project>)} placeholder={t('projectNamePlaceholder')} maxLength={100} />
                         </div>
                         <div>
-                          <label className="form-label">担任角色</label>
-                          <input className="form-input" value={(item as Project).role || ''} onChange={(e) => updateItem(idx, { role: e.target.value } as Partial<Project>)} placeholder="前端负责人" maxLength={100} />
+                          <label className="form-label">{t('role')}</label>
+                          <input className="form-input" value={(item as Project).role || ''} onChange={(e) => updateItem(idx, { role: e.target.value } as Partial<Project>)} placeholder={t('rolePlaceholder')} maxLength={100} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="form-label">开始日期</label>
-                          <MonthPicker value={(item as Project).start_date || ''} onChange={(v) => updateItem(idx, { start_date: v } as Partial<Project>)} placeholder="选择开始日期" />
+                          <label className="form-label">{t('startDate')}</label>
+                          <MonthPicker value={(item as Project).start_date || ''} onChange={(v) => updateItem(idx, { start_date: v } as Partial<Project>)} placeholder={t('startDatePlaceholder')} />
                         </div>
                         <div>
-                          <label className="form-label">结束日期</label>
+                          <label className="form-label">{t('endDate')}</label>
                           <MonthPicker
                             value={(item as Project).end_date || ''}
                             onChange={(v) => updateItem(idx, { end_date: v } as Partial<Project>)}
-                            placeholder="选择结束日期"
+                            placeholder={t('endDatePlaceholder')}
                             showPresent
                             minValue={(item as Project).start_date || undefined}
                             disabled={(item as Project).is_current || false}
@@ -214,14 +216,14 @@ export function ExperienceSection({ type, title }: Props) {
                           onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Project).end_date } as Partial<Project>)}
                           className="accent-primary-600"
                         />
-                        当前项目未结束
+                        {t('currentProject')}
                       </label>
                       <div>
-                        <label className="form-label">项目简述</label>
+                        <label className="form-label">{t('projectSummary')}</label>
                         <RichTextField
                           value={(item as Project).summary || ''}
                           onChange={(v) => updateItem(idx, { summary: v } as Partial<Project>)}
-                          placeholder="项目简要描述..."
+                          placeholder={t('projectSummaryPlaceholder')}
                           maxLength={500}
                         />
                       </div>
@@ -230,7 +232,7 @@ export function ExperienceSection({ type, title }: Props) {
 
                   {/* Highlights */}
                   <div>
-                    <label className="form-label">关键亮点</label>
+                    <label className="form-label">{t('keyHighlights')}</label>
                     <HighlightsEditor
                       highlights={(item as { highlights?: string[] }).highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights } as Partial<Entry>)}
@@ -241,8 +243,8 @@ export function ExperienceSection({ type, title }: Props) {
                   {/* Extras (project only) */}
                   {type === 'projects' && (
                     <div>
-                      <label className="form-label">扩展信息</label>
-                      <p className="text-[10px] text-surface-400 mb-1">自定义字段，如「技术栈」「团队规模」「项目链接」等</p>
+                      <label className="form-label">{t('extras')}</label>
+                      <p className="text-[10px] text-surface-400 mb-1">{t('extrasHint')}</p>
                       <ExtrasEditor
                         extras={(item as Project).extras || []}
                         onChange={(extras) => updateProjectExtras(idx, extras)}
@@ -259,7 +261,7 @@ export function ExperienceSection({ type, title }: Props) {
 
         {(!items || items.length === 0) && (
           <div className="text-center py-6 text-sm text-surface-400">
-            暂无内容，点击上方"添加"按钮开始
+            {t('emptyClickAdd')}
           </div>
         )}
       </div>
@@ -268,6 +270,7 @@ export function ExperienceSection({ type, title }: Props) {
 }
 
 function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void }) {
+  const t = useT()
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
     const updated = [...highlights]
@@ -294,7 +297,7 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
             minHeight={36}
             value={h}
             onChange={(v) => updateHighlight(i, v)}
-            placeholder={`亮点 ${i + 1}`}
+            placeholder={`${t('highlights')} ${i + 1}`}
             maxLength={500}
           />
           <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
@@ -304,7 +307,7 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
       ))}
       <button onClick={addHighlight} className="btn-ghost btn-xs text-primary-600">
         <Plus className="w-3 h-3" />
-        添加亮点
+        {t('addHighlight')}
       </button>
     </div>
   )

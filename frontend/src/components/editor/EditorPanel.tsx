@@ -1,5 +1,6 @@
 import { useEditorStore } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { PersonalSection } from './PersonalSection'
 import { SummarySection } from './SummarySection'
@@ -12,7 +13,7 @@ import { CustomSection } from './CustomSection'
 
 export function EditorPanel() {
   const activeSection = useEditorStore((s) => s.activeSection)
-  const language = useResumeStore((s) => s.resume?.meta?.language)
+  const language = useAppStore((s) => s.language)
 
   const renderSection = () => {
     switch (activeSection) {

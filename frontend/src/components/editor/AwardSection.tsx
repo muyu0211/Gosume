@@ -5,8 +5,13 @@ import { MonthPicker } from '../ui/MonthPicker'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useAppStore } from '../../stores/appStore'
+import { getSectionTitle } from '../../lib/resumeSections'
+import { useT } from '../../lib/i18n'
 
 export function AwardSection() {
+  const t = useT()
+  const language = useAppStore((s) => s.language)
   const items = useResumeStore((s) => s.resume?.awards) || []
   const addItem = useResumeStore((s) => s.addAward)
   const updateItem = useResumeStore((s) => s.updateAward)
@@ -23,12 +28,12 @@ export function AwardSection() {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-primary-600" />
-          <span className="form-section-title">奖项荣誉</span>
+          <span className="form-section-title">{getSectionTitle('awards', language)}</span>
           <span className="text-xs text-surface-400">({items.length})</span>
         </div>
         <button onClick={() => { addItem(); setExpanded({[items.length]: true}) }} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
-          添加
+          {t('add')}
         </button>
       </div>
 
@@ -59,13 +64,13 @@ export function AwardSection() {
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
-                    {award.title || '未命名奖项'}
+                    {award.title || t('unnamedAward')}
                   </span>
                   {award.date && <span className="text-xs text-surface-400 ml-2">{award.date}</span>}
                   {isHidden && (
                     <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
                       <EyeOff className="w-2.5 h-2.5" />
-                      已隐藏
+                      {t('hidden')}
                     </span>
                   )}
                 </div>
@@ -83,21 +88,21 @@ export function AwardSection() {
                   <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="form-label">奖项名称 *</label>
-                      <input className="form-input" value={award.title || ''} onChange={(e) => updateItem(idx, { title: e.target.value })} placeholder="如：年度技术创新奖" maxLength={200} />
+                      <label className="form-label">{t('awardTitle')}</label>
+                      <input className="form-input" value={award.title || ''} onChange={(e) => updateItem(idx, { title: e.target.value })} placeholder={t('awardTitlePlaceholder')} maxLength={200} />
                     </div>
                     <div>
-                      <label className="form-label">颁发机构</label>
-                      <input className="form-input" value={award.issuer || ''} onChange={(e) => updateItem(idx, { issuer: e.target.value })} placeholder="如：字节跳动" maxLength={200} />
+                      <label className="form-label">{t('issuer')}</label>
+                      <input className="form-input" value={award.issuer || ''} onChange={(e) => updateItem(idx, { issuer: e.target.value })} placeholder={t('issuerPlaceholder')} maxLength={200} />
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">获奖日期</label>
-                    <MonthPicker value={award.date || ''} onChange={(v) => updateItem(idx, { date: v })} placeholder="选择获奖日期" />
+                    <label className="form-label">{t('awardDate')}</label>
+                    <MonthPicker value={award.date || ''} onChange={(v) => updateItem(idx, { date: v })} placeholder={t('awardDatePlaceholder')} />
                   </div>
                   <div>
-                    <label className="form-label">说明</label>
-                    <RichTextField value={award.summary || ''} onChange={(v) => updateItem(idx, { summary: v })} placeholder="简要描述获奖原因或背景" maxLength={500} />
+                    <label className="form-label">{t('awardSummary')}</label>
+                    <RichTextField value={award.summary || ''} onChange={(v) => updateItem(idx, { summary: v })} placeholder={t('awardSummaryPlaceholder')} maxLength={500} />
                   </div>
                 </div>
                 </div>
@@ -108,7 +113,7 @@ export function AwardSection() {
 
         {items.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">
-            暂无内容，点击上方"添加"按钮开始
+            {t('emptyClickAdd')}
           </div>
         )}
       </div>

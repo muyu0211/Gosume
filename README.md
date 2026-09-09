@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Stars](https://img.shields.io/github/stars/muyu0211/Gosume?style=social)](https://github.com/muyu0211/Gosume)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Wails](https://img.shields.io/badge/Wails-v3-FF4081)](https://wails.io)
@@ -185,7 +185,7 @@ task build
 task package
 ```
 
-项目采用 **MIT 协议** 开源。欢迎提交 Issue、PR 和自制模板！ 🙌
+Gosume 为**专有软件**，源码不开放，许可条款详见 [LICENSE](LICENSE)。欢迎提交 Issue、功能建议和自制模板！ 🙌
 
 ---
 
@@ -349,7 +349,7 @@ task build
 task package
 ```
 
-Licensed under **MIT**. Issues, PRs and custom templates are welcome! 🙌
+Gosume is **proprietary software** — the source code is not open to the public. See [LICENSE](LICENSE) for terms. Issues, feature requests and custom templates are welcome! 🙌
 
 ---
 

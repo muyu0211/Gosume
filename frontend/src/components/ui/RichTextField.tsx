@@ -3,27 +3,28 @@ import { createPortal } from 'react-dom'
 import type { ClipboardEvent, FormEvent, ReactNode } from 'react'
 import { Bold, Italic, Link, List, ListOrdered, Palette, RemoveFormatting } from 'lucide-react'
 import { cssColorToHex, htmlToMarkdown, LIST_MARKER_NAMES, ORDERED_MARKERS, markdownToHtml, type MarkdownMode } from '../../lib/markdown'
+import { useT } from '../../lib/i18n'
 
 /** 无序列表可选符号（value 为 data-marker；disc 为默认圆点，不带标记）。
  *  符号字符复用 markdown.ts 的 LIST_MARKER_NAMES，避免两处重复维护。 */
 const LIST_OPTIONS = [
-  { value: 'disc', icon: LIST_MARKER_NAMES.point, label: '圆点' },
-  { value: 'square', icon: LIST_MARKER_NAMES.square, label: '方点' },
-  { value: 'arrow', icon: LIST_MARKER_NAMES.arrow, label: '箭头' },
-  { value: 'dash', icon: LIST_MARKER_NAMES.dash, label: '破折号' },
-  { value: 'check', icon: LIST_MARKER_NAMES.check, label: '对勾' },
+  { value: 'disc', icon: LIST_MARKER_NAMES.point, labelKey: 'markerDot' },
+  { value: 'square', icon: LIST_MARKER_NAMES.square, labelKey: 'markerSquare' },
+  { value: 'arrow', icon: LIST_MARKER_NAMES.arrow, labelKey: 'markerArrow' },
+  { value: 'dash', icon: LIST_MARKER_NAMES.dash, labelKey: 'markerDash' },
+  { value: 'check', icon: LIST_MARKER_NAMES.check, labelKey: 'markerCheck' },
 ]
 
 /** 有序列表可选标号（value 为 data-marker；decimal 为原生数字，不带标记）。
  *  编号由渲染层 counter 自动生成，删项自动递补，数据源不存编号。 */
 const ORDERED_OPTIONS = [
-  { value: 'decimal', icon: ORDERED_MARKERS.decimal, label: '数字' },
-  { value: 'lower_roman', icon: ORDERED_MARKERS.lower_roman, label: '小罗马数字' },
-  { value: 'upper_roman', icon: ORDERED_MARKERS.upper_roman, label: '大罗马数字' },
-  { value: 'lower_alpha', icon: ORDERED_MARKERS.lower_alpha, label: '小写字母' },
-  { value: 'upper_alpha', icon: ORDERED_MARKERS.upper_alpha, label: '大写字母' },
-  { value: 'paren', icon: ORDERED_MARKERS.paren, label: '圆括号' },
-  { value: 'bracket', icon: ORDERED_MARKERS.bracket, label: '方括号' },
+  { value: 'decimal', icon: ORDERED_MARKERS.decimal, labelKey: 'orderedDecimal' },
+  { value: 'lower_roman', icon: ORDERED_MARKERS.lower_roman, labelKey: 'orderedLowerRoman' },
+  { value: 'upper_roman', icon: ORDERED_MARKERS.upper_roman, labelKey: 'orderedUpperRoman' },
+  { value: 'lower_alpha', icon: ORDERED_MARKERS.lower_alpha, labelKey: 'orderedLowerAlpha' },
+  { value: 'upper_alpha', icon: ORDERED_MARKERS.upper_alpha, labelKey: 'orderedUpperAlpha' },
+  { value: 'paren', icon: ORDERED_MARKERS.paren, labelKey: 'orderedParen' },
+  { value: 'bracket', icon: ORDERED_MARKERS.bracket, labelKey: 'orderedBracket' },
 ]
 
 /** 字体颜色预设色板（类 Word 常用色，8 列 × 3 行 = 24 色）。 */
@@ -176,6 +177,7 @@ export function RichTextField({
   showCount = true,
   className,
 }: RichTextFieldProps) {
+  const t = useT()
   const isInline = variant === 'inline'
   const mode: MarkdownMode = isInline ? 'inline' : 'block'
   const toolbarMode = toolbarProp ?? (isInline ? 'focus' : 'always')
@@ -487,20 +489,20 @@ export function RichTextField({
         aria-hidden={!showToolbar}
       >
         <div className="flex items-center gap-0.5">
-          <ToolButton title="加粗" disabled={!hasSelection} onClick={() => exec('bold')}>
+          <ToolButton title={t('bold')} disabled={!hasSelection} onClick={() => exec('bold')}>
             <Bold className="w-3.5 h-3.5" />
           </ToolButton>
-          <ToolButton title="斜体" disabled={!hasSelection} onClick={() => exec('italic')}>
+          <ToolButton title={t('italic')} disabled={!hasSelection} onClick={() => exec('italic')}>
             <Italic className="w-3.5 h-3.5" />
           </ToolButton>
-          <ToolButton title="添加链接" active={linkOpen} onClick={() => setLinkOpen((v) => !v)}>
+          <ToolButton title={t('addLink')} active={linkOpen} onClick={() => setLinkOpen((v) => !v)}>
             <Link className="w-3.5 h-3.5" />
           </ToolButton>
           {!isInline && (
             <>
               <ToolButton
                 buttonRef={orderedBtnRef}
-                title="有序列表"
+                title={t('orderedList')}
                 disabled={!hasSelection}
                 active={orderedMenu.open}
                 onClick={orderedMenu.toggle}
@@ -509,7 +511,7 @@ export function RichTextField({
               </ToolButton>
               <ToolButton
                 buttonRef={listBtnRef}
-                title="无序列表"
+                title={t('unorderedList')}
                 disabled={!hasSelection}
                 active={listMenu.open}
                 onClick={listMenu.toggle}
@@ -520,14 +522,14 @@ export function RichTextField({
           )}
           <ToolButton
             buttonRef={colorBtnRef}
-            title="字体颜色"
+            title={t('fontColor')}
             disabled={!hasSelection}
             active={colorMenu.open}
             onClick={colorMenu.toggle}
           >
             <Palette className="w-3.5 h-3.5" />
           </ToolButton>
-          <ToolButton title="清除格式" onClick={clearAllFormat}>
+          <ToolButton title={t('clearFormat')} onClick={clearAllFormat}>
             <RemoveFormatting className="w-3.5 h-3.5" />
           </ToolButton>
         </div>
@@ -552,10 +554,10 @@ export function RichTextField({
                 setLinkUrl('')
               }
             }}
-            placeholder="输入链接地址 (https://...)"
+            placeholder={t('linkUrlPlaceholder')}
           />
           <button className="btn-primary btn-xs" onClick={confirmLink}>
-            确认
+            {t('confirm')}
           </button>
           <button
             className="btn-ghost btn-xs"
@@ -564,7 +566,7 @@ export function RichTextField({
               setLinkUrl('')
             }}
           >
-            取消
+            {t('cancel')}
           </button>
         </div>
       </div>
@@ -607,7 +609,7 @@ export function RichTextField({
 
       {!isInline && maxLength != null && showCount && (
         <p className="text-[10px] text-surface-400 mt-0.5">
-          {count} / {maxLength} 字
+          {t('charCount').replace('{count}', String(count)).replace('{max}', String(maxLength))}
         </p>
       )}
 
@@ -629,7 +631,7 @@ export function RichTextField({
                 onClick={() => applyList(opt.value)}
               >
                 <span className="w-4 inline-block text-center">{opt.icon}</span>
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>,
@@ -653,7 +655,7 @@ export function RichTextField({
                 onClick={() => applyOrderedList(opt.value)}
               >
                 <span className="w-4 inline-block text-center whitespace-nowrap">{opt.icon}</span>
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>,
@@ -688,7 +690,7 @@ export function RichTextField({
                 className="text-[12px] text-surface-500 hover:text-red-600"
                 onClick={clearColor}
               >
-                无颜色
+                {t('noColor')}
               </button>
             </div>
           </div>,

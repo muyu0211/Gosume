@@ -5,11 +5,12 @@ import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { ToolsPanel } from '../components/tools/ToolsPanel'
-import { useResumeStore } from '../stores/resumeStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useAppStore } from '../stores/appStore'
 import { callService } from '../services/backend'
 import { getAppVersion } from '../services/systemService'
 import { extractErrorMessage } from '../lib/errorUtils'
+import { useT } from '../lib/i18n'
 import type { ThemeMode } from '../lib/theme'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
@@ -32,9 +33,11 @@ function getAutoSavePref(): boolean {
 
 export function SettingsPage() {
   const navigate = useNavigate()
-  const resume = useResumeStore((s) => s.resume)
-  const updateField = useResumeStore((s) => s.updateField)
-  const language = resume?.meta?.language || 'zh-CN'
+  // 设置页「语言」控制应用 UI 语言（应用界面），与简历语言（resume.meta.language）解耦；
+  // 简历语言由编辑页顶部「中英切换」单独控制。
+  const appLang = useAppStore((s) => s.language)
+  const setAppLang = useAppStore((s) => s.setLanguage)
+  const t = useT()
   const [autoSave, setAutoSave] = useState(getAutoSavePref)
 
   // 左右分栏拖拽：根据指针在容器内的横向偏移换算百分比，钳制在 SPLIT_RANGE 内并持久化。
@@ -55,11 +58,11 @@ export function SettingsPage() {
   const handleThemeChange = async (mode: ThemeMode) => {
     await useThemeStore.getState().setMode(mode)
   }
-  const themeOptions: Array<{ value: ThemeMode; title: string; desc: string }> = [
-    { value: 'system', title: '跟随系统', desc: '系统浅色用麦色，系统深色用深色' },
-    { value: 'wheat', title: '麦色', desc: '象牙纸暖色，艺术编辑风' },
-    { value: 'obsidian', title: '深色', desc: '黑曜石深色，与宣传前端呼应' },
-    { value: 'classic', title: '经典', desc: '现有默认亮色风格' },
+  const themeOptions: Array<{ value: ThemeMode; titleKey: string; descKey: string }> = [
+    { value: 'system', titleKey: 'themeSystem', descKey: 'themeSystemDesc' },
+    { value: 'wheat', titleKey: 'themeWheat', descKey: 'themeWheatDesc' },
+    { value: 'obsidian', titleKey: 'themeObsidian', descKey: 'themeObsidianDesc' },
+    { value: 'classic', titleKey: 'themeClassic', descKey: 'themeClassicDesc' },
   ]
 
   const [appVersion, setAppVersion] = useState('')
@@ -96,7 +99,7 @@ export function SettingsPage() {
       const info = await callService<UpdateInfo | null>('UpdateService', 'CheckUpdate')
       if (!info) {
         setUpdateStatus('error')
-        setUpdateMsg('当前环境不支持在线检查更新')
+        setUpdateMsg(t('updateCheckUnsupported'))
         return
       }
 
@@ -105,11 +108,11 @@ export function SettingsPage() {
         setUpdateInfo(info)
       } else {
         setUpdateStatus('latest')
-        setUpdateMsg(info.tips || '当前已是最新版本')
+        setUpdateMsg(info.tips || t('upToDate'))
       }
     } catch (err) {
       setUpdateStatus('error')
-      setUpdateMsg(extractErrorMessage(err, '检查更新失败，请稍后重试'))
+      setUpdateMsg(extractErrorMessage(err, t('updateCheckFailed')))
     } finally {
       setCheckingUpdate(false)
     }
@@ -150,7 +153,8 @@ export function SettingsPage() {
   }
 
   const handleLanguageChange = (lang: string) => {
-    updateField('meta.language', lang)
+    // 设置页语言 = 应用 UI 语言；不写 resume.meta.language（简历语言由编辑页切换）
+    setAppLang(lang as 'zh-CN' | 'en-US')
   }
 
   const handleAutoSaveChange = (enabled: boolean) => {
@@ -202,12 +206,12 @@ export function SettingsPage() {
         <button
           onClick={() => navigate(-1)}
           className="btn-ghost btn-sm"
-          title="返回"
+          title={t('back')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <Settings className="w-5 h-5 text-surface-500" />
-        <h1 className="text-lg font-semibold text-surface-800">设置</h1>
+        <h1 className="text-lg font-semibold text-surface-800">{t('settings')}</h1>
       </header>
 
       {/* Settings Content: left = base settings, right = toolbox, split is draggable */}
@@ -218,7 +222,7 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">语言</span>
+              <span className="form-section-title">{t('languageSection')}</span>
             </div>
           </div>
           <div className="space-y-3">
@@ -227,13 +231,13 @@ export function SettingsPage() {
                 type="radio"
                 name="language"
                 value="zh-CN"
-                checked={language === 'zh-CN'}
+                checked={appLang === 'zh-CN'}
                 onChange={() => handleLanguageChange('zh-CN')}
                 className="accent-primary-600"
               />
               <div>
                 <p className="text-sm font-medium text-surface-700">简体中文</p>
-                <p className="text-xs text-surface-400">使用中文界面</p>
+                <p className="text-xs text-surface-400">{t('useZhInterface')}</p>
               </div>
             </label>
             <label className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50">
@@ -241,7 +245,7 @@ export function SettingsPage() {
                 type="radio"
                 name="language"
                 value="en-US"
-                checked={language === 'en-US'}
+                checked={appLang === 'en-US'}
                 onChange={() => handleLanguageChange('en-US')}
                 className="accent-primary-600"
               />
@@ -258,7 +262,7 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <Palette className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">外观</span>
+              <span className="form-section-title">{t('appearance')}</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -276,8 +280,8 @@ export function SettingsPage() {
                   className="accent-primary-600"
                 />
                 <div>
-                  <p className="text-sm font-medium text-surface-700">{opt.title}</p>
-                  <p className="text-xs text-surface-400">{opt.desc}</p>
+                  <p className="text-sm font-medium text-surface-700">{t(opt.titleKey)}</p>
+                  <p className="text-xs text-surface-400">{t(opt.descKey)}</p>
                 </div>
               </label>
             ))}
@@ -289,13 +293,13 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <HardDrive className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">自动保存</span>
+              <span className="form-section-title">{t('autosaveSection')}</span>
             </div>
           </div>
           <label className="flex items-center justify-between p-3 rounded-lg border border-surface-200">
             <div>
-              <p className="text-sm font-medium text-surface-700">启用自动保存</p>
-              <p className="text-xs text-surface-400">每30秒自动保存当前项目</p>
+              <p className="text-sm font-medium text-surface-700">{t('enableAutosave')}</p>
+              <p className="text-xs text-surface-400">{t('autosaveEvery30s')}</p>
             </div>
             <input
               type="checkbox"
@@ -311,13 +315,13 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">数据目录</span>
+              <span className="form-section-title">{t('dataDirSection')}</span>
             </div>
           </div>
           <div className="p-3 rounded-lg border border-surface-200 space-y-3">
             <div>
-              <p className="text-xs text-surface-400 mb-1">当前数据存储位置</p>
-              <p className="text-sm text-surface-700 font-mono break-all">{dataDir || '加载中...'}</p>
+              <p className="text-xs text-surface-400 mb-1">{t('dataDirCurrent')}</p>
+              <p className="text-sm text-surface-700 font-mono break-all">{dataDir || t('loading')}</p>
             </div>
             <button
               onClick={handleChangeDataDir}
@@ -325,14 +329,14 @@ export function SettingsPage() {
               className="btn-secondary btn-sm inline-flex items-center gap-1.5"
             >
               {isChangingDir ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 迁移中...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('migrating')}</>
               ) : (
-                '更改目录'
+                t('changeDir')
               )}
             </button>
             {dirStatus === 'success' && (
               <p className="text-xs text-green-600 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" /> 数据目录已更新
+                <CheckCircle className="w-3 h-3" /> {t('dataDirUpdated')}
               </p>
             )}
             {dirStatus === 'error' && (
@@ -348,19 +352,17 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <Plug className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">一键填入招聘网站</span>
+              <span className="form-section-title">{t('autofillSection')}</span>
             </div>
           </div>
           <div className="p-3 rounded-lg border border-surface-200 space-y-3">
-            <p className="text-xs text-surface-400">
-              在浏览器扩展里提供配对码，即可把当前简历填入招聘网站表单。数据全程在你本机流转。
-            </p>
+            <p className="text-xs text-surface-400">{t('autofillDesc')}</p>
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full shrink-0 ${autofill?.running ? 'bg-green-500' : 'bg-surface-300'}`} />
               <span className="text-xs text-surface-500">
                 {autofill?.running
-                  ? `本地桥已启动（端口 ${autofill.port}）`
-                  : '本地桥未启动'}
+                  ? `${t('localBridgeRunning')} ${autofill.port}）`
+                  : t('localBridgeStopped')}
               </span>
             </div>
             {pairingCode && (
@@ -371,10 +373,10 @@ export function SettingsPage() {
                 <button
                   onClick={handleCopyPair}
                   className="btn-secondary btn-sm inline-flex items-center gap-1 shrink-0"
-                  title="复制配对码"
+                  title={t('copyPairCode')}
                 >
                   {pairCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  {pairCopied ? '已复制' : '复制'}
+                  {pairCopied ? t('copied') : t('copy')}
                 </button>
               </div>
             )}
@@ -386,13 +388,13 @@ export function SettingsPage() {
           <div className="form-section-header">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">关于</span>
+              <span className="form-section-title">{t('aboutSection')}</span>
             </div>
           </div>
           <div className="p-3 text-sm text-surface-600 space-y-1">
             <p><span className="font-medium">Gosume</span> {appVersion ? `v${appVersion}` : ''}</p>
-            <p className="text-xs text-surface-400">桌面级简历制作工具</p>
-            <p className="text-xs text-surface-400 mt-2">基于 Wails v3构建</p>
+            <p className="text-xs text-surface-400">{t('desktopResumeTool')}</p>
+            <p className="text-xs text-surface-400 mt-2">{t('builtByWails')}</p>
             <div className="pt-2">
               <button
                 onClick={handleCheckUpdate}
@@ -400,9 +402,9 @@ export function SettingsPage() {
                 className="btn-secondary btn-sm inline-flex items-center gap-1.5"
               >
                 {checkingUpdate ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> 检查中...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('checking')}</>
                 ) : (
-                  <><Download className="w-4 h-4" /> 检查更新</>
+                  <><Download className="w-4 h-4" /> {t('checkUpdate')}</>
                 )}
               </button>
               {/* 检查结果：grid 行高 0fr↔1fr + 淡入淡出，展开/收起带 200ms 高度渐变（对齐模态窗口动画） */}
@@ -436,7 +438,7 @@ export function SettingsPage() {
           <div className="form-section-header mb-4">
             <div className="flex items-center gap-2">
               <Wrench className="w-4 h-4 text-surface-400" />
-              <span className="form-section-title">工具箱</span>
+              <span className="form-section-title">{t('toolbox')}</span>
             </div>
           </div>
           <ToolsPanel />
@@ -455,9 +457,9 @@ export function SettingsPage() {
       {/* Change data directory confirmation dialog */}
       <ConfirmDialog
         open={!!pendingDir}
-        title="更改数据目录"
-        description={`确认将数据目录更改为：\n${pendingDir}\n\n现有数据将被完整迁移到新位置，迁移后无需重启即可生效。`}
-        confirmText="确认迁移"
+        title={t('changeDataDirTitle')}
+        description={`${t('changeDirConfirm')}\n${pendingDir}\n\n${t('migrateNote')}`}
+        confirmText={t('confirmMigrate')}
         loading={isChangingDir}
         icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
         onConfirm={confirmChangeDataDir}

@@ -8,11 +8,14 @@ import { AnimatedRange } from '../ui/AnimatedRange'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { callService, isWails } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
+import { useT } from '../../lib/i18n'
 import {
-  SIZE_PRESETS, BG_PRESETS, mmToPx, replaceBackground, centerCropToSize,
-  canvasByteSize, downloadCanvas, formatBytes, cropCanvas, centeredAspectBox,
+  SIZE_PRESETS, BG_PRESETS, mmToPx, centerCropToSize,
+  canvasByteSize, downloadCanvas, formatBytes, cropCanvas, centeredAspectBox, fitAspectBox, applyMatte,
 } from './lib'
-import type { BgParams, NormRect } from './lib'
+import type { NormRect } from './lib'
+import { computeMatte } from './aiMatting'
+import type { Matte } from './aiMatting'
 
 interface Props {
   onBack: () => void
@@ -20,6 +23,14 @@ interface Props {
 
 const QUALITY = 90
 const DPI = 300
+
+/** 可导出的图片格式。WebP/JPG 有损质量可调；PNG 无损不支持质量参数。 */
+export type ExportFmt = 'jpg' | 'png' | 'webp'
+const FMT_INFO: Record<ExportFmt, { label: string; mime: string; ext: string; lossy: boolean }> = {
+  jpg: { label: 'JPG', mime: 'image/jpeg', ext: 'jpg', lossy: true },
+  png: { label: 'PNG', mime: 'image/png', ext: 'png', lossy: false },
+  webp: { label: 'WebP', mime: 'image/webp', ext: 'webp', lossy: true },
+}
 
 /** 从源图像构造等尺寸 canvas 并绘制。 */
 function canvasFrom(img: HTMLImageElement): HTMLCanvasElement {
@@ -31,6 +42,7 @@ function canvasFrom(img: HTMLImageElement): HTMLCanvasElement {
 }
 
 export function IdPhotoTool({ onBack }: Props) {
+  const t = useT()
   const [sourceImg, setSourceImg] = useState<HTMLImageElement | null>(null)
   const [sourceUrl, setSourceUrl] = useState('')
   const [sourceName, setSourceName] = useState('')
@@ -38,14 +50,19 @@ export function IdPhotoTool({ onBack }: Props) {
 
   const [quality, setQuality] = useState(QUALITY)
   const [dpi, setDpi] = useState(DPI)
+  // DPI 手动输入草稿：拖动条与输入框双向联动，输入时允许中间态、失焦再提交并 clamp
+  const [dpiText, setDpiText] = useState(String(DPI))
+  // 记录 DPI 输入框是否聚焦：聚焦时输入的即时值不被「dpi→文本」同步 effect 覆盖，
+  // 从而规避把中间输入（如只输了 35 想继续输 350）打断成 clamp 后的值。
+  const dpiFocusedRef = useRef(false)
   const [presetId, setPresetId] = useState('')
-  const [keepAlpha, setKeepAlpha] = useState(false)
-  const [bg, setBg] = useState<BgParams>({
-    enabled: false,
-    rgb: BG_PRESETS[2].rgb,
-    tolerance: 35,
-    feather: 20,
-  })
+  const [fmt, setFmt] = useState<ExportFmt>('jpg')
+  // AI 智能换底：开启后对源图做 MODNet 人像分割，再把保留区域垫上目标底色
+  const [bgEnabled, setBgEnabled] = useState(false)
+  const [bgRgb, setBgRgb] = useState<[number, number, number]>(BG_PRESETS[2].rgb)
+  const [matte, setMatte] = useState<Matte | null>(null)
+  const [matting, setMatting] = useState(false)
+  const [matteError, setMatteError] = useState('')
 
   // 裁剪框（归一化 0..1，相对原图宽高）。默认铺满整张图。
   // ReactCrop 负责拖拽/手柄/比例锁定，这里仅保存其 px 裁剪映射来的归一化矩形。
@@ -68,12 +85,13 @@ export function IdPhotoTool({ onBack }: Props) {
   const [savedPath, setSavedPath] = useState<string | null>(null)
   const [saveError, setSaveError] = useState('')
 
-  const mime = keepAlpha ? 'image/png' : 'image/jpeg'
+  const mime = FMT_INFO[fmt].mime
 
   const preset = SIZE_PRESETS.find((p) => p.id === presetId)
   const presetAspect = preset ? preset.widthMm / preset.heightMm : null
 
-  // 归一化裁剪框 → ReactCrop 的 px 裁剪（渲染尺寸空间）
+  // ReactCrop 受控 crop 使用「显示像素」空间（即预览画布尺寸），这是其 onChange 第一参
+// 的坐标系；用 preview px 与 cropNorm 互转，不受自然尺寸影响。
   const cropPx: Crop | undefined = preview
     ? {
         x: cropNorm.x * preview.w,
@@ -124,12 +142,31 @@ export function IdPhotoTool({ onBack }: Props) {
     return () => ro.disconnect()
   }, [sourceImg, measurePreview])
 
-  // 选择证件照尺寸预设时，裁剪框吸附到目标比例（居中内接框）
+  // 选择证件照尺寸预设。用 fitAspectBox 按图片宽高比补偿，让选区在像素空间
+  // 严格等于目标宽高比（与 ReactCrop 的 aspect 锁定一致），避免点击后比例错位、
+  // 需拖动才纠正；presetId 同时用作 ReactCrop 的 key 以兜底重挂载刷新。
+  const selectPreset = (id: string) => {
+    setPresetId(id)
+    const p = SIZE_PRESETS.find((x) => x.id === id)
+    if (p && sourceImg) {
+      setCropNorm(fitAspectBox(sourceImg.naturalWidth / sourceImg.naturalHeight, p.widthMm / p.heightMm))
+    } else if (p) {
+      setCropNorm(centeredAspectBox(p.widthMm / p.heightMm))
+    }
+  }
+
+  // 解析并提交 DPI 手动输入：非法值回退当前，合法则 clamp 到 [MIN_DPI, MAX_DPI] 并取整
+  const commitDpi = () => {
+    const n = parseInt(dpiText, 10)
+    const v = Number.isFinite(n) ? Math.min(600, Math.max(72, n)) : dpi
+    setDpi(v)
+    setDpiText(String(v))
+  }
+
+  // 拖动条改变 dpi（或失焦提交）时，把输入框显示同步为实际值；聚焦里输入时不覆盖用户草稿
   useEffect(() => {
-    if (presetAspect) setCropNorm(centeredAspectBox(presetAspect))
-    // 仅在 preset 变化时触发
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetId])
+    if (!dpiFocusedRef.current) setDpiText(String(dpi))
+  }, [dpi])
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -152,8 +189,12 @@ export function IdPhotoTool({ onBack }: Props) {
 
   // 重建结果。单独抽出，供 rAF 节流调用。
   const rebuild = useCallback(
-    (img: HTMLImageElement, bgParams: BgParams, pid: string, d: number, cr: NormRect) => {
+    (img: HTMLImageElement, pid: string, d: number, cr: NormRect) => {
       let cur = canvasFrom(img)
+      // AI 智能换底：用 matte 作为 alpha，在全图上垫目标底色，再随裁剪/缩放。
+      if (bgEnabled && matte) {
+        cur = applyMatte(cur, matte.width, matte.height, matte.alpha, bgRgb)
+      }
       const nearFull = cr.x <= 0.001 && cr.y <= 0.001 && cr.w >= 0.999 && cr.h >= 0.999
       if (!nearFull) {
         const nw = img.naturalWidth
@@ -161,7 +202,6 @@ export function IdPhotoTool({ onBack }: Props) {
         const r = { x: cr.x * nw, y: cr.y * nh, w: cr.w * nw, h: cr.h * nh }
         if (r.w > 1 && r.h > 1) cur = cropCanvas(cur, r)
       }
-      if (bgParams.enabled) cur = replaceBackground(cur, bgParams)
       const p = SIZE_PRESETS.find((x) => x.id === pid)
       if (p && preview) {
         const w = mmToPx(p.widthMm, d)
@@ -175,23 +215,48 @@ export function IdPhotoTool({ onBack }: Props) {
         el.height = cur.height
         el.getContext('2d')!.drawImage(cur, 0, 0)
       }
-      setResultLabel(`${cur.width} × ${cur.height} px · `)
+      setResultLabel(bgEnabled && !matte ? `${t('smartMattingShort')} ` : `${cur.width} × ${cur.height} px · `)
     },
-    [preview],
+    [preview, bgEnabled, bgRgb, matte, t],
   )
+
+  // AI 换底开启时，对源图做一次人像分割，得到 matte（缓存；换底色只改 bgRgb 不重抠）。
+  useEffect(() => {
+    if (!bgEnabled || !sourceImg) {
+      setMatte(null)
+      setMatteError('')
+      return
+    }
+    let cancelled = false
+    setMatting(true)
+    setMatteError('')
+    computeMatte(sourceImg)
+      .then((m) => {
+        if (!cancelled) setMatte(m)
+      })
+      .catch((e) => {
+        if (!cancelled) setMatteError(extractErrorMessage(e, t('aiMattingFailed')))
+      })
+      .finally(() => {
+        if (!cancelled) setMatting(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [bgEnabled, sourceImg, t])
 
   // 像素重建用 rAF 节流：高频拖动（裁剪框/DIP 条）时同帧内只执行一次，避免每帧重算。
   useEffect(() => {
     if (!sourceImg) return
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     rafRef.current = requestAnimationFrame(() => {
-      rebuild(sourceImg, bg, presetId, dpi, cropNorm)
+      rebuild(sourceImg, presetId, dpi, cropNorm)
     })
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
     }
-  }, [sourceImg, bg, presetId, dpi, cropNorm, rebuild])
+  }, [sourceImg, presetId, dpi, cropNorm, bgEnabled, bgRgb, matte, rebuild])
 
   // 字节数 / 压缩率用防抖：不在每次拖动时实时 toBlob 编码，停止操作 350ms 后再算。
   useEffect(() => {
@@ -206,7 +271,7 @@ export function IdPhotoTool({ onBack }: Props) {
       if (byteTimerRef.current !== null) window.clearTimeout(byteTimerRef.current)
       byteTimerRef.current = null
     }
-  }, [sourceImg, bg, presetId, dpi, cropNorm, quality, mime])
+  }, [sourceImg, presetId, dpi, cropNorm, bgEnabled, bgRgb, matte, quality, mime])
 
   useEffect(() => () => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
@@ -218,7 +283,7 @@ export function IdPhotoTool({ onBack }: Props) {
     if (!c) return
     const dot = sourceName.lastIndexOf('.')
     const base = dot > 0 ? sourceName.slice(0, dot) : 'resume-photo'
-    const ext = mime === 'image/png' ? 'png' : 'jpg'
+    const ext = FMT_INFO[fmt].ext
 
     // 纯浏览器开发模式（无 Wails）下退化为 blob 下载；桌面端走原生保存对话框
     if (!isWails()) {
@@ -235,7 +300,7 @@ export function IdPhotoTool({ onBack }: Props) {
       // path 为空 = 用户取消，不做任何提示
       if (path) setSavedPath(path)
     } catch (err) {
-      setSaveError(extractErrorMessage(err, '保存图片失败'))
+      setSaveError(extractErrorMessage(err, t('saveImageFailed')))
     } finally {
       setSaving(false)
     }
@@ -248,11 +313,11 @@ export function IdPhotoTool({ onBack }: Props) {
     <div className="space-y-4 animate-page-enter">
       {/* 头部 */}
       <div className="flex items-center gap-2">
-        <button onClick={onBack} className="btn-ghost btn-sm" title="返回工具箱">
+        <button onClick={onBack} className="btn-ghost btn-sm" title={t('backToToolbox')}>
           <ArrowLeft className="w-4 h-4" />
         </button>
         <Camera className="w-5 h-5 text-surface-500" />
-        <h2 className="text-base font-semibold text-surface-800">证件照工具包</h2>
+        <h2 className="text-base font-semibold text-surface-800">{t('idPhotoKit')}</h2>
         {sourceName && (
           <span className="text-xs text-surface-400 truncate ml-1 max-w-[180px]">{sourceName}</span>
         )}
@@ -262,7 +327,7 @@ export function IdPhotoTool({ onBack }: Props) {
       <div className="form-section">
         <label className="w-full p-4 rounded-lg border-2 border-dashed border-surface-300 flex items-center justify-center gap-2 cursor-pointer hover:border-primary-400 hover:bg-surface-50 transition-colors">
           <Upload className="w-4 h-4 text-surface-400" />
-          <span className="text-sm text-surface-600">{empty ? '选择照片文件' : '更换照片'}</span>
+          <span className="text-sm text-surface-600">{empty ? t('choosePhoto') : t('changePhoto')}</span>
           <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </label>
       </div>
@@ -273,12 +338,12 @@ export function IdPhotoTool({ onBack }: Props) {
           {/* 压缩 */}
           <section className="form-section">
             <div className="form-section-header">
-              <span className="form-section-title">压缩</span>
+              <span className="form-section-title">{t('compression')}</span>
             </div>
             <div className="space-y-3">
               <div>
                 <div className="flex items-center justify-between text-xs text-surface-500 mb-1">
-                  <span>图片质量</span>
+                  <span>{t('imageQuality')}</span>
                   <span>{quality}</span>
                 </div>
                 <AnimatedRange
@@ -292,15 +357,15 @@ export function IdPhotoTool({ onBack }: Props) {
               {!empty && (
                 <div className="grid grid-cols-3 gap-2 text-xs text-surface-600">
                   <div className="p-2 rounded bg-surface-50 border border-surface-200">
-                    <p className="text-surface-400">原图</p>
+                    <p className="text-surface-400">{t('originalImg')}</p>
                     <p className="font-medium">{formatBytes(sourceBytes)}</p>
                   </div>
                   <div className="p-2 rounded bg-surface-50 border border-surface-200">
-                    <p className="text-surface-400">输出</p>
-                    <p className="font-medium">{resultBytes > 0 ? formatBytes(resultBytes) : '计算中…'}</p>
+                    <p className="text-surface-400">{t('outputImg')}</p>
+                    <p className="font-medium">{resultBytes > 0 ? formatBytes(resultBytes) : t('computing')}</p>
                   </div>
                   <div className="p-2 rounded bg-surface-50 border border-surface-200">
-                    <p className="text-surface-400">压缩率</p>
+                    <p className="text-surface-400">{t('compressionRate')}</p>
                     <p className="font-medium">
                       {resultBytes > 0 && sourceBytes > 0 ? `${Math.max(0, Math.round((1 - resultBytes / sourceBytes) * 100))}%` : '—'}
                     </p>
@@ -313,45 +378,87 @@ export function IdPhotoTool({ onBack }: Props) {
           {/* 尺寸 */}
           <section className="form-section">
             <div className="form-section-header">
-              <span className="form-section-title">证件照尺寸</span>
+              <span className="form-section-title">{t('idPhotoSize')}</span>
             </div>
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
-                  onClick={() => setPresetId('')}
+                  onClick={() => selectPreset('')}
                   className={`btn btn-sm ${presetId === '' ? 'bg-surface-100 text-surface-800' : 'text-surface-500 hover:bg-surface-100'}`}
                 >
-                  不裁剪
+                  {t('noCrop')}
                 </button>
                 {SIZE_PRESETS.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => setPresetId(p.id)}
+                    onClick={() => selectPreset(p.id)}
                     className={`btn btn-sm ${presetId === p.id ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-100'}`}
                   >
-                    {p.name}
+                    {t(p.nameKey)}
                   </button>
                 ))}
               </div>
               <div>
                 <div className="flex items-center justify-between text-xs text-surface-500 mb-1">
                   <span>DPI</span>
-                  <span>{dpi}</span>
+                  <input
+                    type="number"
+                    min={72}
+                    max={600}
+                    inputMode="numeric"
+                    value={dpiText}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      setDpiText(raw)
+                      // 输入到合法、完整的数值时即时驱动滑块；中间态/越界暂不提交，留待失焦 clamp
+                      const n = parseInt(raw, 10)
+                      if (Number.isFinite(n) && n >= 72 && n <= 600) setDpi(n)
+                    }}
+                    onFocus={() => {
+                      dpiFocusedRef.current = true
+                    }}
+                    onBlur={() => {
+                      dpiFocusedRef.current = false
+                      commitDpi()
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                    }}
+                    className="w-12 h-6 text-right text-[11px] px-1 border border-surface-200 rounded-md bg-elev text-surface-700 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                    title={t('dpiHint')}
+                  />
                 </div>
-                <AnimatedRange
-                  value={dpi}
-                  min={72}
-                  max={600}
-                  onChange={setDpi}
-                  className="w-full"
-                />
+                <AnimatedRange value={dpi} min={72} max={600} onChange={setDpi} className="w-full" />
               </div>
-              {/* 目标尺寸提示：选中预设时展开、取消时收起（0fr→1fr 高度渐变） */}
+              {/* 目标尺寸提示：选中预设时展开、取消时收起（0fr→1fr 高度渐变）。内容始终渲染
+             （预设为空时用占位），收起时高度才能从 1fr 平滑过渡到 0fr */}
               <div className={`grid transition-all duration-200 ${preset ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                 <div className="overflow-hidden">
-                  <p className="text-xs text-surface-500 pt-1">
-                    目标：{preset ? `${preset.widthMm} × ${preset.heightMm} mm → ${mmToPx(preset.widthMm, dpi)} × ${mmToPx(preset.heightMm, dpi)} px（${dpi} dpi）` : ''}
-                  </p>
+                  <div className={`pt-1 space-y-0.5 text-xs min-h-0 ${preset ? '' : 'invisible'}`}>
+                    <p className="text-surface-600">
+                      {preset
+                        ? t('targetSizeHint')
+                            .replace('{w}', String(preset.widthMm))
+                            .replace('{h}', String(preset.heightMm))
+                            .replace('{pw}', String(mmToPx(preset.widthMm, dpi)))
+                            .replace('{ph}', String(mmToPx(preset.heightMm, dpi)))
+                            .replace('{note}', dpi === DPI ? t('stdOutputNote').replace('{dpi}', String(dpi)) : '')
+                        : '\u00A0'}
+                    </p>
+                    <p className="text-surface-400">
+                      {preset
+                        ? t('physicalSizeHint')
+                            .replace('{w}', String(preset.widthMm))
+                            .replace('{h}', String(preset.heightMm))
+                            .replace('{dpi}', String(dpi))
+                            .replace('{stdNote}', dpi !== DPI ? t('stdDpiNote')
+                              .replace('{dpi}', String(DPI))
+                              .replace('{pw}', String(mmToPx(preset.widthMm, DPI)))
+                              .replace('{ph}', String(mmToPx(preset.heightMm, DPI))) : '')
+                            .replace('{stdDpi}', String(DPI))
+                        : '\u00A0'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -362,86 +469,76 @@ export function IdPhotoTool({ onBack }: Props) {
             <div className="form-section-header">
               <div className="flex items-center gap-2">
                 <CropIcon className="w-4 h-4 text-surface-400" />
-                <span className="form-section-title">自由裁剪</span>
+                <span className="form-section-title">{t('freeCrop')}</span>
               </div>
             </div>
             <div className="space-y-2 text-xs text-surface-500">
-              <p>在左侧预览图上拖动选框调整保留区域：拖框体移动，拖四角缩放。</p>
-              <p className="text-surface-400">选择证件照尺寸后，选框将锁定为对应比例。</p>
+              <p>{t('freeCropHint1')}</p>
+              <p className="text-surface-400">{t('freeCropHint2')}</p>
               <button
-                onClick={() => setCropNorm(presetAspect ? centeredAspectBox(presetAspect) : { x: 0, y: 0, w: 1, h: 1 })}
+                onClick={() =>
+                  setCropNorm(
+                    preset && sourceImg
+                      ? fitAspectBox(sourceImg.naturalWidth / sourceImg.naturalHeight, preset.widthMm / preset.heightMm)
+                      : { x: 0, y: 0, w: 1, h: 1 },
+                  )
+                }
                 disabled={!cropActive}
                 className="btn-secondary btn-sm inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <CropIcon className="w-4 h-4" /> 重置裁剪
+                <CropIcon className="w-4 h-4" /> {t('resetCrop')}
               </button>
             </div>
           </section>
 
-          {/* 换底 */}
+          {/* 换底（AI 智能抠图） */}
           <section className="form-section">
             <div className="form-section-header">
-              <span className="form-section-title">背景换底</span>
+              <span className="form-section-title">{t('aiBg')}</span>
               <input
                 type="checkbox"
-                checked={bg.enabled}
-                onChange={(e) => setBg((p) => ({ ...p, enabled: e.target.checked }))}
+                checked={bgEnabled}
+                onChange={(e) => setBgEnabled(e.target.checked)}
                 className="w-4 h-4 rounded accent-primary-600"
               />
             </div>
-            <div className={`grid transition-all duration-200 ${bg.enabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+            <div className={`grid transition-all duration-200 ${bgEnabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
               <div className="overflow-hidden">
                 <div className="space-y-3 pt-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  {/* 去掉浅蓝预设后整组缩排：加水平内边距，使两端控件与父容器
+                      overflow-hidden 边界留出缓冲，选中/按下态向外的外圈不再被遮挡 */}
+                  <div className="flex flex-wrap items-center gap-1.5 px-2 py-1">
                     {BG_PRESETS.map((p) => (
                       <button
                         key={p.id}
-                        onClick={() => setBg((prev) => ({ ...prev, rgb: p.rgb }))}
-                        className={`flex items-center gap-1.5 btn btn-sm ${bg.enabled && bg.rgb[0] === p.rgb[0] && bg.rgb[1] === p.rgb[1] && bg.rgb[2] === p.rgb[2] ? 'ring-2 ring-primary-400' : 'text-surface-500 hover:bg-surface-100'}`}
+                        onClick={() => setBgRgb(p.rgb)}
+                        className={`flex items-center gap-1.5 btn btn-sm ${bgEnabled && bgRgb[0] === p.rgb[0] && bgRgb[1] === p.rgb[1] && bgRgb[2] === p.rgb[2] ? 'ring-2 ring-inset ring-primary-400' : 'text-surface-500 hover:bg-surface-100'}`}
                       >
                         <span
                           className="w-3 h-3 rounded-full inline-block shrink-0 border border-surface-300"
                           style={{ backgroundColor: `rgb(${p.rgb[0]}, ${p.rgb[1]}, ${p.rgb[2]})` }}
                         />
-                        {p.name}
+                        {t(p.nameKey)}
                       </button>
                     ))}
                     <input
                       type="color"
-                      value={rgbToHex(bg.rgb)}
-                      onChange={(e) => setBg((prev) => ({ ...prev, rgb: hexToRgb(e.target.value) }))}
+                      value={rgbToHex(bgRgb)}
+                      onChange={(e) => setBgRgb(hexToRgb(e.target.value))}
                       className="w-8 h-8 rounded cursor-pointer border border-surface-200"
-                      title="自定义颜色"
+                      title={t('customColor')}
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-surface-500 mb-1">
-                      <span>容差</span>
-                      <span>{bg.tolerance}</span>
-                    </div>
-                    <AnimatedRange
-                      value={bg.tolerance}
-                      min={0}
-                      max={100}
-                      onChange={(v) => setBg((p) => ({ ...p, tolerance: v }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-surface-500 mb-1">
-                      <span>边缘羽化</span>
-                      <span>{bg.feather}</span>
-                    </div>
-                    <AnimatedRange
-                      value={bg.feather}
-                      min={0}
-                      max={100}
-                      onChange={(v) => setBg((p) => ({ ...p, feather: v }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <p className="text-xs text-surface-400">
-                    换底为纯色算法，仅对背景均匀的照片效果较好；复杂/渐变背景请手动处理。
+                  {matteError && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" /> {matteError}
+                    </p>
+                  )}
+                  <p className="text-xs text-surface-500 flex items-center gap-1.5">
+                    {matting && (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('aiMattingPleaseWait')}</>
+                    )}
+                    <span>{t('aiMattingHint')}</span>
                   </p>
                 </div>
               </div>
@@ -450,31 +547,35 @@ export function IdPhotoTool({ onBack }: Props) {
 
           <section className="form-section">
             <div className="form-section-header">
-              <span className="form-section-title">输出设置</span>
+              <span className="form-section-title">{t('outputSettings')}</span>
             </div>
-            <label className="flex items-center justify-between p-3 rounded-lg border border-surface-200">
+            <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-surface-700">保留透明背景</p>
-                <p className="text-xs text-surface-400">导出为 PNG（关闭则以 JPEG 导出）</p>
+                <p className="text-xs text-surface-500 mb-2">{t('exportFormat')}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(Object.keys(FMT_INFO) as ExportFmt[]).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setFmt(f)}
+                      className={`btn btn-sm ${fmt === f ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-100'}`}
+                    >
+                      {FMT_INFO[f].label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <input
-                type="checkbox"
-                checked={keepAlpha}
-                onChange={(e) => setKeepAlpha(e.target.checked)}
-                className="w-4 h-4 rounded accent-primary-600"
-              />
-            </label>
-            <button
-              onClick={handleDownload}
-              disabled={empty || saving}
-              className="btn-primary w-full mt-3 inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 保存中…</>
-              ) : (
-                <><Download className="w-4 h-4" /> 保存图片{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}</>
-              )}
-            </button>
+              <button
+                onClick={handleDownload}
+                disabled={empty || saving}
+                className="btn-primary w-full inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('savingElipsis')}</>
+                ) : (
+                  <><Download className="w-4 h-4" /> {t('saveImageFmt').replace('{fmt}', FMT_INFO[fmt].label)}{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}</>
+                )}
+              </button>
+            </div>
             {saveError && (
               <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 shrink-0" /> {saveError}
@@ -487,10 +588,10 @@ export function IdPhotoTool({ onBack }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-lg border border-surface-200 bg-elev p-3">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-surface-400">原图（可拖动裁剪）</p>
+              <p className="text-xs text-surface-400">{t('sourcePreview')}</p>
               {!empty && (
                 <span className={`text-[11px] px-1.5 py-0.5 rounded ${cropActive ? 'bg-primary-100 text-primary-700' : 'bg-surface-100 text-surface-400'}`}>
-                  {cropActive ? '已裁剪' : '整图'}
+                  {cropActive ? t('cropStatus') : t('fullImage')}
                 </span>
               )}
             </div>
@@ -498,15 +599,16 @@ export function IdPhotoTool({ onBack }: Props) {
               {empty ? (
                 <div className="flex flex-col items-center gap-2 text-surface-300 py-10">
                   <ImageIcon className="w-8 h-8" />
-                  <span className="text-xs">请选择照片</span>
+                  <span className="text-xs">{t('choosePhotoPrompt')}</span>
                 </div>
               ) : preview && sourceUrl ? (
                 <ReactCrop
+                  key={presetId}
                   crop={cropPx}
                   onChange={onCropChange}
                   aspect={presetAspect ?? undefined}
-                  minWidth={20}
-                  minHeight={20}
+                  minWidth={10}
+                  minHeight={10}
                   keepSelection
                 >
                   <img
@@ -517,7 +619,7 @@ export function IdPhotoTool({ onBack }: Props) {
                   />
                 </ReactCrop>
               ) : (
-                <span className="text-xs text-surface-300 py-10">正在加载…</span>
+                <span className="text-xs text-surface-300 py-10">{t('loadingElipsis')}</span>
               )}
             </div>
             {!empty && sourceImg && (
@@ -525,19 +627,26 @@ export function IdPhotoTool({ onBack }: Props) {
             )}
           </div>
           <div className="rounded-lg border border-surface-200 bg-elev p-3">
-            <p className="text-xs text-surface-400 mb-2">结果</p>
-            <div className="flex items-center justify-center min-h-[220px] bg-surface-50 rounded overflow-hidden">
+            <p className="text-xs text-surface-400 mb-2">{t('resultLabel')}</p>
+            <div className="relative flex items-center justify-center min-h-[220px] bg-surface-50 rounded overflow-hidden">
               {empty ? (
                 <div className="flex flex-col items-center gap-2 text-surface-300 py-10">
                   <Check className="w-8 h-8" />
-                  <span className="text-xs">选择照片后生成</span>
+                  <span className="text-xs">{t('resultAfterChoose')}</span>
                 </div>
               ) : (
                 <canvas ref={previewRef} className="max-w-full max-h-[460px] w-auto h-auto animate-preview-enter" />
               )}
+              {/* 智能抠图进行中：半透明遮罩盖住结果图，避免误以为卡住 */}
+              {bgEnabled && !matte && matteError === '' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-50/70 backdrop-blur-[1px]">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+                  <span className="text-xs text-surface-500">{matting ? t('smartMattingShort') : t('generating')}</span>
+                </div>
+              )}
             </div>
             {!empty && (
-              <p className="text-xs text-surface-400 mt-2">{resultLabel}{resultBytes > 0 ? formatBytes(resultBytes) : '计算中…'}</p>
+              <p className="text-xs text-surface-400 mt-2">{resultLabel}{resultBytes > 0 ? formatBytes(resultBytes) : t('computing')}</p>
             )}
           </div>
         </div>
@@ -546,9 +655,9 @@ export function IdPhotoTool({ onBack }: Props) {
       {/* 保存结果弹窗（应用内自实现，替代浏览器原生下载栏） */}
       <ConfirmDialog
         open={!!savedPath}
-        title="已保存"
-        description={`图片已保存到：\n${savedPath ?? ''}`}
-        confirmText="好的"
+        title={t('savedTitle')}
+        description={t('savedDesc').replace('{path}', savedPath ?? '')}
+        confirmText={t('ok')}
         icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
         onConfirm={() => setSavedPath(null)}
         onCancel={() => setSavedPath(null)}

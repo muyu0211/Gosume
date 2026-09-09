@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { useT } from '../../lib/i18n'
+import { useAppStore } from '../../stores/appStore'
 
 interface Props {
   value: string
@@ -11,9 +13,14 @@ interface Props {
   disabled?: boolean
 }
 
-const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-
-export function MonthPicker({ value, onChange, placeholder = '选择日期', showPresent = false, minValue, disabled = false }: Props) {
+export function MonthPicker({ value, onChange, placeholder, showPresent = false, minValue, disabled = false }: Props) {
+  const t = useT()
+  const lang = useAppStore((s) => s.language)
+  const placeholderText = placeholder ?? t('datePlaceholder')
+  const MONTHS =
+    lang === 'en-US'
+      ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
   const [open, setOpen] = useState(false)
   const [viewYear, setViewYear] = useState(() => {
     if (value && /^\d{4}-\d{2}$/.test(value)) return parseInt(value.slice(0, 4))
@@ -107,7 +114,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
         <button type="button" onClick={prevYear} className="p-1 hover:bg-surface-100 rounded">
           <ChevronLeft className="w-4 h-4 text-surface-500" />
         </button>
-        <span className="text-sm font-semibold text-surface-700">{viewYear}年</span>
+        <span className="text-sm font-semibold text-surface-700">{viewYear}{t('yearSuffix')}</span>
         <button type="button" onClick={nextYear} className="p-1 hover:bg-surface-100 rounded">
           <ChevronRight className="w-4 h-4 text-surface-500" />
         </button>
@@ -149,7 +156,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
               value === '至今' ? 'bg-primary-500 text-white' : 'text-surface-500 hover:bg-surface-100'
             }`}
           >
-            至今
+            {t('present')}
           </button>
         )}
         <button
@@ -157,7 +164,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
           onClick={clearDate}
           className="flex-1 py-1 text-xs text-surface-400 hover:text-surface-600 hover:bg-surface-100 rounded"
         >
-          清除
+          {t('clear')}
         </button>
       </div>
     </div>
@@ -177,7 +184,7 @@ export function MonthPicker({ value, onChange, placeholder = '选择日期', sho
         className={`form-input flex items-center gap-2 text-left ${!value ? 'text-surface-400' : ''} ${disabled ? 'opacity-50 cursor-not-allowed bg-surface-100' : ''}`}
       >
         <Calendar className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
-        <span className="flex-1 truncate">{value === '至今' ? '至今' : value || placeholder}</span>
+        <span className="flex-1 truncate">{value === '至今' ? t('present') : value || placeholderText}</span>
         {value && (
           <button type="button" onClick={clearDate} className="flex-shrink-0 opacity-40 hover:opacity-100">
             <X className="w-3.5 h-3.5" />

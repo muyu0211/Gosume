@@ -1,13 +1,16 @@
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { FileText, EyeOff } from 'lucide-react'
 import { RichTextField } from '../ui/RichTextField'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { useT } from '../../lib/i18n'
 
 export function SummarySection() {
+  const t = useT()
   const resume = useResumeStore((s) => s.resume)
   const updateField = useResumeStore((s) => s.updateField)
-  const language = resume?.meta?.language
+  const language = useAppStore((s) => s.language)
 
   const summary = resume?.personal_summary
   const isHidden = !!summary?.hidden
@@ -21,22 +24,22 @@ export function SummarySection() {
           {isHidden && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">
               <EyeOff className="w-2.5 h-2.5" />
-              已隐藏
+              {t('hidden')}
             </span>
           )}
         </div>
         <VisibilityToggle
           hidden={isHidden}
           onToggle={() => updateField('personal_summary.hidden', !isHidden)}
-          title={isHidden ? '取消隐藏（在简历中显示）' : '隐藏此段（不在简历中显示）'}
+          title={isHidden ? t('unhideHint') : t('hideHint')}
         />
       </div>
       <div>
-        <label className="form-label">求职意向 / 个人简介</label>
+        <label className="form-label">{t('summaryLabel')}</label>
         <RichTextField
           value={summary?.summary || ''}
           onChange={(v) => updateField('personal_summary.summary', v)}
-          placeholder="简要描述你的职业背景、核心能力和求职目标..."
+          placeholder={t('summaryPlaceholder')}
           maxLength={1000}
           minHeight={96}
         />

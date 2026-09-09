@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { callService } from '../../services/backend'
 import { useResumeStore } from '../../stores/resumeStore'
 import { isMacOS } from '../../lib/platform'
+import { useT } from '../../lib/i18n'
 
 export function TitleBar() {
+  const t = useT()
   const [isMaximised, setIsMaximised] = useState(false)
   const requestLeave = useResumeStore((s) => s.requestLeave)
   // macOS 使用原生红绿灯（关闭/最小化/全屏），不渲染自绘的 Windows 风格按钮
@@ -47,8 +49,8 @@ export function TitleBar() {
           <button
             onClick={handleMinimize}
             className="titlebar-btn"
-            title="最小化"
-            aria-label="最小化"
+            title={t('minimize')}
+            aria-label={t('minimize')}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 6h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -58,8 +60,8 @@ export function TitleBar() {
           <button
             onClick={handleMaximize}
             className="titlebar-btn"
-            title={isMaximised ? '还原' : '最大化'}
-            aria-label={isMaximised ? '还原' : '最大化'}
+            title={isMaximised ? t('restore') : t('maximize')}
+            aria-label={isMaximised ? t('restore') : t('maximize')}
           >
             {isMaximised ? (
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -76,8 +78,8 @@ export function TitleBar() {
           <button
             onClick={handleClose}
             className="titlebar-btn titlebar-btn-close"
-            title="关闭"
-            aria-label="关闭"
+            title={t('close')}
+            aria-label={t('close')}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
