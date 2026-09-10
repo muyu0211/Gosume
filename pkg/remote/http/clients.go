@@ -49,6 +49,21 @@ func NewHttpClient(serviceName string, opts ...Option) *cli {
 	return c
 }
 
+// NewHttpClientWithTarget 按运行时 base 地址构造 HTTP 客户端门面，复用项目
+// 全套 Option / Response / 超时 / 重试 / 代理 / 用户代理 基建。
+// 与 NewHttpClient 的区别：Base URL 不再依赖 config.yaml 静态服务声明（GetService），
+// 而是由调用方运行时传入——适用于用户填写的动态目标（如大模型 API 的 Base URL）。
+func NewHttpClientWithTarget(target string, opts ...Option) *cli {
+	svc := &config.ServiceConfig{Target: target}
+	// 动态目标场景未配置重试，沿用默认重试（幂等请求自动重试）；
+	// 整体超时走默认值，长请求由调用方通过请求级 WithTimeout / context 控制。
+	svc.RetryCount = 0
+	svc.TimeoutSec = nil
+	c := buildClient(svc)
+	c.opts = append(c.opts, opts...)
+	return c
+}
+
 // buildClient 按服务声明构建并返回 HTTP resty 客户端
 func buildClient(svc *config.ServiceConfig) *cli {
 	c := resty.New()

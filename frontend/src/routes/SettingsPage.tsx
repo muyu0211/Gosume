@@ -1,14 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download, Plug, Copy, Check, Wrench } from 'lucide-react'
+import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download, Plug, Copy, Check, Wrench, Sparkles, Eye, EyeOff } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { ToolsPanel } from '../components/tools/ToolsPanel'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import { useThemeStore } from '../stores/themeStore'
 import { useAppStore } from '../stores/appStore'
 import { callService } from '../services/backend'
 import { getAppVersion } from '../services/systemService'
+import { AI_PRESETS, AI_MODELS_BY_PROVIDER, getAIConfig, saveAIConfig, testConnection, type AIConfigInput } from '../services/aiService'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { useT } from '../lib/i18n'
 import type { ThemeMode } from '../lib/theme'
@@ -199,6 +201,150 @@ export function SettingsPage() {
     }
   }
 
+  // ---- AI 服务：配置管理 + 连通性测试（为后续 AI 能力准备）----
+  const [aiForm, setAiForm] = useState<AIConfigInput>({ provider: 'custom', base_url: '', model: '', api_key: '', enabled: false })
+  const [savedKeyMasked, setSavedKeyMasked] = useState('') // 已持久化的脱敏 Key（作 placeholder 提示）
+  const [aiCustomMode, setAiCustomMode] = useState(false) // 处于「自定义模型」模式时展开手输输入框
+  const [showKey, setShowKey] = useState(false)
+  const [aiSaving, setAiSaving] = useState(false)
+  const [aiTesting, setAiTesting] = useState(false)
+  const [aiSaveStatus, setAiSaveStatus] = useState<'' | 'success' | 'error'>('')
+  const [aiSaveMsg, setAiSaveMsg] = useState('')
+  const [aiTestStatus, setAiTestStatus] = useState<'' | 'success' | 'error'>('')
+  const [aiTestMsg, setAiTestMsg] = useState('')
+  const [aiTestLatency, setAiTestLatency] = useState(0)
+
+  // 供应商下拉选项（预设 + 自定义），hint 展示对应 Base URL
+  const providerOptions = useMemo(
+    () => [
+      ...AI_PRESETS.map((p) => ({ value: p.value, label: p.label, hint: p.baseUrl })),
+      { value: 'custom', label: t('aiCustomProvider') },
+    ],
+    [t],
+  )
+
+  // 加载已保存配置（Key 脱敏回显，provider 缺省回退「自定义」）
+  useEffect(() => {
+    getAIConfig()
+      .then((info) => {
+        if (!info) return
+        setSavedKeyMasked(info.key_masked)
+        // 已保存的模型名不在该供应商预设候选中时，恢复为「自定义模式」并回填输入框
+        const presets = AI_MODELS_BY_PROVIDER[info.provider || 'custom'] ?? []
+        setAiCustomMode(info.model !== '' && !presets.includes(info.model))
+        setAiForm({
+          provider: info.provider || 'custom',
+          base_url: info.base_url,
+          model: info.model,
+          api_key: '',
+          enabled: info.enabled,
+        })
+      })
+      .catch(() => { })
+  }, [])
+
+  // 选择预设时联动填充 base_url 与默认模型（退出自定义模型模式，回到预设模型）
+  const handleProviderChange = (value: string) => {
+    setAiForm((f) => ({ ...f, provider: value }))
+    setAiCustomMode(false)
+    const preset = AI_PRESETS.find((p) => p.value === value)
+    if (preset) {
+      setAiForm(() => ({ provider: value, base_url: preset.baseUrl, model: preset.model, api_key: '', enabled: false }))
+    }
+  }
+
+  // 模型候选：按当前 provider 提供常用模型，末尾附「自定义…」供手输
+  const modelOptions = useMemo(
+    () => [
+      ...(AI_MODELS_BY_PROVIDER[aiForm.provider] ?? []).map((m) => ({ value: m, label: m })),
+      { value: '__custom__', label: t('aiCustomModel') },
+    ],
+    [aiForm.provider, t],
+  )
+  // 下拉受控显示值：自定义模式下显示「自定义…」；命中候选显示该项；未选择为空（显示 placeholder）
+  const modelSelectValue = aiCustomMode ? '__custom__' : aiForm.model
+
+  // 选择模型：命中预设候选直接写入并退出自定义模式；自定义则展开输入框
+  const handleModelSelect = (value: string) => {
+    if (value === '__custom__') {
+      setAiCustomMode(true)
+      return
+    }
+    setAiCustomMode(false)
+    setAiForm((f) => ({ ...f, model: value }))
+  }
+
+  // 校验（轻量，贴合设置页现有 useState 风格）：URL 格式 / 模型非空 / Key 非空（含沿用脱敏值）
+  const validateAiForm = (): string | null => {
+    if (!/^https?:\/\//.test(aiForm.base_url.trim())) return t('aiInvalidUrl')
+    if (!aiForm.model.trim()) return t('aiModelRequired')
+    if (!aiForm.api_key.trim() && !savedKeyMasked) return t('aiKeyRequired')
+    return null
+  }
+
+  const buildAiPayload = (): AIConfigInput => ({
+    provider: aiForm.provider || 'custom',
+    base_url: aiForm.base_url.trim(),
+    model: aiForm.model.trim(),
+    // 输入为空且已有保存的 Key 时，回传脱敏串，后端据此沿用原 Key
+    api_key: aiForm.api_key.trim() || savedKeyMasked,
+    enabled: aiForm.enabled,
+  })
+
+  const handleSaveAI = async () => {
+    const err = validateAiForm()
+    if (err) {
+      setAiSaveStatus('error')
+      setAiSaveMsg(err)
+      return
+    }
+    setAiSaving(true)
+    setAiSaveStatus('')
+    try {
+      await saveAIConfig(buildAiPayload())
+      setSavedKeyMasked(maskPreview(aiForm.api_key.trim() || savedKeyMasked))
+      setAiForm((f) => ({ ...f, api_key: '' }))
+      setAiSaveStatus('success')
+      setAiSaveMsg(t('aiSaveSuccess'))
+    } catch (e) {
+      setAiSaveStatus('error')
+      setAiSaveMsg(extractErrorMessage(e, t('aiSaveFailed')))
+    } finally {
+      setAiSaving(false)
+    }
+  }
+
+  // 测试连接：先保存当前表单，再对已保存配置发最小请求
+  const handleTestAI = async () => {
+    const err = validateAiForm()
+    if (err) {
+      setAiSaveStatus('error')
+      setAiSaveMsg(err)
+      return
+    }
+    setAiTesting(true)
+    setAiTestStatus('')
+    try {
+      await saveAIConfig(buildAiPayload())
+      const r = await testConnection()
+      if (!r) {
+        setAiTestStatus('error')
+        setAiTestMsg(t('aiNotConfigured'))
+      } else if (r.ok) {
+        setAiTestStatus('success')
+        setAiTestLatency(r.latency_ms ?? 0)
+      } else {
+        setAiTestStatus('error')
+        setAiTestMsg(r.message || t('aiConnectionFail').replace('{msg}', ''))
+      }
+    } catch (e) {
+      setAiTestStatus('error')
+      setAiTestMsg(extractErrorMessage(e, t('aiConnectionFail').replace('{msg}', '')))
+    } finally {
+      setAiTesting(false)
+    }
+  }
+
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
@@ -383,6 +529,115 @@ export function SettingsPage() {
           </div>
         </section>
 
+        {/* AI 服务：配置大模型，为后续 AI 能力准备 */}
+        <section className="form-section">
+          <div className="form-section-header">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-surface-400" />
+              <span className="form-section-title">{t('aiSection')}</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-xs text-surface-400">{t('aiSectionDesc')}</p>
+
+            <div>
+              <label className="form-label">{t('aiProvider')}</label>
+              <CustomSelect value={aiForm.provider} onChange={handleProviderChange} options={providerOptions} />
+            </div>
+
+            <div>
+              <label className="form-label">{t('aiBaseUrl')}</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder={t('aiBaseUrlPlaceholder')}
+                value={aiForm.base_url}
+                onChange={(e) => setAiForm((f) => ({ ...f, base_url: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="form-label">{t('aiModel')}</label>
+              {/* 模型下拉：预设候选 + 「自定义…」；选中自定义后展开输入框手输 */}
+              <CustomSelect
+                value={modelSelectValue}
+                onChange={handleModelSelect}
+                options={modelOptions}
+                placeholder={t('aiModelPlaceholder')}
+                emptyText={t('aiModelEmpty')}
+              />
+              {/* 自定义模型输入：选「自定义…」后渲染，供手输模型名。
+                不使用省略高度折叠容器（overflow-hidden 会裁掉 form-input 的 hover 阴影），
+                直接条件渲染以保证 hover 效果与其他输入框完全一致。 */}
+              {aiCustomMode && (
+                <input
+                  className="form-input mt-2"
+                  type="text"
+                  placeholder={t('aiModelPlaceholder')}
+                  value={aiForm.model}
+                  onChange={(e) => setAiForm((f) => ({ ...f, model: e.target.value }))}
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="form-label">{t('aiApiKey')}</label>
+              <div className="relative">
+                <input
+                  className="form-input pr-10"
+                  type={showKey ? 'text' : 'password'}
+                  placeholder={savedKeyMasked ? t('aiKeySavedHint').replace('{key}', savedKeyMasked) : t('aiApiKeyPlaceholder')}
+                  value={aiForm.api_key}
+                  onChange={(e) => setAiForm((f) => ({ ...f, api_key: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((v) => !v)}
+                  title={showKey ? t('hidden') : t('unhideHint')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
+                >
+                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleTestAI}
+                disabled={aiSaving || aiTesting}
+                className="btn-secondary btn-sm inline-flex items-center gap-1.5"
+              >
+                {aiTesting ? (<><Loader2 className="w-4 h-4 animate-spin" /> {t('aiTesting')}</>) : t('aiTest')}
+              </button>
+              <button
+                onClick={handleSaveAI}
+                disabled={aiSaving || aiTesting}
+                className="btn-secondary btn-sm inline-flex items-center gap-1.5"
+              >
+                {aiSaving ? (<><Loader2 className="w-4 h-4 animate-spin" /> {t('aiSaving')}</>) : t('aiSave')}
+              </button>
+            </div>
+
+            {/* 保存 / 测试结果：grid 0fr↔1fr 渐变展开（对齐检查更新） */}
+            <div className={`grid transition-all duration-200 ${aiSaveStatus || aiTestStatus ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="overflow-hidden">
+                {aiSaveStatus !== '' && (
+                  <p className={`mt-2 text-xs flex items-center gap-1 ${aiSaveStatus === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                    {aiSaveStatus === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                    {aiSaveMsg}
+                  </p>
+                )}
+                {aiTestStatus !== '' && (
+                  <p className={`mt-2 text-xs flex items-center gap-1 ${aiTestStatus === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                    {aiTestStatus === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                    {aiTestStatus === 'success' ? t('aiConnectionOk').replace('{ms}', String(aiTestLatency)) : aiTestMsg}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* About */}
         <section className="form-section">
           <div className="form-section-header">
@@ -467,4 +722,10 @@ export function SettingsPage() {
       />
     </AnimatedPage>
   )
+}
+
+/** 对 API Key 做预览脱敏（保留前 4 与后 4 位），与后端 ai.MaskKey 保持一致。 */
+function maskPreview(key: string): string {
+  if (!key) return ''
+  return key.length > 8 ? `${key.slice(0, 4)}****${key.slice(-4)}` : '****'
 }

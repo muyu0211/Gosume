@@ -8,6 +8,7 @@ import (
 
 	"gosume/pkg/autofill"
 	asvc "gosume/pkg/autofill/service"
+	aiavc "gosume/pkg/ai/service"
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
@@ -84,6 +85,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	fileSvc := &rsvc.FileService{}
 	updateSvc := &rsvc.UpdateService{}
 	communitySvc := &rsvc.CommunityService{}
+	aiSvc := &aiavc.AIService{}
 
 	// 一键填入本地桥：当前简历数据经 127.0.0.1 暴露给浏览器扩展。
 	autofillBridge := autofill.NewBridge(dataDir, config.GlobalConfig.App.Version, func() *model.Resume {
@@ -106,6 +108,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(fileSvc),
 		application.NewService(updateSvc),
 		application.NewService(communitySvc),
+		application.NewService(aiSvc),
 		application.NewService(autofillSvc),
 		application.NewService(toolSvc),
 	}
@@ -121,6 +124,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 	updateSvc.Inject(app, userCfgMgr)
 	communitySvc.Inject(app, templateLoader, templateStore)
+	aiSvc.Inject(app, userCfgMgr)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
 

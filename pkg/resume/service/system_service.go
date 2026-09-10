@@ -265,7 +265,7 @@ type migratedEntry struct {
 func migrateDataDir(oldDir, newDir string) ([]migratedEntry, error) {
 	var migrated []migratedEntry
 
-	files := []string{"gosume.db", "gosume.db-wal", "gosume.db-shm", "recent.json"}
+	files := []string{"gosume.db", "gosume.db-wal", "gosume.db-shm", "recent.json", "ai_config.json"}
 	for _, name := range files {
 		src := filepath.Join(oldDir, name)
 		dst := filepath.Join(newDir, name)
