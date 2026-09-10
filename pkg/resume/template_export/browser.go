@@ -127,6 +127,14 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 		m.resetBrowser()
 	}
 
+	// 全新启动前，先回收上次会话残留的无头浏览器。
+	//
+	// 禁用 leakless 后，主进程被强杀时浏览器不会随主进程退，残留进程会锁住固定的
+	// profile 目录与调试端口。若不清理直接启动：rod 连上这种半死残留实例会报
+	// "connection ... unexpected EOF"，或新 Edge 因 profile 被锁启动即退出
+	// （"Failed to get the debug url"）。先杀掉才是实现「固定端口收敛残留」的前提。
+	m.reapLeftovers()
+
 	path := findBrowser()
 	if path == "" {
 		return nil, &BrowserLaunchError{
@@ -299,15 +307,28 @@ func (m *BrowserManager) resetBrowser() {
 		m.page = nil
 	}
 	if m.browser != nil {
-		err := m.browser.Close()
+		_ = m.browser.Close()
 		m.browser = nil
-		// browser.Close 靠 CDP 连接下发关闭命令；连接已断时命令送不到，进程可能僵死。
-		// 此时才用 launcher 兜底强杀（Kill 含 1s 等待，故只在失败路径付这个代价）。
-		if err != nil && m.launcher != nil {
-			killLauncher(m.launcher)
-		}
 	}
-	m.launcher = nil
+	// 无论 CDP 关闭是否报错都杀进程树。
+	//
+	// browser.Close 只下发优雅关闭命令，返回 nil 也不代表所有子进程都已退出；且降级
+	// 模式（无 leakless）下进程回收完全依赖这里。不主动清理，残留浏览器就会锁住固定
+	// profile 目录 / 调试端口，导致下次导出出现 "unexpected EOF" 或 "Failed to get
+	// the debug url"。此方法仅在被复用缓存失效/应用退出时调用，Kill 的 1s 等待可忽略。
+	if m.launcher != nil {
+		killLauncher(m.launcher)
+		m.launcher = nil
+	}
+}
+
+// reapLeftovers 回收本站残留的无头浏览器进程，避免其锁死固定 profile 目录与调试端口。
+func (m *BrowserManager) reapLeftovers() {
+	markers := []string{"remote-debugging-port=" + strconv.Itoa(browserDebugPort)}
+	if d := chromiumProfileDir(); d != "" {
+		markers = append(markers, d)
+	}
+	reapLeftoverBrowsers(markers)
 }
 
 // RenderPDF 把已分页的 HTML 渲染为 PDF 字节流。

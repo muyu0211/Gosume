@@ -15,6 +15,7 @@ import (
 const (
 	MaxTemplatePackageSize = 10 << 20 // 是解压后所有文件的总大小上限（10 MB）。
 	MaxTemplateFileSize    = 2 << 20  // 是单个文件解压后的大小上限（2 MB）。
+	MaxTemplateEntries     = 2        // 是压缩包内条目数上限，防止超多条目堆占内存。
 )
 
 // templateIDPattern 限定模板 ID：2–64 位，首字符为字母或数字，
@@ -41,10 +42,15 @@ func LoadPackageFromZip(filePath string) (*TemplatePackage, error) {
 	defer reader.Close()
 
 	var total int64
+	entryCount := 0
 	files := map[string][]byte{}
 	for _, f := range reader.File {
 		if f.FileInfo().IsDir() {
 			continue
+		}
+		entryCount++
+		if entryCount > MaxTemplateEntries {
+			return nil, fmt.Errorf("template package has too many files")
 		}
 		if err := validatePackagePath(f.Name); err != nil {
 			return nil, err

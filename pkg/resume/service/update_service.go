@@ -34,7 +34,6 @@ import (
 // allowedDownloadHosts 允许下载更新包的域名白名单。
 var allowedDownloadHosts = []string{
 	"gosume.dpdns.org",
-	"dl.example.com",                // CDN 主域名（占位）
 	"github.com",                    // GitHub Releases 直链
 	"objects.githubusercontent.com", // GitHub Releases 实际跳转域
 }
@@ -68,6 +67,7 @@ type UpdateService struct {
 type updateMeta struct {
 	Version      string `json:"version"`       // 该包对应的服务端版本号
 	ArtifactType string `json:"artifact_type"` // 更新包形态
+	Sha256       string `json:"sha256"`        // 该包校验通过的 sha256（小写十六进制），用于再次校验本地包完整性
 	DownloadedAt string `json:"downloaded_at"` // 下载完成时间
 }
 
@@ -289,7 +289,8 @@ func (s *UpdateService) setCheckCache(info UpdateInfoResponse) {
 // isUpdateReady 判断本地是否已有“与给定服务端版本一致”的已下载更新包。
 func (s *UpdateService) isUpdateReady(entry dto.AppcastPlatform) bool {
 	updateDir := s.updateDir()
-	if _, err := os.Stat(filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)); err != nil {
+	pkgPath := filepath.Join(updateDir, config.GlobalConfig.App.Update.PackageFile)
+	if _, err := os.Stat(pkgPath); err != nil {
 		log.Errorf("[update_service] isUpdateReady 更新包缺失 %s", err)
 		return false
 	}
@@ -299,8 +300,8 @@ func (s *UpdateService) isUpdateReady(entry dto.AppcastPlatform) bool {
 		log.Errorf("[update_service] isUpdateReady 更新包元数据缺失 %s", err)
 		return false // 缺少元数据则无法确认版本，保守视为未就绪
 	}
-	// 校验本地更新包是否与远程一致（版本+形态）
-	return validateUpdatePkg(meta, entry)
+	// 校验本地更新包是否与远程一致（版本+形态+包哈希）。
+	return validateUpdatePkg(meta, entry, pkgPath)
 }
 
 // saveUpdateMeta 在下载成功后持久化更新包元信息（版本+形态），供下次运行复用。
@@ -324,9 +325,23 @@ func (s *UpdateService) loadUpdateMeta(updateDir string) (updateMeta, error) {
 	return meta, err
 }
 
-// validateUpdatePkg 校验本地更新包是否与远程一致（版本+形态）。
-func validateUpdatePkg(meta updateMeta, entry dto.AppcastPlatform) bool {
-	return meta.Version == entry.Version && meta.ArtifactType == entry.ArtifactType
+// validateUpdatePkg 校验本地更新包是否与远程一致。
+// 除版本与形态外，还重算本地包 sha256 与远端声明比对：即使 update-meta.json
+// 或本地包被恶意篡改，只要与 appcast 声明的哈希不一致便不视为“已就绪”，
+// 从而拒绝安装被替换过的本地更新包。
+func validateUpdatePkg(meta updateMeta, entry dto.AppcastPlatform, pkgPath string) bool {
+	if meta.Version != entry.Version || meta.ArtifactType != entry.ArtifactType {
+		return false
+	}
+	if meta.Sha256 == "" || !strings.EqualFold(meta.Sha256, entry.SHA256) {
+		return false
+	}
+	hash, err := util.HashFile(pkgPath)
+	if err != nil {
+		log.Errorf("[update_service] validateUpdatePkg 计算本地包哈希失败: %v", err)
+		return false
+	}
+	return strings.EqualFold(hash, entry.SHA256)
 }
 
 // doDownload 在后台 goroutine 中执行下载全流程：下载 → sha256 校验 →
@@ -422,6 +437,7 @@ func (s *UpdateService) doDownload(path, sha256Hex string) {
 		_ = s.saveUpdateMeta(updateDir, updateMeta{
 			Version:      cached.LatestVersion,
 			ArtifactType: cached.ArtifactType,
+			Sha256:       hashHex,
 			DownloadedAt: time.Now().Format(time.RFC3339),
 		})
 	}
