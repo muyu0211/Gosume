@@ -30,15 +30,6 @@ type AIConfig struct {
 	Configs  []AIUnit `json:"configs"`
 }
 
-// oldAIConfig 兼容旧版单配置结构（顶层直接是 provider/base_url/api_key/model/enabled）。
-type oldAIConfig struct {
-	Provider string `json:"provider"`
-	BaseURL  string `json:"base_url"`
-	APIKey   string `json:"api_key"`
-	Model    string `json:"model"`
-	Enabled  bool   `json:"enabled"`
-}
-
 // Active 返回当前启用配置；无启用或找不到时返回 ok=false。
 func (c AIConfig) Active() (AIUnit, bool) {
 	for _, u := range c.Configs {
@@ -59,42 +50,12 @@ func (c AIConfig) Find(id string) (AIUnit, bool) {
 	return AIUnit{}, false
 }
 
-// LoadConfig 从数据目录读取 AI 配置（多配置容器）。
-// - 文件不存在或损坏时返回空容器；
-// - 若检测到**旧版单配置**结构，自动迁移为「配置1」并置为当前启用（仅内存态，不自动写盘）。
+// LoadConfig 从数据目录读取 AI 配置容器；文件不存在或损坏时返回空容器。
 func LoadConfig(dataDir string) AIConfig {
-	raw, err := os.ReadFile(filepath.Join(dataDir, aiConfigFileName))
-	if err != nil {
-		return AIConfig{}
-	}
-
-	// 探测新版（active_id/configs）还是旧版（顶层 base_url）。
-	var probe struct {
-		ActiveID string   `json:"active_id"`
-		Configs  []AIUnit `json:"configs"`
-		BaseURL  string   `json:"base_url"`
-	}
-	if json.Unmarshal(raw, &probe) != nil {
-		return AIConfig{}
-	}
-	if probe.BaseURL != "" && probe.ActiveID == "" && len(probe.Configs) == 0 {
-		var old oldAIConfig
-		if json.Unmarshal(raw, &old) != nil {
-			return AIConfig{}
-		}
-		unit := AIUnit{
-			ID:       NewID(),
-			Name:     "配置1",
-			Provider: old.Provider,
-			BaseURL:  old.BaseURL,
-			APIKey:   old.APIKey,
-			Model:    old.Model,
-		}
-		return AIConfig{ActiveID: unit.ID, Configs: []AIUnit{unit}}
-	}
-
 	var c AIConfig
-	_ = json.Unmarshal(raw, &c)
+	if raw, err := os.ReadFile(filepath.Join(dataDir, aiConfigFileName)); err == nil {
+		_ = json.Unmarshal(raw, &c)
+	}
 	return c
 }
 
