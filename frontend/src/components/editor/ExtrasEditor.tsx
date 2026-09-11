@@ -1,6 +1,7 @@
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { RichTextField } from '../ui/RichTextField'
+import { Tooltip } from '../ui/Tooltip'
 import { useT } from '../../lib/i18n'
 import type { ExtraField } from '../../types/resume'
 
@@ -82,9 +83,11 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             placeholder={t('fieldValuePlaceholder')}
             maxLength={300}
           />
-          <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0" title={t('delete')}>
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip label={t('delete')}>
+            <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       ))}
       <button onClick={addExtra} className="btn-ghost btn-xs text-primary-600">

@@ -16,65 +16,85 @@ interface TooltipProps {
 /** 触发元素与提示之间的间隙（px）。 */
 const GAP = 8
 
+/** 提示与视口边缘的最小间距（px）。 */
+const EDGE_MARGIN = 6
+
 interface TipPos {
   top: number
   left: number
-  x: string // 水平 transform（-50% 相对自身居中 / -100% 反向对齐）
-  y: string // 垂直 transform
 }
 
 /**
  * 统一的主题感知悬浮提示，替代浏览器原生 title。
  *
  * 提示本体通过 **Portal 渲染到 document.body 并以 fixed 定位**，因此不会被父组件
- * 的 overflow / transform 祖先裁剪（此前 absolute + group-hover 会被遮挡）。
- * hover / 键盘聚焦时淡入，滚动（面板内部小滚动除外）时跟随触发元素重算位置。
- * 用 `translate(-50%)` 在垂直于开口方向居中，避免依赖自身尺寸测量。
+ * 的 overflow / transform 祖先裁剪。定位为**动态计算**：
+ * - 先按 side 与触发元素锚点取基准位置，再读取提示自身尺寸，
+ *   将 left/top **钳制在视口内**（贴近窗口边缘时自动内收，不再被裁）；
+ * - hover / 键盘聚焦时显示，滚动（面板内部小滚动除外）时跟随触发元素重算。
+ * useLayoutEffect 在绘制前完成定位，避免闪烁。
  */
 export function Tooltip({ label, children, side = 'bottom', className = '' }: TooltipProps) {
   const wrapRef = useRef<HTMLSpanElement>(null)
+  const tipRef = useRef<HTMLSpanElement>(null)
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState<TipPos | null>(null)
+  const [pos, setPos] = useState<TipPos>({ top: 0, left: 0 })
 
-  // 依据触发元素当前视口位置计算提示定位。
-  const calc = (): TipPos | null => {
+  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
+
+  // 依据触发元素与提示自身尺寸计算定位，并钳制在视口内。
+  const updatePos = () => {
     const r = wrapRef.current?.getBoundingClientRect()
-    if (!r || (r.width === 0 && r.height === 0)) return null
+    const tip = tipRef.current
+    if (!r || (r.width === 0 && r.height === 0) || !tip) return
+    const tw = tip.offsetWidth
+    const th = tip.offsetHeight
+    const vw = window.innerWidth
+    const vh = window.innerHeight
     const cx = r.left + r.width / 2
     const cy = r.top + r.height / 2
+
+    let top = 0
+    let left = 0
     switch (side) {
       case 'bottom':
-        return { top: r.bottom + GAP, left: cx, x: '-50%', y: '0' }
+        left = clamp(cx - tw / 2, EDGE_MARGIN, vw - tw - EDGE_MARGIN)
+        top = r.bottom + GAP
+        break
       case 'top':
-        return { top: r.top - GAP, left: cx, x: '-50%', y: '-100%' }
+        left = clamp(cx - tw / 2, EDGE_MARGIN, vw - tw - EDGE_MARGIN)
+        top = r.top - GAP - th
+        break
       case 'right':
-        return { top: cy, left: r.right + GAP, x: '0', y: '-50%' }
+        top = clamp(cy - th / 2, EDGE_MARGIN, vh - th - EDGE_MARGIN)
+        left = r.right + GAP
+        break
       case 'left':
-        return { top: cy, left: r.left - GAP, x: '-100%', y: '-50%' }
+        top = clamp(cy - th / 2, EDGE_MARGIN, vh - th - EDGE_MARGIN)
+        left = r.left - GAP - tw
+        break
     }
+    setPos({ top, left })
   }
 
   const reveal = () => {
-    const p = calc()
-    if (p) setPos(p)
     setOpen(true)
+    // 先以当前（或占位）位置渲染，useLayoutEffect 在绘制前完成真实定位
   }
 
-  // 打开时先定位（useLayoutEffect 避免闪烁）。
+  // 打开时在绘制前定位（此时提示已挂载可测尺寸）。
   useLayoutEffect(() => {
-    if (open) {
-      const p = calc()
-      if (p) setPos(p)
-    }
-  }, [open])
+    if (open) updatePos()
+    // updatePos 为稳定闭包，仅依赖 open/side
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, side])
 
   // 滚动跟随：面板内部滚动（target 在 wrap 内）不重算，其余滚动时跟随避免 fixed 漂移。
   useEffect(() => {
     if (!open) return
     const onScroll = (e: Event) => {
       if (wrapRef.current?.contains(e.target as Node)) return
-      const p = calc()
-      if (p) setPos(p)
+      updatePos()
     }
     window.addEventListener('scroll', onScroll, true)
     return () => window.removeEventListener('scroll', onScroll, true)
@@ -94,8 +114,9 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
         pos &&
         createPortal(
           <span
+            ref={tipRef}
             className="fixed z-[9999] px-2.5 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap shadow-lg pointer-events-none animate-dropdown-enter"
-            style={{ top: pos.top, left: pos.left, transform: `translate(${pos.x}, ${pos.y})` }}
+            style={{ top: pos.top, left: pos.left }}
           >
             {label}
           </span>,

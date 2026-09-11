@@ -3,6 +3,7 @@ import { callService } from '../../services/backend'
 import { useResumeStore } from '../../stores/resumeStore'
 import { isMacOS } from '../../lib/platform'
 import { useT } from '../../lib/i18n'
+import { Tooltip } from '../ui/Tooltip'
 
 export function TitleBar() {
   const t = useT()
@@ -46,45 +47,48 @@ export function TitleBar() {
 
       {!isMac && (
         <div className="titlebar-controls">
-          <button
-            onClick={handleMinimize}
-            className="titlebar-btn"
-            title={t('minimize')}
-            aria-label={t('minimize')}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3 6h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </button>
-
-          <button
-            onClick={handleMaximize}
-            className="titlebar-btn"
-            title={isMaximised ? t('restore') : t('maximize')}
-            aria-label={isMaximised ? t('restore') : t('maximize')}
-          >
-            {isMaximised ? (
+          <Tooltip label={t('minimize')}>
+            <button
+              onClick={handleMinimize}
+              className="titlebar-btn"
+              aria-label={t('minimize')}
+            >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect x="3.5" y="2" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
-                <rect x="1.5" y="4" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" style={{ fill: 'var(--titlebar-bg)' }} />
+                <path d="M3 6h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect x="2.5" y="2.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            )}
-          </button>
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={handleClose}
-            className="titlebar-btn titlebar-btn-close"
-            title={t('close')}
-            aria-label={t('close')}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          <Tooltip label={isMaximised ? t('restore') : t('maximize')}>
+            <button
+              onClick={handleMaximize}
+              className="titlebar-btn"
+              aria-label={isMaximised ? t('restore') : t('maximize')}
+            >
+              {isMaximised ? (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="3.5" y="2" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                  <rect x="1.5" y="4" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" style={{ fill: 'var(--titlebar-bg)' }} />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="2.5" y="2.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                </svg>
+              )}
+            </button>
+          </Tooltip>
+
+          <Tooltip label={t('close')}>
+            <button
+              onClick={handleClose}
+              className="titlebar-btn titlebar-btn-close"
+              aria-label={t('close')}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

@@ -157,7 +157,6 @@ export function AIPolishControl({ text, semantic, onPolish, className = '' }: AI
         <button
           type="button"
           onClick={undo}
-          title={t('aiUndo')}
           className="inline-flex items-center gap-1 text-[11px] px-1.5 py-1 rounded-md text-surface-500 hover:text-primary-600 hover:bg-surface-100 transition-colors"
         >
           <Undo2 className="w-3 h-3" />

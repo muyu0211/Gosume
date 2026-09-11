@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2, X } from 'lucide-react'
+import { Tooltip } from './Tooltip'
 
 interface Props {
   open: boolean
@@ -42,15 +43,16 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
               当前简历有尚未保存的修改，是否先保存再离开？
             </p>
           </div>
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="p-1 -m-1 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors disabled:opacity-50"
-            aria-label="关闭"
-            title="取消操作，停留在当前页面"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <Tooltip label="取消操作，停留在当前页面">
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="p-1 -m-1 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors disabled:opacity-50"
+              aria-label="关闭"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
         <div className="flex justify-end gap-2.5 mt-6">
           <button

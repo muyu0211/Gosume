@@ -4,6 +4,7 @@ import type { ClipboardEvent, FormEvent, ReactNode } from 'react'
 import { Bold, Italic, Link, List, ListOrdered, Palette, RemoveFormatting } from 'lucide-react'
 import { cssColorToHex, htmlToMarkdown, LIST_MARKER_NAMES, ORDERED_MARKERS, markdownToHtml, type MarkdownMode } from '../../lib/markdown'
 import { useT } from '../../lib/i18n'
+import { Tooltip } from './Tooltip'
 
 /** 无序列表可选符号（value 为 data-marker；disc 为默认圆点，不带标记）。
  *  符号字符复用 markdown.ts 的 LIST_MARKER_NAMES，避免两处重复维护。 */
@@ -702,17 +703,18 @@ export function RichTextField({
 
 function ToolButton({ title, disabled, active, onClick, children, buttonRef }: ToolButtonProps) {
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      title={title}
-      disabled={disabled}
-      onClick={onClick}
-      className={`p-1 rounded-md text-surface-500 hover:text-primary-600 hover:bg-surface-100 transition-colors
+    <Tooltip label={title}>
+      <button
+        ref={buttonRef}
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={`p-1 rounded-md text-surface-500 hover:text-primary-600 hover:bg-surface-100 transition-colors
         ${active ? 'text-primary-600 bg-primary-50' : ''} disabled:opacity-40 disabled:cursor-not-allowed`}
-    >
-      {children}
-    </button>
+      >
+        {children}
+      </button>
+    </Tooltip>
   )
 }
 

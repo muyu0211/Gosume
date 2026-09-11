@@ -9,6 +9,7 @@ import { loadTemplateContent } from '../../services/templateService'
 import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { useT } from '../../lib/i18n'
 import { useAppStore } from '../../stores/appStore'
+import { Tooltip } from '../ui/Tooltip'
 import type { ResumeListItem, Resume } from '../../types/resume'
 
 interface Props {
@@ -285,21 +286,23 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                     onClick={() => onOpenResume(item.id)}
                   >
                     {/* Checkbox */}
-                    <button
-                      onClick={(e) => toggleSelect(item.id, e)}
-                      className={`shrink-0 p-0.5 rounded transition-all duration-200 ${
-                        isSelected
-                          ? 'text-primary-600'
-                          : 'text-surface-300 opacity-0 group-hover:opacity-100'
-                      }`}
-                      title={isSelected ? t('deselectItem') : t('selectItem')}
-                    >
-                      {isSelected ? (
-                        <CheckSquare className="w-5 h-5" />
-                      ) : (
-                        <Square className="w-5 h-5" />
-                      )}
-                    </button>
+                    <Tooltip label={isSelected ? t('deselectItem') : t('selectItem')}>
+                      <button
+                        onClick={(e) => toggleSelect(item.id, e)}
+                        aria-label={isSelected ? t('deselectItem') : t('selectItem')}
+                        className={`shrink-0 p-0.5 rounded transition-all duration-200 ${
+                          isSelected
+                            ? 'text-primary-600'
+                            : 'text-surface-300 opacity-0 group-hover:opacity-100'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5" />
+                        ) : (
+                          <Square className="w-5 h-5" />
+                        )}
+                      </button>
+                    </Tooltip>
 
                     <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 group-hover:bg-primary-100 transition-colors">
                       <FileText className="w-4 h-4 text-primary-600" />
@@ -316,13 +319,15 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                       </div>
                     </div>
                     {/* Single delete */}
-                    <button
-                      onClick={(e) => handleDeleteClick(e, item.id)}
-                      className="p-1.5 text-surface-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
-                      title={t('deleteResume')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={t('deleteResume')}>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, item.id)}
+                        aria-label={t('deleteResume')}
+                        className="p-1.5 text-surface-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                     <ChevronRight className="w-4 h-4 text-surface-300 group-hover:text-primary-500 transition-colors" />
                   </div>
                 )

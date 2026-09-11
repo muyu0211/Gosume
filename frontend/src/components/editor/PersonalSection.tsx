@@ -322,19 +322,20 @@ export function PersonalSection() {
           {p.avatar ? (
             <>
               <img src={p.avatar} alt={t('avatarAlt')} className="w-full h-full object-cover" />
-              <button
-                onClick={removeAvatar}
-                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                title={t('removePhoto')}
-              >
-                <Trash2 className="w-5 h-5 text-white" />
-              </button>
+              <Tooltip label={t('removePhoto')} className="absolute inset-0">
+                <button
+                  onClick={removeAvatar}
+                  aria-label={t('removePhoto')}
+                  className="w-full h-full bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-5 h-5 text-white" />
+                </button>
+              </Tooltip>
             </>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex flex-col items-center gap-0.5 text-surface-400 hover:text-primary-500 transition-colors"
-              title={t('uploadPhoto')}
             >
               <Camera className="w-5 h-5" />
               <span className="text-[9px]">{t('photo')}</span>

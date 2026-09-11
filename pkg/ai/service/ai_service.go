@@ -16,13 +16,16 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// AIConfigItem 是返回给前端的单套配置视图，API Key 一律脱敏。
+// AIConfigItem 是返回给前端的单套配置视图。
+// API Key 默认脱敏；only 配置管理列表（ListAIConfigs）经 withKey 下发完整 Key，
+// 供用户在「显示」时查看真实明文。其余场景（如 AI 可用性判定）保持脱敏不返回。
 type AIConfigItem struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Provider string `json:"provider"`
 	BaseURL  string `json:"base_url"`
 	Model    string `json:"model"`
+	Key      string `json:"key,omitempty"` // 完整 Key，仅 withKey=true 时返回
 	KeyMasked string `json:"key_masked"`
 	Active   bool   `json:"active"` // 是否为当前启用
 }
@@ -92,9 +95,10 @@ func (s *AIService) active() (ai.AIUnit, bool) {
 	return s.load().Active()
 }
 
-// toItem 把配置单元转换为脱敏视图。
-func toItem(u ai.AIUnit, isActive bool) AIConfigItem {
-	return AIConfigItem{
+// toItem 把配置单元转换为视图；withKey=true 时附带完整 Key（仅配置管理列表），
+// 否则只回脱敏串。
+func toItem(u ai.AIUnit, isActive bool, withKey bool) AIConfigItem {
+	item := AIConfigItem{
 		ID:        u.ID,
 		Name:      u.Name,
 		Provider:  u.Provider,
@@ -103,14 +107,19 @@ func toItem(u ai.AIUnit, isActive bool) AIConfigItem {
 		KeyMasked: ai.MaskKey(u.APIKey),
 		Active:    isActive,
 	}
+	if withKey {
+		item.Key = u.APIKey
+	}
+	return item
 }
 
-// ListAIConfigs 返回全部配置（Key 脱敏）与当前启用 ID。
+// ListAIConfigs 返回全部配置与当前启用 ID。配置管理场景下附带完整 Key，
+// 供前端「显示」时查看明文。
 func (s *AIService) ListAIConfigs() *util.Response {
 	cfg := s.load()
 	items := make([]AIConfigItem, 0, len(cfg.Configs))
 	for _, u := range cfg.Configs {
-		items = append(items, toItem(u, u.ID == cfg.ActiveID))
+		items = append(items, toItem(u, u.ID == cfg.ActiveID, true))
 	}
 	return util.DoRsp(util.SuccCode, "成功", &AIConfigListResponse{ActiveID: cfg.ActiveID, Configs: items})
 }
@@ -119,7 +128,7 @@ func (s *AIService) ListAIConfigs() *util.Response {
 func (s *AIService) GetAIConfig() *util.Response {
 	cfg := s.load()
 	if u, ok := cfg.Active(); ok {
-		return util.DoRsp(util.SuccCode, "成功", toItem(u, true))
+		return util.DoRsp(util.SuccCode, "成功", toItem(u, true, false))
 	}
 	return util.DoRsp(util.SuccCode, "成功", AIConfigItem{})
 }
@@ -235,7 +244,7 @@ func (s *AIService) DeleteAIConfig(id string) *util.Response {
 		return util.DoRsp(util.ErrCode, "删除失败，请稍后重试", nil)
 	}
 	log.Infof("[ai_service] DeleteAIConfig: id=%s 已删除（剩余 %d 套）", id, len(c.Configs))
-	return util.DoRsp(util.SuccCode, "已删除", &AIConfigListResponse{ActiveID: c.ActiveID, Configs: toItems(c.Configs, c.ActiveID)})
+	return util.DoRsp(util.SuccCode, "已删除", &AIConfigListResponse{ActiveID: c.ActiveID, Configs: toItems(c.Configs, c.ActiveID, true)})
 }
 
 // TestConnection 对指定配置发一次最小请求验证连通性与鉴权；id 为空时用当前启用配置。
@@ -349,10 +358,10 @@ func defaultName(count int) string {
 	return fmt.Sprintf("配置%d", count+1)
 }
 
-func toItems(list []ai.AIUnit, activeID string) []AIConfigItem {
+func toItems(list []ai.AIUnit, activeID string, withKey bool) []AIConfigItem {
 	items := make([]AIConfigItem, 0, len(list))
 	for _, u := range list {
-		items = append(items, toItem(u, u.ID == activeID))
+		items = append(items, toItem(u, u.ID == activeID, withKey))
 	}
 	return items
 }

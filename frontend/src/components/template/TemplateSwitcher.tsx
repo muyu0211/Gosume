@@ -5,6 +5,7 @@ import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumb
 import { importTemplatePackage, loadTemplateMetas, deleteTemplate } from '../../services/templateService'
 import { extractErrorMessage } from '../../lib/errorUtils'
 import { useT } from '../../lib/i18n'
+import { Tooltip } from '../ui/Tooltip'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { Check, ChevronDown, Layout, Loader2, Upload, Trash2 } from 'lucide-react'
 
@@ -197,14 +198,15 @@ export function TemplateSwitcher() {
                     </span>
                     {isActive && <Check className="w-3 h-3 text-primary-500 flex-shrink-0" />}
                     {!tmpl.is_builtin && (
+                      <Tooltip className="ml-auto" label={t('deleteTemplate')}>
                       <button
                         onClick={(e) => handleDeleteClick(e, tmpl.id, tmpl.name)}
                         disabled={isDeleting}
-                        className="ml-auto flex-shrink-0 p-1 rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        title={t('deleteTemplate')}
+                        className="flex-shrink-0 p-1 rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                       >
                         {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                       </button>
+                    </Tooltip>
                     )}
                   </div>
                   <p className="text-[12px] text-surface-400 mt-1 line-clamp-2 leading-relaxed">

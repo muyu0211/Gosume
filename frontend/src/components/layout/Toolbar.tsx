@@ -168,7 +168,6 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
           <button
             onClick={toggleGrayscale}
             className={`btn-ghost btn-sm ${grayscale ? 'bg-surface-100 text-primary-600' : ''}`}
-            title={t('grayscaleOn')}
           >
             {grayscale ? <Contrast className="w-4 h-4" /> : <Palette className="w-4 h-4" />}
           </button>

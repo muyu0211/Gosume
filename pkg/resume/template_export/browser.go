@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-pdf/fpdf"
@@ -71,17 +72,14 @@ const (
 	browserLaunchTimeout = 20 * time.Second
 )
 
-// browserDebugPort 是无头 Chromium 使用的固定 CDP 调试端口。
-//
-// 禁用 leakless 后浏览器不再随主进程强杀，进程被强制结束时可能残留。固定端口让
-// rod 优先复用该端口上已存在的实例（见 openBrowser），把残留数收敛到 1 个，
-// 而不是每次启动都新增一个。代价是本机其它进程可预测地连上它。可接受：
-// Chromium 的 --remote-debugging-port 只监听 127.0.0.1，该实例仅渲染本地简历
-// HTML、不持有任何登录态或凭据。
-const browserDebugPort = 32717
-
 // leaklessEnv 是开启 rod leakless 守护进程的环境变量开关（值为 "1" 时开启）。
 const leaklessEnv = "GOSUME_ENABLE_LEAKLESS"
+
+// staleProfileAge 超过该时长的历史 profile 目录会在下次启动时被清理。
+const staleProfileAge = 24 * time.Hour
+
+// profileSeq 保证同一会话内多次生成的 profile 目录名唯一。
+var profileSeq atomic.Uint64
 
 // BrowserManager 管理共享的无头 Chromium 实例，用于 PDF 与 PNG 渲染。
 // 浏览器在首次使用时惰性启动，并在多次导出之间复用。
@@ -90,6 +88,12 @@ type BrowserManager struct {
 	browser  *rod.Browser
 	launcher *launcher.Launcher // 保存引用，避免 GC 触发清理导致 browser 进程被杀
 	page     *rod.Page          // 维护全局一个page对象
+
+	// profileDir 是本次应用会话专用的独立浏览器 user-data 目录，首次启动时惰性生成。
+	// 每次会话用独立目录 + 随机调试端口，崩溃残留既锁不到新实例、也不会连坏新连接，
+	// 因此不再需要清理残留进程（不再依赖 PowerShell）。历史会话目录由
+	// cleanupStaleBrowserDirs 在下次启动时以文件系统遍历清理。
+	profileDir string
 }
 
 // NewBrowserManager 创建浏览器管理器；浏览器直到首次 Acquire 才真正启动。
@@ -127,13 +131,13 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 		m.resetBrowser()
 	}
 
-	// 全新启动前，先回收上次会话残留的无头浏览器。
-	//
-	// 禁用 leakless 后，主进程被强杀时浏览器不会随主进程退，残留进程会锁住固定的
-	// profile 目录与调试端口。若不清理直接启动：rod 连上这种半死残留实例会报
-	// "connection ... unexpected EOF"，或新 Edge 因 profile 被锁启动即退出
-	// （"Failed to get the debug url"）。先杀掉才是实现「固定端口收敛残留」的前提。
-	m.reapLeftovers()
+	// 首次启动惰性建立本次会话专用的独立 profile 目录，并顺带清理历史残留目录。
+	// 两者只在首次（profileDir 为空）执行一次，避免每次进编辑页/导出都重扫，也避免
+	// 反复拉起清理进程。独立目录 + 随机端口后，崩溃残留锁不到新实例，无需再杀进程。
+	if m.profileDir == "" {
+		m.profileDir = makeProfileDir()
+		cleanupStaleBrowserDirs(staleProfileAge)
+	}
 
 	path := findBrowser()
 	if path == "" {
@@ -143,7 +147,7 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 		}
 	}
 
-	l, browser, err := openBrowser(path)
+	l, browser, err := openBrowser(path, m.profileDir)
 	if err != nil {
 		return nil, &BrowserLaunchError{Message: launchHint(err), Err: err}
 	}
@@ -154,13 +158,13 @@ func (m *BrowserManager) getBrower() (*rod.Browser, error) {
 
 // newLauncher 构造无头浏览器启动器。
 //
-// port 为 0 时使用随机调试端口；非 0 时固定端口（见 browserDebugPort）。
-func newLauncher(bin string, port int) *launcher.Launcher {
+// profileDir 为本次会话的独立 user-data 目录；CDP 调试端口使用 rod 默认随机端口，
+// 每次启动的都是全新健康实例，不依赖复用或清理残留进程。
+func newLauncher(bin, profileDir string) *launcher.Launcher {
 	l := launcher.New().Bin(bin).Headless(true).NoSandbox(true).
-		Set("disable-gpu").Set("disable-software-rasterizer").
-		UserDataDir(chromiumProfileDir())
-	if port > 0 {
-		l = l.RemoteDebuggingPort(port)
+		Set("disable-gpu").Set("disable-software-rasterizer")
+	if profileDir != "" {
+		l = l.UserDataDir(profileDir)
 	}
 	if !leaklessEnabled() {
 		l = l.Leakless(false)
@@ -181,18 +185,27 @@ func leaklessEnabled() bool {
 	return os.Getenv(leaklessEnv) == "1"
 }
 
-// chromiumProfileDir 返回无头 Chromium 的固定 profile 目录；不可用时返回空串，
-// 交给 rod 回落到默认位置。
-//
-// 不使用 rod 默认的 %TEMP%/rod/user-data/<随机>：一是 %TEMP% 常被企业策略
-// （AppLocker / SRP）禁止写入或执行，与 leakless 同属一个雷区；二是每次启动都新建
-// 随机目录会持续堆积。改用系统缓存目录下的固定路径，稳定且可复用。
-func chromiumProfileDir() string {
+// browserRoot 返回所有无头浏览器 profile 目录的根（系统缓存目录下，非 %TEMP%，
+// 规避企业级 %TEMP% 写/执行策略这一雷区）。不可用时返回空串，让 rod 回落到默认位置。
+func browserRoot() string {
 	base, err := os.UserCacheDir()
 	if err != nil || base == "" {
 		return ""
 	}
-	dir := filepath.Join(base, "Gosume", "chromium-profile")
+	return filepath.Join(base, "Gosume", "browser")
+}
+
+// makeProfileDir 在 browserRoot 下创建本次会话专用的独立 profile 目录。
+//
+// 目录名带时间戳 + 自增序号，保证不同会话/同会话多次重建都不冲突，从而崩溃残留的
+// SingletonLock 锁不到新实例——不再需要清理残留进程（可完全移除 PowerShell/pkill）。
+func makeProfileDir() string {
+	root := browserRoot()
+	if root == "" {
+		return ""
+	}
+	seq := profileSeq.Add(1)
+	dir := filepath.Join(root, fmt.Sprintf("session-%d-%d", time.Now().UnixMilli(), seq))
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Warnf("[browser] 创建浏览器 profile 目录失败，回退默认位置: %v", err)
 		return ""
@@ -200,29 +213,33 @@ func chromiumProfileDir() string {
 	return dir
 }
 
-// openBrowser 按降级链启动并连接无头浏览器：
-//
-//  1. 固定调试端口。rod 在禁用 leakless 时会先尝试连接该端口上已存在的浏览器，
-//     于是上次强杀留下的残留进程会被复用而不是不断累积。
-//  2. 固定端口被其它程序占用时（连不上或拿到非 CDP 响应）回退随机端口，
-//     保证导出功能始终可用。
-//
-// 任一级失败都继续尝试下一级，不再按错误信息判断原因：杀软可能先把 leakless.exe
-// 隔离再报 "The system cannot find the file specified"，或直接 "Access is denied"，
-// 这类文案不含任何可识别关键字，字符串匹配会漏判并把错误原样抛给用户。
-func openBrowser(bin string) (*launcher.Launcher, *rod.Browser, error) {
-	l, browser, err := tryLaunch(newLauncher(bin, browserDebugPort))
-	if err == nil {
-		return l, browser, nil
+// cleanupStaleBrowserDirs 清理 browserRoot 下超过时长的旧会话 profile 目录。
+// 纯文件系统遍历（os.ReadDir + RemoveAll），不启动任何进程，在每次会话首次启动时
+// 执行一次，避免历史会话/崩溃遗留的目录无限堆积。
+func cleanupStaleBrowserDirs(olderThan time.Duration) {
+	root := browserRoot()
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return // 根目录不存在或不可读，无需清理
 	}
-	log.Warnf("[browser] 固定调试端口 %d 不可用，回退随机端口: %v", browserDebugPort, err)
+	cutoff := time.Now().Add(-olderThan)
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		if info, err := e.Info(); err == nil && info.ModTime().Before(cutoff) {
+			_ = os.RemoveAll(filepath.Join(root, e.Name()))
+		}
+	}
+}
 
-	l, browser, randErr := tryLaunch(newLauncher(bin, 0))
-	if randErr == nil {
-		return l, browser, nil
-	}
-	// 两个候选都失败：合并上报，便于一次看到两种原因。
-	return nil, nil, errors.Join(err, randErr)
+// openBrowser 启动并连接无头浏览器。
+//
+// 使用随机调试端口 + 独立的 profile 目录，每次得到的都是全新健康实例：不依赖复用
+// 上次残留的浏览器，也不再需要靠固定端口把残留收敛到 1 个，从而彻底规避半死残留
+// 导致 "unexpected EOF"、或残留锁住 profile 目录导致新实例启动即退这两类问题。
+func openBrowser(bin, profileDir string) (*launcher.Launcher, *rod.Browser, error) {
+	return tryLaunch(newLauncher(bin, profileDir))
 }
 
 // tryLaunch 启动并连接浏览器；任一步失败都回收已产生的进程，避免残留。
@@ -312,23 +329,13 @@ func (m *BrowserManager) resetBrowser() {
 	}
 	// 无论 CDP 关闭是否报错都杀进程树。
 	//
-	// browser.Close 只下发优雅关闭命令，返回 nil 也不代表所有子进程都已退出；且降级
-	// 模式（无 leakless）下进程回收完全依赖这里。不主动清理，残留浏览器就会锁住固定
-	// profile 目录 / 调试端口，导致下次导出出现 "unexpected EOF" 或 "Failed to get
-	// the debug url"。此方法仅在被复用缓存失效/应用退出时调用，Kill 的 1s 等待可忽略。
+	// browser.Close 只下发优雅关闭命令，返回 nil 也不代表所有子进程都已退出；且
+	// leakless 默认关闭时进程回收完全依赖这里。不主动清理，主进程被强杀时残留的浏览器
+	// 会一直占着后台。此方法仅在被复用缓存失效/应用退出时调用，Kill 的 1s 等待可忽略。
 	if m.launcher != nil {
 		killLauncher(m.launcher)
 		m.launcher = nil
 	}
-}
-
-// reapLeftovers 回收本站残留的无头浏览器进程，避免其锁死固定 profile 目录与调试端口。
-func (m *BrowserManager) reapLeftovers() {
-	markers := []string{"remote-debugging-port=" + strconv.Itoa(browserDebugPort)}
-	if d := chromiumProfileDir(); d != "" {
-		markers = append(markers, d)
-	}
-	reapLeftoverBrowsers(markers)
 }
 
 // RenderPDF 把已分页的 HTML 渲染为 PDF 字节流。

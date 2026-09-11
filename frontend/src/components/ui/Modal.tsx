@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState, type ReactNode } from 'react'
 
 export interface ModalHandle {
   /** 触发退场动画，动画结束后调用 onClose。 */
@@ -33,29 +33,6 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
   ref,
 ) {
   const [phase, setPhase] = useState<Phase>('entering')
-  const cardRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  // 卡片内容自然高度（→ 设给卡片数值 height，配合 transition 实现尺寸平滑变化）。
-  const [height, setHeight] = useState<number | undefined>(undefined)
-
-  // 每次渲染后按内容自然高度更新卡片高度（内容变化 → 高度过渡）；超高时钳到 90vh。
-  useLayoutEffect(() => {
-    const c = contentRef.current
-    if (!c) return
-    const maxH = Math.floor(window.innerHeight * 0.9)
-    setHeight(Math.min(c.offsetHeight, maxH))
-  })
-
-  // 窗口尺寸变化时重新钳制。
-  useEffect(() => {
-    const onResize = () => {
-      const c = contentRef.current
-      if (!c) return
-      setHeight(Math.min(c.offsetHeight, Math.floor(window.innerHeight * 0.9)))
-    }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
 
   useEffect(() => {
     // 挂载后等待两帧再进入 open，保证入场过渡生效
@@ -76,7 +53,8 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
     return () => document.removeEventListener('keydown', onKey)
   }, [close])
 
-  const handleTransitionEnd = () => {
+  const handleAnimationEnd = () => {
+    // 退出动画执行完（animationend 必然触发）后再卸载，避免覆盖层残留导致页面不可点击
     if (phase === 'exiting') onClose()
   }
 
@@ -90,21 +68,13 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
       onClick={close}
     >
       <div
-        ref={cardRef}
-        onTransitionEnd={handleTransitionEnd}
+        onAnimationEnd={handleAnimationEnd}
         onClick={(e) => e.stopPropagation()}
         className={`bg-elev rounded-2xl shadow-xl ${width} max-h-[90vh] ${cardClassName} transition-all duration-200 ${
-          phase === 'entering'
-            ? 'opacity-0 scale-96 translate-y-2'
-            : phase === 'open'
-            ? 'opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-96 translate-y-2'
+          phase === 'exiting' ? 'gosume-modal-out' : 'gosume-modal-in'
         }`}
-        style={{ height }}
       >
-        <div ref={contentRef} className="flex min-h-0 flex-col">
-          {children}
-        </div>
+        {children}
       </div>
     </div>
   )

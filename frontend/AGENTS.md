@@ -206,12 +206,33 @@ updateField('jobs[0].company', '某公司')
 
 ### 模态窗口规范（Modal）
 
-所有模态窗口**必须**基于 `components/ui/Modal.tsx` 通用外壳（`useRef<ModalHandle>`，`width` 定制宽度），禁止手写 `fixed inset-0` overlay 或自造动画。Modal 内置：三阶段过渡（entering→open→exiting，200ms）、overlay/Escape 关闭、`max-h-[90vh]` 自适应、业务完成后 `modalRef.current?.close()`。
+所有模态窗口**必须**基于 `components/ui/Modal.tsx` 通用外壳（`useRef<ModalHandle>`，`width` 定制宽度），禁止手写 `fixed inset-0` overlay 或自造动画。Modal 内置：三阶段过渡（entering→open→exiting）、overlay/Escape 关闭、`max-h-[90vh]` 自适应、业务完成后 `modalRef.current?.close()`。
 
-* `width`：默认 `w-[520px]`，内容少 `w-[480px]`，确认框 `w-[380px]`。
-* 超高内容滚动：整体滚动用 `cardClassName="overflow-auto"`；固定 Header/Footer 用 `flex flex-col overflow-hidden` + Header/Footer `flex-shrink-0` + 内容 `flex-1 overflow-auto`。
+**进出场动画（已统一，勿改）**：
+* 进入：卡片挂 `gosume-modal-in`（CSS `animation`：`scaleY 0.35→1` + `translateY` + 淡入，0.3s 回弹 easing）。挂载即无条件播放一次，不依赖时序/两帧。
+* 退出：卡片挂 `gosume-modal-out`（`scaleY→0.6` + 淡出，0.2s），用 **`onAnimationEnd` 触发卸载**——必须用 `animation` + `animationend`（而非 `transition` + `transitionend`），否则覆盖层可能残留导致页面不可点击。
+* 关键帧定义在 `assets/styles/globals.css` 的 `.gosume-modal-in/out`；新增/调整动画只改这里，勿在组件内另写。
+
+**尺寸变化（内容高度增减）规范**：
+* 不要在 Modal 内容上叠加 `Expandable`（grid 0fr↔1fr）或 JS 数值 height 测量——会造成「进入动画 + 二次展开」双重动画，或破坏 `flex flex-col overflow-hidden` 布局。
+* 异步加载的模态（如 `AIConfigManagerDialog`）用**稳定最小高度**（内容区 `min-h-[380px]` 左右）避免加载完成时高度突变；内容在各自滚动区呈现。
+* 全局 `interpolate-size: allow-keywords` 已启用，新版 WebView2 对微小高度变化可平滑过渡，无需额外 JS。
+
+* `width`：默认 `w-[520px]`，内容少 `w-[480px]`，确认框 `w-[380px]`，配置管理类用 `w-[900px]`。
+* 超高内容滚动：整体滚动用 `cardClassName="overflow-auto"`；固定 Header/Footer 用 `flex flex-col overflow-hidden` + Header/Footer `flex-shrink-0` + 内容 `flex-1 overflow-auto`（如 `AIConfigManagerDialog`：状态提示常驻 Footer）。
 * 次级确认框用 `ConfirmDialog`（overlay 统一 `bg-black/25 backdrop-blur-sm`），靠 DOM 顺序叠层，勿再叠 z-index。
 * 自定义浮层（下拉等）用 Portal 到 `document.body` + `fixed` + `z-[9999]`（参考 `CustomSelect.tsx`/`Tooltip.tsx`）；面板外部滚动时重算定位。
+
+### Tooltip / 原生提示规范
+
+交互元素（按钮、图标控件等）的提示统一遵循：
+
+* **有可见文本标签的按钮不使用 Tooltip**：按钮内文字已表达语义（如「保存」「删除模板」「去设置」），无需再挂 Tooltip。
+* **纯图标功能按钮/控件必须使用 `Tooltip`**：凡仅渲染图标、无可见文本、悬停需传达用途的交互元素，一律用 `components/ui/Tooltip` 包裹（`label` 走 `i18n` 的 `t()`，`side` 默认 bottom）。
+* **全局禁用浏览器原生 `title` 作为提示**：不得在 `button`/`a` 等可交互元素上用 `title=` 做 tooltip。`title` 仅允许出现在**非交互**展示（如模板色点 `<span>` 标注颜色）或 Tooltip 鞭长莫及处，此等场景须用 `aria-label`/`aria-describedby` 保障无障碍。
+* **无障碍与视觉提示并存**：`aria-label` 与 `Tooltip` 不冲突——图标按钮可同时放置（`aria-label` 供读屏，`Tooltip` 供视觉悬停）。
+
+新增/调整任何按钮、图标交互时，先对照此规则自查：带文本 → 不用 Tooltip；纯图标 → 必须 Tooltip；禁止用原生 `title` 提示，保持全局一致。
 
 ### 通用规则
 
@@ -236,9 +257,10 @@ updateField('jobs[0].company', '某公司')
 
 ### 交互动画
 
+* 模态窗口：进出场走 `gosume-modal-in/out`（见「模态窗口规范（Modal）」），**禁止**对 Modal 内容叠加 `Expandable`/height 数值过渡造成双重动画。
 * 模板切换：纯透明度淡入（`animate-preview-enter`，0.28s）。
 * 内容结构变化：FLIP 动画（`lib/morphPreview.ts`）按 `data-id`/`data-section`+index 匹配；保留块平移、新块淡入、删除块消失。
-* 可折叠部分：CSS grid 动画（`grid-template-rows 0fr→1fr`，180ms）+ `overflow-hidden` + opacity/translateY。
+* 可折叠部分：CSS grid 动画（`grid-template-rows 0fr→1fr`，180ms）+ `overflow-hidden` + opacity/translateY（`Expandable` 组件）。
 
 ### React+TS 专属规则
 

@@ -3,6 +3,7 @@ import { Plus, Trash2, Loader2, Eye, EyeOff, CheckCircle, AlertCircle, Sparkles,
 import { Modal, type ModalHandle } from '../ui/Modal'
 import { CustomSelect } from '../ui/CustomSelect'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { Expandable } from '../ui/Expandable'
 import { Tooltip } from '../ui/Tooltip'
 import { ProviderLogo } from './ProviderLogo'
 import {
@@ -103,14 +104,17 @@ export function AIConfigManagerDialog({ onClose }: Props) {
   // 选中某配置 → 回填表单
   const selectConfig = (info: AIInfo) => {
     setSelectedId(info.id)
+    setShowKey(false)
     setForm({
       id: info.id,
       name: info.name,
       provider: info.provider,
       base_url: info.base_url,
       model: info.model,
-      api_key: '',
-      hasKey: !!info.key_masked,
+      // 完整 Key 直接保留在输入框中（后端配置文件管理列表已下发明文），
+      // 默认加密显示，眼睛按钮切换明文/密文可见。需清空则删除整套配置。
+      api_key: info.key || info.key_masked || '',
+      hasKey: !!info.key_masked || !!info.key,
       keyMasked: info.key_masked,
     })
     setStatus('')
@@ -121,6 +125,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
   const startNew = () => {
     const n = configs.length + 1
     setSelectedId('')
+    setShowKey(false)
     setForm(emptyForm(t('aiConfigDefaultName').replace('{n}', String(n))))
     setStatus('')
     setTestMsg('')
@@ -318,7 +323,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
           </div>
         </div>
 
-        {/* Body：左列表 + 右表单 */}
+        {/* Body：左列表 + 右表单（稳定高度，随内容在各自滚动区展示） */}
         <div className="flex flex-1 overflow-hidden">
           {/* 列表 */}
           <div className="w-[240px] border-r border-surface-100 overflow-y-auto p-2 flex-shrink-0">
@@ -400,7 +405,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
           </div>
 
           {/* 表单 */}
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-5 min-h-[380px]">
             <div className="space-y-3">
               <div className="flex items-center gap-3 mb-1">
                 <ProviderLogo provider={form.provider} size={28} />
@@ -435,15 +440,15 @@ export function AIConfigManagerDialog({ onClose }: Props) {
               <div>
                 <label className="form-label">{t('aiModel')}</label>
                 <CustomSelect value={modelValue} onChange={onModelChange} options={modelOptions} placeholder={t('aiModelPlaceholder')} emptyText={t('aiModelEmpty')} />
-                {aiCustom && (
+                <Expandable show={aiCustom} gapTop={8}>
                   <input
-                    className="form-input mt-2"
+                    className="form-input"
                     type="text"
                     placeholder={t('aiModelPlaceholder')}
                     value={form.model}
                     onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
                   />
-                )}
+                </Expandable>
               </div>
 
               <div>
@@ -453,18 +458,19 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                     type="text"
                     autoComplete="off"
                     className={`form-input pr-10 ${showKey ? '' : '[-webkit-text-security:disc]'}`}
-                    placeholder={form.hasKey ? t('aiKeySavedHint').replace('{key}', form.keyMasked || '') : t('aiApiKeyPlaceholder')}
+                    placeholder={t('aiApiKeyPlaceholder')}
                     value={form.api_key}
                     onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
                   />
+                  <Tooltip className="absolute right-2 top-1/2 -translate-y-1/2" label={showKey ? t('hidden') : t('unhideHint')}>
                   <button
                     type="button"
                     onClick={() => setShowKey((v) => !v)}
-                    title={showKey ? t('hidden') : t('unhideHint')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
+                    className="p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
                   >
                     {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+                </Tooltip>
                 </div>
                 {form.hasKey && <p className="text-[11px] text-surface-400 mt-1">{t('aiKeyLockedHint')}</p>}
               </div>
@@ -475,18 +481,22 @@ export function AIConfigManagerDialog({ onClose }: Props) {
         {/* Footer (固定；左侧常驻保存/测试状态提示，右侧操作按钮) */}
         <div className="flex items-center gap-3 px-6 py-3 border-t border-surface-100 flex-shrink-0">
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            {status !== '' && (
-              <p className={`text-xs flex items-center gap-1 ${status === 'error' ? 'text-red-600' : 'text-green-600'}`}>
-                {status === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
-                {statusMsg}
-              </p>
-            )}
-            {testMsg !== '' && (
-              <p className={`text-xs flex items-center gap-1 ${testMsg === 'error' ? 'text-red-600' : 'text-green-600'}`}>
-                {testMsg === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
-                {testDetail}
-              </p>
-            )}
+            <Expandable show={status !== ''}>
+              {status !== '' && (
+                <p className={`text-xs flex items-center gap-1 ${status === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                  {status === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                  {statusMsg}
+                </p>
+              )}
+            </Expandable>
+            <Expandable show={testMsg !== ''}>
+              {testMsg !== '' && (
+                <p className={`text-xs flex items-center gap-1 ${testMsg === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                  {testMsg === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                  {testDetail}
+                </p>
+              )}
+            </Expandable>
           </div>
           <button
             type="button"

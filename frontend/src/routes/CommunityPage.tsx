@@ -180,7 +180,7 @@ export function CommunityPage() {
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
       <header className="flex items-center gap-3 px-8 py-5 border-b border-surface-100 bg-elev/70 backdrop-blur-sm">
-        <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm" title="返回首页">
+        <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm">
           <ArrowLeft className="w-4 h-4" />
           首页
         </button>
@@ -214,7 +214,7 @@ export function CommunityPage() {
           </div>
         </div>
 
-        <button onClick={refresh} className="btn-ghost btn-sm" title="刷新列表">
+        <button onClick={refresh} className="btn-ghost btn-sm">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           刷新
         </button>

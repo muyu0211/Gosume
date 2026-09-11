@@ -119,6 +119,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   aiCustomModel: { zh: '自定义', en: 'Custom' },
   aiApiKey: { zh: 'API Key', en: 'API Key' },
   aiApiKeyPlaceholder: { zh: '输入你的 API Key', en: 'Enter your API Key' },
+  aiShowKey: { zh: '显示 Key', en: 'Show Key' },
+  aiHideKey: { zh: '隐藏 Key', en: 'Hide Key' },
   aiKeySavedHint: {
     zh: '已保存：{key}。如需更换，直接输入新的 Key 即可。',
     en: 'Saved: {key}. Type a new Key to replace it.',
@@ -225,8 +227,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   wechatPlaceholder: { zh: '微信号', en: 'WeChat ID' },
   yearsOfExp: { zh: '工作年限', en: 'Years of experience' },
   hidden: { zh: '已隐藏', en: 'Hidden' },
-  unhideHint: { zh: '取消隐藏（在简历中显示）', en: 'Show in resume' },
-  hideHint: { zh: '隐藏此段（不在简历中显示）', en: 'Hide from resume' },
+  unhideHint: { zh: '取消隐藏', en: 'Show in resume' },
+  hideHint: { zh: '隐藏此段', en: 'Hide' },
   summaryLabel: { zh: '求职意向 / 个人简介', en: 'Objective / Summary' },
   summaryPlaceholder: {
     zh: '简要描述你的职业背景、核心能力和求职目标…',
@@ -350,7 +352,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   fieldName: { zh: '字段名', en: 'Field name' },
   fieldValuePlaceholder: { zh: '字段值（如：React, Go，可加粗）', en: 'Field value (e.g. React, Go; supports bold)' },
   addExtraField: { zh: '添加扩展项', en: 'Add field' },
-  hideNotShow: { zh: '隐藏（不在简历中显示）', en: 'Hide from resume' },
+  hideNotShow: { zh: '隐藏', en: 'Hide' },
   present: { zh: '至今', en: 'Present' },
   clear: { zh: '清除', en: 'Clear' },
   yearSuffix: { zh: '年', en: '' },

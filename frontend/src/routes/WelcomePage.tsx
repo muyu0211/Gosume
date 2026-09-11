@@ -383,7 +383,6 @@ export function WelcomePage() {
               <button
                 onClick={() => setShowUpdateDialog(true)}
                 className="absolute -top-1.5 -right-2.5 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold tracking-wider shadow-md shadow-red-500/30 animate-badge-pop hover:bg-red-600 active:scale-95 transition-colors"
-                title={t('newVersionTip').replace('{v}', updateInfo.latest_version)}
               >
                 NEW
               </button>
@@ -791,7 +790,6 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
                 onClick={(e) => { e.stopPropagation(); onShare() }}
                 disabled={sharing}
                 className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
-                title={t('exportShareTitle')}
               >
                 {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('export')}</span>
@@ -886,14 +884,16 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                     {new Date(log.imported_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                   </p>
                 </div>
-                <button
-                  onClick={() => onDelete(log)}
-                  disabled={deletingId === log.id}
-                  className="p-1.5 rounded-lg text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
-                  title={t('deleteRecord')}
-                >
-                  {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                </button>
+                <Tooltip label={t('deleteRecord')}>
+                  <button
+                    onClick={() => onDelete(log)}
+                    disabled={deletingId === log.id}
+                    aria-label={t('deleteRecord')}
+                    className="p-1.5 rounded-lg text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
+                  >
+                    {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </button>
+                </Tooltip>
               </div>
             ))}
           </div>

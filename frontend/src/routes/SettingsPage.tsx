@@ -9,6 +9,7 @@ import { AIConfigManagerDialog } from '../components/ai/AIConfigManagerDialog'
 import { ProviderLogo } from '../components/ai/ProviderLogo'
 import { listAIConfigs, type AIInfo } from '../services/aiService'
 import { CustomSelect } from '../components/ui/CustomSelect'
+import { Tooltip } from '../components/ui/Tooltip'
 import { useThemeStore } from '../stores/themeStore'
 import { useAppStore } from '../stores/appStore'
 import { callService } from '../services/backend'
@@ -224,13 +225,14 @@ export function SettingsPage() {
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
       <header className="flex items-center gap-3 px-6 py-4 bg-elev border-b border-surface-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="btn-ghost btn-sm"
-          title={t('back')}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <Tooltip label={t('back')}>
+          <button
+            onClick={() => navigate(-1)}
+            className="btn-ghost btn-sm"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        </Tooltip>
         <Settings className="w-5 h-5 text-surface-500" />
         <h1 className="text-lg font-semibold text-surface-800">{t('settings')}</h1>
       </header>
@@ -394,7 +396,6 @@ export function SettingsPage() {
                 <button
                   onClick={handleCopyPair}
                   className="btn-secondary btn-sm inline-flex items-center gap-1 shrink-0"
-                  title={t('copyPairCode')}
                 >
                   {pairCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   {pairCopied ? t('copied') : t('copy')}

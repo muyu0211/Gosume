@@ -5,6 +5,7 @@ import {
   Upload, Download, ArrowLeft, Check, Image as ImageIcon, Camera, Crop as CropIcon, Loader2, FolderOpen, AlertCircle,
 } from 'lucide-react'
 import { AnimatedRange } from '../ui/AnimatedRange'
+import { Tooltip } from '../ui/Tooltip'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { callService, isWails } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
@@ -313,9 +314,11 @@ export function IdPhotoTool({ onBack }: Props) {
     <div className="space-y-4 animate-page-enter">
       {/* 头部 */}
       <div className="flex items-center gap-2">
-        <button onClick={onBack} className="btn-ghost btn-sm" title={t('backToToolbox')}>
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+        <Tooltip label={t('backToToolbox')}>
+          <button onClick={onBack} className="btn-ghost btn-sm" aria-label={t('backToToolbox')}>
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        </Tooltip>
         <Camera className="w-5 h-5 text-surface-500" />
         <h2 className="text-base font-semibold text-surface-800">{t('idPhotoKit')}</h2>
         {sourceName && (

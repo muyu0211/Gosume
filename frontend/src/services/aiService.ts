@@ -7,13 +7,14 @@
 
 import { callService } from './backend'
 
-/** 后端回显的单套配置视图，API Key 已脱敏。 */
+/** 后端回显的单套配置视图（来自配置管理列表，含完整 Key 供查看明文）。 */
 export interface AIInfo {
   id: string
   name: string
   provider: string
   base_url: string
   model: string
+  key: string // 完整 Key（仅配置管理列表返回，用于「显示」时查看明文）
   key_masked: string
   active: boolean
 }
