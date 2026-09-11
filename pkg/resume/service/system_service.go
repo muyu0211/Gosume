@@ -21,11 +21,9 @@ import (
 
 // SystemService 提供系统相关的信息与工具方法（窗口控制、路径、配置等）。
 type SystemService struct {
-	App       *application.App
-	configMgr *user_config.Manager
-	win       *application.WebviewWindow
-	// closeConfirmed 标记前端已确认关闭窗口（保存或不保存后），下一次关闭请求放行。
-	// 用于拦截系统关闭（标题栏 X / Alt+F4 / macOS 红绿灯），先通知前端做未保存确认。
+	App            *application.App
+	configMgr      *user_config.Manager
+	win            *application.WebviewWindow
 	closeConfirmed atomic.Bool
 }
 

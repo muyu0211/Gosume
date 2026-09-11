@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"gosume/pkg/log"
 	ghttp "gosume/pkg/remote/http"
 )
 
@@ -23,9 +24,9 @@ type Client struct {
 	model  string        // 默认模型名
 }
 
-// NewClient 基于配置构造大模型客户端。Base URL 来自运行时用户配置，
+// NewClient 基于配置单元构造大模型客户端。Base URL 来自运行时用户配置，
 // 故使用动态 target 构造（NewHttpClientWithTarget），不依赖 config.yaml 静态服务声明。
-func NewClient(cfg AIConfig) *Client {
+func NewClient(cfg AIUnit) *Client {
 	return &Client{
 		cli:    ghttp.NewHttpClientWithTarget(strings.TrimRight(cfg.BaseURL, "/"), ghttp.WithTimeout(defaultChatTimeout)),
 		apiKey: cfg.APIKey,
@@ -50,6 +51,7 @@ func (c *Client) Chat(ctx context.Context, msgs []ChatMessage, temperature *floa
 	}
 
 	// 相对路径 /chat/completions 自动拼接在 Base URL 之后。
+	log.Debugf("[ai] Chat: 发起请求 model=%s messages=%d", c.model, len(msgs))
 	if _, err := c.cli.Post(ctx, "/chat/completions", req, &resp, opts...); err != nil {
 		return "", err
 	}

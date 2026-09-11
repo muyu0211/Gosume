@@ -8,6 +8,7 @@ import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { AIPolishControl } from './AIPolishControl'
 import { useT } from '../../lib/i18n'
 
 /**
@@ -263,7 +264,10 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">{t('entryContent')}</label>
+                    <div className="flex items-center justify-between">
+                    <label className="form-label mb-0">{t('entryContent')}</label>
+                    <AIPolishControl text={item.description || ''} semantic="custom" onPolish={(r) => updateItem(sectionIndex, idx, { description: r })} />
+                  </div>
                     <RichTextField
                       value={item.description || ''}
                       onChange={(v) => updateItem(sectionIndex, idx, { description: v })}

@@ -1,6 +1,8 @@
 package ai
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -9,28 +11,94 @@ import (
 // aiConfigFileName 是 AI 配置文件文件名，存放于数据目录内，随数据目录迁移。
 const aiConfigFileName = "ai_config.json"
 
-// AIConfig 描述 AI 服务的用户配置。
+// AIUnit 是单套 AI 配置单元。
 //
 // APIKey 为明文存储（0600 权限限制）。对外回包、日志一律经 MaskKey 脱敏，
 // 后续如需更严格安全可升级为系统钥匙串（Windows Credential Manager / macOS Keychain）。
-type AIConfig struct {
-	Provider string `json:"provider"`  // provider 标识（openai/deepseek/qwen/kimi/zhipu/custom）
-	BaseURL  string `json:"base_url"`  // 大模型服务 Base URL（含 /v1 等版本前缀）
-	APIKey   string `json:"api_key"`   // API Key（明文）
-	Model    string `json:"model"`     // 模型名
-	Enabled  bool   `json:"enabled"`   // 是否启用 AI 服务
+type AIUnit struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`     // 自定义配置名（默认如「配置1」）
+	Provider string `json:"provider"` // provider 标识（openai/deepseek/qwen/kimi/zhipu/custom）
+	BaseURL  string `json:"base_url"` // 大模型服务 Base URL（含 /v1 等版本前缀）
+	APIKey   string `json:"api_key"`  // API Key（明文）
+	Model    string `json:"model"`    // 模型名
 }
 
-// LoadConfig 从数据目录读取 AI 配置；文件不存在或损坏时返回零值配置。
-func LoadConfig(dataDir string) AIConfig {
-	var c AIConfig
-	if raw, err := os.ReadFile(filepath.Join(dataDir, aiConfigFileName)); err == nil {
-		_ = json.Unmarshal(raw, &c)
+// AIConfig 是 AI 配置的根容器：多套配置 + 单「当前启用」。
+type AIConfig struct {
+	ActiveID string   `json:"active_id"` // 当前启用配置的 ID（可为空）
+	Configs  []AIUnit `json:"configs"`
+}
+
+// oldAIConfig 兼容旧版单配置结构（顶层直接是 provider/base_url/api_key/model/enabled）。
+type oldAIConfig struct {
+	Provider string `json:"provider"`
+	BaseURL  string `json:"base_url"`
+	APIKey   string `json:"api_key"`
+	Model    string `json:"model"`
+	Enabled  bool   `json:"enabled"`
+}
+
+// Active 返回当前启用配置；无启用或找不到时返回 ok=false。
+func (c AIConfig) Active() (AIUnit, bool) {
+	for _, u := range c.Configs {
+		if u.ID == c.ActiveID {
+			return u, true
+		}
 	}
+	return AIUnit{}, false
+}
+
+// Find 按 ID 查找配置单元。
+func (c AIConfig) Find(id string) (AIUnit, bool) {
+	for _, u := range c.Configs {
+		if u.ID == id {
+			return u, true
+		}
+	}
+	return AIUnit{}, false
+}
+
+// LoadConfig 从数据目录读取 AI 配置（多配置容器）。
+// - 文件不存在或损坏时返回空容器；
+// - 若检测到**旧版单配置**结构，自动迁移为「配置1」并置为当前启用（仅内存态，不自动写盘）。
+func LoadConfig(dataDir string) AIConfig {
+	raw, err := os.ReadFile(filepath.Join(dataDir, aiConfigFileName))
+	if err != nil {
+		return AIConfig{}
+	}
+
+	// 探测新版（active_id/configs）还是旧版（顶层 base_url）。
+	var probe struct {
+		ActiveID string   `json:"active_id"`
+		Configs  []AIUnit `json:"configs"`
+		BaseURL  string   `json:"base_url"`
+	}
+	if json.Unmarshal(raw, &probe) != nil {
+		return AIConfig{}
+	}
+	if probe.BaseURL != "" && probe.ActiveID == "" && len(probe.Configs) == 0 {
+		var old oldAIConfig
+		if json.Unmarshal(raw, &old) != nil {
+			return AIConfig{}
+		}
+		unit := AIUnit{
+			ID:       NewID(),
+			Name:     "配置1",
+			Provider: old.Provider,
+			BaseURL:  old.BaseURL,
+			APIKey:   old.APIKey,
+			Model:    old.Model,
+		}
+		return AIConfig{ActiveID: unit.ID, Configs: []AIUnit{unit}}
+	}
+
+	var c AIConfig
+	_ = json.Unmarshal(raw, &c)
 	return c
 }
 
-// SaveConfig 原子落盘 AI 配置。配置文件以 0600 权限写入，避免其他用户读取 API Key。
+// SaveConfig 原子落盘 AI 配置容器。配置文件以 0600 权限写入，避免其他用户读取 API Key。
 func SaveConfig(dataDir string, c AIConfig) error {
 	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
@@ -45,6 +113,13 @@ func SaveConfig(dataDir string, c AIConfig) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// NewID 生成新配置单元的随机 ID（32 位十六进制）。
+func NewID() string {
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 // IsMaskedKey 判断 API Key 是否仍为脱敏回显值（含 "*" 占位）。

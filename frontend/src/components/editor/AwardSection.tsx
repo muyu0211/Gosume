@@ -7,6 +7,7 @@ import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
+import { AIPolishControl } from './AIPolishControl'
 import { useT } from '../../lib/i18n'
 
 export function AwardSection() {
@@ -101,7 +102,10 @@ export function AwardSection() {
                     <MonthPicker value={award.date || ''} onChange={(v) => updateItem(idx, { date: v })} placeholder={t('awardDatePlaceholder')} />
                   </div>
                   <div>
-                    <label className="form-label">{t('awardSummary')}</label>
+                    <div className="flex items-center justify-between">
+                    <label className="form-label mb-0">{t('awardSummary')}</label>
+                    <AIPolishControl text={award.summary || ''} semantic="award" onPolish={(r) => updateItem(idx, { summary: r })} />
+                  </div>
                     <RichTextField value={award.summary || ''} onChange={(v) => updateItem(idx, { summary: v })} placeholder={t('awardSummaryPlaceholder')} maxLength={500} />
                   </div>
                 </div>

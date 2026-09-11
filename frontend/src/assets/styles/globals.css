@@ -7,6 +7,10 @@
   --toolbar-height: 48px;
   --statusbar-height: 28px;
   --titlebar-height: 32px;
+
+  /* 允许 height/width:auto 参与过渡：配合元素的 transition 实现尺寸平滑变化
+     （如模态窗口内容增减时高度自适应过渡；基于 Chromium 的 WebView2 支持）。 */
+  interpolate-size: allow-keywords;
 }
 
 /* ===== 主题令牌 =====
@@ -241,6 +245,15 @@ select:hover,
 input[type='range'] {
   -webkit-user-drag: none;
   user-select: none;
+}
+
+/* 隐藏浏览器原生的密码显示/清除图标（::-internal-reveal 为 WebView2/Chromium 的
+   显示密码眼睛），避免与应用内自定义「显示密码」按钮在输入框右侧重合。 */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear,
+input[type='password']::-internal-reveal,
+input[type='password']::-webkit-credentials-auto-fill-button {
+  display: none;
 }
 
 .form-textarea {

@@ -7,6 +7,7 @@ import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
 import { ExtrasEditor } from './ExtrasEditor'
+import { AIPolishControl } from './AIPolishControl'
 import { useT } from '../../lib/i18n'
 
 interface Props {
@@ -171,7 +172,10 @@ export function ExperienceSection({ type, title }: Props) {
                         <input className="form-input" value={(item as Job).location || ''} onChange={(e) => updateItem(idx, { location: e.target.value } as Partial<Job>)} placeholder="北京" maxLength={100} />
                       </div>
                       <div>
-                        <label className="form-label">{t('workSummary')}</label>
+                        <div className="flex items-center justify-between">
+                          <label className="form-label mb-0">{t('workSummary')}</label>
+                          <AIPolishControl text={(item as Job).summary || ''} semantic="job" onPolish={(r) => updateItem(idx, { summary: r } as Partial<Job>)} />
+                        </div>
                         <RichTextField
                           value={(item as Job).summary || ''}
                           onChange={(v) => updateItem(idx, { summary: v } as Partial<Job>)}
@@ -219,7 +223,10 @@ export function ExperienceSection({ type, title }: Props) {
                         {t('currentProject')}
                       </label>
                       <div>
-                        <label className="form-label">{t('projectSummary')}</label>
+                        <div className="flex items-center justify-between">
+                          <label className="form-label mb-0">{t('projectSummary')}</label>
+                          <AIPolishControl text={(item as Project).summary || ''} semantic="project" onPolish={(r) => updateItem(idx, { summary: r } as Partial<Project>)} />
+                        </div>
                         <RichTextField
                           value={(item as Project).summary || ''}
                           onChange={(v) => updateItem(idx, { summary: v } as Partial<Project>)}

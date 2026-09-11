@@ -3,6 +3,7 @@ import { useAppStore } from '../../stores/appStore'
 import { FileText, EyeOff } from 'lucide-react'
 import { RichTextField } from '../ui/RichTextField'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
+import { AIPolishControl } from './AIPolishControl'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { useT } from '../../lib/i18n'
 
@@ -35,7 +36,14 @@ export function SummarySection() {
         />
       </div>
       <div>
-        <label className="form-label">{t('summaryLabel')}</label>
+        <div className="flex items-center justify-between">
+          <label className="form-label mb-0">{t('summaryLabel')}</label>
+          <AIPolishControl
+            text={summary?.summary || ''}
+            semantic="summary"
+            onPolish={(r) => updateField('personal_summary.summary', r)}
+          />
+        </div>
         <RichTextField
           value={summary?.summary || ''}
           onChange={(v) => updateField('personal_summary.summary', v)}
