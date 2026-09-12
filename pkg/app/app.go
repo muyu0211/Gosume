@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"runtime"
 
+	aiavc "gosume/pkg/ai/service"
 	"gosume/pkg/autofill"
 	asvc "gosume/pkg/autofill/service"
-	aiavc "gosume/pkg/ai/service"
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
@@ -31,10 +31,21 @@ type App struct {
 	browserManager *template_export.BrowserManager
 }
 
+// Run 启动应用事件循环，并在退出时停止模板监听、释放无头浏览器与关闭日志。
+func (a *App) Run() {
+	if a.stopWatch != nil {
+		defer close(a.stopWatch)
+	}
+	defer log.Close()
+	defer a.browserManager.Close()
+
+	if err := a.wailsApp.Run(); err != nil {
+		a.browserManager.Close()
+		log.Fatalf("%v", err)
+	}
+}
+
 // New 初始化全部组件并返回可运行的 App。
-//
-// 装配顺序：配置 → 日志 → 存储层 → 模板加载器 → 渲染与导出 → 服务 →
-// Wails 应用与窗口 → 依赖注入 → 事件与数据目录变更回调。
 func New(assets, builtinTemplates embed.FS) *App {
 	rootPath := util.GetRootPath()
 
@@ -86,6 +97,8 @@ func New(assets, builtinTemplates embed.FS) *App {
 	updateSvc := &rsvc.UpdateService{}
 	communitySvc := &rsvc.CommunityService{}
 	aiSvc := &aiavc.AIService{}
+	autofillSvc := &asvc.AutofillService{}
+	toolSvc := &tsvc.ToolService{}
 
 	// 一键填入本地桥：当前简历数据经 127.0.0.1 暴露给浏览器扩展。
 	autofillBridge := autofill.NewBridge(dataDir, config.GlobalConfig.App.Version, func() *model.Resume {
@@ -96,8 +109,10 @@ func New(assets, builtinTemplates embed.FS) *App {
 		}
 		return nil
 	})
-	autofillSvc := &asvc.AutofillService{}
-	toolSvc := &tsvc.ToolService{}
+	// 随应用启动本地桥。
+	if err := autofillBridge.Start(); err != nil {
+		log.Errorf("[main] start autofill bridge: %v", err)
+	}
 
 	// 服务列表
 	svcs := []application.Service{
@@ -127,11 +142,6 @@ func New(assets, builtinTemplates embed.FS) *App {
 	aiSvc.Inject(app, userCfgMgr)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
-
-	// 随应用启动本地桥。
-	if err := autofillBridge.Start(); err != nil {
-		log.Errorf("[main] start autofill bridge: %v", err)
-	}
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
@@ -180,20 +190,6 @@ func New(assets, builtinTemplates embed.FS) *App {
 	log.Infof(" ============ [main] app version: %s ============ ", config.GlobalConfig.App.Version)
 
 	return &App{wailsApp: app, stopWatch: stopWatch, browserManager: browserManager}
-}
-
-// Run 启动应用事件循环，并在退出时停止模板监听、释放无头浏览器与关闭日志。
-func (a *App) Run() {
-	if a.stopWatch != nil {
-		defer close(a.stopWatch)
-	}
-	defer log.Close()
-	defer a.browserManager.Close()
-
-	if err := a.wailsApp.Run(); err != nil {
-		a.browserManager.Close()
-		log.Fatalf("%v", err)
-	}
 }
 
 // createApp 创建应用与主窗口，窗口参数来自 config.yaml。

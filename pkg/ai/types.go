@@ -9,8 +9,8 @@ const (
 
 // ChatMessage 是对话中的一条消息。
 type ChatMessage struct {
-	Role    string `json:"role"`             // system / user / assistant
-	Content string `json:"content"`          // 消息内容
+	Role    string `json:"role"`    // system / user / assistant
+	Content string `json:"content"` // 消息内容
 }
 
 // ChatRequest 是 Chat Completions 请求体（OpenAI 兼容协议子集）。

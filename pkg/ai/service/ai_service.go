@@ -20,19 +20,19 @@ import (
 // API Key 默认脱敏；only 配置管理列表（ListAIConfigs）经 withKey 下发完整 Key，
 // 供用户在「显示」时查看真实明文。其余场景（如 AI 可用性判定）保持脱敏不返回。
 type AIConfigItem struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	BaseURL  string `json:"base_url"`
-	Model    string `json:"model"`
-	Key      string `json:"key,omitempty"` // 完整 Key，仅 withKey=true 时返回
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Provider  string `json:"provider"`
+	BaseURL   string `json:"base_url"`
+	Model     string `json:"model"`
+	Key       string `json:"key,omitempty"` // 完整 Key，仅 withKey=true 时返回
 	KeyMasked string `json:"key_masked"`
-	Active   bool   `json:"active"` // 是否为当前启用
+	Active    bool   `json:"active"` // 是否为当前启用
 }
 
 // AIConfigListResponse 是多配置列表回包。
 type AIConfigListResponse struct {
-	ActiveID string        `json:"active_id"`
+	ActiveID string         `json:"active_id"`
 	Configs  []AIConfigItem `json:"configs"`
 }
 
@@ -104,7 +104,7 @@ func toItem(u ai.AIUnit, isActive bool, withKey bool) AIConfigItem {
 		Provider:  u.Provider,
 		BaseURL:   u.BaseURL,
 		Model:     u.Model,
-		KeyMasked: ai.MaskKey(u.APIKey),
+		KeyMasked: util.MaskKey(u.APIKey),
 		Active:    isActive,
 	}
 	if withKey {

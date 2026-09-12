@@ -462,15 +462,14 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                     value={form.api_key}
                     onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
                   />
-                  <Tooltip className="absolute right-2 top-1/2 -translate-y-1/2" label={showKey ? t('hidden') : t('unhideHint')}>
                   <button
                     type="button"
                     onClick={() => setShowKey((v) => !v)}
-                    className="p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
+                    aria-label={showKey ? t('hidden') : t('unhideHint')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
                   >
                     {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </Tooltip>
                 </div>
                 {form.hasKey && <p className="text-[11px] text-surface-400 mt-1">{t('aiKeyLockedHint')}</p>}
               </div>
