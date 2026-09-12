@@ -401,7 +401,6 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   myFavorites: { zh: '我的收藏', en: 'My favorites' },
   noTemplateInCategory: { zh: '当前分类下没有模板', en: 'No templates in this category' },
   recentOpened: { zh: '最近打开', en: 'Recent' },
-  currentTheme: { zh: '当前：', en: 'Current: ' },
   newVersionTip: { zh: '发现新版本 v{v}，点击查看', en: 'New version v{v} available, click to view' },
   favorite: { zh: '收藏', en: 'Favorite' },
   unfavorite: { zh: '取消收藏', en: 'Unfavorite' },

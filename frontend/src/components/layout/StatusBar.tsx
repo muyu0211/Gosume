@@ -141,7 +141,7 @@ export function StatusBar({ saveStatus = 'idle' }: StatusBarProps) {
     isDirty ? 'text-warning-500 fill-warning-500' : 'text-success-500 fill-success-500'
 
   return (
-    <div className="h-7 flex items-center justify-between px-3 bg-surface-100 text-surface-400 text-xs flex-shrink-0 select-none border-t border-surface-200">
+    <div className="h-7 flex items-center justify-between px-3 glass-shell text-surface-400 text-xs flex-shrink-0 select-none border-t border-surface-200">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <Circle className={`w-2 h-2 ${statusColor}`} />

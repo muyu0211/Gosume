@@ -4,6 +4,7 @@ import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loade
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
+import { Switch } from '../components/ui/Switch'
 import { ToolsPanel } from '../components/tools/ToolsPanel'
 import { AIConfigManagerDialog } from '../components/ai/AIConfigManagerDialog'
 import { ProviderLogo } from '../components/ai/ProviderLogo'
@@ -249,7 +250,7 @@ export function SettingsPage() {
             </div>
           </div>
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50">
+            <label className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer">
               <input
                 type="radio"
                 name="language"
@@ -263,7 +264,7 @@ export function SettingsPage() {
                 <p className="text-xs text-surface-400">{t('useZhInterface')}</p>
               </div>
             </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50">
+            <label className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer">
               <input
                 type="radio"
                 name="language"
@@ -292,7 +293,7 @@ export function SettingsPage() {
             {themeOptions.map((opt) => (
               <label
                 key={opt.value}
-                className="flex items-center gap-3 p-3 rounded-lg border border-surface-200 cursor-pointer hover:bg-surface-50"
+                className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer"
               >
                 <input
                   type="radio"
@@ -319,16 +320,15 @@ export function SettingsPage() {
               <span className="form-section-title">{t('autosaveSection')}</span>
             </div>
           </div>
-          <label className="flex items-center justify-between p-3 rounded-lg border border-surface-200">
+          <label className="glass-entry flex items-center justify-between p-3">
             <div>
               <p className="text-sm font-medium text-surface-700">{t('enableAutosave')}</p>
               <p className="text-xs text-surface-400">{t('autosaveEvery30s')}</p>
             </div>
-            <input
-              type="checkbox"
+            <Switch
               checked={autoSave}
-              onChange={(e) => handleAutoSaveChange(e.target.checked)}
-              className="size-icon-lg rounded accent-primary-600"
+              onChange={handleAutoSaveChange}
+              label={t('enableAutosave')}
             />
           </label>
         </section>
@@ -341,7 +341,7 @@ export function SettingsPage() {
               <span className="form-section-title">{t('dataDirSection')}</span>
             </div>
           </div>
-          <div className="p-3 rounded-lg border border-surface-200 space-y-3">
+          <div className="glass-entry p-3 space-y-3">
             <div>
               <p className="text-xs text-surface-400 mb-1">{t('dataDirCurrent')}</p>
               <p className="text-sm text-surface-700 font-mono break-all">{dataDir || t('loading')}</p>
@@ -378,7 +378,7 @@ export function SettingsPage() {
               <span className="form-section-title">{t('autofillSection')}</span>
             </div>
           </div>
-          <div className="p-3 rounded-lg border border-surface-200 space-y-3">
+          <div className="glass-entry p-3 space-y-3">
             <p className="text-xs text-surface-400">{t('autofillDesc')}</p>
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full shrink-0 ${autofill?.running ? 'bg-success-500' : 'bg-surface-300'}`} />
@@ -413,7 +413,7 @@ export function SettingsPage() {
               <span className="form-section-title">{t('aiSection')}</span>
             </div>
           </div>
-          <div className="p-3 rounded-lg border border-surface-200 space-y-3">
+          <div className="glass-entry p-3 space-y-3">
             <p className="text-xs text-surface-400">{t('aiSectionDesc')}</p>
             {/* 当前启用配置一览 */}
             <div className="flex items-center gap-2">

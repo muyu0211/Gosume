@@ -7,6 +7,7 @@ import { MonthPicker } from '../ui/MonthPicker'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition, useListEnterAnimation } from '../../hooks/useEntryTransition'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { useT } from '../../lib/i18n'
 
@@ -14,6 +15,7 @@ export function EducationSection() {
   const t = useT()
   const language = useAppStore((s) => s.language)
   const items = useResumeStore((s) => s.resume?.education) || []
+  const { listRef, deleteEntry } = useEntryTransition(items, (idx) => requestDelete('education', idx))
   const addItem = useResumeStore((s) => s.addEducation)
   const updateItem = useResumeStore((s) => s.updateEducation)
   const requestDelete = useResumeStore((s) => s.requestItemDelete)
@@ -39,7 +41,7 @@ export function EducationSection() {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {items.map((edu, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
           const isHidden = !!edu.hidden
@@ -47,9 +49,10 @@ export function EducationSection() {
           return (
             <div
               key={edu.id}
-              className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
+              data-del-key={`item:education:${idx}`}
+              className={`glass-entry overflow-hidden transition-colors ${
+                overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
@@ -80,7 +83,7 @@ export function EducationSection() {
                   hidden={isHidden}
                   onToggle={() => updateItem(idx, { hidden: !isHidden })}
                 />
-                <button onClick={(e) => { e.stopPropagation(); requestDelete('education', idx) }} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); deleteEntry(idx, e) }} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
                   <Trash2 className="size-icon-sm" />
                 </button>
               </div>
@@ -135,6 +138,7 @@ export function EducationSection() {
                       highlights={edu.highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights })}
                       onRequestRemove={(subIdx) => requestHighlightDelete('education', idx, subIdx)}
+                      delKeyPrefix={`highlight:education:${idx}`}
                     />
                   </div>
                 </div>
@@ -154,7 +158,7 @@ export function EducationSection() {
   )
 }
 
-function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void }) {
+function HighlightsEditor({ highlights, onChange, onRequestRemove, delKeyPrefix }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void; delKeyPrefix: string }) {
   const t = useT()
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
@@ -169,11 +173,12 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
     }
     onChange(highlights.filter((_, i) => i !== idx))
   }
+  const enterRef = useListEnterAnimation(highlights.length, '.hl-row')
 
   return (
-    <div className="space-y-1.5">
+    <div ref={enterRef} className="space-y-1.5">
       {highlights.map((h, i) => (
-        <div key={i} className="flex gap-1">
+        <div key={i} data-del-key={`${delKeyPrefix}:${i}`} className="hl-row flex gap-1">
           <div className="flex items-center px-1 pt-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
           </div>

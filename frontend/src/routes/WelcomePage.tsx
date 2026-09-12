@@ -43,9 +43,7 @@ export function WelcomePage() {
   const appliedTheme = useThemeStore((s) => s.applied)
   const themeMode = useThemeStore((s) => s.mode)
   const ThemeIcon = appliedTheme === 'obsidian' ? Moon : appliedTheme === 'wheat' ? Palette : Sun
-  const themeTitle = t('currentTheme') + (
-    appliedTheme === 'obsidian' ? t('themeObsidian') : appliedTheme === 'wheat' ? t('themeWheat') : t('themeClassic')
-  )
+  const themeTitle = appliedTheme === 'obsidian' ? t('themeObsidian') : appliedTheme === 'wheat' ? t('themeWheat') : t('themeClassic')
   const handleCycleTheme = () => {
     useThemeStore.getState().setMode(nextExplicitTheme(themeMode))
   }
@@ -424,7 +422,7 @@ export function WelcomePage() {
           <Tooltip label={themeTitle}>
             <button
               onClick={handleCycleTheme}
-              className="btn-ghost btn-sm size-ctl-lg p-0 justify-center focus:ring-0 focus:ring-offset-0"
+              className="btn-ghost btn-sm size-ctl-lg p-0 justify-center"
             >
               <ThemeIcon className="size-icon-md" />
             </button>
@@ -545,7 +543,7 @@ export function WelcomePage() {
               {recentFiles.slice(0, 3).map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center gap-4 px-4 py-3 rounded-xl bg-elev border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
+                  className="glass-entry glass-hover flex items-center gap-4 px-4 py-3 cursor-pointer transition-all duration-150 group"
                   onClick={() => handleOpenRecent(file.id)}
                 >
                   <div className="size-ctl-lg rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
@@ -642,7 +640,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`size-ctl-md rounded-lg text-sm font-medium transition-colors ${page === currentPage
+          className={`size-ctl-md rounded-full text-sm font-medium transition-colors ${page === currentPage
             ? 'bg-primary-600 text-white shadow-sm'
             : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
             }`}
@@ -703,7 +701,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group cursor-pointer rounded-xl border border-surface-200 bg-elev overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
+      className="glass glass-card hover-lift group cursor-pointer overflow-hidden animate-card-enter"
       style={{ animationDelay: `${index * 60}ms`, containerType: 'inline-size' }}
     >
       {/* Preview area */}
@@ -732,7 +730,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
               disabled={favLoading}
-              className={`size-ctl-md rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:bg-elev'
+              className={`size-ctl-md rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:shadow-lg'
                 } disabled:opacity-60`}
             >
               {favLoading ? <Loader2 className="size-icon-md animate-spin" /> : <Heart className={`size-icon-md ${favorite ? 'fill-current' : ''}`} />}
@@ -766,7 +764,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           <div className="relative z-10 flex flex-col items-center gap-2 px-4">
             <button
               onClick={(e) => { e.stopPropagation(); onPreview() }}
-              className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-surface-800 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+              className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-surface-800 text-sm font-medium active:scale-95 transition-all duration-150 disabled:opacity-50"
             >
               <Eye className="size-icon-md shrink-0" />
               <span className="preview-label truncate min-w-0">{t('preview')}</span>
@@ -775,7 +773,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <button
                 onClick={(e) => { e.stopPropagation(); onShare() }}
                 disabled={sharing}
-                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+                className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-primary-600 text-sm font-medium hover:text-primary-700 active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
                 {sharing ? <Loader2 className="size-icon-md animate-spin" /> : <Download className="size-icon-md shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('export')}</span>
@@ -785,7 +783,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
                 disabled={isDeleting}
-                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-danger-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-danger-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+                className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-danger-600 text-sm font-medium hover:text-danger-700 active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 className="size-icon-md animate-spin" /> : <Trash2 className="size-icon-md shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('delete')}</span>
@@ -794,8 +792,8 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           </div>
         </div>
       </div>
-      {/* Meta info */}
-      <div className="p-4 border-t border-surface-100">
+      {/* Meta info：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担） */}
+      <div className="glass-plate p-4">
         <h3 className="text-sm font-semibold text-surface-800">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
         <div className="flex gap-1.5 mt-2">
@@ -815,10 +813,9 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`w-24 h-ctl-sm flex items-center justify-center gap-1.5 px-3 rounded-full text-xs font-medium leading-none transition-colors ${active
-        ? 'bg-primary-600 text-white'
-        : 'bg-surface-200 text-surface-600 hover:bg-surface-300/70 hover:text-surface-800'
-        }`}
+      className={`glass glass-chip w-24 h-ctl-sm flex items-center justify-center gap-1.5 px-3 text-xs font-medium leading-none transition-colors ${
+        active ? 'glass-chip-on' : ''
+      }`}
     >
       {children}
     </button>
@@ -855,7 +852,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-surface-100 hover:border-surface-200 transition-colors"
+                className="glass-entry glass-hover flex items-center gap-3 px-3 py-2 transition-colors"
               >
                 <PackageOpen className="size-icon-md text-surface-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">

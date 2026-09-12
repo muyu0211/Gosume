@@ -592,7 +592,7 @@ export function RichTextField({
           onCompositionEnd={handleCompositionEnd}
           onBeforeInput={handleBeforeInput}
           onPaste={handlePaste}
-          className={`rich-editor w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-elev
+          className={`rich-editor w-full px-3 py-2 text-sm border border-surface-200 rounded-glass-card bg-elev
             focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400
             transition-all duration-150 overflow-auto break-words leading-relaxed
             ${isInline ? '' : 'text-surface-800'}`}
@@ -620,7 +620,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={listMenu.menuRef}
-            className="fixed z-[9999] min-w-[132px] bg-elev border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
+            className="fixed z-[9999] min-w-[132px] glass-menu py-1 animate-dropdown-enter"
             style={{ top: listMenu.pos.top, left: listMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >
@@ -628,7 +628,7 @@ export function RichTextField({
               <button
                 key={opt.value}
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
+                className="glass-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
                 onClick={() => applyList(opt.value)}
               >
                 <span className="w-4 inline-block text-center">{opt.icon}</span>
@@ -644,7 +644,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={orderedMenu.menuRef}
-            className="fixed z-[9999] min-w-[132px] bg-elev border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
+            className="fixed z-[9999] min-w-[132px] glass-menu py-1 animate-dropdown-enter"
             style={{ top: orderedMenu.pos.top, left: orderedMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >
@@ -652,7 +652,7 @@ export function RichTextField({
               <button
                 key={opt.value}
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
+                className="glass-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
                 onClick={() => applyOrderedList(opt.value)}
               >
                 <span className="w-4 inline-block text-center whitespace-nowrap">{opt.icon}</span>
@@ -669,7 +669,7 @@ export function RichTextField({
         createPortal(
           <div
             ref={colorMenu.menuRef}
-            className="fixed z-[9999] bg-elev border border-surface-200 rounded-lg shadow-lg p-2 animate-dropdown-enter"
+            className="fixed z-[9999] glass-menu p-2 animate-dropdown-enter"
             style={{ top: colorMenu.pos.top, left: colorMenu.pos.left }}
             onMouseDown={(e) => e.preventDefault()}
           >
@@ -679,7 +679,7 @@ export function RichTextField({
                   key={c}
                   type="button"
                   title={c}
-                  className="size-icon-lg rounded border border-surface-200 hover:border-surface-400 transition-colors"
+                  className="size-icon-lg rounded-full hairline-frame hover:bg-surface-100 transition-colors"
                   style={{ backgroundColor: c }}
                   onClick={() => applyColor(c)}
                 />

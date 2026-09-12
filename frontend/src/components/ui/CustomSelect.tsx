@@ -110,7 +110,7 @@ export function CustomSelect({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className={`custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left rounded-lg border bg-elev transition-all duration-150 ${
+        className={`custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left rounded-full border bg-elev transition-all duration-150 ${
           open
             ? 'border-primary-400 ring-2 ring-primary-500/20'
             : 'border-surface-200 hover:border-surface-300'
@@ -129,7 +129,7 @@ export function CustomSelect({
           <div
             ref={panelRef}
             style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }}
-            className="fixed z-[9999] overflow-auto bg-elev rounded-lg border border-surface-200 shadow-xl animate-dropdown-enter py-1"
+            className="fixed z-[9999] overflow-auto glass-menu animate-dropdown-enter py-1"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-sm text-surface-400">{emptyText}</div>
@@ -142,7 +142,7 @@ export function CustomSelect({
                     onChange(opt.value)
                     close()
                   }}
-                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${
+                  className={`glass-menu-item w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${
                     opt.value === value
                       ? 'bg-primary-50/60 text-primary-700'
                       : 'text-surface-600 hover:bg-surface-100'

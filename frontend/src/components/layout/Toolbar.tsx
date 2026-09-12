@@ -62,7 +62,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
   }, [commitName])
 
   return (
-    <div className="h-12 flex items-center gap-1 px-3 bg-elev/80 backdrop-blur-sm border-b border-surface-100 flex-shrink-0 relative z-10">
+    <div className="h-12 flex items-center gap-1 px-3 glass-shell border-b border-surface-100 flex-shrink-0 relative z-10">
       {/* Left */}
       <div className="flex items-center gap-1">
         <Tooltip label={t('backHome')}>

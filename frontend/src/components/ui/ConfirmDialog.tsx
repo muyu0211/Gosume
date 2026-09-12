@@ -58,7 +58,7 @@ export function ConfirmDialog({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-elev rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
+        className="glass glass-modal p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
           {resolvedIcon && (
@@ -95,16 +95,14 @@ export function ConfirmDialog({
             <button
               onClick={onCancel}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+              className="btn btn-secondary"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
               disabled={loading}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
-                danger ? 'bg-danger-600 hover:bg-danger-700' : 'bg-primary-600 hover:bg-primary-700'
-              }`}
+              className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
             >
               {loading && <Loader2 className="size-icon-md animate-spin" />}
               {confirmText}

@@ -108,6 +108,9 @@ export default {
         '2xl': '20px',
         '3xl': '26px',
         full: '9999px',
+        // 液态玻璃容器档（docs/Gosume液态玻璃/液态玻璃落地规范.md 第 2.2 节）
+        'glass-card': 'var(--radius-glass-card)',
+        'glass-modal': 'var(--radius-glass-modal)',
       },
 
       // ----- 层级阴影（指向 CSS 变量 → 随主题切换）-----

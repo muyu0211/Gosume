@@ -31,7 +31,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
+        className="glass glass-modal p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
           <div className="size-ctl-xl rounded-full bg-warning-100 flex items-center justify-center shrink-0">
@@ -58,14 +58,14 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
           <button
             onClick={onDiscardAndContinue}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+            className="btn btn-secondary"
           >
             不保存
           </button>
           <button
             onClick={onSaveAndContinue}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="btn btn-primary"
           >
             {saving && <Loader2 className="size-icon-md animate-spin" />}
             {saving ? '保存中...' : '保存并继续'}

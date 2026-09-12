@@ -112,6 +112,22 @@ export function PersonalSection() {
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [avatarW, setAvatarW] = useState<number>(styleState.avatarWidth ?? avatarRenderedSize?.width ?? 100)
   const [avatarH, setAvatarH] = useState<number>(styleState.avatarHeight ?? avatarRenderedSize?.height ?? 100)
+  // 「跟随模板」圆角的定格展示值：avatarRadius 未定制时，圆角滑块展示模板原生圆角。
+  // ⚠ 不能直接绑 avatarRenderedSize.radius —— 该值每次预览重测都会把模板 px 圆角按
+  // 当前头像宽折算成百分比（radius% = pxRadius / width × 200），拖宽/高滑块改变宽度 →
+  // 预览重测 → 圆角滑块跟着滑（实际踩坑：首次拖宽高滑块圆角联动；手动拖过一次圆角滑块后
+  // styleState.avatarRadius 非 null，?? 短路不再走测量值，联动"消失"——正是该 bug 的假象来源）。
+  // 这里只在首次拿到测量时定格；切简历（store 清空测量）后重新跟随新模板。
+  const [radiusFallback, setRadiusFallback] = useState<number | null>(null)
+  useEffect(() => {
+    if (avatarRenderedSize == null) {
+      setRadiusFallback((v) => (v == null ? v : null))
+      return
+    }
+    if (avatarRenderedSize.radius != null) {
+      setRadiusFallback((v) => (v == null ? avatarRenderedSize.radius ?? null : v))
+    }
+  }, [avatarRenderedSize])
   const [lockRatio, setLockRatio] = useState(true)
   const [ratioPreset, setRatioPreset] = useState<string>('custom')
   // 是否双栏模板：双栏时 .r-header 为持久侧栏，不支持切换布局。
@@ -364,7 +380,7 @@ export function PersonalSection() {
       {/* 简历中头像显示尺寸（宽/高 px）+ 信息区布局（4:1 同行等高） */}
       {p.avatar && (
         <div className="flex items-stretch gap-3 mb-4">
-          <div className="flex-[4] min-w-0 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2">
+          <div className="glass glass-card flex-[4] min-w-0 p-3 space-y-2">
             <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-surface-600">{t('displaySize')}</span>
             <div className="flex items-center gap-2">
@@ -403,7 +419,7 @@ export function PersonalSection() {
                 step={1}
                 value={avatarW}
                 onChange={(e) => handleWidthChange(Number(e.target.value))}
-                className="w-full accent-primary-600"
+                className="range-slider w-full"
               />
             </div>
             <div>
@@ -418,7 +434,7 @@ export function PersonalSection() {
                 step={1}
                 value={avatarH}
                 onChange={(e) => handleHeightChange(Number(e.target.value))}
-                className="w-full accent-primary-600"
+                className="range-slider w-full"
               />
             </div>
           </div>
@@ -430,21 +446,21 @@ export function PersonalSection() {
                 <span>{t('cornerRadius')}</span>
                 {styleState.avatarRadius == null && <span className="text-surface-400">{t('followTemplate')}</span>}
               </span>
-              <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? avatarRenderedSize?.radius ?? 0}</span>
+              <span className="tabular-nums font-medium text-surface-700">{styleState.avatarRadius ?? radiusFallback ?? 0}</span>
             </div>
             <AnimatedRange
-              value={styleState.avatarRadius ?? avatarRenderedSize?.radius ?? 0}
+              value={styleState.avatarRadius ?? radiusFallback ?? 0}
               min={AVATAR_RADIUS_MIN}
               max={AVATAR_RADIUS_MAX}
               onChange={(v) => updateCustomCss({ avatarRadius: v })}
-              className="w-full accent-primary-600"
+              className="w-full"
             />
             <p className="text-[10px] text-surface-400 mt-1">{t('radiusHint')}</p>
           </div>
           </div>
 
           {/* 信息区布局：切换头像与文字排布；仅当前简历，双栏模板禁用。 */}
-          <div className="flex-1 p-3 rounded-lg border border-surface-200 bg-surface-50/60 flex flex-col">
+          <div className="glass glass-card flex-1 p-3 flex flex-col">
             <p className="text-xs font-medium text-surface-600 mb-2">{t('headerLayout')}</p>
             <div className="flex flex-col justify-between gap-1.5 flex-1">
               {HEADER_LAYOUT_PRESETS.map((preset) => {

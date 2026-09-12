@@ -2,6 +2,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { useAppStore } from '../../stores/appStore'
 import { Plus, Trash2, Languages, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition } from '../../hooks/useEntryTransition'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
@@ -23,6 +24,7 @@ export function LanguageSection() {
   const addItem = useResumeStore((s) => s.addLanguage)
   const updateItem = useResumeStore((s) => s.updateLanguage)
   const requestDelete = useResumeStore((s) => s.requestItemDelete)
+  const { listRef, deleteEntry } = useEntryTransition(items, (idx) => requestDelete('language', idx))
   const moveItem = useResumeStore((s) => s.moveLanguage)
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
@@ -41,15 +43,16 @@ export function LanguageSection() {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {items.map((lang, idx) => {
           const isHidden = !!lang.hidden
           return (
           <div
-            key={lang.id}
-            className={`border rounded-lg p-3 transition-colors ${
-              overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-            } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
+              key={lang.id}
+              data-del-key={`item:language:${idx}`}
+              className={`glass-entry p-3 transition-colors ${
+              overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+            } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60' : ''}`}
             onDragOver={(e) => onDragOver(e, idx)}
             onDrop={() => onDrop(idx)}
           >
@@ -94,7 +97,7 @@ export function LanguageSection() {
                 onToggle={() => updateItem(idx, { hidden: !isHidden })}
                 className="flex-shrink-0 self-start mt-5"
               />
-              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0 self-start mt-5">
+              <button onClick={(e) => deleteEntry(idx, e)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0 self-start mt-5">
                 <Trash2 className="size-icon-md" />
               </button>
             </div>

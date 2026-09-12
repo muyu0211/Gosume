@@ -2,6 +2,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import { useAppStore } from '../../stores/appStore'
 import { Plus, Trash2, Code, GripVertical, EyeOff } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition } from '../../hooks/useEntryTransition'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { useT } from '../../lib/i18n'
@@ -14,6 +15,7 @@ export function SkillSection() {
   const updateGroup = useResumeStore((s) => s.updateSkillGroup)
   const requestDelete = useResumeStore((s) => s.requestItemDelete)
   const requestSkillItemDelete = useResumeStore((s) => s.requestSkillItemDelete)
+  const { listRef, deleteEntry } = useEntryTransition(items, (idx) => requestDelete('skill', idx))
   const moveGroup = useResumeStore((s) => s.moveSkillGroup)
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveGroup)
@@ -45,15 +47,16 @@ export function SkillSection() {
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div ref={listRef} className="space-y-3">
         {items.map((group, gIdx) => {
           const isGroupHidden = !!group.hidden
           return (
           <div
             key={group.id}
-            className={`border rounded-lg p-3 transition-colors ${
-              overIdx === gIdx && draggedIdx !== gIdx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-            } ${draggedIdx === gIdx ? 'opacity-40' : ''} ${isGroupHidden ? 'opacity-60 bg-surface-50' : ''}`}
+            data-del-key={`item:skill:${gIdx}`}
+            className={`glass-entry p-3 transition-colors ${
+              overIdx === gIdx && draggedIdx !== gIdx ? 'glass-entry-dragover' : ''
+            } ${draggedIdx === gIdx ? 'opacity-40' : ''} ${isGroupHidden ? 'opacity-60' : ''}`}
             onDragOver={(e) => onDragOver(e, gIdx)}
             onDrop={() => onDrop(gIdx)}
           >
@@ -83,7 +86,7 @@ export function SkillSection() {
                 hidden={isGroupHidden}
                 onToggle={() => updateGroup(gIdx, { hidden: !isGroupHidden })}
               />
-              <button onClick={() => requestDelete('skill', gIdx)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+              <button onClick={(e) => deleteEntry(gIdx, e)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
                 <Trash2 className="size-icon-md" />
               </button>
             </div>
@@ -92,7 +95,7 @@ export function SkillSection() {
               {group.items.map((skill, sIdx) => {
                 const isSkillHidden = !!skill.hidden
                 return (
-                <div key={sIdx} className={`flex items-center gap-1.5 ${isSkillHidden ? 'opacity-60' : ''}`}>
+                <div key={sIdx} data-del-key={`skillItem:${gIdx}:${sIdx}`} className={`flex items-center gap-1.5 ${isSkillHidden ? 'opacity-60' : ''}`}>
                   <input
                     className={`form-input flex-1 ${isSkillHidden ? 'text-surface-400 line-through' : ''}`}
                     value={skill.name || ''}

@@ -7,6 +7,7 @@ import { MonthPicker } from '../ui/MonthPicker'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition, useListEnterAnimation } from '../../hooks/useEntryTransition'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { AIPolishControl } from './AIPolishControl'
 import { useT } from '../../lib/i18n'
@@ -26,6 +27,7 @@ export function CustomSection() {
   const addSection = useResumeStore((s) => s.addCustomSection)
   const updateSection = useResumeStore((s) => s.updateCustomSection)
   const requestDelete = useResumeStore((s) => s.requestItemDelete)
+  const { listRef, deleteEntry } = useEntryTransition(sections, (idx) => requestDelete('custom', idx))
   const moveSection = useResumeStore((s) => s.moveCustomSection)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
@@ -57,7 +59,7 @@ export function CustomSection() {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {sections.map((section, idx) => {
           const isExpanded = expanded[idx] ?? (idx === sections.length - 1 && sections.length <= 2)
           const isHidden = !!section.hidden
@@ -65,9 +67,10 @@ export function CustomSection() {
           return (
             <div
               key={section.id}
-              className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
+              data-del-key={`item:custom:${idx}`}
+              className={`glass-entry overflow-hidden transition-colors ${
+                overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
@@ -103,7 +106,7 @@ export function CustomSection() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    requestDelete('custom', idx)
+                    deleteEntry(idx, e)
                   }}
                   className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
@@ -144,6 +147,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
 
   const items = section.items || []
+  const { listRef, deleteEntry } = useEntryTransition(items, (idx) => requestItemDelete(sectionIndex, idx))
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder((from, to) =>
     moveItem(sectionIndex, from, to),
   )
@@ -170,7 +174,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {items.map((item, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
           const isHidden = !!item.hidden
@@ -179,9 +183,10 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
           return (
             <div
               key={item.id}
-              className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
+              data-del-key={`customItem:${sectionIndex}:${idx}`}
+              className={`glass-entry overflow-hidden transition-colors ${
+                overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
@@ -220,7 +225,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    requestItemDelete(sectionIndex, idx)
+                    deleteEntry(idx, e)
                   }}
                   className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
@@ -281,6 +286,7 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                       highlights={item.highlights || []}
                       onChange={(highlights) => updateItem(sectionIndex, idx, { highlights })}
                       onRequestRemove={(subIdx) => requestHighlightDelete(sectionIndex, idx, subIdx)}
+                      delKeyPrefix={`customHighlight:${sectionIndex}:${idx}`}
                     />
                   </div>
                   </div>
@@ -305,10 +311,12 @@ function HighlightsEditor({
   highlights,
   onChange,
   onRequestRemove,
+  delKeyPrefix,
 }: {
   highlights: string[]
   onChange: (h: string[]) => void
   onRequestRemove: (highlightIndex: number) => void
+  delKeyPrefix: string
 }) {
   const t = useT()
   const addHighlight = () => onChange([...highlights, ''])
@@ -318,11 +326,12 @@ function HighlightsEditor({
     onChange(updated)
   }
   const removeHighlight = (idx: number) => onRequestRemove(idx)
+  const enterRef = useListEnterAnimation(highlights.length, '.hl-row')
 
   return (
-    <div className="space-y-1.5">
+    <div ref={enterRef} className="space-y-1.5">
       {highlights.map((h, i) => (
-        <div key={i} className="flex gap-1">
+        <div key={i} data-del-key={`${delKeyPrefix}:${i}`} className="hl-row flex gap-1">
           <div className="flex items-center px-1 pt-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
           </div>

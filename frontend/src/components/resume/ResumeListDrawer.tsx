@@ -393,7 +393,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-elev rounded-xl shadow-2xl p-6 w-[360px] max-w-[90vw] animate-dialog-enter"
+            className="glass glass-modal p-6 w-[360px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
               <div className="size-ctl-xl rounded-full bg-danger-100 flex items-center justify-center shrink-0">
@@ -410,14 +410,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleCancelDelete}
                 disabled={!!deletingId}
-                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+                className="btn btn-secondary"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={!!deletingId}
-                className="px-4 py-2 text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="btn btn-danger"
               >
                 {deletingId ? (
                   <>
@@ -441,7 +441,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-elev rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
+            className="glass glass-modal p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
               <div className="size-ctl-xl rounded-full bg-danger-100 flex items-center justify-center shrink-0">
@@ -458,14 +458,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleCancelBatchDelete}
                 disabled={batchDeleting}
-                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+                className="btn btn-secondary"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleBatchConfirmDelete}
                 disabled={batchDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="btn btn-danger"
               >
                 {batchDeleting ? (
                   <>
@@ -489,7 +489,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
+            className="glass glass-modal p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4 mb-5">
               <div className="size-ctl-xl rounded-full bg-primary-100 flex items-center justify-center shrink-0">
@@ -586,14 +586,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleCancelBatchExport}
                 disabled={batchExporting}
-                className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors disabled:opacity-50"
+                className="btn btn-secondary"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleBatchExport}
                 disabled={batchExporting}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="btn btn-primary"
               >
                 {batchExporting ? (
                   <>

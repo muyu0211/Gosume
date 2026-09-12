@@ -359,15 +359,15 @@ export function IdPhotoTool({ onBack }: Props) {
               </div>
               {!empty && (
                 <div className="grid grid-cols-3 gap-2 text-xs text-surface-600">
-                  <div className="p-2 rounded bg-surface-50 border border-surface-200">
+                  <div className="glass glass-card p-2">
                     <p className="text-surface-400">{t('originalImg')}</p>
                     <p className="font-medium">{formatBytes(sourceBytes)}</p>
                   </div>
-                  <div className="p-2 rounded bg-surface-50 border border-surface-200">
+                  <div className="glass glass-card p-2">
                     <p className="text-surface-400">{t('outputImg')}</p>
                     <p className="font-medium">{resultBytes > 0 ? formatBytes(resultBytes) : t('computing')}</p>
                   </div>
-                  <div className="p-2 rounded bg-surface-50 border border-surface-200">
+                  <div className="glass glass-card p-2">
                     <p className="text-surface-400">{t('compressionRate')}</p>
                     <p className="font-medium">
                       {resultBytes > 0 && sourceBytes > 0 ? `${Math.max(0, Math.round((1 - resultBytes / sourceBytes) * 100))}%` : '—'}
@@ -395,7 +395,7 @@ export function IdPhotoTool({ onBack }: Props) {
                   <button
                     key={p.id}
                     onClick={() => selectPreset(p.id)}
-                    className={`btn btn-sm ${presetId === p.id ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-100'}`}
+                    className={`btn btn-sm ${presetId === p.id ? 'btn-primary' : 'text-surface-500 hover:bg-surface-100'}`}
                   >
                     {t(p.nameKey)}
                   </button>
@@ -427,7 +427,7 @@ export function IdPhotoTool({ onBack }: Props) {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
                     }}
-                    className="w-12 h-6 text-right text-[11px] px-1 border border-surface-200 rounded-md bg-elev text-surface-700 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                    className="w-12 h-6 text-right text-[11px] px-1 rounded-full bg-elev text-surface-700 focus:outline-none focus:ring-1 focus:ring-primary-400"
                     title={t('dpiHint')}
                   />
                 </div>
@@ -518,7 +518,7 @@ export function IdPhotoTool({ onBack }: Props) {
                         className={`flex items-center gap-1.5 btn btn-sm ${bgEnabled && bgRgb[0] === p.rgb[0] && bgRgb[1] === p.rgb[1] && bgRgb[2] === p.rgb[2] ? 'ring-2 ring-inset ring-primary-400' : 'text-surface-500 hover:bg-surface-100'}`}
                       >
                         <span
-                          className="w-3 h-3 rounded-full inline-block shrink-0 border border-surface-300"
+                          className="w-3 h-3 rounded-full inline-block shrink-0 hairline-frame"
                           style={{ backgroundColor: `rgb(${p.rgb[0]}, ${p.rgb[1]}, ${p.rgb[2]})` }}
                         />
                         {t(p.nameKey)}
@@ -528,7 +528,7 @@ export function IdPhotoTool({ onBack }: Props) {
                       type="color"
                       value={rgbToHex(bgRgb)}
                       onChange={(e) => setBgRgb(hexToRgb(e.target.value))}
-                      className="w-8 h-8 rounded cursor-pointer border border-surface-200"
+                      className="w-8 h-8 rounded-full hairline-frame cursor-pointer"
                       title={t('customColor')}
                     />
                   </div>
@@ -560,7 +560,7 @@ export function IdPhotoTool({ onBack }: Props) {
                     <button
                       key={f}
                       onClick={() => setFmt(f)}
-                      className={`btn btn-sm ${fmt === f ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-100'}`}
+                      className={`btn btn-sm ${fmt === f ? 'btn-primary' : 'text-surface-500 hover:bg-surface-100'}`}
                     >
                       {FMT_INFO[f].label}
                     </button>
@@ -589,7 +589,7 @@ export function IdPhotoTool({ onBack }: Props) {
 
         {/* 预览区 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-lg border border-surface-200 bg-elev p-3">
+          <div className="glass glass-card p-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-surface-400">{t('sourcePreview')}</p>
               {!empty && (
@@ -629,7 +629,7 @@ export function IdPhotoTool({ onBack }: Props) {
               <p className="text-xs text-surface-400 mt-2">{sourceImg.naturalWidth} × {sourceImg.naturalHeight} px</p>
             )}
           </div>
-          <div className="rounded-lg border border-surface-200 bg-elev p-3">
+          <div className="glass glass-card p-3">
             <p className="text-xs text-surface-400 mb-2">{t('resultLabel')}</p>
             <div className="relative flex items-center justify-center min-h-[220px] bg-surface-50 rounded overflow-hidden">
               {empty ? (

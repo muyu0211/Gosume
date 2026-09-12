@@ -124,10 +124,8 @@ export function ExportDialog({ onClose }: Props) {
               {formats.map(({ id, labelKey, descKey, icon: Icon }) => (
                 <label
                   key={id}
-                  className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
-                    selectedFormat === id
-                      ? 'border-primary-400 bg-primary-50/40'
-                      : 'border-surface-200 hover:border-surface-300'
+                  className={`glass-entry glass-hover flex items-start gap-4 p-4 cursor-pointer transition-all duration-150 ${
+                    selectedFormat === id ? 'glass-entry-selected' : ''
                   }`}
                 >
                   <input
@@ -160,10 +158,10 @@ export function ExportDialog({ onClose }: Props) {
                   <button
                     key={value}
                     onClick={() => setScale(value)}
-                    className={`px-4 py-2 text-sm rounded-lg border-2 transition-all duration-150 ${
+                    className={`glass glass-hover rounded-full px-4 py-2 text-sm transition-all duration-150 ${
                       scale === value
-                        ? 'border-primary-400 bg-primary-50 text-primary-700 font-medium'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                        ? '!bg-primary-600 text-white font-medium'
+                        : 'text-surface-600'
                     }`}
                   >
                     {label}

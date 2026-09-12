@@ -26,7 +26,7 @@ export function VisibilityToggle({ hidden, onToggle, title, className = '' }: Vi
           e.stopPropagation()
           onToggle()
         }}
-        className={`inline-flex items-center justify-center p-1 rounded-md transition-colors ${
+        className={`inline-flex items-center justify-center p-1 rounded-full transition-colors ${
           hidden
             ? 'text-surface-500 hover:text-surface-700 bg-surface-200'
             : 'text-surface-400 hover:text-surface-600 hover:bg-surface-100'

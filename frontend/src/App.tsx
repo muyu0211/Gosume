@@ -9,9 +9,13 @@ import { CommunityPage } from './routes/CommunityPage'
 import { useResumeStore } from './stores/resumeStore'
 import { useThemeStore } from './stores/themeStore'
 import { applyPlatformToDocument } from './lib/platform'
+import { useLiquidGlass } from './hooks/useLiquidGlass'
 import { isWails, callService } from './services/backend'
 
 export default function App() {
+  // 液态玻璃引擎：挂载/卸载所有 [data-lg] 元素（Chromium 专属的边缘折射）。
+  // 非 Chromium 内核自动跳过，元素停在纯模糊降级，不会变成透明块。
+  useLiquidGlass()
   // 平台标记已由 main.tsx 在渲染前写入；此处再次应用以确保一致，
   // 并仅在非 macOS 平台强制 frameless（macOS 使用原生红绿灯，见 app.go）
   useEffect(() => {

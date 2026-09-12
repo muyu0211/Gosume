@@ -6,6 +6,7 @@ import { VisibilityToggle } from '../ui/VisibilityToggle'
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition, useListEnterAnimation } from '../../hooks/useEntryTransition'
 import { ExtrasEditor } from './ExtrasEditor'
 import { AIPolishControl } from './AIPolishControl'
 import { useT } from '../../lib/i18n'
@@ -45,6 +46,7 @@ export function ExperienceSection({ type, title }: Props) {
   const updateProjectExtras = useResumeStore((s) => s.updateProjectExtras)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const sectionKind: 'job' | 'internship' | 'project' = type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project'
+  const { listRef, deleteEntry } = useEntryTransition(items, (idx) => requestDelete(sectionKind, idx))
 
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
 
@@ -70,7 +72,7 @@ export function ExperienceSection({ type, title }: Props) {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {items?.map((item, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
           const isHidden = !!(item as Entry).hidden
@@ -80,9 +82,10 @@ export function ExperienceSection({ type, title }: Props) {
           return (
             <div
               key={item.id}
-              className={`border rounded-lg overflow-hidden transition-colors ${
-                overIdx === idx && draggedIdx !== idx ? 'border-primary-400 bg-primary-50/50' : 'border-surface-200'
-              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60 bg-surface-50' : ''}`}
+              data-del-key={`item:${sectionKind}:${idx}`}
+              className={`glass-entry overflow-hidden transition-colors ${
+                overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+              } ${draggedIdx === idx ? 'opacity-40' : ''} ${isHidden ? 'opacity-60' : ''}`}
               onDragOver={(e) => onDragOver(e, idx)}
               onDrop={() => onDrop(idx)}
             >
@@ -118,7 +121,7 @@ export function ExperienceSection({ type, title }: Props) {
                   onToggle={() => updateItem(idx, { hidden: !isHidden } as Partial<Entry>)}
                 />
                 <button
-                  onClick={(e) => { e.stopPropagation(); requestDelete(type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project', idx) }}
+                  onClick={(e) => { e.stopPropagation(); deleteEntry(idx, e) }}
                   className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
                   <Trash2 className="size-icon-sm" />
@@ -244,6 +247,7 @@ export function ExperienceSection({ type, title }: Props) {
                       highlights={(item as { highlights?: string[] }).highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights } as Partial<Entry>)}
                       onRequestRemove={(subIdx) => requestHighlightDelete(sectionKind, idx, subIdx)}
+                      delKeyPrefix={`highlight:${sectionKind}:${idx}`}
                     />
                   </div>
 
@@ -256,6 +260,7 @@ export function ExperienceSection({ type, title }: Props) {
                         extras={(item as Project).extras || []}
                         onChange={(extras) => updateProjectExtras(idx, extras)}
                         onRequestRemove={(subIdx) => requestExtraDelete(idx, subIdx)}
+                        delKeyPrefix={`extra:${idx}`}
                       />
                     </div>
                   )}
@@ -276,7 +281,7 @@ export function ExperienceSection({ type, title }: Props) {
   )
 }
 
-function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void }) {
+function HighlightsEditor({ highlights, onChange, onRequestRemove, delKeyPrefix }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void; delKeyPrefix: string }) {
   const t = useT()
   const addHighlight = () => onChange([...highlights, ''])
   const updateHighlight = (idx: number, value: string) => {
@@ -291,11 +296,12 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
     }
     onChange(highlights.filter((_, i) => i !== idx))
   }
+  const enterRef = useListEnterAnimation(highlights.length, '.hl-row')
 
   return (
-    <div className="space-y-1.5">
+    <div ref={enterRef} className="space-y-1.5">
       {highlights.map((h, i) => (
-        <div key={i} className="flex gap-1">
+        <div key={i} data-del-key={`${delKeyPrefix}:${i}`} className="hl-row flex gap-1">
           <div className="flex items-center px-1 pt-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
           </div>

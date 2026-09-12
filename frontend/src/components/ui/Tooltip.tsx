@@ -19,6 +19,9 @@ const GAP = 8
 /** 提示与视口边缘的最小间距（px）。 */
 const EDGE_MARGIN = 6
 
+/** 鼠标悬停显示延迟（ms）：光标停留超过该时长才渲染提示，划过不弹。 */
+const HOVER_DELAY = 1000
+
 interface TipPos {
   top: number
   left: number
@@ -39,6 +42,15 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
   const tipRef = useRef<HTMLSpanElement>(null)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<TipPos>({ top: 0, left: 0 })
+  // 鼠标悬停延迟计时器：离开/失焦即取消，避免「划过也弹」与「离开后迟到弹出」。
+  const timerRef = useRef<number | null>(null)
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+  useEffect(() => clearTimer, [])
 
   const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -82,6 +94,20 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     // 先以当前（或占位）位置渲染，useLayoutEffect 在绘制前完成真实定位
   }
 
+  /** 鼠标进入：延迟 HOVER_DELAY 后才显示；期间离开会被 clearTimer 取消。 */
+  const revealDelayed = () => {
+    clearTimer()
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null
+      setOpen(true)
+    }, HOVER_DELAY)
+  }
+
+  const hide = () => {
+    clearTimer()
+    setOpen(false)
+  }
+
   // 打开时在绘制前定位（此时提示已挂载可测尺寸）。
   useLayoutEffect(() => {
     if (open) updatePos()
@@ -104,10 +130,10 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     <span
       ref={wrapRef}
       className={`inline-flex ${className}`}
-      onMouseEnter={reveal}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={revealDelayed}
+      onMouseLeave={hide}
       onFocus={reveal}
-      onBlur={() => setOpen(false)}
+      onBlur={hide}
     >
       {children}
       {open &&
@@ -115,7 +141,7 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
         createPortal(
           <span
             ref={tipRef}
-            className="fixed z-[9999] px-3 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap shadow-lg pointer-events-none animate-dropdown-enter"
+            className="fixed z-[9999] px-3 py-1.5 glass glass-card text-surface-700 text-xs whitespace-nowrap pointer-events-none animate-dropdown-enter"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}

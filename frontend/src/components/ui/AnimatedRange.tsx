@@ -113,7 +113,7 @@ export function AnimatedRange({
         setValInstant(v)
         onChange(v)
       }}
-      className={className}
+      className={`range-slider ${className}`}
     />
   )
 }

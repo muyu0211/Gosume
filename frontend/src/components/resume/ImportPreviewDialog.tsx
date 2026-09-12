@@ -129,7 +129,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
         {/* Content — 中间唯一可滚动区域 */}
         <div className="p-6 space-y-5 flex-1 overflow-auto">
           {/* 预览摘要 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-50/50 p-4">
+          <div className="hairline-frame rounded-glass-card bg-surface-50/50 p-4">
             <p className="text-base font-semibold text-surface-800 truncate">
               {summary.name || t('resumeTitlePlaceholder')}
             </p>
@@ -141,7 +141,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                 {stats.map(({ label, value }) => (
                   <span
                     key={label}
-                    className="px-2 py-0.5 text-[12px] rounded-full bg-elev border border-surface-200 text-surface-600"
+                    className="px-2 py-0.5 text-[12px] rounded-full bg-elev hairline-frame text-surface-600"
                   >
                     {label} {value}
                   </span>
@@ -185,8 +185,8 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
               <label className="text-sm font-medium text-surface-600 mb-2 block">{t('importMethod')}</label>
               <div className="space-y-2">
                 <label
-                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    mode === 'new' ? 'border-primary-400 bg-primary-50/40' : 'border-surface-200 hover:border-surface-300'
+                  className={`glass-entry glass-hover flex items-start gap-3 p-4 cursor-pointer transition-all ${
+                    mode === 'new' ? 'glass-entry-selected' : ''
                   }`}
                 >
                   <input
@@ -204,8 +204,8 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                 </label>
 
                 <label
-                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    mode === 'overwrite' ? 'border-primary-400 bg-primary-50/40' : 'border-surface-200 hover:border-surface-300'
+                  className={`glass-entry glass-hover flex items-start gap-3 p-4 cursor-pointer transition-all ${
+                    mode === 'overwrite' ? 'glass-entry-selected' : ''
                   }`}
                 >
                   <input

@@ -179,7 +179,7 @@ export function CommunityPage() {
   return (
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
-      <header className="flex items-center gap-3 px-8 py-5 border-b border-surface-100 bg-elev/70 backdrop-blur-sm">
+      <header className="glass-shell flex items-center gap-3 px-8 py-5 border-b border-surface-100">
         <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm">
           <ArrowLeft className="size-icon-md" />
           首页
@@ -203,7 +203,7 @@ export function CommunityPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="搜索模板名称 / 标签"
-              className="w-full h-9 pl-10 pr-20 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
+              className="w-full h-9 pl-10 pr-20 rounded-full border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
             />
             <button
               onClick={handleSearch}
@@ -338,8 +338,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`w-24 h-ctl-sm flex items-center justify-center px-3 rounded-full text-xs font-medium leading-none transition-colors ${active ? 'bg-primary-600 text-white' : 'bg-surface-200 text-surface-600 hover:bg-surface-300/70 hover:text-surface-800'
-        }`}
+      className={`glass glass-chip w-24 h-ctl-sm flex items-center justify-center px-3 text-xs font-medium leading-none transition-colors ${active ? 'glass-chip-on' : ''}`}
     >
       {children}
     </button>
@@ -355,7 +354,7 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
           <button
             key={p}
             onClick={() => onChange(p)}
-            className={`size-ctl-md rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-primary-600 text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'}`}
+            className={`size-ctl-md rounded-full text-sm font-medium transition-colors ${p === page ? 'bg-primary-600 text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'}`}
           >
             {p}
           </button>
@@ -378,7 +377,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
   return (
     <div
       onClick={onOpen}
-      className="group cursor-pointer rounded-xl border border-surface-200 bg-elev overflow-hidden hover:shadow-md hover:border-primary-300 transition-all duration-200 hover:-translate-y-0.5 animate-card-enter"
+      className="glass glass-card hover-lift group cursor-pointer overflow-hidden animate-card-enter"
       style={{ animationDelay: `${index * 50}ms` }}
     >
       {/* 缩略图 */}
@@ -411,8 +410,8 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
           <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: template.colors?.accent }} title="强调色" />
         </div>
       </div>
-      {/* 信息 */}
-      <div className="p-4">
+      {/* 信息：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担） */}
+      <div className="glass-plate p-4">
         <h3 className="text-sm font-semibold text-surface-800 truncate">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-1">{template.description}</p>
         <div className="flex items-center gap-3 mt-2 text-[12px] text-surface-400">
@@ -429,7 +428,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
             <button
               onClick={(e) => { e.stopPropagation(); onDownload() }}
               disabled={downloading}
-              className="flex items-center gap-1 px-3 py-1 rounded-md bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               下载
@@ -459,7 +458,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
       <div className="flex gap-5 px-6 py-5 border-b border-surface-100 flex-shrink-0">
         {/* 缩略图 */}
         <div className="w-32 flex-shrink-0">
-          <div className="relative aspect-[210/297] rounded-lg bg-surface-100 overflow-hidden border border-surface-100">
+          <div className="relative aspect-[210/297] rounded-glass-card bg-surface-100 overflow-hidden hairline-frame">
             {template.thumbnail_url ? (
               <img src={template.thumbnail_url} alt={template.name} className="w-full h-full object-cover object-top" />
             ) : (
@@ -555,7 +554,7 @@ function StarRating({ value, interactive = false, onSelect, size = 'size-icon-md
           key={n}
           disabled={!interactive}
           onClick={() => onSelect?.(n)}
-          className={`${size} ${interactive ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
+          className={`${size} ${interactive ? 'cursor-pointer hover:text-surface-500 transition-colors' : 'cursor-default'}`}
           aria-label={`${n} 星`}
         >
           <Star className={`${n <= value ? 'text-warning-400 fill-warning-400' : 'text-surface-300'}`} />
@@ -593,7 +592,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
           <select
             value={selectedId}
             onChange={(e) => onSelect(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+            className="w-full h-10 px-3 rounded-full border border-surface-200 bg-elev text-sm text-surface-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
           >
             {templates.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>

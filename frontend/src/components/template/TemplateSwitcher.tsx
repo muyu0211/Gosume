@@ -153,7 +153,7 @@ export function TemplateSwitcher() {
       </button>
 
       {visible && (
-        <div className={`absolute right-0 top-full mt-1 w-72 bg-elev rounded-lg border border-surface-200 shadow-lg z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
+        <div className={`glass-menu glass-menu-lg absolute right-0 top-full mt-1 w-72 z-50 will-change-transform ${open ? 'animate-dropdown-enter' : 'animate-dropdown-exit pointer-events-none'}`}>
           <div className="px-3 py-1.5 text-[12px] text-surface-400 flex items-center gap-1.5 border-b border-surface-100">
             <Layout className="w-3 h-3" />
             {t('switchStyle')}
@@ -170,7 +170,7 @@ export function TemplateSwitcher() {
                 onClick={() => handleSelect(tmpl.id)}
                 role="button"
                 tabIndex={0}
-                className={`w-full flex items-start gap-3 px-3 py-2 text-left transition-colors cursor-pointer group ${
+                className={`glass-menu-item w-full flex items-start gap-3 px-3 py-2 text-left transition-colors cursor-pointer group ${
                   isActive ? 'bg-primary-50' : 'hover:bg-surface-50'
                 }`}
               >

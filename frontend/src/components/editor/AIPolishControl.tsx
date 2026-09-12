@@ -180,7 +180,7 @@ export function AIPolishControl({ text, semantic, onPolish, className = '' }: AI
       {open && pos && createPortal(
         <div
           ref={menuRef}
-          className="fixed z-[9999] min-w-[150px] bg-elev border border-surface-200 rounded-lg shadow-lg py-1 animate-dropdown-enter"
+          className="fixed z-[9999] min-w-[150px] glass-menu py-1 animate-dropdown-enter"
           style={{ top: pos.top, left: pos.left }}
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -188,7 +188,7 @@ export function AIPolishControl({ text, semantic, onPolish, className = '' }: AI
             <button
               key={m.value}
               type="button"
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
+              className="glass-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-800 text-left"
               onClick={() => runPolish(m.value)}
             >
               {t(m.labelKey)}

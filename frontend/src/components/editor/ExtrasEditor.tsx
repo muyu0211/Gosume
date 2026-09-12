@@ -1,5 +1,6 @@
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useDragReorder } from '../../hooks/useDragReorder'
+import { useEntryTransition } from '../../hooks/useEntryTransition'
 import { RichTextField } from '../ui/RichTextField'
 import { Tooltip } from '../ui/Tooltip'
 import { useT } from '../../lib/i18n'
@@ -10,14 +11,18 @@ interface Props {
   onChange: (extras: ExtraField[]) => void
   /** 删除子项时改为走二次确认（由父组件统一处理）；缺省则直接删除。 */
   onRequestRemove?: (extraIndex: number) => void
+  /** data-del-key 前缀（如 `extra:2`），供删除确认时定位条目 DOM 播放离场动画。 */
+  delKeyPrefix?: string
 }
 
 /**
  * Editor for user-defined key/value pairs on a Project (e.g. "技术栈": "React, Go").
  * Each extra has a label (the key) and a multi-line value. Supports drag-to-reorder.
  */
-export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
+export function ExtrasEditor({ extras, onChange, onRequestRemove, delKeyPrefix }: Props) {
   const t = useT()
+  // 离场动画：确认弹窗点击「确认」后由 playEntryExit 按 data-del-key 播放，此处只负责请求
+  const { listRef, deleteEntry } = useEntryTransition(extras, (idx) => removeExtra(idx))
   const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(moveItem)
 
   function moveItem(from: number, to: number) {
@@ -46,12 +51,13 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
   }
 
   return (
-    <div className="space-y-1.5">
+    <div ref={listRef} className="space-y-1.5">
       {extras.map((extra, i) => (
         <div
           key={extra.id}
-          className={`flex gap-1.5 items-start rounded border transition-colors ${
-            overIdx === i && draggedIdx !== i ? 'border-primary-400 bg-primary-50/50' : 'border-transparent'
+          data-del-key={delKeyPrefix ? `${delKeyPrefix}:${i}` : undefined}
+          className={`glass-entry flex gap-1.5 items-start transition-colors ${
+            overIdx === i && draggedIdx !== i ? 'glass-entry-dragover' : ''
           } ${draggedIdx === i ? 'opacity-40' : ''}`}
           onDragOver={(e) => onDragOver(e, i)}
           onDrop={() => onDrop(i)}
@@ -84,7 +90,7 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             maxLength={300}
           />
           <Tooltip label={t('delete')}>
-            <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
+            <button onClick={(e) => deleteEntry(i, e)} className="p-1 mt-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
               <Trash2 className="size-icon-sm" />
             </button>
           </Tooltip>

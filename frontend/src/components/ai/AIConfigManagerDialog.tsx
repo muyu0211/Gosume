@@ -318,8 +318,8 @@ export function AIConfigManagerDialog({ onClose }: Props) {
 
         {/* Body：左列表 + 右表单（稳定高度，随内容在各自滚动区展示） */}
         <div className="flex flex-1 overflow-hidden">
-          {/* 列表 */}
-          <div className="w-[240px] border-r border-surface-100 overflow-y-auto p-2 flex-shrink-0">
+          {/* 列表：inset 面板——完整边框 + 圆角，与玻璃模态的层次关系更清晰 */}
+          <div className="w-[248px] m-2 border border-surface-200 rounded-lg overflow-y-auto p-1.5 flex-shrink-0">
             {loading ? (
               <div className="flex items-center justify-center py-8 text-surface-300">
                 <Loader2 className="size-icon-lg animate-spin" />
@@ -331,15 +331,15 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                 <div
                   key={c.id}
                   onClick={() => selectConfig(c)}
-                  className={`group flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-colors border-l-2 ${
+                  className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                     selectedId === c.id
-                      ? 'bg-surface-50 border-l-primary-500'
-                      : 'border-l-transparent hover:bg-surface-50'
+                      ? 'bg-primary-50/70 text-primary-700'
+                      : 'text-surface-700 hover:bg-surface-100'
                   }`}
                 >
                   <ProviderLogo provider={c.provider} size={22} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-surface-700 truncate">{c.name}</p>
+                    <p className={`text-sm truncate ${selectedId === c.id ? 'font-medium text-primary-700' : 'text-surface-700'}`}>{c.name}</p>
                     <p className="text-[11px] text-surface-400 truncate">{c.provider}</p>
                   </div>
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

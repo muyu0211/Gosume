@@ -70,7 +70,7 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
       <div
         onAnimationEnd={handleAnimationEnd}
         onClick={(e) => e.stopPropagation()}
-        className={`bg-elev rounded-2xl shadow-xl ${width} max-h-[90vh] ${cardClassName} transition-all duration-200 ${
+        className={`glass glass-modal ${width} max-h-[90vh] ${cardClassName} transition-all duration-200 ${
           phase === 'exiting' ? 'gosume-modal-out' : 'gosume-modal-in'
         }`}
       >

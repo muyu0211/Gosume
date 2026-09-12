@@ -32,7 +32,7 @@ export function Sidebar({ onExport }: SidebarProps) {
   const language = useAppStore((s) => s.language)
 
   return (
-    <div className="w-[56px] bg-surface-100 flex flex-col items-center py-3 gap-0.5 flex-shrink-0 border-r border-surface-200">
+    <div className="w-[56px] glass-shell relative z-10 flex flex-col items-center py-3 gap-0.5 flex-shrink-0 border-r border-surface-200">
       {sections.map(({ id, icon: Icon }) => {
         const label = getSectionTitle(id, language)
         const isActive = activeSection === id
@@ -41,7 +41,7 @@ export function Sidebar({ onExport }: SidebarProps) {
           <button
             key={isFlash ? `flash-${flashNonce}` : id}
             onClick={() => setActiveSection(id)}
-            className={`size-ctl-xl flex items-center justify-center rounded-xl transition-all duration-150 group relative ${
+            className={`size-ctl-xl flex items-center justify-center rounded-full transition-all duration-150 group relative ${
               isActive
                 ? 'bg-primary-600 text-white shadow-sm shadow-primary-600/25'
                 : 'text-surface-400 hover:text-surface-600 hover:bg-surface-200'
@@ -49,7 +49,7 @@ export function Sidebar({ onExport }: SidebarProps) {
           >
             <Icon className="w-4.5 h-4.5" strokeWidth={isActive ? 2.25 : 1.75} />
             {/* Tooltip */}
-            <span className="absolute left-full ml-2 px-3 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity duration-150 shadow-lg">
+            <span className="absolute left-full ml-2 px-3 py-1.5 glass glass-card text-surface-700 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity duration-150 group-hover:delay-1000">
               {label}
             </span>
           </button>
@@ -61,7 +61,7 @@ export function Sidebar({ onExport }: SidebarProps) {
         <Tooltip label="导出简历" side="right">
           <button
             onClick={onExport}
-            className="size-ctl-xl flex items-center justify-center rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-150 shadow-sm shadow-primary-600/25"
+            className="btn-primary !size-ctl-xl !p-0"
           >
             <FileOutput className="size-icon-lg" />
           </button>

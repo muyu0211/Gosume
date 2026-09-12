@@ -97,7 +97,7 @@ function SliderRow({
         <span className="text-[12px] font-medium text-surface-600">{label}</span>
         <span className="text-[12px] font-mono text-surface-500">{value}px</span>
       </div>
-      <AnimatedRange value={value} min={min} max={max} onChange={onChange} className="w-full margin-range-slider" />
+      <AnimatedRange value={value} min={min} max={max} onChange={onChange} className="w-full" />
     </div>
   )
 }
@@ -105,7 +105,7 @@ function SliderRow({
 /** 功能区域卡片：统一边框 + 底色。summary 可选，省略时头部仅显示标题。 */
 function PanelCard({ title, icon, summary, children }: { title: string; icon: React.ReactNode; summary?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-surface-200 bg-surface-50/60 px-3 py-3">
+    <div className="glass glass-card px-3 py-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[12px] font-medium text-surface-600 flex items-center gap-1.5">
           {icon}

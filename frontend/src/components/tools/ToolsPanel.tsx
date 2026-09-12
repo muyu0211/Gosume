@@ -19,7 +19,7 @@ export function ToolsPanel() {
         <button
           key={id}
           onClick={() => setOpen(id)}
-          className="flex flex-col items-start gap-2 p-4 rounded-lg border text-left transition-all duration-150 border-surface-200 hover:bg-surface-50 hover:border-surface-300 hover:shadow-sm cursor-pointer active:scale-[0.98]"
+          className="glass glass-card hover-lift flex flex-col items-start gap-2 p-4 text-left cursor-pointer active:scale-[0.98]"
         >
           <span className="p-2 rounded-md bg-surface-100 text-primary-600">
             <Icon className="size-icon-lg" />

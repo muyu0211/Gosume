@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useResumeStore, type ItemDeleteKind, type PendingItemDelete } from '../../stores/resumeStore'
 import { useAppStore } from '../../stores/appStore'
 import { getSectionTitle } from '../../lib/resumeSections'
 import { useT } from '../../lib/i18n'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { entryDeleteKey, playEntryExit } from '../../hooks/useEntryTransition'
 
 /** 删除条目种类 → 板块 id（用于 getSectionTitle 取实际模块标题）。 */
 const KIND_SECTION_ID: Record<ItemDeleteKind, string> = {
@@ -54,6 +56,22 @@ export function ItemDeleteConfirmDialog() {
   const cancel = useResumeStore((s) => s.cancelItemDelete)
   const language = useAppStore((s) => s.language)
   const t = useT()
+  const [exiting, setExiting] = useState(false)
+
+  /** 确认：先对目标条目播放离场动画（若能定位到），动画结束才执行真正的数据删除。 */
+  const handleConfirm = async () => {
+    if (!pending || exiting) return
+    const key = entryDeleteKey(pending)
+    if (key) {
+      setExiting(true)
+      try {
+        await playEntryExit(key)
+      } finally {
+        setExiting(false)
+      }
+    }
+    confirm()
+  }
 
   return (
     <ConfirmDialog
@@ -63,10 +81,11 @@ export function ItemDeleteConfirmDialog() {
       confirmText={t('delete')}
       cancelText={t('cancel')}
       danger
+      loading={exiting}
       showDontAskAgain
       dontAskAgain={skip}
       onDontAskAgainChange={setSkip}
-      onConfirm={confirm}
+      onConfirm={handleConfirm}
       onCancel={cancel}
     />
   )

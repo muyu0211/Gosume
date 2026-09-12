@@ -71,9 +71,58 @@
     'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
 
-  /* 材质模糊强度（颜色部分按主题定义） */
-  --material-filter: saturate(180%) blur(20px);
-  --material-filter-strong: saturate(180%) blur(30px);
+  /* ===== 液态玻璃参数（与主题无关）=====
+     规范：docs/Gosume液态玻璃/液态玻璃落地规范.md 第 1–2 节
+     已定稿，组件里禁止写死字面值或局部覆盖；颜色部分（--glass-*）按主题定义在后文。 */
+  --lg-blur: 10px;      /* 背景模糊 */
+  --lg-refract: 10px;   /* 边缘折射位移（Chromium 专属，非 Chromium 自动回落） */
+  --lg-edge: 10px;      /* 折射带宽：从边缘向内，位移由 0 渐强到满值 */
+  --lg-sat: 180%;       /* 饱和度 */
+  --lg-tint: 0.40;      /* 玻璃底色不透明度（为玻璃上文字的可读性上调） */
+  --lg-tint-hover: 0.58;  /* hover：比基础深两档才能被感知（0.40→0.50 实测几乎无感） */
+  --lg-tint-active: 0.72; /* 按压：再深一档，与 hover 拉开可感知差距 */
+
+  /* 容器类玻璃的不透明度**单独设档**：卡片 / 模态承载大量正文，
+     沿用控件档 0.40 会让正文对比度跌到 4.5:1 以下（规范 7）。
+     0.88 与原有 --material-panel 的 0.86 基本持平，视觉迁移是平滑的。 */
+  --lg-tint-panel: 0.78;  /* 卡片 / 面板 / 工具提示 */
+  --lg-tint-modal: 0.88;  /* 模态对话框（正文密集，太透影响可读） */
+
+  /* 下拉菜单单独一档：选项列表行数少、背后多是面板/正文，
+     0.88 会几乎看不出玻璃感（用户实测反馈「缺少透明效果」）。
+     0.66 在浅色下文字对比度仍有 ~5:1，深色下 ~9:1，且磨砂明显可见。 */
+  --lg-tint-menu: 0.66;   /* 下拉菜单 / 弹出菜单 */
+
+  /* 玻璃容器圆角（尺度令牌，只需加在 :root）。
+     控件类走胶囊 --radius-full（= h/2）；容器类高度不定，不能用 h/2，用固定值。 */
+  --radius-glass-card: 18px;
+  --radius-glass-modal: 22px;
+
+  /* 液态玻璃的「上缘高光 + 下缘反光 + 发丝内描边」三层。
+     抽成变量是为了让需要叠加自有投影的组件能组合使用，例如：
+       box-shadow: var(--glass-layers), var(--shadow-sm);
+     自定义属性值在**使用时**才做替换，所以这里引用主题变量是安全的。 */
+  --glass-layers:
+    inset 0  1px 0 0 var(--glass-spec-top),
+    inset 0 -1px 0 0 var(--glass-spec-bottom),
+    inset 0  0  0 1px var(--glass-hairline);
+
+  /* 实色按钮的玻璃质感层：顶部白光渐入 + 底部微暗。
+     叠在实色语义底色上模拟玻璃的光泽而不破坏对比度 —— 白光只落在按钮上下边缘，
+     文字所在的垂直中线处浓度 ≈ 0，白字对比度保持 4.5:1 以上。
+     ⚠ 实色按钮刻意不加 backdrop-filter：工具条按钮间距(gap-2=8px)小于模糊半径(10px)，
+     相邻按钮会互相采样引发 hover 串扰（批次 2 踩过的坑，见批次 8.1 记录）。 */
+  --glass-sheen: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.14) 0%,
+    rgb(255 255 255 / 0.02) 45%,
+    rgb(0 0 0 / 0.06) 100%
+  );
+
+  /* hover 投影浮起的组合配方：玻璃三层 + 原有玻璃投影 + 上浮一档。
+     ⚠ 必须保留 --glass-shadow：它（0 6px 18px .28）比 --shadow-md（.08）更重，
+     hover 时若直接换成 shadow-md 视觉上是「减淡」（用户实测反馈的 bug）。 */
+  --glass-lift: var(--glass-layers), var(--glass-shadow), var(--shadow-md);
 }
 
 /* 模态进入：垂直拉伸渐变。每次打开强制播放一次（animation 不依赖 grid/两帧时序），
@@ -210,9 +259,8 @@ html[data-theme='classic'] {
   --sidebar-active: #0071E3;
   --sidebar-active-bg: #EAF2FD;
 
-  /* 材质（浮层与外壳的 vibrancy）：只用于标题栏/侧栏/状态栏/工具栏/模态/下拉 */
-  --material-bar: rgba(251, 251, 253, 0.78);
-  --material-panel: rgba(255, 255, 255, 0.86);
+  /* 遮罩（模态/抽屉的背景压暗）。
+     原 --material-bar/panel/filter 已随液态玻璃改造移除（外壳改用 .glass-shell）。 */
   --material-overlay: rgba(0, 0, 0, 0.24);
 
   /* hairline 分隔线（0.5px 观感）与控件描边 */
@@ -227,6 +275,15 @@ html[data-theme='classic'] {
   --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
   --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.16), 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-focus: 0 0 0 3px rgb(var(--primary-500) / 0.28);
+
+  /* 液态玻璃材质色（规范 3.1）
+     --glass-rgb 是玻璃本体底色；spec-top/bottom 是上下缘高光（立体感的主要来源）；
+     hairline 是发丝内描边；shadow 是近处边界 + 远处柔影。 */
+  --glass-rgb: 255 255 255;
+  --glass-spec-top: rgba(255, 255, 255, 0.75);
+  --glass-spec-bottom: rgba(255, 255, 255, 0.18);
+  --glass-hairline: rgba(255, 255, 255, 0.55);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 6px 18px -6px rgba(0, 0, 0, 0.28);
 
   /* 选区 */
   --selection-bg: #0071E3;
@@ -318,8 +375,6 @@ html[data-theme='wheat'] {
   --sidebar-active: #C2410C;
   --sidebar-active-bg: #FBEDE2;
 
-  --material-bar: rgba(255, 253, 250, 0.78);
-  --material-panel: rgba(255, 253, 250, 0.88);
   --material-overlay: rgba(40, 25, 10, 0.24);
 
   --hairline: rgba(40, 25, 10, 0.1);
@@ -333,6 +388,13 @@ html[data-theme='wheat'] {
   --shadow-xl: 0 16px 40px rgba(40, 25, 10, 0.13), 0 4px 12px rgba(40, 25, 10, 0.06);
   --shadow-2xl: 0 24px 64px rgba(40, 25, 10, 0.17), 0 8px 20px rgba(40, 25, 10, 0.08);
   --shadow-focus: 0 0 0 3px rgb(var(--primary-500) / 0.28);
+
+  /* 液态玻璃材质色（偏暖的白，与暖调中性面协调） */
+  --glass-rgb: 255 252 246;
+  --glass-spec-top: rgba(255, 255, 255, 0.72);
+  --glass-spec-bottom: rgba(255, 255, 255, 0.16);
+  --glass-hairline: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 1px 2px rgba(40, 25, 10, 0.1), 0 6px 18px -6px rgba(40, 25, 10, 0.28);
 
   --selection-bg: #C2410C;
   --selection-fg: #FFFFFF;
@@ -424,8 +486,6 @@ html[data-theme='obsidian'] {
   --sidebar-active: #0A84FF;
   --sidebar-active-bg: #1B3B5C;
 
-  --material-bar: rgba(28, 28, 30, 0.78);
-  --material-panel: rgba(44, 44, 46, 0.88);
   --material-overlay: rgba(0, 0, 0, 0.5);
 
   --hairline: rgba(255, 255, 255, 0.12);
@@ -438,6 +498,13 @@ html[data-theme='obsidian'] {
   --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.45);
   --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.7), 0 8px 20px rgba(0, 0, 0, 0.5);
   --shadow-focus: 0 0 0 3px rgb(var(--primary-500) / 0.35);
+
+  /* 液态玻璃材质色（深色：中灰本体 + 更弱的白高光，避免深色下高光过曝） */
+  --glass-rgb: 120 120 128;
+  --glass-spec-top: rgba(255, 255, 255, 0.2);
+  --glass-spec-bottom: rgba(255, 255, 255, 0.05);
+  --glass-hairline: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px -8px rgba(0, 0, 0, 0.7);
 
   --selection-bg: #0A84FF;
   --selection-fg: #FFFFFF;
@@ -452,10 +519,20 @@ html[data-theme='obsidian'] {
 @media (prefers-reduced-transparency: reduce) {
   :root,
   html[data-theme] {
-    --material-bar: var(--titlebar-bg);
-    --material-panel: rgb(var(--elev));
-    --material-filter: none;
-    --material-filter-strong: none;
+    /* 液态玻璃：关掉折射并把底色提高到接近实色，保证玻璃上的文字仍可读。
+       --lg-refract 归零后引擎会自动回落到 Tier 0 纯模糊。
+       容器档（panel / modal）也要一起提到接近不透明，否则正文压在半透明面上读不清。
+       （原 --material-bar/panel/filter 的覆写已随令牌移除，见 .glass-shell 说明。） */
+    --lg-tint: 0.92;
+    --lg-tint-hover: 0.96;
+    --lg-tint-active: 1;
+    --lg-tint-panel: 0.98;
+    --lg-tint-modal: 0.98;
+    --lg-tint-menu: 0.98;
+    --lg-refract: 0px;
+    /* 模糊也一并关掉：降低透明度的本意就是「接近实色」，此时模糊已无意义，
+       还省掉一层合成开销。 */
+    --lg-blur: 0px;
   }
 }
 
@@ -538,7 +615,15 @@ body {
    2. 卡片默认不画满边框，层级由阴影与背景差表达，内部结构用 hairline 分隔线。 */
 
 .form-section {
-  @apply bg-elev rounded-lg p-4 mb-3 shadow-xs;
+  @apply p-4 mb-3;
+  /* 液态玻璃卡片（编辑模块 / 设置模块 / 工具模块统一容器）：
+     卡片档 —— 圆角 18px（--radius-glass-card）、底色 panel 0.78、blur+折射。
+     显式展开而不 @apply glass：避免简写/长手声明被 Lightning CSS 乱序合并（批次 8.10 教训）。 */
+  border-radius: var(--radius-glass-card);
+  background: rgb(var(--elev) / var(--lg-tint-panel));
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  box-shadow: var(--glass-layers), var(--glass-shadow);
 }
 
 .form-section-header {
@@ -556,7 +641,7 @@ body {
 }
 
 .form-input {
-  @apply w-full min-h-ctl-lg px-3 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none;
+  @apply w-full min-h-ctl-lg px-3 text-sm rounded-full text-surface-800 placeholder:text-surface-400 outline-none;
   background: rgb(var(--elev));
   box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
   transition: background-color var(--dur-hover) var(--ease-apple),
@@ -631,6 +716,17 @@ textarea:focus-visible,
   box-shadow: var(--shadow-focus);
 }
 
+/* 玻璃按钮的键盘焦点：光晕叠加在玻璃三层与投影之上，而不是替换 ——
+   全局规则只写 shadow-focus，特异度 (0,1,1) 高于 .btn (0,1,0)，
+   会把玻璃描边/投影顶掉（实际踩坑：聚焦后按钮变扁平）。 */
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-ghost:focus-visible,
+.btn-danger:focus-visible {
+  box-shadow: var(--glass-layers), var(--glass-shadow), var(--shadow-focus);
+}
+
 input[type='range'] {
   -webkit-user-drag: none;
   user-select: none;
@@ -646,7 +742,8 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 
 .form-textarea {
-  @apply w-full px-3 py-2 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none resize-none;
+  @apply w-full px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 outline-none resize-none;
+  border-radius: var(--radius-glass-card);
   background: rgb(var(--elev));
   box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
   transition: background-color var(--dur-hover) var(--ease-apple),
@@ -664,7 +761,8 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 
 .form-textarea-resizable {
-  @apply w-full px-3 py-2 pr-7 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none;
+  @apply w-full px-3 py-2 pr-7 text-sm text-surface-800 placeholder:text-surface-400 outline-none;
+  border-radius: var(--radius-glass-card);
   resize: vertical;
   min-height: 64px;
   background: rgb(var(--elev));
@@ -721,68 +819,302 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   transform: translateY(0);
 }
 
-/* ===== 按钮（苹果风）=====
-   主按钮：实色填充 + 上缘极细高光；次按钮：**半透明灰填充**（不是「白底 + 边框」）；
-   hover 只改颜色；按压用 active:scale-[0.98]（唯一的缩放反馈）；
-   焦点由全局 :focus-visible 光晕接管，**不再用 ring-2 + ring-offset-1 双层环**。 */
+/* ===== 液态玻璃材质（可复用工具类）=====
+   规范：docs/Gosume液态玻璃/液态玻璃落地规范.md 第 4 节
+
+   这是全项目玻璃效果的**唯一入口**，组件一律复用，禁止重复硬编码这套四层材质。
+
+      class="glass"               控件类（默认胶囊圆角 = h/2）
+      class="glass glass-card"    卡片 / 面板（18px）
+      class="glass glass-modal"   模态 / 浮层（22px）
+
+   需要 Chromium 专属的边缘折射时额外加 `data-lg`，由液态玻璃引擎接管；
+   不加则停在 Tier 0（纯模糊），任何内核下都不会变成透明块。
+
+   ⚠ 这里**不要写 position** —— `.glass` 同时被 `fixed` / `absolute` 定位的浮层
+   （下拉面板 / 工具提示）和普通控件复用。一旦在这里写 `relative`，会以同特异度、
+   更靠后的源码顺序覆盖掉 Tailwind 的 `fixed`，下拉弹窗就会脱离定位坐标，
+   表现为「点击后不弹下拉」（实际踩过的 bug）。需要定位上下文的组件自己写。 */
+.glass {
+  border-radius: var(--radius-full);
+
+  /* ① 底色：给玻璃一点「厚度」 */
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
+
+  /* ③ 高光 / 发丝描边（立体感的主要来源）+ ④ 投影。
+     全部用 inset box-shadow，不用 border —— 避免影响盒模型与尺寸令牌。
+     ② 背景滤镜**故意不写在这里**，见下方 .glass-blur 的说明。 */
+  box-shadow: var(--glass-layers), var(--glass-shadow);
+
+  transition:
+    background var(--dur-base) var(--ease-apple),
+    box-shadow var(--dur-base) var(--ease-apple),
+    transform var(--dur-instant) var(--ease-apple),
+    /* opacity 也要在列：Tooltip / 手写 tooltip 靠 opacity 淡入淡出，
+       若不写会被这里的 transition 覆盖成瞬时切换（无过渡）。 */
+    opacity var(--dur-fast) linear,
+    /* color 同理：ghost / 卡片悬浮按钮 hover 会加深文字色 */
+    color var(--dur-hover) var(--ease-apple);
+}
+
+/* ② 背景模糊：默认**不启用**，只给「不与同类玻璃紧邻」的独立表面使用。
+
+   ⚠ 千万不要加在按钮 / chip 这类紧密排列的控件上 —— 这是本次改造实际踩到的 bug：
+   backdrop-filter 的模糊要采样元素框**之外**的像素（采样半径约等于 --lg-blur），
+   而控件间距（gap-2 = 8px）小于模糊半径（10px），相邻控件就会互相采样到对方。
+   于是 hover 一个按钮改变了它的底色时，邻居的模糊背景跟着变，
+   表现为「hover 一个按钮，旁边的按钮也亮了」且高光看起来错位。
+
+   独立表面（模态 / 面板 / 下拉 / 工具提示）彼此不相邻，不存在这个问题。 */
+.glass-blur,
+.glass-card,
+.glass-modal {
+  isolation: isolate;
+  /* --lg-backdrop 由引擎注入（Tier 1 折射），未注入时回落 Tier 0 纯模糊 */
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+}
+
+/* 分类 chip（WelcomePage / CommunityPage 的 FilterChip）。
+   特异度写成 .glass.glass-chip（0,2,0）才能覆盖 .glass 的底色（0,1,0）。
+   底色已并入 tint 体系（原独立色板 surface-400/0.30、hover surface-300/0.70 已废弃）：
+   未选中 = 控件档 0.40、hover = 0.58，与次按钮完全同源 ——
+   glass-rgb 是中性灰，在浅色页面可见度足够（早期「看不出来」的是纯白 elev 玻璃）。 */
+.glass.glass-chip {
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
+}
+
+.glass.glass-chip:not(.glass-chip-on):hover {
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
+  box-shadow: var(--glass-lift);
+  color: rgb(var(--surface-800));
+}
+
+.glass.glass-chip.glass-chip-on {
+  background: rgb(var(--primary-600));
+  background-image: var(--glass-sheen);
+  color: rgb(255 255 255);
+}
+
+/* 卡片 / 面板：底色用 --elev 而不是 --glass-rgb。
+   原因：深色主题下 --glass-rgb 是中灰（120 120 128），大面积铺开会变成中灰面板，
+   而正文是浅色字（--surface-800 = #F2F2F7），对比度反而变差。
+   --elev 是主题感知的「抬升面」（浅色白 / 深色 #2C2C2E），承载正文才安全。 */
+.glass-card {
+  border-radius: var(--radius-glass-card);
+  background: rgb(var(--elev) / var(--lg-tint-panel));
+}
+
+.glass-modal {
+  border-radius: var(--radius-glass-modal);
+  background: rgb(var(--elev) / var(--lg-tint-modal));
+}
+
+/* 下拉菜单 / 弹出菜单：比模态更透的一档（--lg-tint-menu）。
+   独立成类而不用 `.glass + .glass-modal` 组合 —— 菜单不需要 .glass 的
+   transition（它靠 animate-dropdown-enter 动画），且背景要走 menu 档。
+   ⚠ 同样**不写 position**（会被 fixed 浮层复用，见 .glass 的警示）。 */
+.glass-menu {
+  isolation: isolate;
+  border-radius: var(--radius-glass-modal);
+  background: rgb(var(--elev) / var(--lg-tint-menu));
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  box-shadow: var(--glass-layers), var(--glass-shadow);
+}
+
+/* 大型内容面板（TemplateSwitcher 模板切换等）：宽 > 200px、带缩略图/描述、
+   悬浮在内容密集的编辑区上 —— 菜单档 0.66 太透，背后内容会干扰阅读（用户实测反馈）。
+   底色提到模态档 0.88（文字对比度与模态一致），玻璃材质（模糊/描边/投影/22px 圆角）不变。
+   ⚠ 必须定义在 .glass-menu 之后：同为 (0,1,0)，靠源码顺序覆盖其底色。 */
+.glass-menu-lg {
+  background: rgb(var(--elev) / var(--lg-tint-modal));
+}
+
+/* 下拉菜单选项行：圆角 + 选项间垂直外边距（iOS 菜单的内缩行样式，2026-09-13）。
+   圆角取 --radius-sm(7px)：行高 28–36px 时 ≈0.22 行高，对齐 iOS 菜单行比例，规范标准档位。
+   外边距只加垂直方向 2px（相邻行合计 4px 间距，避免拥挤又不松散），面板 py-1 保持不变。
+   hover/选中底色由各菜单既有的 bg-* 工具类提供，border-radius 会自动裁剪高亮形状；
+   仅样式调整，点击/键盘/滚动等交互逻辑零改动。 */
+.glass-menu-item {
+  border-radius: var(--radius-full);
+  margin: 0 3px;
+  /* 选项行 markup 上的 w-full(100%) + 水平 margin 会把总宽撑到 100%+6px，
+     超出 overflow-auto 面板 → 横向滚动条（实际踩坑）。
+     ⚠ 不能用 width:auto —— <button> 的 auto 是「收缩到内容」而非拉伸（探针实测），
+     高亮会只剩文字那截。calc(100% - 6px) 精确扣掉两侧 3px margin，占满不溢出；
+     本类在 utilities 之后，同特异度下覆盖 w-full。改 margin 水平值时同步改这里的 6px。 */
+  width: calc(100% - 6px);
+}
+
+/* 行间距只加在「相邻行之间」—— ⚠ 不能用统一的 margin-bottom：
+   overflow-auto 面板是 BFC，末行的 bottom margin 不塌陷出去而计入滚动高度，
+   内容明明放得下也会多出 2px → 凭空出现一条竖直滚动条（实际踩坑）。 */
+.glass-menu-item + .glass-menu-item {
+  margin-top: 2px;
+}
+
+/* 玻璃叠层：在玻璃 / 不透明容器**内部**再加一层玻璃质感（如卡片底部的文字区）。
+   规范已放开「玻璃叠玻璃」（2026-09-12），但本类**仍默认不带 backdrop-filter**：
+   叠层通常已经压在模糊面之上，再模糊收益很低，却多一层合成开销。
+   确实需要内层模糊时，另加 `.glass-blur` 即可（嵌套深度控制在 2 层内）。 */
+.glass-plate {
+  background: rgb(var(--elev) / var(--lg-tint-panel));
+  box-shadow: var(--glass-layers);
+}
+
+/* 编辑模块条目容器（form-section 内的可折叠条目 / 设置页选项行）：
+   **完全透明、无边框、无底色**（2026-09-13 用户二次调整：连灰底也去掉，保持简洁）。
+   层级不靠条目自身样式，靠父卡（玻璃卡片）+ 间距 + 分隔线表达——最简形态。
+   交互反馈只发生在 hover（.glass-hover，可点条目才有）与选中/拖拽（primary tint）。
+   圆角保留 18px（hover/选中底色出现时的形状）。
+   ⚠ 本类位于 utilities 之后且特异度 (0,1,0)：markup 不要再叠加 bg-* / border-*，会被这里覆盖。 */
+.glass-entry {
+  border-radius: var(--radius-glass-card);
+  background: transparent;
+}
+
+/* 可点条目的 hover（设置页选项行 / 选择卡）：悬停时才出现的浅灰反馈 */
+.glass-hover:hover {
+  background: rgb(var(--surface-600) / 0.1);
+}
+
+/* 拖拽落点提示 / 选中态：主色底 + 主色 hairline（inset，不占布局）。
+   primary-500 tint 在浅色（白底）与深色（深灰底）上都可见，两主题无需分档。 */
+.glass-entry-dragover,
+.glass-entry-selected {
+  background: rgb(var(--primary-500) / 0.14);
+  box-shadow: inset 0 0 0 var(--border-thin) rgb(var(--primary-400));
+}
+
+/* 编辑页左侧模块导航 tab（Sidebar）：**不用玻璃** —— tab 排布密集（gap 2px），
+   叠加玻璃描边/投影后视觉杂乱（用户实测反馈），保持简洁的底色悬停 + 实色选中。
+   曾短暂使用过 .nav-tab 玻璃样式，2026-09-13 按用户决策移除；样式由 markup 内
+   Tailwind 工具类表达（hover:bg-surface-200 / 选中 bg-primary-600），此处不再定义全局类。 */
+
+/* 应用外壳（标题栏 / 侧栏 / 工具栏 / 状态栏）：贴边的整条玻璃面。
+   不设圆角与投影 —— 外壳由窗口裁剪，分界用既有的 hairline 边框表达。 */
+.glass-shell {
+  background: rgb(var(--elev) / var(--lg-tint-panel));
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+}
+
+/* 分组框 / 列表项的描边：用 inset hairline 取代 border。
+   依据：液态玻璃规范 11「不用 border 画描边，改用 inset box-shadow」；
+   视觉与原 border-surface-200 几乎一致（--hairline 浅色为 10% 黑、深色为 12% 白，主题感知）。
+   ⚠ 本类占用 box-shadow —— 元素如需落影，请把两层写进同一条 box-shadow，不要叠加两个类。 */
+.hairline-frame {
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+/* 悬停浮起（用户拍板保留并全站统一）：可点击卡片类组件的 hover 交互。
+   ⚠ 苹果风规范原本禁止 hover 位移 —— 此处为用户明确决策的例外，已在台账登记。
+   统一走本类而不是各写各的 hover:-translate-y-*，保证幅度与曲线一致。 */
+.hover-lift {
+  transition: transform var(--dur-base) var(--ease-apple-out),
+    box-shadow var(--dur-base) var(--ease-apple);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* ===== 按钮（苹果风 + 液态玻璃）=====
+   材质全部复用 `.glass`（四层：底色 / 背景滤镜 / 高光描边 / 投影），此处只定义变体差异。
+
+   · 主按钮与危险按钮**保持实色语义令牌打底**（规范 7）：
+     白字在低透明度彩色玻璃上极易跌到 3:1 以下，只叠加玻璃高光、不做透明化。
+   · 次按钮 = 半透明玻璃填充；ghost = 默认透明，hover 才浮现玻璃。
+   · hover 只改颜色（禁止 hover 缩放/位移）；按压 active:scale-[0.98] 是唯一的缩放反馈。
+   · 圆角统一胶囊（h/2），由 .glass 的 --radius-full 提供。 */
 .btn {
-  @apply inline-flex h-ctl-lg items-center justify-center gap-1.5 px-3 text-sm font-medium rounded-md
+  /* ⚠ **不要在这里写 background** —— 实测 Lightning CSS 会把 @apply 展开的
+     `background` 简写与变体的 `background-color` 合并时丢弃后者，
+     导致主按钮实色被玻璃白覆盖、白字几乎不可见（实际踩坑）。
+     背景一律由变体（btn-primary/secondary/ghost/danger）自己声明。 */
+  @apply inline-flex h-ctl-lg items-center justify-center gap-1.5 px-3 text-sm font-medium
          outline-none transition duration-hover ease-apple active:scale-[0.98]
          disabled:opacity-50 disabled:pointer-events-none;
+  border-radius: var(--radius-full);        /* 胶囊 */
+  box-shadow: var(--glass-layers), var(--glass-shadow);
 }
 
 .btn-primary {
+  /* 实色语义令牌打底（规范 7：白字在低透明彩色玻璃上会跌破 3:1）+ 玻璃质感：
+     sheen 光泽渐变 + .btn 基类的 glass-layers / glass-shadow（不再用更弱的 shadow-sm
+     覆盖基类投影 —— 那会让实色按钮看起来比玻璃按钮更「平」）。 */
   @apply btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
-  box-shadow: var(--shadow-sm);
+  background-image: var(--glass-sheen);
+}
+
+.btn-primary:hover {
+  /* 统一 hover 规范第二通道：投影浮起（底色加深由 @apply hover:bg-primary-700 提供） */
+  box-shadow: var(--glass-lift);
 }
 
 .btn-secondary {
   @apply btn text-surface-800;
-  background: rgb(var(--surface-600) / 0.08);
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
 }
 
 .btn-secondary:hover {
-  background: rgb(var(--surface-600) / 0.14);
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
+  box-shadow: var(--glass-lift);
 }
 
 .btn-secondary:active {
-  background: rgb(var(--surface-600) / 0.2);
+  background: rgb(var(--glass-rgb) / var(--lg-tint-active));
 }
 
 .btn-ghost {
   @apply btn text-surface-600;
+  background: transparent;
 }
 
 .btn-ghost:hover {
-  background: rgb(var(--surface-600) / 0.08);
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
   color: rgb(var(--surface-800));
 }
 
 .btn-ghost:active {
-  background: rgb(var(--surface-600) / 0.14);
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
 }
 
-/* 危险按钮：Apple 的 destructive 是实色红，而不是浅红底 + 红字 */
+/* 危险按钮：Apple 的 destructive 是实色红，而不是浅红底 + 红字。
+   玻璃质感与 hover 浮起同 .btn-primary（sheen + 继承基类投影 + hover glass-lift）。 */
 .btn-danger {
-  @apply btn bg-danger-500 text-white;
+  @apply btn bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700;
+  background-image: var(--glass-sheen);
 }
 
 .btn-danger:hover {
-  background: rgb(var(--danger-600));
+  box-shadow: var(--glass-lift);
 }
 
-.btn-danger:active {
-  background: rgb(var(--danger-700));
-}
+/* ===== 按钮 hover 统一规范（三通道，全变体一致）=====
+   1. 底色加深：实色变体走语义色深一档（primary-700 / danger-600），
+      玻璃变体走 --lg-tint-hover(0.58) / --lg-tint-active(0.72) ——
+      原 0.50 的差值实测肉眼几乎无感，故加深幅度提到可感知阈值之上。
+   2. 投影浮起：一律叠加 var(--glass-lift)（玻璃三层 + 玻璃投影 + shadow-md），
+      无位移无缩放（位移被苹果风规范禁止；active:scale-[0.98] 是唯一缩放反馈）。
+      ⚠ 不要把 hover 投影直接换成 shadow-md：glass-shadow 本身比 shadow-md 重，
+      直接替换视觉上是「减淡」（用户实测踩坑）。
+   3. ghost 例外：无边框透明按钮 hover 只出底色、不加投影 ——
+      浮起的投影会让"无实体"的按钮显得突兀（Apple 工具条按钮同款处理）。
+   4. 实色变体（primary/danger）的玻璃质感来自 --glass-sheen 光泽层 +
+      glass-layers 高光描边；不加 backdrop-filter（间距 < 模糊半径会串扰）。
+   时长与缓动由 .btn 的 transition（duration-hover 0.12s + ease-apple）统一提供。 */
 
 /* 尺寸变体：高度与水平内边距成对绑定（见 苹果风落地规范 第 4.1 节）。
-   不要在这里写 box-shadow —— 与 .btn-primary 同特异度且源码更靠后，会把主按钮的高光压掉。 */
+   液态玻璃胶囊规范下「尺寸越小圆角越小」这条作废 —— 已移除 rounded-sm / rounded-xs，
+   所有尺寸统一胶囊。也不要在这里写 box-shadow，否则会压掉变体的高光。 */
 .btn-sm {
-  @apply h-ctl-md px-3 text-xs rounded-sm;
+  @apply h-ctl-md px-3 text-xs;
 }
 
 .btn-xs {
-  @apply h-ctl-xs px-1.5 text-xs rounded-xs;
+  @apply h-ctl-xs px-1.5 text-xs;
 }
 
 /* Page transition animation */
@@ -1076,16 +1408,30 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   }
 }
 
-/* Title Bar —— macOS 的标题栏是 vibrancy 材质：透出环境色 + 高饱和模糊。
-   必须保留不透明回退（prefers-reduced-transparency 时 --material-bar 会退化为 --titlebar-bg）。 */
+/* 卡片悬浮面板的预览/导出/删除按钮：统一 hover 规范（底色加深 + 投影浮起）。
+   原先markup 上的 hover:bg-elev/90 是「提高不透明度」—— 与全站「加深玻璃底色」
+   方向相反（用户反馈为「hover 时减弱透明度」），已从 TSX 移除，集中到这里。
+   特异度 (0,2,0) 高于 .glass (0,1,0)，可稳定覆盖其底色。 */
+.preview-btn:hover {
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
+  box-shadow: var(--glass-lift);
+}
+
+.preview-btn:active {
+  background: rgb(var(--glass-rgb) / var(--lg-tint-active));
+}
+
+/* Title Bar —— 液态玻璃外壳：与侧栏 / 工具栏 / 状态栏共用同一套玻璃令牌，
+   保证外壳四条边材质一致。不透明回退走 --lg-tint-panel(0.98) + --lg-blur(0px)，
+   见 prefers-reduced-transparency 块。 */
 .titlebar {
   height: var(--titlebar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--material-bar);
-  -webkit-backdrop-filter: var(--material-filter);
-  backdrop-filter: var(--material-filter);
+  background: rgb(var(--elev) / var(--lg-tint-panel));
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
   border-bottom: 1px solid var(--hairline);
   flex-shrink: 0;
   user-select: none;
@@ -1129,12 +1475,13 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 
 .titlebar-btn:hover {
-  background: rgb(var(--surface-600) / 0.1);
+  /* 与 .btn-ghost hover 同源（控件档 0.40）—— 原为硬编码 surface-600/0.10 */
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
   color: rgb(var(--surface-800));
 }
 
 .titlebar-btn:active {
-  background: rgb(var(--surface-600) / 0.16);
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
   color: rgb(var(--surface-900));
 }
 
@@ -1160,55 +1507,226 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   padding-left: 84px;
 }
 
-/* Range slider for margin presets —— 苹果风滑杆：
-   细轨道 + 白面滑块 + hairline 描边 + 层级阴影。
-   滑块本体的 hover 缩放是规范允许的唯一缩放例外（它是用户手势直接作用的控件本体，幅度 ≤1.1）。 */
-.margin-range-slider {
+/* ===== 开关（Switch）===== 液态玻璃开关：胶囊轨道 + 玻璃高光描边 + 白面旋钮。
+   刻意**不加 backdrop-filter** —— 开关常与其它控件同行摆放，加了会重蹈
+   「hover 串扰」bug（见 .glass-blur 的说明）；且开启态是实色，模糊本来也看不见。 */
+.gosume-switch {
+  position: relative;
+  width: 46px;
+  height: var(--ctl-sm);
+  border-radius: var(--radius-full);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
+  box-shadow: var(--glass-layers), var(--glass-shadow);
+  transition:
+    background var(--dur-base) var(--ease-apple),
+    box-shadow var(--dur-base) var(--ease-apple);
+}
+
+.gosume-switch:hover {
+  background: rgb(var(--glass-rgb) / var(--lg-tint-hover));
+}
+
+.gosume-switch:focus {
+  outline: none;
+}
+
+.gosume-switch:focus-visible {
+  box-shadow: var(--glass-layers), var(--shadow-focus);
+}
+
+.gosume-switch:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* 开启态：实色语义令牌打底（与主按钮同一策略：实色 + sheen 光泽 + 玻璃高光）。
+   特异度 0,2,0，需高于 .gosume-switch:hover(0,2,0) —— 靠源码顺序取胜。 */
+.gosume-switch.gosume-switch-on {
+  background-color: rgb(var(--primary-600));
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-layers), var(--shadow-sm);
+}
+
+.gosume-switch.gosume-switch-on:hover {
+  background-color: rgb(var(--primary-700)); /* 0,3,0，稳压上面两条 */
+}
+
+.gosume-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: rgb(var(--elev));
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-base) var(--ease-apple-out);
+}
+
+.gosume-switch.gosume-switch-on .gosume-switch-knob {
+  transform: translateX(18px);
+}
+
+/* ===== 滑杆（Range Slider）===== 苹果风滑杆 + 液态玻璃材质：
+   加粗的半透明轨道 + **胶囊滑钮**（贴合 iOS 原生滑块的椭圆手感）+ 玻璃高光圈。
+   ⚠ 轨道**不加 backdrop-filter**：细轨道做模糊既看不见，又会与相邻玻璃互相采样。
+   滑钮本体的 hover 缩放是规范允许的唯一缩放例外（它是用户手势直接作用的控件本体，幅度 ≤1.1）。
+   原类名 .margin-range-slider 已随滑杆统一收敛为 .range-slider（AnimatedRange 内置）。 */
+.range-slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  height: 6px;
   border-radius: var(--radius-full);
-  background: rgb(var(--surface-600) / 0.12);
+  background: rgb(var(--surface-600) / 0.18);
+  box-shadow: inset 0 0 0 1px var(--glass-hairline);
   outline: none;
   cursor: pointer;
 }
 
-.margin-range-slider::-webkit-slider-thumb {
+/* 胶囊滑钮：20 × 16，圆角走 --radius-full（渲染时 = h/2，即两端全圆）。
+   尺寸比例：滑钮高 16px ≈ 轨道 6px 的 2.7 倍 —— 对齐 iOS 原生滑块
+   「细轨道 + 更大的滑钮」的视觉关系，20px 宽度给出舒适的抓握区。 */
+.range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
+  width: 20px;
   height: 16px;
   border-radius: var(--radius-full);
   background: rgb(var(--elev));
-  border: 1px solid var(--hairline-strong);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-layers), var(--shadow-sm);
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple);
 }
 
-/* 滑块本体的 hover / active 缩放是规范允许的唯一缩放例外
+/* 滑钮本体的 hover / active 缩放是规范允许的唯一缩放例外
    （它是用户手势直接作用的控件本体，幅度 ≤1.1），逐行用 gosume-style-allow 标注豁免扫描。 */
-.margin-range-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.08); /* gosume-style-allow: 滑块本体缩放属允许例外 */
-  box-shadow: var(--shadow-md);
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.08); /* gosume-style-allow: 滑钮本体缩放属允许例外 */
+  box-shadow: var(--glass-layers), var(--shadow-md);
 }
 
-.margin-range-slider::-webkit-slider-thumb:active {
-  transform: scale(1.02); /* gosume-style-allow: 滑块本体缩放属允许例外 */
+.range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.02); /* gosume-style-allow: 滑钮本体缩放属允许例外 */
 }
 
-.margin-range-slider::-moz-range-thumb {
-  width: 16px;
+.range-slider::-moz-range-thumb {
+  width: 20px;
   height: 16px;
   border-radius: var(--radius-full);
   background: rgb(var(--elev));
-  border: 1px solid var(--hairline-strong);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-layers), var(--shadow-sm);
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple);
 }
 
-.margin-range-slider::-moz-range-thumb:hover {
-  transform: scale(1.08); /* gosume-style-allow: 滑块本体缩放属允许例外 */
-  box-shadow: var(--shadow-md);
+.range-slider::-moz-range-thumb:hover {
+  transform: scale(1.08); /* gosume-style-allow: 滑钮本体缩放属允许例外 */
+  box-shadow: var(--glass-layers), var(--shadow-md);
+}
+
+/* ===== 液态玻璃分段控件 =====
+   组件：frontend/src/components/ui/LiquidSegmented.tsx
+   规范：docs/Gosume液态玻璃/液态玻璃落地规范.md 第 8.4 节
+   预览：docs/liquid-glass-preview/index.html
+
+   ⚠ 这里**故意只用既有令牌**（--elev / --hairline / --shadow-sm / --shadow-focus），
+   因此在「批次 0 令牌层」落地之前就能正常显示，且三主题都对。
+   批次 0 完成后，把下面标注 [批次0] 的三处换成
+   --glass-rgb / --glass-spec-top / --glass-hairline 即可（取值见规范 3.1）。 */
+.seg {
+  position: relative;                 /* 胶囊的定位基准 */
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-full);  /* 胶囊 */
+  /* 与 .glass 同源：底色走控件档，模糊折射走引擎注入；描边投影走玻璃统一配方。
+     [批次0] 的 fallback 字面量与 hairline-strong/shadow-sm 已随令牌体系收敛。 */
+  background: rgb(var(--glass-rgb) / var(--lg-tint));
+  -webkit-backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  backdrop-filter: var(--lg-backdrop, blur(var(--lg-blur)) saturate(var(--lg-sat)));
+  box-shadow: var(--glass-layers), var(--glass-shadow);
+}
+
+/* 选中指示胶囊：独立于按钮的高亮层，位置与尺寸由组件实测写入。
+   底色走模态档（0.88，选中态要压得住底下内容）；描边走玻璃高光三层。 */
+.seg-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;                         /* 在文字之下 */
+  border-radius: var(--radius-full);
+  background: rgb(var(--elev) / var(--lg-tint-modal));
+  box-shadow: var(--glass-layers), var(--shadow-sm);
+  pointer-events: none;               /* 不拦截点击 */
+  opacity: 0;
+  will-change: transform, width, height;
+}
+
+/* 过渡只在切换时挂载：首次渲染与尺寸重算必须「瞬间就位」，
+   否则页面一打开会看到胶囊从左上角滑进来。 */
+.seg-pill.is-animated {
+  transition:
+    transform var(--dur-slow) var(--ease-apple-out),
+    width var(--dur-slow) var(--ease-apple-out),
+    height var(--dur-slow) var(--ease-apple-out),
+    opacity var(--dur-fast) linear;
+}
+
+.seg-btn {
+  position: relative;
+  z-index: 1;                         /* 文字在胶囊之上 */
+  height: var(--ctl-sm);
+  padding: 0 12px;                    /* 间距阶梯：14px 是禁用档位，取 12px */
+  border: 0;
+  background: transparent;            /* 底色交给胶囊，按钮恒透明 */
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(var(--surface-600));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--dur-slow) var(--ease-apple-out),
+    font-weight var(--dur-slow) var(--ease-apple-out);
+}
+
+.seg-btn:hover {
+  color: rgb(var(--surface-800));
+}
+
+.seg-btn[aria-selected='true'] {
+  color: rgb(var(--surface-900));
+  font-weight: 600;
+}
+
+.seg-btn:focus {
+  outline: none;
+}
+
+.seg-btn:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.seg-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* 关键：用一份隐藏的加粗副本把加粗后的宽度预留出来。
+   否则选中时字重 500→600 会把按钮撑宽，胶囊宽度跟着跳，动画出现一次抽动。 */
+.seg-txt {
+  display: inline-block;
+}
+
+.seg-txt::before {
+  content: attr(data-text);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  font-weight: 600;
 }
