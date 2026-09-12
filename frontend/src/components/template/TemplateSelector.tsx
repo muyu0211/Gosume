@@ -23,7 +23,7 @@ export function TemplateSelector({ onTemplateChange }: Props) {
   return (
     <div className="p-3">
       <div className="flex items-center gap-2 mb-3">
-        <Palette className="w-4 h-4 text-primary-600" />
+        <Palette className="size-icon-md text-primary-600" />
         <span className="text-sm font-semibold text-surface-700">模板选择</span>
       </div>
       <div className="space-y-2">
@@ -51,7 +51,7 @@ function TemplateCard({ template, isActive, onSelect }: { template: TemplateMeta
       }`}
     >
       {isActive && (
-        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
+        <div className="absolute top-2 right-2 size-icon-lg rounded-full bg-primary-500 flex items-center justify-center">
           <Check className="w-3 h-3 text-white" />
         </div>
       )}

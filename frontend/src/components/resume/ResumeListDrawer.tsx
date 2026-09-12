@@ -223,7 +223,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
     <div
       className={`fixed inset-0 z-50 flex justify-end transition-all duration-300 ${
         isActive
-          ? 'bg-black/30 backdrop-blur-sm'
+          ? 'bg-[var(--material-overlay)] backdrop-blur-sm'
           : 'bg-transparent backdrop-blur-none'
       }`}
       onClick={onClose}
@@ -243,7 +243,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-200 shrink-0">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary-600" />
+            <FileText className="size-icon-lg text-primary-600" />
             <h2 className="text-lg font-semibold text-surface-800">{t('allResumes')}</h2>
             <span className="text-xs text-surface-400 bg-surface-100 px-2 py-0.5 rounded-full">
               {resumeList.length}
@@ -253,7 +253,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             {resumeList.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="px-2.5 py-1.5 text-xs font-medium text-surface-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-surface-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
                 {allSelected ? t('deselectAll') : t('selectAll')}
               </button>
@@ -262,7 +262,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               onClick={onClose}
               className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="size-icon-lg" />
             </button>
           </div>
         </div>
@@ -271,6 +271,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         <div className="flex-1 overflow-auto">
           {resumeList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-surface-400 gap-3">
+              {/* gosume-style-allow: 空态装饰大图标 48px，超出标准 icon 档（12–32） */}
               <Inbox className="w-12 h-12" />
               <p className="text-sm">{t('noSavedResumes')}</p>
               <p className="text-xs">{t('savedResumesWillShow')}</p>
@@ -282,7 +283,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 return (
                   <div
                     key={item.id}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-50 transition-colors text-left group cursor-pointer"
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-50 transition-colors text-left group cursor-pointer"
                     onClick={() => onOpenResume(item.id)}
                   >
                     {/* Checkbox */}
@@ -297,15 +298,15 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                         }`}
                       >
                         {isSelected ? (
-                          <CheckSquare className="w-5 h-5" />
+                          <CheckSquare className="size-icon-lg" />
                         ) : (
-                          <Square className="w-5 h-5" />
+                          <Square className="size-icon-lg" />
                         )}
                       </button>
                     </Tooltip>
 
-                    <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 group-hover:bg-primary-100 transition-colors">
-                      <FileText className="w-4 h-4 text-primary-600" />
+                    <div className="size-ctl-lg rounded-lg bg-primary-50 flex items-center justify-center shrink-0 group-hover:bg-primary-100 transition-colors">
+                      <FileText className="size-icon-md text-primary-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-surface-700 truncate">
@@ -323,12 +324,12 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                       <button
                         onClick={(e) => handleDeleteClick(e, item.id)}
                         aria-label={t('deleteResume')}
-                        className="p-1.5 text-surface-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                        className="p-1.5 text-surface-300 hover:text-danger-500 hover:bg-danger-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="size-icon-md" />
                       </button>
                     </Tooltip>
-                    <ChevronRight className="w-4 h-4 text-surface-300 group-hover:text-primary-500 transition-colors" />
+                    <ChevronRight className="size-icon-md text-surface-300 group-hover:text-primary-500 transition-colors" />
                   </div>
                 )
               })}
@@ -344,7 +345,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               batchCount > 0 ? 'max-h-14 opacity-100' : 'max-h-0 opacity-0'
             }`}
           >
-            <div className="flex items-center justify-between px-4 py-2.5 bg-primary-50 border-b border-primary-100">
+            <div className="flex items-center justify-between px-4 py-2 bg-primary-50 border-b border-primary-100">
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSelectAll}
@@ -361,14 +362,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                   onClick={handleBatchExportClick}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="size-icon-sm" />
                   {t('batchExport')}
                 </button>
                 <button
                   onClick={handleBatchDeleteClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="size-icon-sm" />
                   {t('batchDelete')}
                 </button>
               </div>
@@ -387,7 +388,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       {/* Single-delete confirmation dialog */}
       {confirmDeleteId && (
         <div
-          className="absolute inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter"
+          className="absolute inset-0 bg-[var(--material-overlay)] flex items-center justify-center animate-dialog-overlay-enter"
           onClick={handleCancelDelete}
         >
           <div
@@ -395,8 +396,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             className="bg-elev rounded-xl shadow-2xl p-6 w-[360px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="size-ctl-xl rounded-full bg-danger-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="size-icon-lg text-danger-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-surface-800">{t('deleteConfirmTitle')}</h3>
@@ -405,7 +406,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2.5 mt-6">
+            <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={handleCancelDelete}
                 disabled={!!deletingId}
@@ -416,11 +417,11 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleConfirmDelete}
                 disabled={!!deletingId}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {deletingId ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="size-icon-md border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     {t('deletingElipsis')}
                   </>
                 ) : (
@@ -435,7 +436,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       {/* Batch-delete confirmation dialog */}
       {showBatchConfirm && (
         <div
-          className="absolute inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter"
+          className="absolute inset-0 bg-[var(--material-overlay)] flex items-center justify-center animate-dialog-overlay-enter"
           onClick={handleCancelBatchDelete}
         >
           <div
@@ -443,8 +444,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             className="bg-elev rounded-xl shadow-2xl p-6 w-[380px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="size-ctl-xl rounded-full bg-danger-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="size-icon-lg text-danger-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-surface-800">{t('batchDeleteConfirmTitle')}</h3>
@@ -453,7 +454,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2.5 mt-6">
+            <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={handleCancelBatchDelete}
                 disabled={batchDeleting}
@@ -464,11 +465,11 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <button
                 onClick={handleBatchConfirmDelete}
                 disabled={batchDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {batchDeleting ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="size-icon-md border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     {t('deletingElipsis')}
                   </>
                 ) : (
@@ -483,7 +484,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
       {/* Batch-export dialog */}
       {showBatchExport && (
         <div
-          className="absolute inset-0 bg-black/20 flex items-center justify-center animate-dialog-overlay-enter"
+          className="absolute inset-0 bg-[var(--material-overlay)] flex items-center justify-center animate-dialog-overlay-enter"
           onClick={handleCancelBatchExport}
         >
           <div
@@ -491,8 +492,8 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
             className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
           >
             <div className="flex items-start gap-4 mb-5">
-              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                <Download className="w-5 h-5 text-primary-600" />
+              <div className="size-ctl-xl rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                <Download className="size-icon-lg text-primary-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-surface-800">{t('batchExportTitle')}</h3>
@@ -515,13 +516,13 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                       key={id}
                       onClick={() => setBatchExportFormat(id)}
                       disabled={batchExporting}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm rounded-lg border-2 transition-all duration-150 disabled:opacity-50 ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm rounded-lg border-2 transition-all duration-150 disabled:opacity-50 ${
                         batchExportFormat === id
                           ? 'border-primary-400 bg-primary-50 text-primary-700 font-medium'
                           : 'border-surface-200 text-surface-600 hover:border-surface-300'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="size-icon-md" />
                       {label}
                     </button>
                   ))}
@@ -562,9 +563,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
                 <div className="flex items-center justify-between text-xs text-surface-500 mb-1.5">
                   <span className="flex items-center gap-1.5">
                     {batchExporting ? (
-                      <Loader2 className="w-3.5 h-3.5 text-primary-500 animate-spin" />
+                      <Loader2 className="size-icon-sm text-primary-500 animate-spin" />
                     ) : (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="size-icon-sm text-success-500" />
                     )}
                     {batchExporting ? t('exportingStatus') : t('exportFinishedStatus')}{' '}
                     {t('piecesCount')
@@ -581,7 +582,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               </div>
             )}
 
-            <div className="flex justify-end gap-2.5 mt-6">
+            <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={handleCancelBatchExport}
                 disabled={batchExporting}
@@ -596,7 +597,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               >
                 {batchExporting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="size-icon-md animate-spin" />
                     {t('exportingElipsis')}
                   </>
                 ) : batchExportDone ? (

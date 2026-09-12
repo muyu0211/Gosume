@@ -111,9 +111,9 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
       <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="flex flex-col overflow-hidden">
         {/* Header — 固定在顶部，不参与滚动 */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-surface-100 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-              <FileJson className="w-4 h-4 text-primary-600" />
+              <FileJson className="size-icon-md text-primary-600" />
             </div>
             <h2 className="text-base font-semibold text-surface-800">{t('importResume')}</h2>
           </div>
@@ -122,7 +122,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             disabled={importing}
             className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="size-icon-lg" />
           </button>
         </div>
 
@@ -153,14 +153,14 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             <div>
               <label className="text-sm font-medium text-surface-600 mb-2 block">{t('template')}</label>
               {templateMatched ? (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-sm text-emerald-700">
-                  <Check className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-success-50 border border-success-100 text-sm text-success-700">
+                  <Check className="size-icon-md shrink-0" />
                   <span>{t('originalTemplateAvailable').replace('{name}', matchedTemplateName)}</span>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-sm text-amber-700">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-warning-50 border border-warning-100 text-sm text-warning-700">
+                    <AlertTriangle className="size-icon-md mt-0.5 shrink-0" />
                     <span>
                       {t('originalTemplateMissing').replace('{name}', preview.template.referenced_name || t('unknownTemplate'))}
                     </span>
@@ -185,7 +185,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
               <label className="text-sm font-medium text-surface-600 mb-2 block">{t('importMethod')}</label>
               <div className="space-y-2">
                 <label
-                  className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     mode === 'new' ? 'border-primary-400 bg-primary-50/40' : 'border-surface-200 hover:border-surface-300'
                   }`}
                 >
@@ -196,7 +196,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                     onChange={() => setMode('new')}
                     className="mt-0.5 accent-primary-600"
                   />
-                  <FilePlus2 className={`w-5 h-5 mt-0.5 ${mode === 'new' ? 'text-primary-500' : 'text-surface-400'}`} />
+                  <FilePlus2 className={`size-icon-lg mt-0.5 ${mode === 'new' ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div>
                     <p className="text-sm font-medium text-surface-700">{t('newResumeOption')}</p>
                     <p className="text-xs text-surface-400 mt-0.5">{t('newResumeDesc')}</p>
@@ -204,7 +204,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                 </label>
 
                 <label
-                  className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     mode === 'overwrite' ? 'border-primary-400 bg-primary-50/40' : 'border-surface-200 hover:border-surface-300'
                   }`}
                 >
@@ -215,7 +215,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                     onChange={() => setMode('overwrite')}
                     className="mt-0.5 accent-primary-600"
                   />
-                  <RefreshCw className={`w-5 h-5 mt-0.5 ${mode === 'overwrite' ? 'text-primary-500' : 'text-surface-400'}`} />
+                  <RefreshCw className={`size-icon-lg mt-0.5 ${mode === 'overwrite' ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-surface-700">{t('overwriteResumeOption')}</p>
                     <p className="text-xs text-surface-400 mt-0.5">{t('overwriteResumeDesc')}</p>
@@ -238,22 +238,22 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             </div>
 
             <Expandable show={!!error} gapTop={20}>
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-700">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-danger-50 border border-danger-100 text-sm text-danger-700">
+                <AlertTriangle className="size-icon-md mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
             </Expandable>
 
             <Expandable show={importing} gapTop={20}>
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
-                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                <span className="text-sm text-blue-700">{t('importingElipsis')}</span>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-info-50 border border-info-100">
+                <Loader2 className="size-icon-md text-info-600 animate-spin" />
+                <span className="text-sm text-info-700">{t('importingElipsis')}</span>
               </div>
             </Expandable>
           </div>
 
           {/* Footer — 固定在底部，不参与滚动 */}
-          <div className="flex justify-end gap-2.5 px-6 py-3 border-t border-surface-100 flex-shrink-0 bg-elev">
+          <div className="flex justify-end gap-2 px-6 py-3 border-t border-surface-100 flex-shrink-0 bg-elev">
             <button onClick={() => modalRef.current?.close()} className="btn-secondary" disabled={importing}>
               {t('cancel')}
             </button>
@@ -262,7 +262,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
               disabled={!canImport}
               className="btn-primary gap-2"
             >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'overwrite' ? <RefreshCw className="w-4 h-4" /> : <FilePlus2 className="w-4 h-4" />}
+              {importing ? <Loader2 className="size-icon-md animate-spin" /> : mode === 'overwrite' ? <RefreshCw className="size-icon-md" /> : <FilePlus2 className="size-icon-md" />}
               {mode === 'overwrite' ? t('overwriteImportBtn') : t('newImportBtn')}
             </button>
           </div>

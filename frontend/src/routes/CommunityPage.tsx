@@ -181,12 +181,12 @@ export function CommunityPage() {
       {/* Header */}
       <header className="flex items-center gap-3 px-8 py-5 border-b border-surface-100 bg-elev/70 backdrop-blur-sm">
         <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm">
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-icon-md" />
           首页
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-primary-600/10 flex items-center justify-center">
-            <Globe className="w-5 h-5 text-primary-600" />
+          <div className="size-ctl-lg rounded-xl bg-primary-600/10 flex items-center justify-center">
+            <Globe className="size-icon-lg text-primary-600" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-surface-800 leading-tight">模板社区</h1>
@@ -197,7 +197,7 @@ export function CommunityPage() {
         {/* 搜索 */}
         <div className="flex-1 flex justify-center px-6">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-300" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-icon-md text-surface-300" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -215,11 +215,11 @@ export function CommunityPage() {
         </div>
 
         <button onClick={refresh} className="btn-ghost btn-sm">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-icon-md ${loading ? 'animate-spin' : ''}`} />
           刷新
         </button>
         <button onClick={() => { setPublishOpen(true); setPublishTemplateId(localTemplates[0]?.id ?? '') }} className="btn-primary btn-sm">
-          <Upload className="w-4 h-4" />
+          <Upload className="size-icon-md" />
           发布模板
         </button>
       </header>
@@ -228,7 +228,7 @@ export function CommunityPage() {
       {error && (
         <div className="mx-8 mt-4 px-4 py-2 rounded-lg border border-danger-200 bg-danger-50 text-sm text-danger-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2">
-            <WifiOff className="w-4 h-4 flex-shrink-0" />
+            <WifiOff className="size-icon-md flex-shrink-0" />
             {error}
           </span>
           <button onClick={() => setError('')} className="text-danger-500 hover:text-danger-700 text-xs font-medium flex-shrink-0">
@@ -239,7 +239,7 @@ export function CommunityPage() {
       {successMsg && (
         <div className="mx-8 mt-4 px-4 py-2 rounded-lg border border-success-200 bg-success-50 text-sm text-success-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 truncate">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <CheckCircle2 className="size-icon-md flex-shrink-0" />
             {successMsg}
           </span>
           <button onClick={() => setSuccessMsg('')} className="text-success-500 hover:text-success-700 text-xs font-medium flex-shrink-0">
@@ -252,11 +252,11 @@ export function CommunityPage() {
       <main className="flex-1 overflow-auto px-8 py-5 mr-1">
         {!configured ? (
           <div className="flex flex-col items-center justify-center py-24 text-surface-300">
-            <Globe className="w-10 h-10 mb-3" />
+            <Globe className="size-ctl-xl mb-3" />
             <p className="text-sm text-surface-500">模板社区暂不可用</p>
             <p className="text-xs mt-1">请确认已联网且社区服务已配置后重试</p>
             <button onClick={refresh} className="mt-4 btn-secondary btn-sm">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`size-icon-md ${loading ? 'animate-spin' : ''}`} />
               重新尝试
             </button>
           </div>
@@ -276,11 +276,11 @@ export function CommunityPage() {
 
             {loading && items.length === 0 ? (
               <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-6 h-6 animate-spin text-surface-300" />
+                <Loader2 className="size-icon-xl animate-spin text-surface-300" />
               </div>
             ) : items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-surface-300">
-                <Search className="w-10 h-10 mb-3" />
+                <Search className="size-ctl-xl mb-3" />
                 <p className="text-sm">没有找到符合条件的模板</p>
               </div>
             ) : (
@@ -338,7 +338,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active ? 'bg-primary-50 text-primary-700 border-primary-200' : 'text-surface-500 border-surface-200 hover:border-surface-300 hover:text-surface-700'
+      className={`w-24 h-ctl-sm flex items-center justify-center px-3 rounded-full text-xs font-medium leading-none transition-colors ${active ? 'bg-primary-600 text-white' : 'bg-surface-200 text-surface-600 hover:bg-surface-300/70 hover:text-surface-800'
         }`}
     >
       {children}
@@ -355,7 +355,7 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
           <button
             key={p}
             onClick={() => onChange(p)}
-            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-primary-600 text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'}`}
+            className={`size-ctl-md rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-primary-600 text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'}`}
           >
             {p}
           </button>
@@ -488,11 +488,11 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
           </p>
           {/* 评分与下载量 */}
           <div className="flex items-center gap-4 mt-3">
-            <StarRating value={template.rating} size="w-4 h-4" />
+            <StarRating value={template.rating} size="size-icon-md" />
             <span className="text-sm text-surface-600">{template.rating > 0 ? template.rating.toFixed(1) : '暂无'}</span>
             <span className="text-xs text-surface-400">({template.rating_count} 人评分)</span>
             <span className="flex items-center gap-1 text-xs text-surface-400">
-              <Download className="w-3.5 h-3.5" />
+              <Download className="size-icon-sm" />
               {template.download_count.toLocaleString()} 次下载
             </span>
           </div>
@@ -514,13 +514,13 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
         <div className="mt-5 pt-4 border-t border-surface-100">
           <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">为模板评分</h3>
           <div className="flex items-center gap-4">
-            <StarRating value={detailScore} interactive onSelect={onSelectScore} size="w-6 h-6" />
+            <StarRating value={detailScore} interactive onSelect={onSelectScore} size="size-icon-xl" />
             <button
               onClick={() => detailScore > 0 && onRate(detailScore)}
               disabled={detailScore === 0 || !!ratingId}
               className="btn-secondary btn-sm disabled:opacity-50"
             >
-              {ratingId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {ratingId ? <Loader2 className="size-icon-sm animate-spin" /> : null}
               提交评分
             </button>
           </div>
@@ -534,7 +534,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
           disabled={downloading || template.is_installed}
           className={`btn-sm ${template.is_installed ? 'btn-ghost pointer-events-none opacity-60' : 'btn-primary'}`}
         >
-          {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {downloading ? <Loader2 className="size-icon-md animate-spin" /> : <Download className="size-icon-md" />}
           {template.is_installed ? '已安装到本地' : '下载并安装'}
         </button>
       </div>
@@ -542,7 +542,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
   )
 }
 
-function StarRating({ value, interactive = false, onSelect, size = 'w-4 h-4' }: {
+function StarRating({ value, interactive = false, onSelect, size = 'size-icon-md' }: {
   value: number
   interactive?: boolean
   onSelect?: (score: number) => void
@@ -579,7 +579,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
     <Modal ref={modalRef} onClose={onClose} width="w-[480px]">
       <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-          <Upload className="w-4 h-4 text-primary-600" />
+          <Upload className="size-icon-md text-primary-600" />
         </div>
         <span className="text-base font-semibold text-surface-700">发布模板到社区</span>
       </div>
@@ -608,7 +608,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
           disabled={!selectedId || publishing || templates.length === 0}
           className="btn-primary btn-sm disabled:opacity-50"
         >
-          {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          {publishing ? <Loader2 className="size-icon-md animate-spin" /> : <Upload className="size-icon-md" />}
           发布
         </button>
       </div>

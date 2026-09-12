@@ -31,7 +31,7 @@ export function LanguageSection() {
     <div className="form-section">
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <Languages className="w-4 h-4 text-primary-600" />
+          <Languages className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('languages', language)}</span>
           <span className="text-xs text-surface-400">({items.length})</span>
         </div>
@@ -60,7 +60,7 @@ export function LanguageSection() {
                 onDragEnd={onDragEnd}
                 className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-surface-200 transition-colors flex-shrink-0 self-start mt-5 ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
               >
-                <GripVertical className="w-3.5 h-3.5" />
+                <GripVertical className="size-icon-sm" />
               </div>
               <div className="flex-1 grid grid-cols-2 gap-2">
                 <div>
@@ -94,8 +94,8 @@ export function LanguageSection() {
                 onToggle={() => updateItem(idx, { hidden: !isHidden })}
                 className="flex-shrink-0 self-start mt-5"
               />
-              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0 self-start mt-5">
-                <Trash2 className="w-4 h-4" />
+              <button onClick={() => requestDelete('language', idx)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0 self-start mt-5">
+                <Trash2 className="size-icon-md" />
               </button>
             </div>
             <div className="mt-2">

@@ -112,11 +112,11 @@ export function MonthPicker({ value, onChange, placeholder, showPresent = false,
       {/* Year navigation */}
       <div className="flex items-center justify-between mb-2">
         <button type="button" onClick={prevYear} className="p-1 hover:bg-surface-100 rounded">
-          <ChevronLeft className="w-4 h-4 text-surface-500" />
+          <ChevronLeft className="size-icon-md text-surface-500" />
         </button>
         <span className="text-sm font-semibold text-surface-700">{viewYear}{t('yearSuffix')}</span>
         <button type="button" onClick={nextYear} className="p-1 hover:bg-surface-100 rounded">
-          <ChevronRight className="w-4 h-4 text-surface-500" />
+          <ChevronRight className="size-icon-md text-surface-500" />
         </button>
       </div>
 
@@ -183,11 +183,11 @@ export function MonthPicker({ value, onChange, placeholder, showPresent = false,
         }}
         className={`form-input flex items-center gap-2 text-left ${!value ? 'text-surface-400' : ''} ${disabled ? 'opacity-50 cursor-not-allowed bg-surface-100' : ''}`}
       >
-        <Calendar className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
+        <Calendar className="size-icon-sm flex-shrink-0 opacity-50" />
         <span className="flex-1 truncate">{value === '至今' ? t('present') : value || placeholderText}</span>
         {value && (
           <button type="button" onClick={clearDate} className="flex-shrink-0 opacity-40 hover:opacity-100">
-            <X className="w-3.5 h-3.5" />
+            <X className="size-icon-sm" />
           </button>
         )}
       </button>

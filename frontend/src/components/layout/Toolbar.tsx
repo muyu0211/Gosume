@@ -70,7 +70,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             onClick={() => (onHome ?? (() => navigate('/')))()}
             className="btn-ghost btn-sm"
           >
-            <Home className="w-4 h-4" />
+            <Home className="size-icon-md" />
           </button>
         </Tooltip>
         <div className="w-px h-5 bg-surface-200 mx-1" />
@@ -82,11 +82,11 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             className="btn-primary btn-sm"
           >
             {saveStatus === 'saving' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="size-icon-md animate-spin" />
             ) : saveStatus === 'saved' ? (
-              <Check className="w-4 h-4" />
+              <Check className="size-icon-md" />
             ) : (
-              <Save className="w-4 h-4" />
+              <Save className="size-icon-md" />
             )}
             <span className="hidden sm:inline">
               {saveStatus === 'saving' ? t('saving') : saveStatus === 'saved' ? t('saved') : saveStatus === 'error' ? t('saveError') : t('save')}
@@ -97,7 +97,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
 
         <Tooltip label={t('exportWith')}>
           <button onClick={onExport} className="btn-secondary btn-sm">
-            <FileOutput className="w-4 h-4" />
+            <FileOutput className="size-icon-md" />
             <span className="hidden sm:inline">{t('export')}</span>
           </button>
         </Tooltip>
@@ -134,7 +134,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
         <Tooltip label={t('zoomOut')}>
           <button onClick={() => setZoom(zoom - 0.1)} className="btn-ghost btn-xs">
-            <ZoomOut className="w-3.5 h-3.5" />
+            <ZoomOut className="size-icon-sm" />
           </button>
         </Tooltip>
         <span className="text-xs text-surface-500 min-w-[42px] text-center tabular-nums">
@@ -142,12 +142,12 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
         </span>
         <Tooltip label={t('zoomIn')}>
           <button onClick={() => setZoom(zoom + 0.1)} className="btn-ghost btn-xs">
-            <ZoomIn className="w-3.5 h-3.5" />
+            <ZoomIn className="size-icon-sm" />
           </button>
         </Tooltip>
         <Tooltip label={t('zoomReset')}>
           <button onClick={() => setZoom(1.0)} className="btn-ghost btn-xs">
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="size-icon-sm" />
           </button>
         </Tooltip>
       </div>
@@ -161,7 +161,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
           className="btn-ghost btn-sm inline-flex items-center gap-1"
           title={t('toggleLanguage')}
         >
-          <Languages className="w-4 h-4" />
+          <Languages className="size-icon-md" />
           <span className="text-xs">{resume?.meta?.language === 'en-US' ? 'English' : '中文'}</span>
         </button>
         <Tooltip label={grayscale ? t('grayscaleOff') : t('grayscaleOn')}>
@@ -169,7 +169,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             onClick={toggleGrayscale}
             className={`btn-ghost btn-sm ${grayscale ? 'bg-surface-100 text-primary-600' : ''}`}
           >
-            {grayscale ? <Contrast className="w-4 h-4" /> : <Palette className="w-4 h-4" />}
+            {grayscale ? <Contrast className="size-icon-md" /> : <Palette className="size-icon-md" />}
           </button>
         </Tooltip>
         <Tooltip label={stylePanelOpen ? t('panelCollapse') : t('panelExpand')}>
@@ -177,7 +177,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             onClick={toggleStylePanel}
             className={`btn-ghost btn-sm ${stylePanelOpen ? 'bg-surface-100 text-primary-600' : ''}`}
           >
-            {stylePanelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+            {stylePanelOpen ? <PanelRightClose className="size-icon-md" /> : <PanelRightOpen className="size-icon-md" />}
           </button>
         </Tooltip>
       </div>

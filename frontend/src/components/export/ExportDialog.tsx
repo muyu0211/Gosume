@@ -105,14 +105,14 @@ export function ExportDialog({ onClose }: Props) {
     <Modal ref={modalRef} onClose={onClose} width="w-[480px]" cardClassName="overflow-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
-            <Download className="w-5 h-5 text-primary-600" />
+        <div className="flex items-center gap-2">
+          <div className="size-ctl-lg rounded-xl bg-primary-50 flex items-center justify-center">
+            <Download className="size-icon-lg text-primary-600" />
           </div>
           <h2 className="text-lg font-semibold text-surface-800">{t('exportResume')}</h2>
         </div>
         <button onClick={() => modalRef.current?.close()} className="p-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors">
-          <X className="w-5 h-5" />
+          <X className="size-icon-lg" />
         </button>
       </div>
 
@@ -124,7 +124,7 @@ export function ExportDialog({ onClose }: Props) {
               {formats.map(({ id, labelKey, descKey, icon: Icon }) => (
                 <label
                   key={id}
-                  className={`flex items-start gap-3.5 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
+                  className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
                     selectedFormat === id
                       ? 'border-primary-400 bg-primary-50/40'
                       : 'border-surface-200 hover:border-surface-300'
@@ -138,7 +138,7 @@ export function ExportDialog({ onClose }: Props) {
                     onChange={() => { setSelectedFormat(id); setStatus('idle'); setErrorMsg('') }}
                     className="mt-0.5 accent-primary-600"
                   />
-                  <Icon className={`w-5 h-5 mt-0.5 ${selectedFormat === id ? 'text-primary-500' : 'text-surface-400'}`} />
+                  <Icon className={`size-icon-lg mt-0.5 ${selectedFormat === id ? 'text-primary-500' : 'text-surface-400'}`} />
                   <div>
                     <p className="text-sm font-medium text-surface-700">{t(labelKey)}</p>
                     <p className="text-xs text-surface-400 mt-0.5">{t(descKey)}</p>
@@ -185,13 +185,13 @@ export function ExportDialog({ onClose }: Props) {
                 <div
                   className={`flex items-start gap-2 p-3 rounded-lg border text-sm ${
                     heightLevel === 'over'
-                      ? 'bg-red-50 border-red-100 text-red-700'
+                      ? 'bg-danger-50 border-danger-100 text-danger-700'
                       : heightLevel === 'ok'
-                      ? 'bg-amber-50 border-amber-100 text-amber-700'
-                      : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                      ? 'bg-warning-50 border-warning-100 text-warning-700'
+                      : 'bg-success-50 border-success-100 text-success-700'
                   }`}
                 >
-                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <AlertCircle className="size-icon-md mt-0.5 shrink-0" />
                   <span>
                     {heightLevel === 'over'
                       ? t('heightOver').replace('{pct}', String(heightPercent))
@@ -206,30 +206,30 @@ export function ExportDialog({ onClose }: Props) {
 
           <Expandable show={status !== 'idle'} gapTop={20}>
             {status === 'exporting' && (
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
-                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                <span className="text-sm text-blue-700">{t('exportingFmt').replace('{fmt}', selectedFormat.toUpperCase())}</span>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-info-50 border border-info-100">
+                <Loader2 className="size-icon-md text-info-600 animate-spin" />
+                <span className="text-sm text-info-700">{t('exportingFmt').replace('{fmt}', selectedFormat.toUpperCase())}</span>
               </div>
             )}
 
             {status === 'done' && (
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm text-emerald-700">{t('exportDone')}</span>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-success-50 border border-success-100">
+                <Check className="size-icon-md text-success-600" />
+                <span className="text-sm text-success-700">{t('exportDone')}</span>
               </div>
             )}
 
             {status === 'error' && (
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 border border-red-100">
-                <AlertCircle className="w-4 h-4 text-red-500" />
-                <span className="text-sm text-red-700">{errorMsg}</span>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-danger-50 border border-danger-100">
+                <AlertCircle className="size-icon-md text-danger-500" />
+                <span className="text-sm text-danger-700">{errorMsg}</span>
               </div>
             )}
           </Expandable>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-surface-100">
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-surface-100">
           <button onClick={() => modalRef.current?.close()} className="btn-secondary" disabled={status === 'exporting'}>
             {t('cancel')}
           </button>
@@ -239,11 +239,11 @@ export function ExportDialog({ onClose }: Props) {
             className="btn-primary gap-2"
           >
             {status === 'exporting' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="size-icon-md animate-spin" />
             ) : status === 'done' ? (
-              <Check className="w-4 h-4" />
+              <Check className="size-icon-md" />
             ) : (
-              <Download className="w-4 h-4" />
+              <Download className="size-icon-md" />
             )}
             {status === 'exporting' ? t('exporting') : status === 'done' ? t('done') : selectedFormat === 'gosume' ? t('exportEditable') : t('exportFmt').replace('{fmt}', selectedFormat.toUpperCase())}
           </button>

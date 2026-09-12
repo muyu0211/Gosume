@@ -230,10 +230,10 @@ export function SettingsPage() {
             onClick={() => navigate(-1)}
             className="btn-ghost btn-sm"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-icon-lg" />
           </button>
         </Tooltip>
-        <Settings className="w-5 h-5 text-surface-500" />
+        <Settings className="size-icon-lg text-surface-500" />
         <h1 className="text-lg font-semibold text-surface-800">{t('settings')}</h1>
       </header>
 
@@ -244,7 +244,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-surface-400" />
+              <Globe className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('languageSection')}</span>
             </div>
           </div>
@@ -284,7 +284,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-surface-400" />
+              <Palette className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('appearance')}</span>
             </div>
           </div>
@@ -315,7 +315,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-surface-400" />
+              <HardDrive className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('autosaveSection')}</span>
             </div>
           </div>
@@ -328,7 +328,7 @@ export function SettingsPage() {
               type="checkbox"
               checked={autoSave}
               onChange={(e) => handleAutoSaveChange(e.target.checked)}
-              className="w-5 h-5 rounded accent-primary-600"
+              className="size-icon-lg rounded accent-primary-600"
             />
           </label>
         </section>
@@ -337,7 +337,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <FolderOpen className="w-4 h-4 text-surface-400" />
+              <FolderOpen className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('dataDirSection')}</span>
             </div>
           </div>
@@ -352,7 +352,7 @@ export function SettingsPage() {
               className="btn-secondary btn-sm inline-flex items-center gap-1.5"
             >
               {isChangingDir ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> {t('migrating')}</>
+                <><Loader2 className="size-icon-md animate-spin" /> {t('migrating')}</>
               ) : (
                 t('changeDir')
               )}
@@ -374,7 +374,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Plug className="w-4 h-4 text-surface-400" />
+              <Plug className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('autofillSection')}</span>
             </div>
           </div>
@@ -397,7 +397,7 @@ export function SettingsPage() {
                   onClick={handleCopyPair}
                   className="btn-secondary btn-sm inline-flex items-center gap-1 shrink-0"
                 >
-                  {pairCopied ? <Check className="w-4 h-4 text-success-600" /> : <Copy className="w-4 h-4" />}
+                  {pairCopied ? <Check className="size-icon-md text-success-600" /> : <Copy className="size-icon-md" />}
                   {pairCopied ? t('copied') : t('copy')}
                 </button>
               </div>
@@ -409,7 +409,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-surface-400" />
+              <Sparkles className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('aiSection')}</span>
             </div>
           </div>
@@ -430,7 +430,7 @@ export function SettingsPage() {
               onClick={() => setShowAIConfig(true)}
               className="btn-secondary btn-sm inline-flex items-center gap-1.5"
             >
-              <Settings2 className="w-4 h-4" />
+              <Settings2 className="size-icon-md" />
               {t('aiManageConfig')}
             </button>
           </div>
@@ -450,7 +450,7 @@ export function SettingsPage() {
         <section className="form-section">
           <div className="form-section-header">
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-surface-400" />
+              <Info className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('aboutSection')}</span>
             </div>
           </div>
@@ -465,9 +465,9 @@ export function SettingsPage() {
                 className="btn-secondary btn-sm inline-flex items-center gap-1.5"
               >
                 {checkingUpdate ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('checking')}</>
+                  <><Loader2 className="size-icon-md animate-spin" /> {t('checking')}</>
                 ) : (
-                  <><Download className="w-4 h-4" /> {t('checkUpdate')}</>
+                  <><Download className="size-icon-md" /> {t('checkUpdate')}</>
                 )}
               </button>
               {/* 检查结果：grid 行高 0fr↔1fr + 淡入淡出，展开/收起带 200ms 高度渐变（对齐模态窗口动画） */}
@@ -500,7 +500,7 @@ export function SettingsPage() {
         <div className="flex-1 min-w-0 overflow-y-auto p-6 border-l border-surface-100">
           <div className="form-section-header mb-4">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-surface-400" />
+              <Wrench className="size-icon-md text-surface-400" />
               <span className="form-section-title">{t('toolbox')}</span>
             </div>
           </div>
@@ -524,7 +524,7 @@ export function SettingsPage() {
         description={`${t('changeDirConfirm')}\n${pendingDir}\n\n${t('migrateNote')}`}
         confirmText={t('confirmMigrate')}
         loading={isChangingDir}
-        icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
+        icon={<FolderOpen className="size-icon-lg text-primary-600" />}
         onConfirm={confirmChangeDataDir}
         onCancel={() => setPendingDir(null)}
       />

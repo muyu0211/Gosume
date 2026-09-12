@@ -55,11 +55,11 @@ export function ExperienceSection({ type, title }: Props) {
       <div className="form-section-header">
         <div className="flex items-center gap-2">
           {type === 'jobs' ? (
-            <Briefcase className="w-4 h-4 text-primary-600" />
+            <Briefcase className="size-icon-md text-primary-600" />
           ) : type === 'internships' ? (
-            <Building className="w-4 h-4 text-primary-600" />
+            <Building className="size-icon-md text-primary-600" />
           ) : (
-            <FolderGit2 className="w-4 h-4 text-primary-600" />
+            <FolderGit2 className="size-icon-md text-primary-600" />
           )}
           <span className="form-section-title">{title}</span>
           <span className="text-xs text-surface-400">({items?.length || 0})</span>
@@ -98,9 +98,9 @@ export function ExperienceSection({ type, title }: Props) {
                   className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <GripVertical className="w-3.5 h-3.5" />
+                  <GripVertical className="size-icon-sm" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
+                {isExpanded ? <ChevronDown className="size-icon-md text-surface-400" /> : <ChevronRight className="size-icon-md text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
                     {name || `${t('unnamed')}${type === 'projects' ? t('projectNoun') : t('companyNoun')}`}
@@ -119,16 +119,16 @@ export function ExperienceSection({ type, title }: Props) {
                 />
                 <button
                   onClick={(e) => { e.stopPropagation(); requestDelete(type === 'jobs' ? 'job' : type === 'internships' ? 'internship' : 'project', idx) }}
-                  className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors"
+                  className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="size-icon-sm" />
                 </button>
               </div>
 
               {/* Expanded form */}
               <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
                 <div className="collapse-inner">
-                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2">
                   {type === 'jobs' || type === 'internships' ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
@@ -307,8 +307,8 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
             placeholder={`${t('highlights')} ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => removeHighlight(i)} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
+            <Trash2 className="size-icon-sm" />
           </button>
         </div>
       ))}

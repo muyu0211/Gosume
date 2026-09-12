@@ -97,16 +97,6 @@ export function WelcomePage() {
     currentPage * PAGE_SIZE,
   )
 
-  // 分类数量汇总（含未分类）
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const t of templates) {
-      const c = categoryOf(t)
-      counts.set(c, (counts.get(c) ?? 0) + 1)
-    }
-    return counts
-  }, [templates])
-
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages)
   }, [marketTemplates.length])
@@ -375,8 +365,8 @@ export function WelcomePage() {
       <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="size-ctl-xl rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
+              <Sparkles className="size-icon-lg text-white" />
             </div>
             {/* 新版本角标：启动检查到更新时渲染，点击弹出更新对话框（复用设置页 UpdateDialog） */}
             {updateInfo && (
@@ -398,14 +388,14 @@ export function WelcomePage() {
             onClick={() => navigate('/community')}
             className="btn-primary btn-sm"
           >
-            <Globe className="w-4 h-4 shrink-0" />
+            <Globe className="size-icon-md shrink-0" />
             <span className="hidden md:inline">{t('templateCommunity')}</span>
           </button>
           <button
             onClick={handleOpenImportLogs}
             className="btn-secondary btn-sm"
           >
-            <Clock className="w-4 h-4 shrink-0" />
+            <Clock className="size-icon-md shrink-0" />
             <span className="hidden md:inline">{t('importLogs')}</span>
           </button>
           <button
@@ -413,7 +403,7 @@ export function WelcomePage() {
             disabled={importingTemplate}
             className="btn-secondary btn-sm"
           >
-            {importingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 shrink-0" />}
+            {importingTemplate ? <Loader2 className="size-icon-md animate-spin" /> : <Upload className="size-icon-md shrink-0" />}
             <span className="hidden md:inline">{t('importTemplate')}</span>
           </button>
           <button
@@ -421,22 +411,22 @@ export function WelcomePage() {
             disabled={importingGosume}
             className="btn-secondary btn-sm"
           >
-            {importingGosume ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4 shrink-0" />}
+            {importingGosume ? <Loader2 className="size-icon-md animate-spin" /> : <FileUp className="size-icon-md shrink-0" />}
             <span className="hidden md:inline">{t('importResume')}</span>
           </button>
           <button
             onClick={() => setShowDrawer(true)}
             className="btn-secondary btn-sm"
           >
-            <List className="w-4 h-4 shrink-0" />
+            <List className="size-icon-md shrink-0" />
             <span className="hidden md:inline">{t('allResumes')}</span>
           </button>
           <Tooltip label={themeTitle}>
             <button
               onClick={handleCycleTheme}
-              className="btn-ghost btn-sm w-9 h-9 p-0 justify-center focus:ring-0 focus:ring-offset-0"
+              className="btn-ghost btn-sm size-ctl-lg p-0 justify-center focus:ring-0 focus:ring-offset-0"
             >
-              <ThemeIcon className="w-4 h-4" />
+              <ThemeIcon className="size-icon-md" />
             </button>
           </Tooltip>
           <Tooltip label={t('settings')}>
@@ -444,7 +434,7 @@ export function WelcomePage() {
               onClick={() => navigate('/settings')}
               className="btn-ghost btn-sm"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="size-icon-md" />
             </button>
           </Tooltip>
         </div>
@@ -462,7 +452,7 @@ export function WelcomePage() {
       {importSuccess && (
         <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-success-200 bg-success-50 text-sm text-success-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 className="size-icon-md" />
             {importSuccess}
           </span>
           <button onClick={() => setImportSuccess('')} className="text-success-500 hover:text-success-700 text-xs font-medium">
@@ -496,7 +486,6 @@ export function WelcomePage() {
                 onClick={() => handleSelectCategory(cat.name)}
               >
                 {cat.name === 'custom' ? t('uncategorized') : cat.name}
-                <span className="opacity-60">{categoryCounts.get(cat.name) ?? cat.count}</span>
               </FilterChip>
             ))}
             <div className="flex-1" />
@@ -504,16 +493,13 @@ export function WelcomePage() {
               active={favoriteOnly}
               onClick={() => { setFavoriteOnly(!favoriteOnly); setCurrentPage(1) }}
             >
-              <Star className="w-3.5 h-3.5" />
+              <Star className="size-icon-sm" />
               {t('myFavorites')}
-              {templates.filter((t) => t.is_favorite).length > 0 && (
-                <span className="opacity-60">{templates.filter((t) => t.is_favorite).length}</span>
-              )}
             </FilterChip>
           </div>
           {paginatedTemplates.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-surface-300">
-              <Star className="w-9 h-9 mb-2" />
+              <Star className="size-ctl-lg mb-2" />
               <p className="text-sm">{t('noTemplateInCategory')}</p>
             </div>
           ) : (
@@ -562,8 +548,8 @@ export function WelcomePage() {
                   className="flex items-center gap-4 px-4 py-3 rounded-xl bg-elev border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
                   onClick={() => handleOpenRecent(file.id)}
                 >
-                  <div className="w-9 h-9 rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
-                    <Clock className="w-4 h-4 text-surface-400 group-hover:text-primary-500 transition-colors" />
+                  <div className="size-ctl-lg rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
+                    <Clock className="size-icon-md text-surface-400 group-hover:text-primary-500 transition-colors" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-surface-700 truncate">{file.name}</p>
@@ -571,7 +557,7 @@ export function WelcomePage() {
                       {new Date(file.updated_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-surface-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="size-icon-md text-surface-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all" />
                 </div>
               ))}
             </div>
@@ -650,13 +636,13 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
         className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         aria-label={t('prevPage')}
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="size-icon-md" />
       </button>
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === currentPage
+          className={`size-ctl-md rounded-lg text-sm font-medium transition-colors ${page === currentPage
             ? 'bg-primary-600 text-white shadow-sm'
             : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
             }`}
@@ -670,7 +656,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: {
         className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         aria-label={t('nextPage')}
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="size-icon-md" />
       </button>
     </div>
   )
@@ -746,10 +732,10 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
               disabled={favLoading}
-              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:bg-elev'
+              className={`size-ctl-md rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:bg-elev'
                 } disabled:opacity-60`}
             >
-              {favLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />}
+              {favLoading ? <Loader2 className="size-icon-md animate-spin" /> : <Heart className={`size-icon-md ${favorite ? 'fill-current' : ''}`} />}
             </button>
           </Tooltip>
         )}
@@ -777,12 +763,12 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
             }}
           />
           {/* Preview + delete buttons on top of blur */}
-          <div className="relative z-10 flex flex-col items-center gap-2">
+          <div className="relative z-10 flex flex-col items-center gap-2 px-4">
             <button
               onClick={(e) => { e.stopPropagation(); onPreview() }}
               className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-surface-800 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
             >
-              <Eye className="w-4 h-4 shrink-0" />
+              <Eye className="size-icon-md shrink-0" />
               <span className="preview-label truncate min-w-0">{t('preview')}</span>
             </button>
             {onShare && (
@@ -791,7 +777,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
                 disabled={sharing}
                 className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-primary-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-primary-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
-                {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
+                {sharing ? <Loader2 className="size-icon-md animate-spin" /> : <Download className="size-icon-md shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('export')}</span>
               </button>
             )}
@@ -801,7 +787,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
                 disabled={isDeleting}
                 className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-danger-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-danger-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
+                {isDeleting ? <Loader2 className="size-icon-md animate-spin" /> : <Trash2 className="size-icon-md shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('delete')}</span>
               </button>
             )}
@@ -829,9 +815,9 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active
-        ? 'bg-primary-50 text-primary-700 border-primary-200'
-        : 'text-surface-500 border-surface-200 hover:border-surface-300 hover:text-surface-700'
+      className={`w-24 h-ctl-sm flex items-center justify-center gap-1.5 px-3 rounded-full text-xs font-medium leading-none transition-colors ${active
+        ? 'bg-primary-600 text-white'
+        : 'bg-surface-200 text-surface-600 hover:bg-surface-300/70 hover:text-surface-800'
         }`}
     >
       {children}
@@ -854,14 +840,14 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
     <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-          <Clock className="w-4 h-4 text-primary-600" />
+          <Clock className="size-icon-md text-primary-600" />
         </div>
         <span className="text-base font-semibold text-surface-700">{t('importLogsTitle')}</span>
       </div>
       <div className="flex-1 overflow-auto px-6 py-3">
         {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-surface-300">
-            <Clock className="w-9 h-9 mb-2" />
+            <Clock className="size-ctl-lg mb-2" />
             <p className="text-sm">{t('noImportLogs')}</p>
           </div>
         ) : (
@@ -871,7 +857,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                 key={log.id}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg border border-surface-100 hover:border-surface-200 transition-colors"
               >
-                <PackageOpen className="w-4 h-4 text-surface-400 flex-shrink-0" />
+                <PackageOpen className="size-icon-md text-surface-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-surface-700 truncate">{log.template_name}</span>
@@ -891,7 +877,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                     aria-label={t('deleteRecord')}
                     className="p-1.5 rounded-lg text-surface-300 hover:text-danger-500 hover:bg-danger-50 transition-colors disabled:opacity-50 flex-shrink-0"
                   >
-                    {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    {deletingId === log.id ? <Loader2 className="size-icon-md animate-spin" /> : <Trash2 className="size-icon-md" />}
                   </button>
                 </Tooltip>
               </div>

@@ -32,7 +32,7 @@ export function VisibilityToggle({ hidden, onToggle, title, className = '' }: Vi
             : 'text-surface-400 hover:text-surface-600 hover:bg-surface-100'
         } ${className}`}
       >
-        {hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        {hidden ? <EyeOff className="size-icon-sm" /> : <Eye className="size-icon-sm" />}
       </button>
     </Tooltip>
   )

@@ -103,7 +103,7 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
   return (
     <span
       ref={wrapRef}
-      className={`relative inline-flex ${className}`}
+      className={`inline-flex ${className}`}
       onMouseEnter={reveal}
       onMouseLeave={() => setOpen(false)}
       onFocus={reveal}

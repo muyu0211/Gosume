@@ -170,7 +170,7 @@ export function TemplateSwitcher() {
                 onClick={() => handleSelect(tmpl.id)}
                 role="button"
                 tabIndex={0}
-                className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer group ${
+                className={`w-full flex items-start gap-3 px-3 py-2 text-left transition-colors cursor-pointer group ${
                   isActive ? 'bg-primary-50' : 'hover:bg-surface-50'
                 }`}
               >
@@ -202,7 +202,7 @@ export function TemplateSwitcher() {
                       <button
                         onClick={(e) => handleDeleteClick(e, tmpl.id, tmpl.name)}
                         disabled={isDeleting}
-                        className="flex-shrink-0 p-1 rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        className="flex-shrink-0 p-1 rounded text-surface-300 hover:text-danger-500 hover:bg-danger-50 transition-colors disabled:opacity-50"
                       >
                         {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                       </button>
@@ -219,7 +219,7 @@ export function TemplateSwitcher() {
           </div>
           <div className="border-t border-surface-100 p-2">
             {importError && (
-              <div className="mb-2 px-2 py-1.5 rounded-md bg-red-50 text-[12px] text-red-600 leading-relaxed">
+              <div className="mb-2 px-2 py-1.5 rounded-md bg-danger-50 text-[12px] text-danger-600 leading-relaxed">
                 {importError}
               </div>
             )}
@@ -228,7 +228,7 @@ export function TemplateSwitcher() {
               disabled={importing}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-60"
             >
-              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {importing ? <Loader2 className="size-icon-sm animate-spin" /> : <Upload className="size-icon-sm" />}
               {t('importPackage')}
             </button>
           </div>

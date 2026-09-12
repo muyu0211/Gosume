@@ -34,8 +34,8 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
         className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-warning-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-warning-600" />
+          <div className="size-ctl-xl rounded-full bg-warning-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="size-icon-lg text-warning-600" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-surface-800">未保存的更改</h3>
@@ -50,7 +50,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
               className="p-1 -m-1 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors disabled:opacity-50"
               aria-label="关闭"
             >
-              <X className="w-4 h-4" />
+              <X className="size-icon-md" />
             </button>
           </Tooltip>
         </div>
@@ -67,7 +67,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
             disabled={saving}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {saving && <Loader2 className="size-icon-md animate-spin" />}
             {saving ? '保存中...' : '保存并继续'}
           </button>
         </div>

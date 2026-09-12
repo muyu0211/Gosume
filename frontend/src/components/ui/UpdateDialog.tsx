@@ -110,7 +110,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       show: stage === 'ready',
       node: (
         <div className="flex items-center gap-2 text-sm text-surface-600">
-          <CheckCircle2 className="w-4 h-4 text-success-500 shrink-0" />
+          <CheckCircle2 className="size-icon-md text-success-500 shrink-0" />
           更新包已就绪，重启后自动完成安装。
         </div>
       ),
@@ -127,7 +127,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       show: stage === 'error',
       node: (
         <div className="flex items-start gap-2 text-sm text-danger-600">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <AlertCircle className="size-icon-md mt-0.5 shrink-0" />
           <span className="min-w-0">{errorMsg}</span>
         </div>
       ),
@@ -237,7 +237,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-          <ArrowUpCircle className="w-4 h-4 text-primary-600" />
+          <ArrowUpCircle className="size-icon-md text-primary-600" />
         </div>
         <h2 className="text-base font-semibold text-surface-800">发现新版本</h2>
       </div>
@@ -249,7 +249,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
           <span className="px-2 py-0.5 rounded-md bg-surface-100 text-surface-500 font-mono text-sm">
             v{info.current_version ?? '—'}
           </span>
-          <ArrowRight className="w-4 h-4 text-surface-400" />
+          <ArrowRight className="size-icon-md text-surface-400" />
           <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 font-mono text-sm font-medium">
             v{info.latest_version ?? ''}
           </span>
@@ -279,7 +279,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
               稍后提醒
             </button>
             <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-              <Download className="w-4 h-4" /> 立即下载
+              <Download className="size-icon-md" /> 立即下载
             </button>
           </>
         )}
@@ -298,7 +298,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
               disabled={applying}
               className="btn-primary btn-sm inline-flex items-center gap-1.5 disabled:opacity-60"
             >
-              <Download className="w-4 h-4" /> {applying ? '正在准备…' : '重启并安装'}
+              <Download className="size-icon-md" /> {applying ? '正在准备…' : '重启并安装'}
             </button>
           </>
         )}
@@ -308,7 +308,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
               关闭
             </button>
             <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-              <RotateCw className="w-4 h-4" /> 重试下载
+              <RotateCw className="size-icon-md" /> 重试下载
             </button>
           </>
         )}

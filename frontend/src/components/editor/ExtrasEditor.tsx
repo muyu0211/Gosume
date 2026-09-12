@@ -63,7 +63,7 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             className="cursor-grab active:cursor-grabbing p-1 mt-1.5 text-surface-300 hover:text-primary-500 flex-shrink-0"
             title={t('dragReorder')}
           >
-            <GripVertical className="w-3.5 h-3.5" />
+            <GripVertical className="size-icon-sm" />
           </div>
           <input
             className="form-input text-sm !w-24 !flex-shrink-0 h-[2.25rem] min-h-[2.25rem]"
@@ -84,8 +84,8 @@ export function ExtrasEditor({ extras, onChange, onRequestRemove }: Props) {
             maxLength={300}
           />
           <Tooltip label={t('delete')}>
-            <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
-              <Trash2 className="w-3.5 h-3.5" />
+            <button onClick={() => removeExtra(i)} className="p-1 mt-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
+              <Trash2 className="size-icon-sm" />
             </button>
           </Tooltip>
         </div>

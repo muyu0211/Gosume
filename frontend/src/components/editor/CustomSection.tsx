@@ -41,7 +41,7 @@ export function CustomSection() {
     <div className="form-section">
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-primary-600" />
+          <Layers className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('custom', language)}{t('moduleSuffix')}</span>
           <span className="text-xs text-surface-400">({sections.length})</span>
         </div>
@@ -85,9 +85,9 @@ export function CustomSection() {
                   }`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <GripVertical className="w-3.5 h-3.5" />
+                  <GripVertical className="size-icon-sm" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
+                {isExpanded ? <ChevronDown className="size-icon-md text-surface-400" /> : <ChevronRight className="size-icon-md text-surface-400" />}
                 <input
                   className="form-input text-sm px-2 py-1 min-w-0 flex-1"
                   value={section.title || ''}
@@ -105,16 +105,16 @@ export function CustomSection() {
                     e.stopPropagation()
                     requestDelete('custom', idx)
                   }}
-                  className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors"
+                  className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="size-icon-sm" />
                 </button>
               </div>
 
               {/* 展开态：条目列表 */}
               <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
                 <div className="collapse-inner">
-                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2">
                   <CustomEntryList sectionIndex={idx} section={section} />
                   </div>
                 </div>
@@ -199,9 +199,9 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                   }`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <GripVertical className="w-3.5 h-3.5" />
+                  <GripVertical className="size-icon-sm" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
+                {isExpanded ? <ChevronDown className="size-icon-md text-surface-400" /> : <ChevronRight className="size-icon-md text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
                     {titleText || t('unnamedEntry')}
@@ -222,16 +222,16 @@ function CustomEntryList({ sectionIndex, section }: { sectionIndex: number; sect
                     e.stopPropagation()
                     requestItemDelete(sectionIndex, idx)
                   }}
-                  className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors"
+                  className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="size-icon-sm" />
                 </button>
               </div>
 
               {/* 条目展开表单：标题 / 副标题+日期 / 内容 / 亮点 */}
               <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
                 <div className="collapse-inner">
-                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2">
                   <div>
                     <label className="form-label">{t('entryTitle')}</label>
                     <RichTextField
@@ -334,8 +334,8 @@ function HighlightsEditor({
             placeholder={`${t('highlights')} ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors flex-shrink-0">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => removeHighlight(i)} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
+            <Trash2 className="size-icon-sm" />
           </button>
         </div>
       ))}

@@ -35,7 +35,7 @@ export function SkillSection() {
     <div className="form-section">
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <Code className="w-4 h-4 text-primary-600" />
+          <Code className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('skills', language)}</span>
           <span className="text-xs text-surface-400">({items.length}{t('groupCountSuffix')})</span>
         </div>
@@ -64,7 +64,7 @@ export function SkillSection() {
                 onDragEnd={onDragEnd}
                 className={`cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === gIdx ? 'text-primary-500' : 'text-surface-300'}`}
               >
-                <GripVertical className="w-3.5 h-3.5" />
+                <GripVertical className="size-icon-sm" />
               </div>
               <input
                 className={`form-input flex-1 font-medium ${isGroupHidden ? 'text-surface-400 line-through' : ''}`}
@@ -83,8 +83,8 @@ export function SkillSection() {
                 hidden={isGroupHidden}
                 onToggle={() => updateGroup(gIdx, { hidden: !isGroupHidden })}
               />
-              <button onClick={() => requestDelete('skill', gIdx)} className="p-1.5 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors">
-                <Trash2 className="w-4 h-4" />
+              <button onClick={() => requestDelete('skill', gIdx)} className="p-1.5 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+                <Trash2 className="size-icon-md" />
               </button>
             </div>
 
@@ -105,7 +105,7 @@ export function SkillSection() {
                       <button
                         key={lvl}
                         onClick={() => updateSkill(gIdx, sIdx, skill.name, skill.level === lvl ? 0 : lvl)}
-                        className={`w-4 h-4 rounded-sm border transition-colors ${
+                        className={`size-icon-md rounded-sm border transition-colors ${
                           (skill.level || 0) >= lvl
                             ? 'bg-primary-500 border-primary-500'
                             : 'bg-surface-100 border-surface-200 hover:border-primary-300'
@@ -122,8 +122,8 @@ export function SkillSection() {
                       updateGroup(gIdx, { items: newItems })
                     }}
                   />
-                  <button onClick={() => requestSkillItemDelete(gIdx, sIdx)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
+                  <button onClick={() => requestSkillItemDelete(gIdx, sIdx)} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+                    <Trash2 className="size-icon-sm" />
                   </button>
                 </div>
                 )

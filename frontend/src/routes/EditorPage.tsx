@@ -254,7 +254,7 @@ function EditorSkeleton() {
           <div className="p-5 space-y-5">
             {/* Section header */}
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-4 h-4 rounded bg-surface-200 animate-shimmer" />
+              <div className="size-icon-md rounded bg-surface-200 animate-shimmer" />
               <div className="w-16 h-4 rounded bg-surface-200 animate-shimmer" />
             </div>
             {/* Avatar + form fields */}
@@ -287,9 +287,10 @@ function EditorSkeleton() {
         {/* Preview skeleton */}
         <div className="flex-1 flex items-start justify-center py-8 bg-surface-200">
           <div className="bg-elev rounded-xl shadow-sm flex flex-col items-center justify-center gap-4" style={{ width: DEFAULT_PAPER.pxW, height: DEFAULT_PAPER.pxH * 0.7 }}>
+            {/* gosume-style-allow: 骨架屏空态大图标 48px，超出标准 icon 档 */}
             <FileText className="w-12 h-12 text-surface-300" />
             <div className="flex items-center gap-2 text-surface-400">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="size-icon-md animate-spin" />
               <span className="text-sm">正在加载简历...</span>
             </div>
             <div className="w-48 h-2 rounded-full bg-surface-100 overflow-hidden">

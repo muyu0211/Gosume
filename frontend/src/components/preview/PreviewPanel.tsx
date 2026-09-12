@@ -670,7 +670,7 @@ export function PreviewPanel() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-surface-400">
-          <div className="w-16 h-20 mx-auto mb-3 rounded border-2 border-surface-300 bg-white" />
+          <div className="w-16 h-20 mx-auto mb-3 rounded border-2 border-surface-300 bg-elev" />
           <p className="text-sm">简历预览将在此显示</p>
           <p className="text-xs mt-1">请在左侧填写信息</p>
         </div>

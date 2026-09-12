@@ -148,7 +148,7 @@ export function AIPolishControl({ text, semantic, onPolish, className = '' }: AI
           className={`p-1 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed
             ${loading || open ? 'text-primary-600 bg-primary-50' : 'text-surface-400 hover:text-primary-500 hover:bg-surface-100'}`}
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {loading ? <Loader2 className="size-icon-md animate-spin" /> : <Sparkles className="size-icon-md" />}
         </button>
       </Tooltip>
 
@@ -166,7 +166,7 @@ export function AIPolishControl({ text, semantic, onPolish, className = '' }: AI
 
       {/* 错误/未配置引导：紧凑红字 + 去设置 */}
       {error !== '' && !open && (
-        <span className="text-[11px] text-red-600 flex items-center gap-1">
+        <span className="text-[11px] text-danger-600 flex items-center gap-1">
           {error}
           {!configured && (
             <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-primary-600">

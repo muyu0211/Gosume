@@ -304,7 +304,7 @@ export function PersonalSection() {
     <div className="form-section">
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <User className="w-4 h-4 text-primary-600" />
+          <User className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('personal', language)}</span>
         </div>
       </div>
@@ -326,9 +326,9 @@ export function PersonalSection() {
                 <button
                   onClick={removeAvatar}
                   aria-label={t('removePhoto')}
-                  className="w-full h-full bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  className="w-full h-full bg-[var(--material-overlay)] flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                 >
-                  <Trash2 className="w-5 h-5 text-white" />
+                  <Trash2 className="size-icon-lg text-white" />
                 </button>
               </Tooltip>
             </>
@@ -337,7 +337,7 @@ export function PersonalSection() {
               onClick={() => fileInputRef.current?.click()}
               className="flex flex-col items-center gap-0.5 text-surface-400 hover:text-primary-500 transition-colors"
             >
-              <Camera className="w-5 h-5" />
+              <Camera className="size-icon-lg" />
               <span className="text-[9px]">{t('photo')}</span>
             </button>
           )}
@@ -346,7 +346,7 @@ export function PersonalSection() {
           <p className="text-sm font-medium text-surface-700">{t('personalPhoto')}</p>
           <p className="text-xs text-surface-400 mt-0.5">{t('photoHint')}</p>
           {photoError && (
-            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+            <p className="text-xs text-danger-500 mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               {photoError}
             </p>
@@ -364,7 +364,7 @@ export function PersonalSection() {
       {/* 简历中头像显示尺寸（宽/高 px）+ 信息区布局（4:1 同行等高） */}
       {p.avatar && (
         <div className="flex items-stretch gap-3 mb-4">
-          <div className="flex-[4] min-w-0 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2.5">
+          <div className="flex-[4] min-w-0 p-3 rounded-lg border border-surface-200 bg-surface-50/60 space-y-2">
             <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-surface-600">{t('displaySize')}</span>
             <div className="flex items-center gap-2">
@@ -384,7 +384,7 @@ export function PersonalSection() {
                     setLockRatio(e.target.checked)
                     if (!e.target.checked) setRatioPreset('custom')
                   }}
-                  className="w-3.5 h-3.5 rounded accent-primary-600"
+                  className="size-icon-sm rounded accent-primary-600"
                 />
                 {t('lockRatio')}
               </label>
@@ -459,7 +459,7 @@ export function PersonalSection() {
                       type="button"
                       disabled={isDoubleColumn}
                       onClick={() => onSelectHeaderLayout(preset.key)}
-                      className={`group h-full w-full flex items-center justify-center rounded-md transition-all duration-200 ease-out hover:scale-105 active:scale-95 ${
+                      className={`group h-full w-full flex items-center justify-center rounded-md transition-all duration-200 ease-out active:scale-95 ${
                         isDoubleColumn ? 'opacity-50 cursor-not-allowed' : ''
                       } ${
                         active
@@ -467,7 +467,7 @@ export function PersonalSection() {
                           : 'bg-surface-200/80 hover:bg-surface-300'
                       }`}
                     >
-                      <span className="group-hover:animate-[jelly_0.5s_ease-out]">
+                      <span>
                         <LayoutMiniPreview layout={preset.key} active={active} />
                       </span>
                     </button>

@@ -120,7 +120,7 @@ export function CustomSelect({
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown
-          className={`w-4 h-4 shrink-0 text-surface-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          className={`size-icon-md shrink-0 text-surface-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -152,7 +152,7 @@ export function CustomSelect({
                     <span className="truncate font-medium">{opt.label}</span>
                     {opt.hint && <span className="text-[12px] text-surface-400 truncate">{opt.hint}</span>}
                   </span>
-                  {opt.value === value && <Check className="w-4 h-4 shrink-0 text-primary-600" />}
+                  {opt.value === value && <Check className="size-icon-md shrink-0 text-primary-600" />}
                 </button>
               ))
             )}

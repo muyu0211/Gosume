@@ -20,7 +20,7 @@ export function SummarySection() {
     <div className={`form-section ${isHidden ? 'opacity-60' : ''}`}>
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-primary-600" />
+          <FileText className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('summary', language)}</span>
           {isHidden && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 bg-surface-200 rounded">

@@ -491,13 +491,13 @@ export function RichTextField({
       >
         <div className="flex items-center gap-0.5">
           <ToolButton title={t('bold')} disabled={!hasSelection} onClick={() => exec('bold')}>
-            <Bold className="w-3.5 h-3.5" />
+            <Bold className="size-icon-sm" />
           </ToolButton>
           <ToolButton title={t('italic')} disabled={!hasSelection} onClick={() => exec('italic')}>
-            <Italic className="w-3.5 h-3.5" />
+            <Italic className="size-icon-sm" />
           </ToolButton>
           <ToolButton title={t('addLink')} active={linkOpen} onClick={() => setLinkOpen((v) => !v)}>
-            <Link className="w-3.5 h-3.5" />
+            <Link className="size-icon-sm" />
           </ToolButton>
           {!isInline && (
             <>
@@ -508,7 +508,7 @@ export function RichTextField({
                 active={orderedMenu.open}
                 onClick={orderedMenu.toggle}
               >
-                <ListOrdered className="w-3.5 h-3.5" />
+                <ListOrdered className="size-icon-sm" />
               </ToolButton>
               <ToolButton
                 buttonRef={listBtnRef}
@@ -517,7 +517,7 @@ export function RichTextField({
                 active={listMenu.open}
                 onClick={listMenu.toggle}
               >
-                <List className="w-3.5 h-3.5" />
+                <List className="size-icon-sm" />
               </ToolButton>
             </>
           )}
@@ -528,10 +528,10 @@ export function RichTextField({
             active={colorMenu.open}
             onClick={colorMenu.toggle}
           >
-            <Palette className="w-3.5 h-3.5" />
+            <Palette className="size-icon-sm" />
           </ToolButton>
           <ToolButton title={t('clearFormat')} onClick={clearAllFormat}>
-            <RemoveFormatting className="w-3.5 h-3.5" />
+            <RemoveFormatting className="size-icon-sm" />
           </ToolButton>
         </div>
       </div>
@@ -679,7 +679,7 @@ export function RichTextField({
                   key={c}
                   type="button"
                   title={c}
-                  className="w-5 h-5 rounded border border-surface-200 hover:border-surface-400 transition-colors"
+                  className="size-icon-lg rounded border border-surface-200 hover:border-surface-400 transition-colors"
                   style={{ backgroundColor: c }}
                   onClick={() => applyColor(c)}
                 />

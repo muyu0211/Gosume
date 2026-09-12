@@ -74,10 +74,6 @@
   /* 材质模糊强度（颜色部分按主题定义） */
   --material-filter: saturate(180%) blur(20px);
   --material-filter-strong: saturate(180%) blur(30px);
-
-  /* 实色填充按钮的上缘高光（Apple 按钮的极细内亮边）。
-     它落在彩色填充上，不随主题变化，故用固定值而非主题令牌。 */
-  --btn-sheen: rgb(255 255 255 / 0.16);
 }
 
 /* 模态进入：垂直拉伸渐变。每次打开强制播放一次（animation 不依赖 grid/两帧时序），
@@ -561,14 +557,15 @@ body {
 
 .form-input {
   @apply w-full min-h-ctl-lg px-3 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none;
-  background: rgb(var(--surface-600) / 0.06);
+  background: rgb(var(--elev));
   box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
   transition: background-color var(--dur-hover) var(--ease-apple),
     box-shadow var(--dur-hover) var(--ease-apple);
 }
 
 .form-input:hover {
-  box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong), var(--shadow-xs);
+  background: rgb(var(--surface-600) / 0.06);
+  box-shadow: inset 0 0 0 var(--border-thin) rgb(var(--surface-300));
 }
 
 .form-input:focus {
@@ -600,6 +597,27 @@ select,
     color var(--dur-hover) var(--ease-apple);
 }
 
+/* 输入类控件 hover 反馈：描边/背景加深（苹果风，禁止缩放）。
+   .form-input / .form-textarea 的填充式 hover 已在各自定义处强化（背景 + inset 描边加深）；
+   这里统一覆盖原生 input/select/textarea 与富文本 .rich-editor 的 border 式 hover。 */
+input[type='text']:hover,
+input[type='email']:hover,
+input[type='number']:hover,
+input[type='url']:hover,
+input[type='search']:hover,
+input[type='password']:hover,
+input[type='tel']:hover,
+input:not([type]):hover,
+textarea:hover,
+select:hover {
+  border-color: rgb(var(--surface-300));
+}
+
+.rich-editor:hover {
+  border-color: rgb(var(--surface-300));
+  background: rgb(var(--surface-600) / 0.06);
+}
+
 /* 焦点统一为 3px 主色光晕（苹果风）。
    用 :focus-visible 而非 :focus —— 鼠标点击不应亮起光晕。
    组件若自带更具体的焦点样式（如 .form-input:focus）则优先。 */
@@ -629,14 +647,15 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 
 .form-textarea {
   @apply w-full px-3 py-2 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none resize-none;
-  background: rgb(var(--surface-600) / 0.06);
+  background: rgb(var(--elev));
   box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
   transition: background-color var(--dur-hover) var(--ease-apple),
     box-shadow var(--dur-hover) var(--ease-apple);
 }
 
 .form-textarea:hover {
-  box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong), var(--shadow-xs);
+  background: rgb(var(--surface-600) / 0.06);
+  box-shadow: inset 0 0 0 var(--border-thin) rgb(var(--surface-300));
 }
 
 .form-textarea:focus {
@@ -648,14 +667,15 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   @apply w-full px-3 py-2 pr-7 text-sm rounded-md text-surface-800 placeholder:text-surface-400 outline-none;
   resize: vertical;
   min-height: 64px;
-  background: rgb(var(--surface-600) / 0.06);
+  background: rgb(var(--elev));
   box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
   transition: background-color var(--dur-hover) var(--ease-apple),
     box-shadow var(--dur-hover) var(--ease-apple);
 }
 
 .form-textarea-resizable:hover {
-  box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong), var(--shadow-xs);
+  background: rgb(var(--surface-600) / 0.06);
+  box-shadow: inset 0 0 0 var(--border-thin) rgb(var(--surface-300));
 }
 
 .form-textarea-resizable:focus {
@@ -713,7 +733,7 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 
 .btn-primary {
   @apply btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 var(--btn-sheen);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary {

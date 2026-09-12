@@ -316,10 +316,10 @@ export function IdPhotoTool({ onBack }: Props) {
       <div className="flex items-center gap-2">
         <Tooltip label={t('backToToolbox')}>
           <button onClick={onBack} className="btn-ghost btn-sm" aria-label={t('backToToolbox')}>
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="size-icon-md" />
           </button>
         </Tooltip>
-        <Camera className="w-5 h-5 text-surface-500" />
+        <Camera className="size-icon-lg text-surface-500" />
         <h2 className="text-base font-semibold text-surface-800">{t('idPhotoKit')}</h2>
         {sourceName && (
           <span className="text-xs text-surface-400 truncate ml-1 max-w-[180px]">{sourceName}</span>
@@ -329,7 +329,7 @@ export function IdPhotoTool({ onBack }: Props) {
       {/* 文件选择 */}
       <div className="form-section">
         <label className="w-full p-4 rounded-lg border-2 border-dashed border-surface-300 flex items-center justify-center gap-2 cursor-pointer hover:border-primary-400 hover:bg-surface-50 transition-colors">
-          <Upload className="w-4 h-4 text-surface-400" />
+          <Upload className="size-icon-md text-surface-400" />
           <span className="text-sm text-surface-600">{empty ? t('choosePhoto') : t('changePhoto')}</span>
           <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </label>
@@ -471,7 +471,7 @@ export function IdPhotoTool({ onBack }: Props) {
           <section className="form-section">
             <div className="form-section-header">
               <div className="flex items-center gap-2">
-                <CropIcon className="w-4 h-4 text-surface-400" />
+                <CropIcon className="size-icon-md text-surface-400" />
                 <span className="form-section-title">{t('freeCrop')}</span>
               </div>
             </div>
@@ -489,7 +489,7 @@ export function IdPhotoTool({ onBack }: Props) {
                 disabled={!cropActive}
                 className="btn-secondary btn-sm inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <CropIcon className="w-4 h-4" /> {t('resetCrop')}
+                <CropIcon className="size-icon-md" /> {t('resetCrop')}
               </button>
             </div>
           </section>
@@ -502,7 +502,7 @@ export function IdPhotoTool({ onBack }: Props) {
                 type="checkbox"
                 checked={bgEnabled}
                 onChange={(e) => setBgEnabled(e.target.checked)}
-                className="w-4 h-4 rounded accent-primary-600"
+                className="size-icon-md rounded accent-primary-600"
               />
             </div>
             <div className={`grid transition-all duration-200 ${bgEnabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -533,13 +533,13 @@ export function IdPhotoTool({ onBack }: Props) {
                     />
                   </div>
                   {matteError && (
-                    <p className="text-xs text-red-600 flex items-center gap-1">
+                    <p className="text-xs text-danger-600 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" /> {matteError}
                     </p>
                   )}
                   <p className="text-xs text-surface-500 flex items-center gap-1.5">
                     {matting && (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('aiMattingPleaseWait')}</>
+                      <><Loader2 className="size-icon-sm animate-spin" /> {t('aiMattingPleaseWait')}</>
                     )}
                     <span>{t('aiMattingHint')}</span>
                   </p>
@@ -573,14 +573,14 @@ export function IdPhotoTool({ onBack }: Props) {
                 className="btn-primary w-full inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {saving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('savingElipsis')}</>
+                  <><Loader2 className="size-icon-md animate-spin" /> {t('savingElipsis')}</>
                 ) : (
-                  <><Download className="w-4 h-4" /> {t('saveImageFmt').replace('{fmt}', FMT_INFO[fmt].label)}{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}</>
+                  <><Download className="size-icon-md" /> {t('saveImageFmt').replace('{fmt}', FMT_INFO[fmt].label)}{!empty && resultBytes > 0 ? `（${formatBytes(resultBytes)}）` : ''}</>
                 )}
               </button>
             </div>
             {saveError && (
-              <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+              <p className="mt-2 text-xs text-danger-600 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 shrink-0" /> {saveError}
               </p>
             )}
@@ -601,7 +601,7 @@ export function IdPhotoTool({ onBack }: Props) {
             <div ref={cellRef} className="flex items-center justify-center min-h-[220px] bg-surface-50 rounded overflow-hidden">
               {empty ? (
                 <div className="flex flex-col items-center gap-2 text-surface-300 py-10">
-                  <ImageIcon className="w-8 h-8" />
+                  <ImageIcon className="size-icon-2xl" />
                   <span className="text-xs">{t('choosePhotoPrompt')}</span>
                 </div>
               ) : preview && sourceUrl ? (
@@ -634,7 +634,7 @@ export function IdPhotoTool({ onBack }: Props) {
             <div className="relative flex items-center justify-center min-h-[220px] bg-surface-50 rounded overflow-hidden">
               {empty ? (
                 <div className="flex flex-col items-center gap-2 text-surface-300 py-10">
-                  <Check className="w-8 h-8" />
+                  <Check className="size-icon-2xl" />
                   <span className="text-xs">{t('resultAfterChoose')}</span>
                 </div>
               ) : (
@@ -643,7 +643,7 @@ export function IdPhotoTool({ onBack }: Props) {
               {/* 智能抠图进行中：半透明遮罩盖住结果图，避免误以为卡住 */}
               {bgEnabled && !matte && matteError === '' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-50/70 backdrop-blur-[1px]">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+                  <Loader2 className="size-icon-xl animate-spin text-primary-600" />
                   <span className="text-xs text-surface-500">{matting ? t('smartMattingShort') : t('generating')}</span>
                 </div>
               )}
@@ -661,7 +661,7 @@ export function IdPhotoTool({ onBack }: Props) {
         title={t('savedTitle')}
         description={t('savedDesc').replace('{path}', savedPath ?? '')}
         confirmText={t('ok')}
-        icon={<FolderOpen className="w-5 h-5 text-primary-600" />}
+        icon={<FolderOpen className="size-icon-lg text-primary-600" />}
         onConfirm={() => setSavedPath(null)}
         onCancel={() => setSavedPath(null)}
       />

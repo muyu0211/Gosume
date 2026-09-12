@@ -273,23 +273,16 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     <>
       <Modal ref={modalRef} onClose={onClose} width="w-[900px]" cardClassName="flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-surface-100 flex-shrink-0">
+        <div className="flex items-center px-6 py-3 border-b border-surface-100 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary-600" />
+            <Sparkles className="size-icon-md text-primary-600" />
             <span className="text-sm font-semibold text-surface-800">{t('aiSection')}</span>
             <span className="text-[11px] text-surface-400">{t('aiConfigHeldCount').replace('{n}', String(configs.length))}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Tooltip label={t('aiNewConfig')}>
-              <button type="button" onClick={startNew} className="p-1 rounded-md text-surface-400 hover:text-primary-500 hover:bg-surface-100 transition-colors">
-                <Plus className="w-4 h-4" />
-              </button>
-            </Tooltip>
           </div>
         </div>
 
         {/* 当前启用栏 */}
-        <div className="px-6 py-2.5 bg-surface-50/60 border-b border-surface-100 flex-shrink-0">
+        <div className="px-6 py-2 bg-surface-50/60 border-b border-surface-100 flex-shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               {(() => {
@@ -329,7 +322,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
           <div className="w-[240px] border-r border-surface-100 overflow-y-auto p-2 flex-shrink-0">
             {loading ? (
               <div className="flex items-center justify-center py-8 text-surface-300">
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="size-icon-lg animate-spin" />
               </div>
             ) : configs.length === 0 ? (
               <p className="text-xs text-surface-400 px-3 py-6 text-center">{t('aiEmpty')}</p>
@@ -375,19 +368,19 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                           })()
                         }}
                       >
-                        <Zap className="w-3.5 h-3.5" />
+                        <Zap className="size-icon-sm" />
                       </button>
                     </Tooltip>
                     <Tooltip label={t('aiDelete')}>
                       <button
                         type="button"
-                        className="p-1 rounded-md text-red-400 hover:bg-red-100 hover:text-red-600"
+                        className="p-1 rounded-md text-danger-400 hover:bg-danger-100 hover:text-danger-600"
                         onClick={(e) => {
                           e.stopPropagation()
                           setPendingDelete(c)
                         }}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="size-icon-sm" />
                       </button>
                     </Tooltip>
                   </div>
@@ -399,7 +392,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
               onClick={startNew}
               className="w-full mt-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-sm text-primary-600 hover:bg-primary-50 transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="size-icon-sm" />
               {t('aiNewConfig')}
             </button>
           </div>
@@ -468,7 +461,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                     aria-label={showKey ? t('hidden') : t('unhideHint')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-surface-400 hover:text-surface-600 hover:bg-surface-100 transition-colors"
                   >
-                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showKey ? <EyeOff className="size-icon-md" /> : <Eye className="size-icon-md" />}
                   </button>
                 </div>
                 {form.hasKey && <p className="text-[11px] text-surface-400 mt-1">{t('aiKeyLockedHint')}</p>}
@@ -482,7 +475,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <Expandable show={status !== ''}>
               {status !== '' && (
-                <p className={`text-xs flex items-center gap-1 ${status === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                <p className={`text-xs flex items-center gap-1 ${status === 'error' ? 'text-danger-600' : 'text-success-600'}`}>
                   {status === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                   {statusMsg}
                 </p>
@@ -490,7 +483,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
             </Expandable>
             <Expandable show={testMsg !== ''}>
               {testMsg !== '' && (
-                <p className={`text-xs flex items-center gap-1 ${testMsg === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                <p className={`text-xs flex items-center gap-1 ${testMsg === 'error' ? 'text-danger-600' : 'text-success-600'}`}>
                   {testMsg === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                   {testDetail}
                 </p>
@@ -503,14 +496,14 @@ export function AIConfigManagerDialog({ onClose }: Props) {
             disabled={testing || saving || !formValid}
             className="btn-secondary btn-sm inline-flex items-center gap-1.5"
           >
-            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {testing ? <Loader2 className="size-icon-md animate-spin" /> : null}
             {t('aiTest')}
           </button>
           <button type="button" onClick={() => modalRef.current?.close()} className="btn-secondary btn-sm">
             {t('cancel')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving || testing} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {saving ? <Loader2 className="size-icon-md animate-spin" /> : null}
             {t('aiSave')}
           </button>
         </div>
@@ -522,7 +515,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
         title={t('aiDeleteTitle')}
         description={`${t('aiDeleteConfirm')}\n${pendingDelete?.name ?? ''}\n\n${t('aiDeleteKeyNote')}`}
         confirmText={t('aiDelete')}
-        icon={<Trash2 className="w-5 h-5 text-red-600" />}
+        icon={<Trash2 className="size-icon-lg text-danger-600" />}
         onConfirm={handleDelete}
         onCancel={() => setPendingDelete(null)}
       />

@@ -19,10 +19,10 @@ export function ToolsPanel() {
         <button
           key={id}
           onClick={() => setOpen(id)}
-          className="flex flex-col items-start gap-2 p-4 rounded-lg border text-left transition-all duration-150 border-surface-200 hover:bg-surface-50 hover:border-surface-300 hover:scale-[1.03] hover:shadow-sm cursor-pointer active:scale-[0.98]"
+          className="flex flex-col items-start gap-2 p-4 rounded-lg border text-left transition-all duration-150 border-surface-200 hover:bg-surface-50 hover:border-surface-300 hover:shadow-sm cursor-pointer active:scale-[0.98]"
         >
           <span className="p-2 rounded-md bg-surface-100 text-primary-600">
-            <Icon className="w-5 h-5" />
+            <Icon className="size-icon-lg" />
           </span>
           <span className="text-sm font-medium text-surface-700">{t(titleKey)}</span>
           <span className="text-xs text-surface-400">{t(descKey)}</span>

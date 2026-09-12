@@ -29,7 +29,7 @@ export function EducationSection() {
     <div className="form-section">
       <div className="form-section-header">
         <div className="flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-primary-600" />
+          <GraduationCap className="size-icon-md text-primary-600" />
           <span className="form-section-title">{getSectionTitle('education', language)}</span>
           <span className="text-xs text-surface-400">({items.length})</span>
         </div>
@@ -61,9 +61,9 @@ export function EducationSection() {
                   className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-surface-200 transition-colors ${draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <GripVertical className="w-3.5 h-3.5" />
+                  <GripVertical className="size-icon-sm" />
                 </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-surface-400" /> : <ChevronRight className="w-4 h-4 text-surface-400" />}
+                {isExpanded ? <ChevronDown className="size-icon-md text-surface-400" /> : <ChevronRight className="size-icon-md text-surface-400" />}
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm font-medium truncate ${isHidden ? 'text-surface-400 line-through' : 'text-surface-700'}`}>
                     {edu.school || t('unnamedSchool')}
@@ -80,14 +80,14 @@ export function EducationSection() {
                   hidden={isHidden}
                   onToggle={() => updateItem(idx, { hidden: !isHidden })}
                 />
-                <button onClick={(e) => { e.stopPropagation(); requestDelete('education', idx) }} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
+                <button onClick={(e) => { e.stopPropagation(); requestDelete('education', idx) }} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+                  <Trash2 className="size-icon-sm" />
                 </button>
               </div>
 
               <div className={`collapse-wrap ${isExpanded ? 'open' : ''}`}>
                 <div className="collapse-inner">
-                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2.5">
+                  <div className="collapse-content px-3 pb-3 pt-1 border-t border-surface-100 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="form-label">{t('school')}</label>
@@ -185,8 +185,8 @@ function HighlightsEditor({ highlights, onChange, onRequestRemove }: { highlight
             placeholder={`${t('highlights')} ${i + 1}`}
             maxLength={500}
           />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => removeHighlight(i)} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors">
+            <Trash2 className="size-icon-sm" />
           </button>
         </div>
       ))}

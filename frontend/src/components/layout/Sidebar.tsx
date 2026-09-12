@@ -41,7 +41,7 @@ export function Sidebar({ onExport }: SidebarProps) {
           <button
             key={isFlash ? `flash-${flashNonce}` : id}
             onClick={() => setActiveSection(id)}
-            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-150 group relative ${
+            className={`size-ctl-xl flex items-center justify-center rounded-xl transition-all duration-150 group relative ${
               isActive
                 ? 'bg-primary-600 text-white shadow-sm shadow-primary-600/25'
                 : 'text-surface-400 hover:text-surface-600 hover:bg-surface-200'
@@ -61,9 +61,9 @@ export function Sidebar({ onExport }: SidebarProps) {
         <Tooltip label="导出简历" side="right">
           <button
             onClick={onExport}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-150 shadow-sm shadow-primary-600/25"
+            className="size-ctl-xl flex items-center justify-center rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-150 shadow-sm shadow-primary-600/25"
           >
-            <FileOutput className="w-5 h-5" />
+            <FileOutput className="size-icon-lg" />
           </button>
         </Tooltip>
       </div>

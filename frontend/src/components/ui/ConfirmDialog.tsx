@@ -49,7 +49,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null
 
-  const resolvedIcon = icon ?? (danger ? <AlertTriangle className="w-5 h-5 text-danger-600" /> : null)
+  const resolvedIcon = icon ?? (danger ? <AlertTriangle className="size-icon-lg text-danger-600" /> : null)
 
   return (
     <div
@@ -63,7 +63,7 @@ export function ConfirmDialog({
         <div className="flex items-start gap-4">
           {resolvedIcon && (
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+              className={`size-ctl-xl rounded-full flex items-center justify-center shrink-0 ${
                 danger ? 'bg-danger-100' : 'bg-primary-50'
               }`}
             >
@@ -82,7 +82,7 @@ export function ConfirmDialog({
             <label className="flex items-center gap-2 text-xs text-surface-500 cursor-pointer select-none">
               <input
                 type="checkbox"
-                className="w-3.5 h-3.5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                className="size-icon-sm rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                 checked={dontAskAgain}
                 onChange={(e) => onDontAskAgainChange?.(e.target.checked)}
               />
@@ -106,7 +106,7 @@ export function ConfirmDialog({
                 danger ? 'bg-danger-600 hover:bg-danger-700' : 'bg-primary-600 hover:bg-primary-700'
               }`}
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading && <Loader2 className="size-icon-md animate-spin" />}
               {confirmText}
             </button>
           </div>
