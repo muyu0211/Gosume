@@ -49,11 +49,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null
 
-  const resolvedIcon = icon ?? (danger ? <AlertTriangle className="w-5 h-5 text-red-600" /> : null)
+  const resolvedIcon = icon ?? (danger ? <AlertTriangle className="w-5 h-5 text-danger-600" /> : null)
 
   return (
     <div
-      className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
+      className="fixed inset-0 bg-[var(--material-overlay)] backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
       onClick={onCancel}
     >
       <div
@@ -64,7 +64,7 @@ export function ConfirmDialog({
           {resolvedIcon && (
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                danger ? 'bg-red-100' : 'bg-primary-50'
+                danger ? 'bg-danger-100' : 'bg-primary-50'
               }`}
             >
               {resolvedIcon}
@@ -91,7 +91,7 @@ export function ConfirmDialog({
           ) : (
             <span />
           )}
-          <div className="flex gap-2.5">
+          <div className="flex gap-2">
             <button
               onClick={onCancel}
               disabled={loading}
@@ -103,7 +103,7 @@ export function ConfirmDialog({
               onClick={onConfirm}
               disabled={loading}
               className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
-                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+                danger ? 'bg-danger-600 hover:bg-danger-700' : 'bg-primary-600 hover:bg-primary-700'
               }`}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}

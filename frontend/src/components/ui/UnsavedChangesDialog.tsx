@@ -26,7 +26,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
 
   return (
     <div
-      className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
+      className="fixed inset-0 bg-[var(--material-overlay)] backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
       onClick={onClose}
     >
       <div
@@ -34,8 +34,8 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
         className="bg-elev rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-dialog-enter"
       >
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
+          <div className="w-10 h-10 rounded-full bg-warning-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-warning-600" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-surface-800">未保存的更改</h3>
@@ -54,7 +54,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
             </button>
           </Tooltip>
         </div>
-        <div className="flex justify-end gap-2.5 mt-6">
+        <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onDiscardAndContinue}
             disabled={saving}

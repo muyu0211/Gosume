@@ -49,7 +49,7 @@ export function Sidebar({ onExport }: SidebarProps) {
           >
             <Icon className="w-4.5 h-4.5" strokeWidth={isActive ? 2.25 : 1.75} />
             {/* Tooltip */}
-            <span className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity duration-150 shadow-lg">
+            <span className="absolute left-full ml-2 px-3 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity duration-150 shadow-lg">
               {label}
             </span>
           </button>

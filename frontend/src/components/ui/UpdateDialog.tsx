@@ -79,7 +79,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
           <ul className="space-y-1">
             {notes.map((line, idx) => (
               <li key={idx} className="flex items-start gap-2 text-sm text-surface-600">
-                <span className="w-1 h-1 rounded-full bg-surface-300 mt-[7px] shrink-0" />
+                <span className="w-1 h-1 rounded-full bg-surface-300 mt-2 shrink-0" />
                 <span className="min-w-0">{line}</span>
               </li>
             ))}
@@ -110,7 +110,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       show: stage === 'ready',
       node: (
         <div className="flex items-center gap-2 text-sm text-surface-600">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-success-500 shrink-0" />
           更新包已就绪，重启后自动完成安装。
         </div>
       ),
@@ -126,7 +126,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       // 错误提示置于内容最下方，避免在更新说明中间突兀出现
       show: stage === 'error',
       node: (
-        <div className="flex items-start gap-2 text-sm text-red-600">
+        <div className="flex items-start gap-2 text-sm text-danger-600">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span className="min-w-0">{errorMsg}</span>
         </div>
@@ -235,7 +235,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       cardClassName="flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-6 py-3 border-b border-surface-100 flex-shrink-0">
+      <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <ArrowUpCircle className="w-4 h-4 text-primary-600" />
         </div>
@@ -272,7 +272,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       </div>
 
       {/* Footer：按阶段切换按钮 */}
-      <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-surface-100 flex-shrink-0">
+      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-surface-100 flex-shrink-0">
         {stage === 'available' && (
           <>
             <button onClick={handleClose} className="btn-secondary btn-sm">

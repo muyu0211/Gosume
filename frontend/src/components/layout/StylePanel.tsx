@@ -92,7 +92,7 @@ function SliderRow({
   onChange: (v: number) => void
 }) {
   return (
-    <div className="mb-2.5 last:mb-0">
+    <div className="mb-2 last:mb-0">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[12px] font-medium text-surface-600">{label}</span>
         <span className="text-[12px] font-mono text-surface-500">{value}px</span>
@@ -106,7 +106,7 @@ function SliderRow({
 function PanelCard({ title, icon, summary, children }: { title: string; icon: React.ReactNode; summary?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-surface-200 bg-surface-50/60 px-3 py-3">
-      <div className="flex items-center justify-between mb-2.5">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-[12px] font-medium text-surface-600 flex items-center gap-1.5">
           {icon}
           {title}

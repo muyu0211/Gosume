@@ -184,7 +184,7 @@ export function CommunityPage() {
           <ArrowLeft className="w-4 h-4" />
           首页
         </button>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary-600/10 flex items-center justify-center">
             <Globe className="w-5 h-5 text-primary-600" />
           </div>
@@ -203,11 +203,11 @@ export function CommunityPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="搜索模板名称 / 标签"
-              className="w-full h-9 pl-9 pr-20 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
+              className="w-full h-9 pl-10 pr-20 rounded-lg border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
             />
             <button
               onClick={handleSearch}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 h-7 rounded-md text-xs font-medium text-primary-700 hover:bg-primary-50 transition-colors"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 h-7 rounded-md text-xs font-medium text-primary-700 hover:bg-primary-50 transition-colors"
             >
               搜索
             </button>
@@ -226,23 +226,23 @@ export function CommunityPage() {
 
       {/* 提示条 */}
       {error && (
-        <div className="mx-8 mt-4 px-4 py-2.5 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between gap-3">
+        <div className="mx-8 mt-4 px-4 py-2 rounded-lg border border-danger-200 bg-danger-50 text-sm text-danger-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 flex-shrink-0" />
             {error}
           </span>
-          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 text-xs font-medium flex-shrink-0">
+          <button onClick={() => setError('')} className="text-danger-500 hover:text-danger-700 text-xs font-medium flex-shrink-0">
             关闭
           </button>
         </div>
       )}
       {successMsg && (
-        <div className="mx-8 mt-4 px-4 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-700 flex items-center justify-between gap-3">
+        <div className="mx-8 mt-4 px-4 py-2 rounded-lg border border-success-200 bg-success-50 text-sm text-success-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 truncate">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             {successMsg}
           </span>
-          <button onClick={() => setSuccessMsg('')} className="text-emerald-500 hover:text-emerald-700 text-xs font-medium flex-shrink-0">
+          <button onClick={() => setSuccessMsg('')} className="text-success-500 hover:text-success-700 text-xs font-medium flex-shrink-0">
             关闭
           </button>
         </div>
@@ -400,7 +400,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
         )}
         {/* 已安装徽标 */}
         {template.is_installed && (
-          <span className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/90 text-white text-[10px] font-medium shadow-sm">
+          <span className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-500/90 text-white text-[10px] font-medium shadow-sm">
             <CheckCircle2 className="w-3 h-3" />
             已安装
           </span>
@@ -412,12 +412,12 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
         </div>
       </div>
       {/* 信息 */}
-      <div className="p-3.5">
+      <div className="p-4">
         <h3 className="text-sm font-semibold text-surface-800 truncate">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-1">{template.description}</p>
-        <div className="flex items-center gap-3 mt-2.5 text-[12px] text-surface-400">
+        <div className="flex items-center gap-3 mt-2 text-[12px] text-surface-400">
           <span className="flex items-center gap-1">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+            <Star className="w-3 h-3 text-warning-400 fill-warning-400" />
             {template.rating > 0 ? template.rating.toFixed(1) : '暂无'}
           </span>
           <span className="flex items-center gap-1">
@@ -429,7 +429,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
             <button
               onClick={(e) => { e.stopPropagation(); onDownload() }}
               disabled={downloading}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-1 rounded-md bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               下载
@@ -474,7 +474,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-surface-800 truncate">{template.name}</h2>
             {template.is_installed && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium flex-shrink-0">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-50 text-success-600 text-[10px] font-medium flex-shrink-0">
                 <CheckCircle2 className="w-3 h-3" />
                 已安装
               </span>
@@ -555,10 +555,10 @@ function StarRating({ value, interactive = false, onSelect, size = 'w-4 h-4' }: 
           key={n}
           disabled={!interactive}
           onClick={() => onSelect?.(n)}
-          className={`${size} ${interactive ? 'cursor-pointer hover:scale-125 transition-transform' : 'cursor-default'}`}
+          className={`${size} ${interactive ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
           aria-label={`${n} 星`}
         >
-          <Star className={`${n <= value ? 'text-amber-400 fill-amber-400' : 'text-surface-300'}`} />
+          <Star className={`${n <= value ? 'text-warning-400 fill-warning-400' : 'text-surface-300'}`} />
         </button>
       ))}
     </div>
@@ -577,7 +577,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
 
   return (
     <Modal ref={modalRef} onClose={onClose} width="w-[480px]">
-      <div className="flex items-center gap-2.5 px-6 py-3 border-b border-surface-100">
+      <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <Upload className="w-4 h-4 text-primary-600" />
         </div>

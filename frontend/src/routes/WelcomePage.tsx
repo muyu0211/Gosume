@@ -373,7 +373,7 @@ export function WelcomePage() {
     <AnimatedPage className="h-full flex flex-col bg-surface-50">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-6">
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-4">
           <div className="relative">
             <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
               <Sparkles className="w-5 h-5 text-white" />
@@ -382,7 +382,7 @@ export function WelcomePage() {
             {updateInfo && (
               <button
                 onClick={() => setShowUpdateDialog(true)}
-                className="absolute -top-1.5 -right-2.5 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold tracking-wider shadow-md shadow-red-500/30 animate-badge-pop hover:bg-red-600 active:scale-95 transition-colors"
+                className="absolute -top-1.5 -right-2.5 px-1.5 py-0.5 rounded-full bg-danger-500 text-white text-[9px] font-bold tracking-wider shadow-md shadow-danger-500/30 animate-badge-pop hover:bg-danger-600 active:scale-95 transition-colors"
               >
                 NEW
               </button>
@@ -451,21 +451,21 @@ export function WelcomePage() {
       </header>
 
       {importError && (
-        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700 flex items-center justify-between gap-3">
+        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-danger-200 bg-danger-50 text-sm text-danger-700 flex items-center justify-between gap-3">
           <span>{importError}</span>
-          <button onClick={() => setImportError('')} className="text-red-500 hover:text-red-700 text-xs font-medium">
+          <button onClick={() => setImportError('')} className="text-danger-500 hover:text-danger-700 text-xs font-medium">
             {t('close')}
           </button>
         </div>
       )}
 
       {importSuccess && (
-        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-700 flex items-center justify-between gap-3">
+        <div className="mx-8 mb-4 px-4 py-3 rounded-lg border border-success-200 bg-success-50 text-sm text-success-700 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
             {importSuccess}
           </span>
-          <button onClick={() => setImportSuccess('')} className="text-emerald-500 hover:text-emerald-700 text-xs font-medium">
+          <button onClick={() => setImportSuccess('')} className="text-success-500 hover:text-success-700 text-xs font-medium">
             {t('close')}
           </button>
         </div>
@@ -559,7 +559,7 @@ export function WelcomePage() {
               {recentFiles.slice(0, 3).map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-elev border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl bg-elev border border-surface-100 hover:border-surface-200 hover:shadow-sm cursor-pointer transition-all duration-150 group"
                   onClick={() => handleOpenRecent(file.id)}
                 >
                   <div className="w-9 h-9 rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
@@ -746,7 +746,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
               disabled={favLoading}
-              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-amber-400 text-white hover:bg-amber-500' : 'bg-elev/90 text-surface-400 hover:text-amber-500 hover:bg-elev'
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:bg-elev'
                 } disabled:opacity-60`}
             >
               {favLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />}
@@ -799,7 +799,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
                 disabled={isDeleting}
-                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-red-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-red-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
+                className="preview-btn flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-xl bg-elev/70 backdrop-blur-sm text-danger-600 text-sm font-medium border border-surface-200 shadow-md hover:bg-elev/90 hover:text-danger-700 hover:border-surface-300 hover:shadow-lg active:scale-95 transition-all duration-150 disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
                 <span className="preview-label truncate min-w-0">{t('delete')}</span>
@@ -809,10 +809,10 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
         </div>
       </div>
       {/* Meta info */}
-      <div className="p-3.5 border-t border-surface-100">
+      <div className="p-4 border-t border-surface-100">
         <h3 className="text-sm font-semibold text-surface-800">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
-        <div className="flex gap-1.5 mt-2.5">
+        <div className="flex gap-1.5 mt-2">
           {template.tags.slice(0, 3).map((tag) => (
             <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-surface-100 text-surface-500 font-medium">
               {tag}
@@ -852,7 +852,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
 
   return (
     <Modal ref={modalRef} onClose={onClose} width="w-[520px]" cardClassName="flex flex-col overflow-hidden">
-      <div className="flex items-center gap-2.5 px-6 py-3 border-b border-surface-100 flex-shrink-0">
+      <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <Clock className="w-4 h-4 text-primary-600" />
         </div>
@@ -860,7 +860,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
       </div>
       <div className="flex-1 overflow-auto px-6 py-3">
         {logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-14 text-surface-300">
+          <div className="flex flex-col items-center justify-center py-16 text-surface-300">
             <Clock className="w-9 h-9 mb-2" />
             <p className="text-sm">{t('noImportLogs')}</p>
           </div>
@@ -869,13 +869,13 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-surface-100 hover:border-surface-200 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-surface-100 hover:border-surface-200 transition-colors"
               >
                 <PackageOpen className="w-4 h-4 text-surface-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-surface-700 truncate">{log.template_name}</span>
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-medium flex-shrink-0 ${log.source === 'share' ? 'bg-primary-50 text-primary-600' : log.source === 'community' ? 'bg-emerald-50 text-emerald-600' : 'bg-surface-100 text-surface-500'
+                    <span className={`px-1.5 py-0.5 text-[10px] rounded-full font-medium flex-shrink-0 ${log.source === 'share' ? 'bg-primary-50 text-primary-600' : log.source === 'community' ? 'bg-success-50 text-success-600' : 'bg-surface-100 text-surface-500'
                       }`}>
                       {log.source === 'share' ? t('sourceShare') : log.source === 'community' ? t('sourceCommunity') : t('sourceLocal')}
                     </span>
@@ -889,7 +889,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
                     onClick={() => onDelete(log)}
                     disabled={deletingId === log.id}
                     aria-label={t('deleteRecord')}
-                    className="p-1.5 rounded-lg text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
+                    className="p-1.5 rounded-lg text-surface-300 hover:text-danger-500 hover:bg-danger-50 transition-colors disabled:opacity-50 flex-shrink-0"
                   >
                     {deletingId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </button>

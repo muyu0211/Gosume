@@ -115,7 +115,7 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
         createPortal(
           <span
             ref={tipRef}
-            className="fixed z-[9999] px-2.5 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap shadow-lg pointer-events-none animate-dropdown-enter"
+            className="fixed z-[9999] px-3 py-1.5 bg-elev text-surface-700 border border-surface-200 text-xs rounded-lg whitespace-nowrap shadow-lg pointer-events-none animate-dropdown-enter"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}

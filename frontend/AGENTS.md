@@ -127,6 +127,100 @@ try {
 * 实际以 `document.documentElement.dataset.theme` 写入 `<html data-theme>`，令牌变量在 `assets/styles/globals.css` 的 `html[data-theme=...]` 块。
 * 持久化经 `SystemService.GetTheme/SetTheme`（config.json）。`ensureLoaded` 在 `App.tsx` 挂载时调用。
 
+### 苹果风落地契约（Apple HIG · 强制）
+
+应用界面采用苹果风。**颜色只是入口，几何、边框、动效同样受约束** —— 只改颜色的文件不算完成。
+权威规范：`docs/Gosume苹果风主题/苹果风落地规范.md`；进度台账：`docs/Gosume苹果风主题/改造成进度.md`；
+详细基准：`docs/Gosume苹果风主题/参考/`；校验工具：`docs/Gosume苹果风主题/工具/`。
+
+**主题与令牌**
+
+* 主题键固定为 `system | classic | wheat | obsidian`，深浅语义不变（classic/wheat 浅、obsidian 深，
+  system 映射 浅→wheat / 深→obsidian）。**只改令牌取值，不改键名与 `lib/theme.ts` 逻辑。**
+* 令牌变量名是稳定 API，只能改值、不能改名：`--surface-50..900` / `--primary-50..900` / `--elev` /
+  `--app-bg` / `--titlebar-bg` / `--sidebar-{bg,text,active,active-bg}` / `--selection-{bg,fg}`。
+  `:root` 与 `html[data-theme='classic']` 同组，**新增令牌必须三套主题同时加**。
+* 主题感知的取值经 `tailwind.config.ts` 映射：`boxShadow` 指向 `var(--shadow-*)`、
+  `borderRadius` 为苹果尺度、`fontFamily.sans` 为 SF 优先系统栈。**不要覆盖 `spacing`。**
+* 几何/描边/动效令牌（`--radius-*` / `--ctl-*` / `--icon-*` / `--border-*` / `--dur-*` / `--ease-apple-*`）
+  定义在 `globals.css` 的「苹果风尺度令牌」块。
+
+**颜色**
+
+* 只用令牌：`surface-*` / `primary-*` / `elev` / `danger|success|warning|info-*`。
+  禁止 `bg-white` / `text-black` / `bg-black/NN` / `#RRGGBB` / `rgb(...)` / `bg-[#...]`。
+* `text-white` 允许（彩色填充上的前景色）；`border-white/N` 允许（on-color 装饰）。
+* 禁止用 Tailwind 原始色板表达状态：`text-red-500` → `text-danger-600`；`bg-emerald-50` → `bg-success-50`；
+  `text-amber-700` → `text-warning-700`；`bg-blue-50` → `bg-info-50`。
+* 分档规则：`-500` 用于图形/填充/图标（对白底 ≥3:1），`-600` 用于正文文字与按钮填充（≥4.5:1）。
+  因此系统橙 `#FF9500`（白底 2.0:1）只作装饰 `--accent-orange`，不作主色。
+* 装饰色 `--accent-{red,orange,yellow,green,teal,blue,indigo,purple,pink,graphite}` 仅用于非文字场景
+  （徽标/状态点/分类色点），不要拿它做正文或按钮填充。
+
+**几何（尺寸与间距）**
+
+* 控件高度只用 `ctl` 令牌：`h-ctl-xs(24) / -sm(28) / -md(32) / -lg(36，基准，输入框与按钮) / -xl(40)`。
+  同一行/同分组内控件**必须同高**。
+* 图标尺寸只用 `size-icon-*`（12/14/16/20/24/32），不写 `w-4 h-4`；方形控件用 `size-ctl-*`。
+* 间距只用固定阶梯（Tailwind key）：`0 / 0.5 / 1 / 1.5 / 2 / 3 / 4 / 5 / 6 / 8 / 10 / 12 / 16`。
+  **档外值（2.5 / 3.5 / 7 / 9 / 11 / 14）与任意值 `p-[14px]` 一律禁止**，
+  收敛到相邻档（2.5→2或3；3.5→3或4；7→6或8；9→8或10），且**同组保持同一收敛方向**。
+* 圆角与尺寸成比例：`radius ≈ min(height/4, 12px)`。控件 `rounded-sm`(7)/`rounded-md`(9)，
+  卡片 `rounded-lg`(12)，模态 `rounded-xl`(16)。禁止任意值圆角/阴影。
+* 纵向节奏一律用 `margin-bottom`，不用 `margin-top`。同屏不混用 density 档
+  （工具区 compact：24–32px 控件；页面区 regular：32–40px）。
+
+**边框与轮廓**
+
+* **Apple 少用边框**。层级优先级：填充色差 → 分隔线 → 描边 → 阴影。能用低一级就不用高一级。
+* 卡片**默认不画满边框**：`bg-elev` + `shadow-xs`，内部结构用 `1px solid var(--hairline)` 分隔线。
+* 次按钮与输入框用**填充式**（`rgb(var(--surface-600) / 0.06~0.08)`），不是「白底 + 边框」。
+* 描边优先用 `inset box-shadow` 而非 `border`（避免 1px 尺寸偏移与双层轮廓）。
+* 描边宽度只允许 `0.5 / 1 / 1.5 / 2`；禁止 `border-4` / `border-8`。
+* 分隔线用 `border-bottom` + `var(--hairline)`，左右内缩，hover 不加深。
+* **焦点统一为 3px 主色光晕** `box-shadow: var(--shadow-focus)`；用 `:focus-visible` 不用 `:focus`；
+  禁止 `focus:ring-2` + `ring-offset-1` 双层环；`outline: none` 仅在提供 `:focus-visible` 替代时允许。
+* 模态遮罩用 `var(--material-overlay)`，不写 `bg-black/25`。
+
+**毛玻璃材质**
+
+* `--material-bar`（标题栏/侧栏/状态栏/工具栏）、`--material-panel`（下拉/浮层/模态）。
+* 只用于浮层与外壳；必须保证关掉模糊后仍可读；必须有不透明回退
+  （`prefers-reduced-transparency: reduce` 时替换为实色）。
+* 不用在不透明实底上，不叠在大面积正文上，不与强渐变同时使用。
+
+**动效**
+
+* **禁止 hover 缩放**（`hover:scale-*` / `group-hover:scale-*` / jelly）。hover 只用颜色、背景、阴影、
+  描边变化；按压用 `active:scale-[0.98]`。唯一例外是滑块本体（幅度 ≤1.1，需加 `gosume-style-allow` 注解）。
+* **禁止 hover 位移**（用 `hover:shadow-md` 表达浮起）。
+* 时长取自 `--dur-instant(100) / hover(120) / fast(150) / enter(180) / base(200) / slow(300)`；
+  Tailwind `duration-*` 只允许 `75/100/150/200/300`。出现用 `--ease-apple-out`，消失用 `ease-in`。
+* 位移 ≤ 8px；scale 入场 0.96→1、按压 0.98。
+* 除骨架 `animate-shimmer` 与 `animate-loading-bar` 外，**不引入无限循环动画**；
+  不用 `animate-pulse/bounce/ping` 表达状态。
+* **`.gosume-modal-in/out` 的关键帧、时长（0.3s/0.2s）与曲线已锁定，勿改**
+  （退出依赖 `animationend` 卸载）。
+* 新增动画必须：关键帧写在 `globals.css`、登记进落地规范的动画表、时长曲线取自令牌。
+
+**重构边界（不得触碰）**
+
+* `templates/template.html` 的 DOM 契约、`paginationCore.ts` 的 `KEEP_WHOLE` 与拆分规则、
+  `resume-global.css` 的内容间距选择器契约。
+* `templates/**/styles.css` 与 `template.json.colors`（模板是「简历外观」，非应用皮肤）。
+* 渲染/导出管线（`exportHtml.ts` / `paginationCore.ts` / `paginate.ts` / `thumbnailService.ts`）里的
+  `#ffffff` 是**纸张色**，不要令牌化。
+* 简历字体不得使用 `-apple-system`（跨平台导出会不一致）。
+
+**每轮开工/收工**
+
+开工：读本小节 → 读落地规范 → 读改造成进度 → 跑
+`node docs/Gosume苹果风主题/工具/verify-theme-contracts.mjs --gate` 与
+`node docs/Gosume苹果风主题/工具/scan-style-violations.mjs --by-file` → 与台账快照对比
+（**数字劣于台账说明上一轮留了回归，先修再开工**）→ 只做一个批次。
+收工：当前阶段门禁全绿 → 本批 0 错误 → `npx tsc --noEmit` → 构建 → 三主题 × 中英双语走查 →
+更新台账与落地规范 → 写交接摘要。详见 `docs/Gosume苹果风主题/参考/08-跨轮次工作流.md`。
+
 ### 简历字段更新
 
 字段更新通过 `resumeStore.updateField` 使用点号路径表示法：
@@ -220,7 +314,7 @@ updateField('jobs[0].company', '某公司')
 
 * `width`：默认 `w-[520px]`，内容少 `w-[480px]`，确认框 `w-[380px]`，配置管理类用 `w-[900px]`。
 * 超高内容滚动：整体滚动用 `cardClassName="overflow-auto"`；固定 Header/Footer 用 `flex flex-col overflow-hidden` + Header/Footer `flex-shrink-0` + 内容 `flex-1 overflow-auto`（如 `AIConfigManagerDialog`：状态提示常驻 Footer）。
-* 次级确认框用 `ConfirmDialog`（overlay 统一 `bg-black/25 backdrop-blur-sm`），靠 DOM 顺序叠层，勿再叠 z-index。
+* 次级确认框用 `ConfirmDialog`（overlay 统一 `var(--material-overlay)`，随主题变深；**不写 `bg-black/25`**），靠 DOM 顺序叠层，勿再叠 z-index。
 * 自定义浮层（下拉等）用 Portal 到 `document.body` + `fixed` + `z-[9999]`（参考 `CustomSelect.tsx`/`Tooltip.tsx`）；面板外部滚动时重算定位。
 
 ### Tooltip / 原生提示规范
@@ -238,10 +332,10 @@ updateField('jobs[0].company', '某公司')
 
 * 格式化：Prettier + ESLint。
 * 禁止：`any` 类型、`var` 声明、硬编码魔法值（如直接写 100 代替 `SPACING_PX_MAX`）。
-* **样式须适配主题**：所有界面颜色/背景/边框/阴影用主题令牌（`surface-*`/`primary-*`/`bg-elev` 及 `globals.css` 中的 CSS 变量），禁止硬编码 hex / `bg-white` / `text-black`，确保三套主题 + 跟随系统下均可读一致。
-* 下拉/按钮风格统一：触发器 `bg-elev`/`surface` 边框 + hover 态；面板 Portal + `fixed` + `z-[9999]` + `animate-dropdown-enter`。同一功能多入口（如页边距/内容间距）外观交互完全一致。
-* 图标按钮（可见性切换/删除）：默认彩色，hover 背景加深、图标加深；删除 `text-red-500` hover `bg-red-100 text-red-600`，`rounded-md`。Tooltip 仅用于图标按钮。
-* 文本输入 hover：`transform: scale(1.01)` + `box-shadow` 内发光；按钮 hover：`scale-105` + 果冻动画，激活 `scale-95`。
+* **样式须适配主题**：所有界面颜色/背景/边框/阴影用主题令牌（`surface-*`/`primary-*`/`bg-elev`/`danger|success|warning|info-*` 及 `globals.css` 中的 CSS 变量），禁止硬编码 hex / `bg-white` / `text-black`，确保三套主题 + 跟随系统下均可读一致。
+* 下拉/按钮风格统一：触发器填充式（`rgb(var(--surface-600) / 0.06~0.08)`）+ hover 态；面板 Portal + `fixed` + `z-[9999]` + `animate-dropdown-enter` + `--shadow-lg`。同一功能多入口（如页边距/内容间距）外观交互完全一致。
+* 图标按钮（可见性切换/删除）：删除态用语义色 `text-danger-500` / hover `bg-danger-100 text-danger-600`，`rounded-md`；尺寸走 `size-ctl-*`。Tooltip 仅用于图标按钮。
+* **交互反馈（苹果风）**：hover 只用颜色/背景/阴影/描边变化，**禁止 hover 缩放与位移**（`hover:scale-*` / `hover:-translate-y-*` / 果冻动画均不允许）；按压用 `active:scale-[0.98]`。唯一例外是滑块本体（幅度 ≤1.1）。
 * `input[type='range']` 必须设 `-webkit-user-drag: none` + `user-select: none`。
 * 动态文本按钮/标签：`truncate min-w-0`；窄窗口只留图标（`hidden md:inline`）。
 

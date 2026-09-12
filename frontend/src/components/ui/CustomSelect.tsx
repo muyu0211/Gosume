@@ -132,7 +132,7 @@ export function CustomSelect({
             className="fixed z-[9999] overflow-auto bg-elev rounded-lg border border-surface-200 shadow-xl animate-dropdown-enter py-1"
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2.5 text-sm text-surface-400">{emptyText}</div>
+              <div className="px-3 py-2 text-sm text-surface-400">{emptyText}</div>
             ) : (
               options.map((opt) => (
                 <button

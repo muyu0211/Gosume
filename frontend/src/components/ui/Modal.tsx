@@ -63,7 +63,7 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
-        isActive ? 'bg-black/25 backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
+        isActive ? 'bg-[var(--material-overlay)] backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
       }`}
       onClick={close}
     >

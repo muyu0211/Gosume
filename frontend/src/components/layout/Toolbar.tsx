@@ -91,7 +91,7 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
             <span className="hidden sm:inline">
               {saveStatus === 'saving' ? t('saving') : saveStatus === 'saved' ? t('saved') : saveStatus === 'error' ? t('saveError') : t('save')}
             </span>
-            {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
+            {isDirty && saveStatus === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-warning-400" />}
           </button>
         </Tooltip>
 

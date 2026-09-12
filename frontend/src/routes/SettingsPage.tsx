@@ -358,12 +358,12 @@ export function SettingsPage() {
               )}
             </button>
             {dirStatus === 'success' && (
-              <p className="text-xs text-green-600 flex items-center gap-1">
+              <p className="text-xs text-success-600 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" /> {t('dataDirUpdated')}
               </p>
             )}
             {dirStatus === 'error' && (
-              <p className="text-xs text-red-600 flex items-center gap-1">
+              <p className="text-xs text-danger-600 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {dirErrorMsg}
               </p>
             )}
@@ -381,7 +381,7 @@ export function SettingsPage() {
           <div className="p-3 rounded-lg border border-surface-200 space-y-3">
             <p className="text-xs text-surface-400">{t('autofillDesc')}</p>
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${autofill?.running ? 'bg-green-500' : 'bg-surface-300'}`} />
+              <span className={`w-2 h-2 rounded-full shrink-0 ${autofill?.running ? 'bg-success-500' : 'bg-surface-300'}`} />
               <span className="text-xs text-surface-500">
                 {autofill?.running
                   ? `${t('localBridgeRunning')} ${autofill.port}）`
@@ -397,7 +397,7 @@ export function SettingsPage() {
                   onClick={handleCopyPair}
                   className="btn-secondary btn-sm inline-flex items-center gap-1 shrink-0"
                 >
-                  {pairCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {pairCopied ? <Check className="w-4 h-4 text-success-600" /> : <Copy className="w-4 h-4" />}
                   {pairCopied ? t('copied') : t('copy')}
                 </button>
               </div>
@@ -477,7 +477,7 @@ export function SettingsPage() {
               >
                 <div className="overflow-hidden">
                   {updateMsg && (
-                    <p className={`mt-2 text-xs flex items-center gap-1 ${updateStatus === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                    <p className={`mt-2 text-xs flex items-center gap-1 ${updateStatus === 'error' ? 'text-danger-600' : 'text-success-600'}`}>
                       {updateStatus === 'error' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                       {updateMsg}
                     </p>

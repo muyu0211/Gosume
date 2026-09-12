@@ -679,7 +679,7 @@ export function RichTextField({
                   key={c}
                   type="button"
                   title={c}
-                  className="w-5 h-5 rounded border border-surface-200 hover:scale-110 transition-transform"
+                  className="w-5 h-5 rounded border border-surface-200 hover:border-surface-400 transition-colors"
                   style={{ backgroundColor: c }}
                   onClick={() => applyColor(c)}
                 />
@@ -688,7 +688,7 @@ export function RichTextField({
             <div className="mt-2 pt-2 border-t border-surface-100 flex items-center justify-end">
               <button
                 type="button"
-                className="text-[12px] text-surface-500 hover:text-red-600"
+                className="text-[12px] text-surface-500 hover:text-danger-600"
                 onClick={clearColor}
               >
                 {t('noColor')}
