@@ -14,9 +14,9 @@
     ProcessorArchitecture="x64" />
   
   <Properties>
-    <DisplayName>My Product</DisplayName>
-    <PublisherDisplayName>My Company</PublisherDisplayName>
-    <Description>A Gosume application</Description>
+    <DisplayName>Gosume</DisplayName>
+    <PublisherDisplayName>Muyu</PublisherDisplayName>
+    <Description>Gosume - 专业 · 简洁 · 高颜值 · 本地优先</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   
