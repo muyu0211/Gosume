@@ -9,7 +9,8 @@ import { Tooltip } from '../ui/Tooltip'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { callService, isWails } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
-import { useT } from '../../lib/i18n'
+// useT → 响应式（渲染用）；t → 非响应式（effect/回调等不随语言重建的闭包里用）
+import { useT, t as tStatic } from '../../lib/i18n'
 import {
   SIZE_PRESETS, BG_PRESETS, mmToPx, centerCropToSize,
   canvasByteSize, downloadCanvas, formatBytes, cropCanvas, centeredAspectBox, fitAspectBox, applyMatte,
@@ -90,6 +91,11 @@ export function IdPhotoTool({ onBack }: Props) {
 
   const preset = SIZE_PRESETS.find((p) => p.id === presetId)
   const presetAspect = preset ? preset.widthMm / preset.heightMm : null
+
+  // matte 是否就绪且与当前源图匹配。换图后旧 matte 的宽高对不上 → 视为未就绪，
+  // 结果区显示「智能抠图中」遮罩，而不是短暂露出一张用旧 matte 合成的错图。
+  const matteReady =
+    !!matte && !!sourceImg && matte.width === sourceImg.naturalWidth && matte.height === sourceImg.naturalHeight
 
   // ReactCrop 受控 crop 使用「显示像素」空间（即预览画布尺寸），这是其 onChange 第一参
 // 的坐标系；用 preview px 与 cropNorm 互转，不受自然尺寸影响。
@@ -182,6 +188,15 @@ export function IdPhotoTool({ onBack }: Props) {
         setSourceUrl(url)
         setSourceImg(img)
         setCropNorm({ x: 0, y: 0, w: 1, h: 1 })
+        // 换图后上一张图的结果数据一律作废：matte（换底 alpha）与结果尺寸/字节数、
+        // 保存结果弹窗/保存错误，避免旧值短暂残留或被误读成新图的结果。
+        // （源图尺寸变化时下面的重建/字节数 effect 也会各自刷新，这里只做显式清空。）
+        setMatte(null)
+        setMatteError('')
+        setResultBytes(0)
+        setResultLabel('')
+        setSavedPath(null)
+        setSaveError('')
       }
       img.src = url
     }
@@ -193,7 +208,11 @@ export function IdPhotoTool({ onBack }: Props) {
     (img: HTMLImageElement, pid: string, d: number, cr: NormRect) => {
       let cur = canvasFrom(img)
       // AI 智能换底：用 matte 作为 alpha，在全图上垫目标底色，再随裁剪/缩放。
-      if (bgEnabled && matte) {
+      // 仅当 matte 与「当前源图」同尺寸时才应用 —— applyMatte 以 matte 的宽高作为
+      // 输出画布尺寸，用上一张图的 matte 合成会把旧人像轮廓压在新图上（叠影 bug）。
+      const matteOk =
+        bgEnabled && !!matte && matte.width === img.naturalWidth && matte.height === img.naturalHeight
+      if (matteOk && matte) {
         cur = applyMatte(cur, matte.width, matte.height, matte.alpha, bgRgb)
       }
       const nearFull = cr.x <= 0.001 && cr.y <= 0.001 && cr.w >= 0.999 && cr.h >= 0.999
@@ -216,27 +235,37 @@ export function IdPhotoTool({ onBack }: Props) {
         el.height = cur.height
         el.getContext('2d')!.drawImage(cur, 0, 0)
       }
-      setResultLabel(bgEnabled && !matte ? `${t('smartMattingShort')} ` : `${cur.width} × ${cur.height} px · `)
+      setResultLabel(bgEnabled && !matteOk ? `${t('smartMattingShort')} ` : `${cur.width} × ${cur.height} px · `)
     },
     [preview, bgEnabled, bgRgb, matte, t],
   )
 
   // AI 换底开启时，对源图做一次人像分割，得到 matte（缓存；换底色只改 bgRgb 不重抠）。
+  //
+  // 换图必须先清空上一张图的 matte：换底结果是「新图 + matte alpha」合成出来的，
+  // 若沿用旧 matte（尺寸/轮廓都是上一张图的），会把旧人像轮廓压在新图上 → 两张图的
+  // 换底结果叠在一起。清空后重建会退回原图并显示「智能抠图中」遮罩，直到新 matte 就绪。
+  //
+  // deps 刻意不含 t：useT() 每次渲染都会返回新函数，把 t 放进 deps 会让本 effect
+  // 在每次渲染后重跑 —— 每次都会取消掉进行中的推理（matte 永远更新不了）并反复重算。
+  // 错误文案用非响应式 t 取词（读取的是当下语言，与闭包时的语言一致）。
   useEffect(() => {
     if (!bgEnabled || !sourceImg) {
       setMatte(null)
       setMatteError('')
+      setMatting(false)
       return
     }
     let cancelled = false
-    setMatting(true)
+    setMatte(null)
     setMatteError('')
+    setMatting(true)
     computeMatte(sourceImg)
       .then((m) => {
         if (!cancelled) setMatte(m)
       })
       .catch((e) => {
-        if (!cancelled) setMatteError(extractErrorMessage(e, t('aiMattingFailed')))
+        if (!cancelled) setMatteError(extractErrorMessage(e, tStatic('aiMattingFailed')))
       })
       .finally(() => {
         if (!cancelled) setMatting(false)
@@ -244,7 +273,7 @@ export function IdPhotoTool({ onBack }: Props) {
     return () => {
       cancelled = true
     }
-  }, [bgEnabled, sourceImg, t])
+  }, [bgEnabled, sourceImg])
 
   // 像素重建用 rAF 节流：高频拖动（裁剪框/DIP 条）时同帧内只执行一次，避免每帧重算。
   useEffect(() => {
@@ -468,7 +497,7 @@ export function IdPhotoTool({ onBack }: Props) {
           </section>
 
           {/* 自由裁剪 */}
-          <section className="form-section">
+          {/* <section className="form-section">
             <div className="form-section-header">
               <div className="flex items-center gap-2">
                 <CropIcon className="size-icon-md text-surface-400" />
@@ -492,7 +521,7 @@ export function IdPhotoTool({ onBack }: Props) {
                 <CropIcon className="size-icon-md" /> {t('resetCrop')}
               </button>
             </div>
-          </section>
+          </section> */}
 
           {/* 换底（AI 智能抠图） */}
           <section className="form-section">
@@ -640,8 +669,8 @@ export function IdPhotoTool({ onBack }: Props) {
               ) : (
                 <canvas ref={previewRef} className="max-w-full max-h-[460px] w-auto h-auto animate-preview-enter" />
               )}
-              {/* 智能抠图进行中：半透明遮罩盖住结果图，避免误以为卡住 */}
-              {bgEnabled && !matte && matteError === '' && (
+              {/* 智能抠图进行中：半透明遮罩盖住结果图，避免误以为卡住（无源图时不盖空态占位） */}
+              {!empty && bgEnabled && !matteReady && matteError === '' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-50/70 backdrop-blur-[1px]">
                   <Loader2 className="size-icon-xl animate-spin text-primary-600" />
                   <span className="text-xs text-surface-500">{matting ? t('smartMattingShort') : t('generating')}</span>

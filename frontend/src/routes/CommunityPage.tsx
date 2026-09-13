@@ -25,6 +25,8 @@ import {
   WifiOff,
 } from 'lucide-react'
 import type { CommunityTemplate } from '../types/community'
+// useT → 响应式（渲染用）；t → 非响应式（useCallback 等不随语言重建的闭包里用）
+import { useT, t as tStatic } from '../lib/i18n'
 
 const PAGE_SIZE = 12
 
@@ -36,6 +38,7 @@ function formatDownloadCount(n: number): string {
 
 export function CommunityPage() {
   const navigate = useNavigate()
+  const t = useT()
   const localTemplates = useTemplateStore((s) => s.templates)
 
   const [items, setItems] = useState<CommunityTemplate[]>([])
@@ -77,7 +80,7 @@ export function CommunityPage() {
       setTotal(resp.total)
       setCategories((prev) => [...new Set([...prev, ...resp.items.map((i) => i.category).filter(Boolean)])])
     } catch (err) {
-      setError(extractErrorMessage(err, '访问模板社区失败，请检查网络后重试'))
+      setError(extractErrorMessage(err, tStatic('communityFetchFailed')))
       setItems([])
       setTotal(0)
     } finally {
@@ -124,13 +127,13 @@ export function CommunityPage() {
     try {
       const result = await downloadCommunityTemplate(tmpl.id)
       if (result) {
-        setSuccessMsg(`已下载并安装「${result.name}」，现在离线也能使用`)
+        setSuccessMsg(tStatic('templateDownloaded').replace('{name}', result.name))
         setItems((prev) => prev.map((t) => (t.id === tmpl.id ? { ...t, is_installed: true } : t)))
         setDetail((prev) => (prev && prev.id === tmpl.id ? { ...prev, is_installed: true } : prev))
       }
     } catch (err) {
       console.error('Download community template failed:', err)
-      setError(extractErrorMessage(err, '模板下载失败'))
+      setError(extractErrorMessage(err, tStatic('templateDownloadFailed')))
     } finally {
       setDownloadingId(null)
     }
@@ -146,9 +149,9 @@ export function CommunityPage() {
       const newCount = detail.rating_count + 1
       const newRating = (detail.rating * detail.rating_count + score) / newCount
       setDetail({ ...detail, rating: newRating, rating_count: newCount })
-      setSuccessMsg(`已提交 ${score} 星评分`)
+      setSuccessMsg(tStatic('ratingSubmitted').replace('{score}', String(score)))
     } catch (err) {
-      setError(extractErrorMessage(err, '评分提交失败'))
+      setError(extractErrorMessage(err, tStatic('ratingFailed')))
     } finally {
       setRatingId(null)
     }
@@ -162,13 +165,13 @@ export function CommunityPage() {
     try {
       const result = await publishCommunityTemplate(publishTemplateId)
       if (result) {
-        setSuccessMsg(`模板已发布到社区（ID: ${result.id}）`)
+        setSuccessMsg(tStatic('templatePublished').replace('{id}', String(result.id)))
         setPublishOpen(false)
         refresh()
       }
     } catch (err) {
       console.error('Publish template failed:', err)
-      setError(extractErrorMessage(err, '发布到社区失败'))
+      setError(extractErrorMessage(err, tStatic('publishFailed')))
     } finally {
       setPublishing(false)
     }
@@ -182,15 +185,15 @@ export function CommunityPage() {
       <header className="glass-shell flex items-center gap-3 px-8 py-5 border-b border-surface-100">
         <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm">
           <ArrowLeft className="size-icon-md" />
-          首页
+          {t('home')}
         </button>
         <div className="flex items-center gap-2">
           <div className="size-ctl-lg rounded-xl bg-primary-600/10 flex items-center justify-center">
             <Globe className="size-icon-lg text-primary-600" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-surface-800 leading-tight">模板社区</h1>
-            <p className="text-[12px] text-surface-400">在线模板市场 · 需联网访问，下载后可离线使用</p>
+            <h1 className="text-lg font-bold text-surface-800 leading-tight">{t('templateCommunity')}</h1>
+            <p className="text-[12px] text-surface-400">{t('communitySubtitle')}</p>
           </div>
         </div>
 
@@ -202,25 +205,25 @@ export function CommunityPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="搜索模板名称 / 标签"
+              placeholder={t('searchTemplatePlaceholder')}
               className="w-full h-9 pl-10 pr-20 rounded-full border border-surface-200 bg-elev text-sm text-surface-700 placeholder:text-surface-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-shadow"
             />
             <button
               onClick={handleSearch}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 h-7 rounded-md text-xs font-medium text-primary-700 hover:bg-primary-50 transition-colors"
             >
-              搜索
+              {t('search')}
             </button>
           </div>
         </div>
 
         <button onClick={refresh} className="btn-ghost btn-sm">
           <RefreshCw className={`size-icon-md ${loading ? 'animate-spin' : ''}`} />
-          刷新
+          {t('refresh')}
         </button>
         <button onClick={() => { setPublishOpen(true); setPublishTemplateId(localTemplates[0]?.id ?? '') }} className="btn-primary btn-sm">
           <Upload className="size-icon-md" />
-          发布模板
+          {t('publishTemplate')}
         </button>
       </header>
 
@@ -232,7 +235,7 @@ export function CommunityPage() {
             {error}
           </span>
           <button onClick={() => setError('')} className="text-danger-500 hover:text-danger-700 text-xs font-medium flex-shrink-0">
-            关闭
+            {t('close')}
           </button>
         </div>
       )}
@@ -243,7 +246,7 @@ export function CommunityPage() {
             {successMsg}
           </span>
           <button onClick={() => setSuccessMsg('')} className="text-success-500 hover:text-success-700 text-xs font-medium flex-shrink-0">
-            关闭
+            {t('close')}
           </button>
         </div>
       )}
@@ -253,11 +256,11 @@ export function CommunityPage() {
         {!configured ? (
           <div className="flex flex-col items-center justify-center py-24 text-surface-300">
             <Globe className="size-ctl-xl mb-3" />
-            <p className="text-sm text-surface-500">模板社区暂不可用</p>
-            <p className="text-xs mt-1">请确认已联网且社区服务已配置后重试</p>
+            <p className="text-sm text-surface-500">{t('communityUnavailable')}</p>
+            <p className="text-xs mt-1">{t('communityUnavailableHint')}</p>
             <button onClick={refresh} className="mt-4 btn-secondary btn-sm">
               <RefreshCw className={`size-icon-md ${loading ? 'animate-spin' : ''}`} />
-              重新尝试
+              {t('retry')}
             </button>
           </div>
         ) : (
@@ -265,7 +268,7 @@ export function CommunityPage() {
             {/* 分类筛选 */}
             <div className="flex items-center gap-2 mb-5 flex-wrap">
               <FilterChip active={!activeCategory} onClick={() => handleSelectCategory('')}>
-                全部
+                {t('all')}
               </FilterChip>
               {categories.map((cat) => (
                 <FilterChip key={cat} active={activeCategory === cat} onClick={() => handleSelectCategory(cat)}>
@@ -281,7 +284,7 @@ export function CommunityPage() {
             ) : items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-surface-300">
                 <Search className="size-ctl-xl mb-3" />
-                <p className="text-sm">没有找到符合条件的模板</p>
+                <p className="text-sm">{t('noMatchTemplate')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-3 xl:grid-cols-4 gap-5">
@@ -371,6 +374,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
   onOpen: () => void
   onDownload: () => void
 }) {
+  const t = useT()
   const color = template.colors?.primary || '#64748B'
   const [imgFailed, setImgFailed] = useState(false)
 
@@ -401,13 +405,13 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
         {template.is_installed && (
           <span className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-500/90 text-white text-[10px] font-medium shadow-sm">
             <CheckCircle2 className="w-3 h-3" />
-            已安装
+            {t('installed')}
           </span>
         )}
         {/* 色点 */}
         <div className="absolute bottom-2.5 left-2.5 flex gap-1">
-          <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: template.colors?.primary }} title="主色" />
-          <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: template.colors?.accent }} title="强调色" />
+          <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: template.colors?.primary }} title={t('primaryColor')} />
+          <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: template.colors?.accent }} title={t('accentColor')} />
         </div>
       </div>
       {/* 信息：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担） */}
@@ -417,7 +421,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
         <div className="flex items-center gap-3 mt-2 text-[12px] text-surface-400">
           <span className="flex items-center gap-1">
             <Star className="w-3 h-3 text-warning-400 fill-warning-400" />
-            {template.rating > 0 ? template.rating.toFixed(1) : '暂无'}
+            {template.rating > 0 ? template.rating.toFixed(1) : t('noRating')}
           </span>
           <span className="flex items-center gap-1">
             <Download className="w-3 h-3" />
@@ -431,7 +435,7 @@ function CommunityCard({ template, downloading, index, onOpen, onDownload }: {
               className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary-600 text-white text-[12px] font-medium hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              下载
+              {t('download')}
             </button>
           )}
         </div>
@@ -451,6 +455,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
   onClose: () => void
 }) {
   const modalRef = useRef<ModalHandle>(null)
+  const t = useT()
   const color = template.colors?.primary || '#64748B'
 
   return (
@@ -475,24 +480,24 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
             {template.is_installed && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-50 text-success-600 text-[10px] font-medium flex-shrink-0">
                 <CheckCircle2 className="w-3 h-3" />
-                已安装
+                {t('installed')}
               </span>
             )}
           </div>
           <p className="flex items-center gap-1 text-xs text-surface-400 mt-1">
             <User className="w-3 h-3" />
-            {template.published_by_name || template.author?.name || '社区用户'}
+            {template.published_by_name || template.author?.name || t('communityUser')}
             <span className="mx-1 text-surface-200">|</span>
             v{template.version}
           </p>
           {/* 评分与下载量 */}
           <div className="flex items-center gap-4 mt-3">
             <StarRating value={template.rating} size="size-icon-md" />
-            <span className="text-sm text-surface-600">{template.rating > 0 ? template.rating.toFixed(1) : '暂无'}</span>
-            <span className="text-xs text-surface-400">({template.rating_count} 人评分)</span>
+            <span className="text-sm text-surface-600">{template.rating > 0 ? template.rating.toFixed(1) : t('noRating')}</span>
+            <span className="text-xs text-surface-400">{t('nRatings').replace('{count}', String(template.rating_count))}</span>
             <span className="flex items-center gap-1 text-xs text-surface-400">
               <Download className="size-icon-sm" />
-              {template.download_count.toLocaleString()} 次下载
+              {t('nDownloads').replace('{count}', template.download_count.toLocaleString())}
             </span>
           </div>
           {/* 标签 */}
@@ -506,12 +511,12 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
       </div>
 
       <div className="flex-1 overflow-auto px-6 py-4">
-        <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">模板说明</h3>
-        <p className="text-sm text-surface-600 leading-relaxed whitespace-pre-wrap">{template.description || '暂无说明'}</p>
+        <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">{t('templateDesc')}</h3>
+        <p className="text-sm text-surface-600 leading-relaxed whitespace-pre-wrap">{template.description || t('noDescription')}</p>
 
         {/* 评分区 */}
         <div className="mt-5 pt-4 border-t border-surface-100">
-          <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">为模板评分</h3>
+          <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">{t('rateTemplate')}</h3>
           <div className="flex items-center gap-4">
             <StarRating value={detailScore} interactive onSelect={onSelectScore} size="size-icon-xl" />
             <button
@@ -520,7 +525,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
               className="btn-secondary btn-sm disabled:opacity-50"
             >
               {ratingId ? <Loader2 className="size-icon-sm animate-spin" /> : null}
-              提交评分
+              {t('submitRating')}
             </button>
           </div>
         </div>
@@ -534,7 +539,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
           className={`btn-sm ${template.is_installed ? 'btn-ghost pointer-events-none opacity-60' : 'btn-primary'}`}
         >
           {downloading ? <Loader2 className="size-icon-md animate-spin" /> : <Download className="size-icon-md" />}
-          {template.is_installed ? '已安装到本地' : '下载并安装'}
+          {template.is_installed ? t('installedLocally') : t('downloadAndInstall')}
         </button>
       </div>
     </Modal>
@@ -547,6 +552,7 @@ function StarRating({ value, interactive = false, onSelect, size = 'size-icon-md
   onSelect?: (score: number) => void
   size?: string
 }) {
+  const t = useT()
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -555,7 +561,7 @@ function StarRating({ value, interactive = false, onSelect, size = 'size-icon-md
           disabled={!interactive}
           onClick={() => onSelect?.(n)}
           className={`${size} ${interactive ? 'cursor-pointer hover:text-surface-500 transition-colors' : 'cursor-default'}`}
-          aria-label={`${n} 星`}
+          aria-label={t('nStars').replace('{n}', String(n))}
         >
           <Star className={`${n <= value ? 'text-warning-400 fill-warning-400' : 'text-surface-300'}`} />
         </button>
@@ -573,6 +579,7 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
   onClose: () => void
 }) {
   const modalRef = useRef<ModalHandle>(null)
+  const t = useT()
 
   return (
     <Modal ref={modalRef} onClose={onClose} width="w-[480px]">
@@ -580,14 +587,14 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <Upload className="size-icon-md text-primary-600" />
         </div>
-        <span className="text-base font-semibold text-surface-700">发布模板到社区</span>
+        <span className="text-base font-semibold text-surface-700">{t('publishToCommunity')}</span>
       </div>
       <div className="px-6 py-5">
         <p className="text-xs text-surface-400 mb-3">
-          选择要发布到模板社区的本地模板，社区其他用户即可下载使用。
+          {t('publishDesc')}
         </p>
         {templates.length === 0 ? (
-          <p className="text-sm text-surface-500 py-4 text-center">暂无可发布的本地模板</p>
+          <p className="text-sm text-surface-500 py-4 text-center">{t('noPublishableTemplate')}</p>
         ) : (
           <select
             value={selectedId}
@@ -601,14 +608,14 @@ function PublishModal({ templates, selectedId, publishing, onSelect, onPublish, 
         )}
       </div>
       <div className="flex items-center gap-3 px-6 py-4 border-t border-surface-100 justify-end">
-        <button onClick={onClose} className="btn-ghost btn-sm">取消</button>
+        <button onClick={onClose} className="btn-ghost btn-sm">{t('cancel')}</button>
         <button
           onClick={onPublish}
           disabled={!selectedId || publishing || templates.length === 0}
           className="btn-primary btn-sm disabled:opacity-50"
         >
           {publishing ? <Loader2 className="size-icon-md animate-spin" /> : <Upload className="size-icon-md" />}
-          发布
+          {t('publish')}
         </button>
       </div>
     </Modal>

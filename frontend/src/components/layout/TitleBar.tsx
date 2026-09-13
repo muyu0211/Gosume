@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { callService } from '../../services/backend'
+import { Events } from '@wailsio/runtime'
+import { callService, isWails } from '../../services/backend'
 import { useResumeStore } from '../../stores/resumeStore'
 import { isMacOS } from '../../lib/platform'
 import { useT } from '../../lib/i18n'
@@ -14,12 +15,26 @@ export function TitleBar() {
 
   useEffect(() => {
     if (isMac) return
-    // 窗口控制为火发即忘调用，失败静默（如窗口已关闭），避免 unhandled rejection
-    callService<boolean>('SystemService', 'IsWindowMaximised')
-      .then((v) => {
-        if (v) setIsMaximised(v)
-      })
-      .catch(() => { /* 忽略：非关键路径 */ })
+    // 以窗口**真实状态**为准（不乐观翻转）：
+    // 1) 挂载时查询一次；2) 订阅 Go 侧 WindowMaximise/UnMaximise 事件——
+    //    拖动还原、双击标题栏、Win+方向键等所有路径都会推送真实状态；
+    // 3) 视口 resize 兜底重查，覆盖事件遗漏的场景。
+    const refresh = () => {
+      callService<boolean>('SystemService', 'IsWindowMaximised')
+        .then((v) => setIsMaximised(!!v))
+        .catch(() => { /* 忽略：非关键路径 */ })
+    }
+    refresh()
+    const off = isWails()
+      ? Events.On('window:maximise-state', (ev) => {
+          setIsMaximised(!!(ev as { data?: unknown }).data)
+        })
+      : undefined
+    window.addEventListener('resize', refresh)
+    return () => {
+      window.removeEventListener('resize', refresh)
+      off?.()
+    }
   }, [isMac])
 
   const handleMinimize = useCallback(() => {
@@ -27,9 +42,11 @@ export function TitleBar() {
   }, [])
 
   const handleMaximize = useCallback(() => {
+    // 火发即忘，真实状态由 Go 侧 WindowMaximise/UnMaximise 事件推回。
+    // 不做本地乐观翻转——拖动还原等非按钮路径无法被乐观翻转覆盖，
+    // 那是旧实现「图标与实际状态相反」的根源。
     callService('SystemService', 'MaximizeWindow').catch(() => { /* 忽略 */ })
-    setIsMaximised(!isMaximised)
-  }, [isMaximised])
+  }, [])
 
   const handleClose = useCallback(() => {
     // 未保存守卫：有未保存更改时先弹二确（保存并继续 / 不保存并继续 / 取消），

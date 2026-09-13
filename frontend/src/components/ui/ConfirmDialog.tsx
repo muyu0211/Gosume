@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
+import { useT } from '../../lib/i18n'
 
 export interface ConfirmDialogProps {
   /** Whether the dialog is shown. */
@@ -35,18 +36,21 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmText = '确认',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   danger = false,
   loading = false,
   icon,
   showDontAskAgain = false,
   dontAskAgain = false,
-  dontAskAgainText = '本次不再提示',
+  dontAskAgainText,
   onDontAskAgainChange,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  // 默认按钮文案走 i18n：多数调用方只传 title/description，
+  // 「确认 / 取消 / 本次不再提示」由本组件兜底，语言切换时同步更新。
+  const t = useT()
   if (!open) return null
 
   const resolvedIcon = icon ?? (danger ? <AlertTriangle className="size-icon-lg text-danger-600" /> : null)
@@ -86,7 +90,7 @@ export function ConfirmDialog({
                 checked={dontAskAgain}
                 onChange={(e) => onDontAskAgainChange?.(e.target.checked)}
               />
-              <span>{dontAskAgainText}</span>
+              <span>{dontAskAgainText ?? t('dontAskAgain')}</span>
             </label>
           ) : (
             <span />
@@ -97,7 +101,7 @@ export function ConfirmDialog({
               disabled={loading}
               className="btn btn-secondary"
             >
-              {cancelText}
+              {cancelText ?? t('cancel')}
             </button>
             <button
               onClick={onConfirm}
@@ -105,7 +109,7 @@ export function ConfirmDialog({
               className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
             >
               {loading && <Loader2 className="size-icon-md animate-spin" />}
-              {confirmText}
+              {confirmText ?? t('confirm')}
             </button>
           </div>
         </div>

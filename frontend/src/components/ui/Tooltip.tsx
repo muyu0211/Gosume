@@ -44,6 +44,9 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
   const [pos, setPos] = useState<TipPos>({ top: 0, left: 0 })
   // 鼠标悬停延迟计时器：离开/失焦即取消，避免「划过也弹」与「离开后迟到弹出」。
   const timerRef = useRef<number | null>(null)
+  // 点击抑制标记：点击（mousedown）会紧随触发 focus，若不抑制会在点击瞬间弹出，
+  // 且焦点不离开就一直挂显。置位后本次聚焦周期内的 focus 不再立显，blur 时复位。
+  const suppressRef = useRef(false)
   const clearTimer = () => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
@@ -108,6 +111,19 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     setOpen(false)
   }
 
+  /** 鼠标按下：点击即视为「不提示」——取消悬停计时、立即隐藏已显示的提示，
+      并抑制紧随 focus 的立显（键盘 Tab 聚焦不经过 mousedown，不受影响）。 */
+  const onPress = () => {
+    suppressRef.current = true
+    hide()
+  }
+
+  /** 聚焦：键盘 Tab 聚焦立即显示（无障碍）；点击产生的 focus 被按下时置位的抑制标记拦下。 */
+  const handleFocus = () => {
+    if (suppressRef.current) return
+    reveal()
+  }
+
   // 打开时在绘制前定位（此时提示已挂载可测尺寸）。
   useLayoutEffect(() => {
     if (open) updatePos()
@@ -132,8 +148,12 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
       className={`inline-flex ${className}`}
       onMouseEnter={revealDelayed}
       onMouseLeave={hide}
-      onFocus={reveal}
-      onBlur={hide}
+      onMouseDown={onPress}
+      onFocus={handleFocus}
+      onBlur={() => {
+        suppressRef.current = false
+        hide()
+      }}
     >
       {children}
       {open &&

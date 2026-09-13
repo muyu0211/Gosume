@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Events } from '@wailsio/runtime'
-import { AlertCircle, ArrowRight, ArrowUpCircle, CheckCircle2, Download, RotateCw } from 'lucide-react'
+import { AlertCircle, AlertTriangle, ArrowRight, ArrowUpCircle, CheckCircle2, Download, RotateCw } from 'lucide-react'
 import { Modal, type ModalHandle } from './Modal'
 import { callService, isWails } from '../../services/backend'
 import { useResumeStore } from '../../stores/resumeStore'
 import { extractErrorMessage } from '../../lib/errorUtils'
+import { useT } from '../../lib/i18n'
 
 /**
  * 检查更新返回的版本信息（与后端 UpdateInfo 对齐，见《在线更新开发方案》§5/§6.3）。
@@ -53,17 +54,21 @@ interface UpdateDialogProps {
  * 4. error：错误信息 + 「重试下载」。
  */
 export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
+  const t = useT()
   const modalRef = useRef<ModalHandle>(null)
   const [stage, setStage] = useState<Stage>(info.update_ready ? 'ready' : 'available')
   const [progress, setProgress] = useState<number | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [applying, setApplying] = useState(false)
 
-  // 更新说明按行拆分为列表（appcast 的 notes 以 \n 分隔）
-  const notes = (info.tips ?? '')
+  // 更新说明（release_notes）按行拆分为列表（appcast 的 notes 以 \n 分隔）。
+  // tips 是区别于更新说明的「更新提示」，单独展示在更新说明下方（带警告图标）；
+  // tips 的兜底文案由后端负责（beta 包未传时默认提示谨慎更新），前端只做空值处理。
+  const notes = (info.release_notes ?? '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
+  const tips = (info.tips ?? '').trim()
 
   // 动态内容区：各 stage 的内容并排叠放为 grid 行，active 行展开为 1fr、
   // 其余折叠为 0fr，从而让卡片高度随 stage 切换平滑过渡（200ms，与设置页
@@ -75,7 +80,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       show: notes.length > 0,
       node: (
         <div>
-          <p className="text-xs font-medium text-surface-500 mb-1.5">更新内容</p>
+          <p className="text-xs font-medium text-surface-500 mb-1.5">{t('updateNotes')}</p>
           <ul className="space-y-1">
             {notes.map((line, idx) => (
               <li key={idx} className="flex items-start gap-2 text-sm text-surface-600">
@@ -88,12 +93,23 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       ),
     },
     {
+      key: 'tips',
+      // 更新提示（区别于更新说明）：软警示条独立于说明列表，置底显示
+      show: !!tips,
+      node: (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-warning-50 text-warning-700">
+          <AlertTriangle className="size-icon-md mt-0.5 shrink-0 text-warning-500" />
+          <span className="text-xs leading-relaxed whitespace-pre-line min-w-0">{tips}</span>
+        </div>
+      ),
+    },
+    {
       key: 'progress',
       show: stage === 'downloading',
       node: (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-surface-500">
-            <span>正在下载更新包…</span>
+            <span>{t('downloadingPkg')}</span>
             <span className="font-mono">{formatProgress(progress)}</span>
           </div>
           <div className="h-1.5 rounded-full bg-surface-100 overflow-hidden">
@@ -111,16 +127,16 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       node: (
         <div className="flex items-center gap-2 text-sm text-surface-600">
           <CheckCircle2 className="size-icon-md text-success-500 shrink-0" />
-          更新包已就绪，重启后自动完成安装。
+          {t('updateReadyHint')}
         </div>
       ),
     },
-    {
-      key: 'safety',
-      // 数据安全提示全阶段常驻，不随 stage 切换折叠
-      show: true,
-      node: <p className="text-xs text-surface-400">更新不会影响你的简历、模板与设置数据。</p>,
-    },
+    // {
+    //   key: 'safety',
+    //   // 数据安全提示全阶段常驻，不随 stage 切换折叠
+    //   show: true,
+    //   node: <p className="text-xs text-surface-400">更新不会影响你的简历、模板与设置数据。</p>,
+    // },
     {
       key: 'error',
       // 错误提示置于内容最下方，避免在更新说明中间突兀出现
@@ -184,7 +200,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
   const handleDownload = async () => {
     if (!info.download_url || !info.sha256) {
       setStage('error')
-      setErrorMsg('更新信息不完整，请重新检查更新')
+      setErrorMsg(t('updateInfoIncomplete'))
       return
     }
     setStage('downloading')
@@ -196,7 +212,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       await callService('UpdateService', 'DownloadUpdate', info.download_url, info.sha256)
     } catch (err) {
       setStage('error')
-      setErrorMsg(extractErrorMessage(err, '下载更新包失败，请稍后重试'))
+      setErrorMsg(extractErrorMessage(err, t('downloadUpdateFailed')))
     }
   }
 
@@ -222,7 +238,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       modalRef.current?.close()
     } catch (err) {
       setApplying(false)
-      setErrorMsg(extractErrorMessage(err, '启动更新失败'))
+      setErrorMsg(extractErrorMessage(err, t('applyUpdateFailed')))
       setStage('error')
     }
   }
@@ -235,16 +251,15 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       cardClassName="flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-6 py-3 border-b border-surface-100 flex-shrink-0">
+      <div className="flex items-center gap-2 px-6 py-3 border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
           <ArrowUpCircle className="size-icon-md text-primary-600" />
         </div>
-        <h2 className="text-base font-semibold text-surface-800">发现新版本</h2>
+        <h2 className="text-base font-semibold text-surface-800">{t('findNewPkg')}</h2>
       </div>
 
       {/* Body */}
       <div className="px-6 py-4">
-        {/* 版本对比 + 发布日期（固定块，不参与折叠） */}
         <div className="flex items-center gap-2 flex-wrap pb-4">
           <span className="px-2 py-0.5 rounded-md bg-surface-100 text-surface-500 font-mono text-sm">
             v{info.current_version ?? '—'}
@@ -272,43 +287,43 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
       </div>
 
       {/* Footer：按阶段切换按钮 */}
-      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-surface-100 flex-shrink-0">
+      <div className="flex items-center justify-end gap-2 px-6 py-4 border-surface-100 flex-shrink-0">
         {stage === 'available' && (
           <>
             <button onClick={handleClose} className="btn-secondary btn-sm">
-              稍后提醒
+              {t('remindLater')}
             </button>
             <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-              <Download className="size-icon-md" /> 立即下载
+              <Download className="size-icon-md" /> {t('downloadNow')}
             </button>
           </>
         )}
         {stage === 'downloading' && (
           <button onClick={handleCancelDownload} className="btn-secondary btn-sm">
-            取消
+            {t('cancel')}
           </button>
         )}
         {stage === 'ready' && (
           <>
             <button onClick={handleClose} className="btn-secondary btn-sm">
-              稍后安装
+              {t('installLater')}
             </button>
             <button
               onClick={handleInstall}
               disabled={applying}
               className="btn-primary btn-sm inline-flex items-center gap-1.5 disabled:opacity-60"
             >
-              <Download className="size-icon-md" /> {applying ? '正在准备…' : '重启并安装'}
+              <Download className="size-icon-md" /> {applying ? t('preparing') : t('restartAndInstall')}
             </button>
           </>
         )}
         {stage === 'error' && (
           <>
             <button onClick={handleClose} className="btn-secondary btn-sm">
-              关闭
+              {t('close')}
             </button>
             <button onClick={handleDownload} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-              <RotateCw className="size-icon-md" /> 重试下载
+              <RotateCw className="size-icon-md" /> {t('retryDownload')}
             </button>
           </>
         )}

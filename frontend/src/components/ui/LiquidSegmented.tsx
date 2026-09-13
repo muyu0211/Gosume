@@ -189,7 +189,6 @@ export function LiquidSegmented<T extends string = string>({
   return (
     <div
       ref={rootRef}
-      // data-lg：液态玻璃引擎（规范批次 1）的挂载点，引擎落地后自动获得真实折射
       data-lg
       className={`seg ${className}`}
       role="tablist"
@@ -219,7 +218,6 @@ export function LiquidSegmented<T extends string = string>({
               if (item.value !== value) onChange(item.value)
             }}
           >
-            {/* data-text 供 ::before 渲染隐藏的加粗副本，预留加粗后的宽度 */}
             <span className="seg-txt" data-text={item.label}>
               {item.label}
             </span>

@@ -417,7 +417,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   allResumes: { zh: '全部简历', en: 'All resumes' },
   all: { zh: '全部', en: 'All' },
   uncategorized: { zh: '未分类', en: 'Uncategorized' },
-  myFavorites: { zh: '我的收藏', en: 'My favorites' },
+  myFavorites: { zh: '我的收藏', en: 'Collection' },
   noTemplateInCategory: { zh: '当前分类下没有模板', en: 'No templates in this category' },
   recentOpened: { zh: '最近打开', en: 'Recent' },
   newVersionTip: { zh: '发现新版本 v{v}，点击查看', en: 'New version v{v} available, click to view' },
@@ -621,6 +621,86 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   loadingElipsis: { zh: '正在加载…', en: 'Loading…' },
   generating: { zh: '生成中…', en: 'Generating…' },
   dpiHint: { zh: '手动输入 DPI（72–600）', en: 'Enter DPI (72–600)' },
+
+
+  // 通用确认对话框（ConfirmDialog 默认值）
+  dontAskAgain: { zh: '本次不再提示', en: 'Don’t ask again' },
+
+  loadingResume: { zh: '正在加载简历…', en: 'Loading resume…' },
+
+  // 未保存更改确认对话框
+  unsavedTitle: { zh: '未保存的更改', en: 'Unsaved changes' },
+  unsavedDesc: {
+    zh: '当前简历有尚未保存的修改，是否先保存再离开？',
+    en: 'This resume has unsaved changes. Save them before leaving?',
+  },
+  unsavedCancelHint: { zh: '取消操作，停留在当前页面', en: 'Cancel and stay on this page' },
+  discard: { zh: '不保存', en: 'Don’t save' },
+  saveAndContinue: { zh: '保存并继续', en: 'Save & continue' },
+
+  // 更新模态窗口
+  findNewPkg: { zh: '发现新版本', en: 'New version found' },
+  updateNotes: { zh: '更新内容', en: 'What’s new' },
+  downloadingPkg: { zh: '正在下载更新包…', en: 'Downloading…' },
+  updateReadyHint: { zh: '更新包已就绪，重启后自动完成安装。', en: 'Ready — install finishes after restart.' },
+  remindLater: { zh: '稍后提醒', en: 'Later' },
+  downloadNow: { zh: '立即下载', en: 'Download' },
+  installLater: { zh: '稍后安装', en: 'Later' },
+  restartAndInstall: { zh: '重启并安装', en: 'Restart & install' },
+  preparing: { zh: '正在准备…', en: 'Preparing…' },
+  retryDownload: { zh: '重试下载', en: 'Retry' },
+  updateInfoIncomplete: { zh: '更新信息不完整，请重新检查更新', en: 'Update info incomplete — check again' },
+  downloadUpdateFailed: { zh: '下载更新包失败，请稍后重试', en: 'Download failed, please retry' },
+  applyUpdateFailed: { zh: '启动更新失败', en: 'Failed to start update' },
+
+  // 模板社区（页面 + 详情/发布模态）
+  communitySubtitle: {
+    zh: '在线模板市场 · 需联网访问，下载后可离线使用',
+    en: 'Online gallery · needs internet; works offline once downloaded',
+  },
+  search: { zh: '搜索', en: 'Search' },
+  searchTemplatePlaceholder: { zh: '搜索模板名称 / 标签', en: 'Search name or tag' },
+  refresh: { zh: '刷新', en: 'Refresh' },
+  publishTemplate: { zh: '发布模板', en: 'Publish' },
+  communityUnavailable: { zh: '模板社区暂不可用', en: 'Gallery unavailable' },
+  communityUnavailableHint: {
+    zh: '请确认已联网且社区服务已配置后重试',
+    en: 'Check your connection and gallery config, then retry',
+  },
+  retry: { zh: '重新尝试', en: 'Try again' },
+  noMatchTemplate: { zh: '没有找到符合条件的模板', en: 'No templates match' },
+  installed: { zh: '已安装', en: 'Installed' },
+  primaryColor: { zh: '主色', en: 'Primary' },
+  accentColor: { zh: '强调色', en: 'Accent' },
+  noRating: { zh: '暂无', en: 'No rating' },
+  download: { zh: '下载', en: 'Download' },
+  communityUser: { zh: '社区用户', en: 'Community user' },
+  nRatings: { zh: '({count} 人评分)', en: '({count} ratings)' },
+  nDownloads: { zh: '{count} 次下载', en: '{count} downloads' },
+  templateDesc: { zh: '模板说明', en: 'Description' },
+  noDescription: { zh: '暂无说明', en: 'No description' },
+  rateTemplate: { zh: '为模板评分', en: 'Rate this template' },
+  submitRating: { zh: '提交评分', en: 'Submit' },
+  installedLocally: { zh: '已安装到本地', en: 'Installed locally' },
+  downloadAndInstall: { zh: '下载并安装', en: 'Download & install' },
+  nStars: { zh: '{n} 星', en: '{n} stars' },
+  publishToCommunity: { zh: '发布模板到社区', en: 'Publish to gallery' },
+  publishDesc: {
+    zh: '选择要发布到模板社区的本地模板，社区其他用户即可下载使用。',
+    en: 'Pick a local template to publish — others can then download it.',
+  },
+  noPublishableTemplate: { zh: '暂无可发布的本地模板', en: 'No local templates to publish' },
+  publish: { zh: '发布', en: 'Publish' },
+  communityFetchFailed: { zh: '访问模板社区失败，请检查网络后重试', en: 'Cannot reach the gallery — check your network' },
+  templateDownloaded: {
+    zh: '已下载并安装「{name}」，现在离线也能使用',
+    en: 'Installed “{name}” — now usable offline',
+  },
+  templateDownloadFailed: { zh: '模板下载失败', en: 'Download failed' },
+  ratingSubmitted: { zh: '已提交 {score} 星评分', en: 'Rated {score} stars' },
+  ratingFailed: { zh: '评分提交失败', en: 'Rating failed' },
+  templatePublished: { zh: '模板已发布到社区（ID: {id}）', en: 'Published to gallery (ID: {id})' },
+  publishFailed: { zh: '发布到社区失败', en: 'Publish failed' },
 }
 
 /** 非响应式取词（事件回调/非组件场景用）。 */

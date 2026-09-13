@@ -17,6 +17,7 @@ import { usePreview } from '../hooks/usePreview'
 import { useAutoSave } from '../hooks/useAutoSave'
 import { callService } from '../services/backend'
 import { DEFAULT_PAPER } from '../lib/paper'
+import { useT } from '../lib/i18n'
 import { FileText, Loader2 } from 'lucide-react'
 
 const SAVE_KEY = 'resume-craft-project'
@@ -231,6 +232,7 @@ export function EditorPage() {
 }
 
 function EditorSkeleton() {
+  const t = useT()
   return (
     <div className="h-full flex flex-col bg-surface-50">
       {/* Toolbar skeleton */}
@@ -291,7 +293,7 @@ function EditorSkeleton() {
             <FileText className="w-12 h-12 text-surface-300" />
             <div className="flex items-center gap-2 text-surface-400">
               <Loader2 className="size-icon-md animate-spin" />
-              <span className="text-sm">正在加载简历...</span>
+              <span className="text-sm">{t('loadingResume')}</span>
             </div>
             <div className="w-48 h-2 rounded-full bg-surface-100 overflow-hidden">
               <div className="h-full bg-primary-400 rounded-full animate-loading-bar" style={{ width: '60%' }} />

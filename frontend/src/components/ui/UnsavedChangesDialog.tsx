@@ -1,5 +1,6 @@
 import { AlertTriangle, Loader2, X } from 'lucide-react'
 import { Tooltip } from './Tooltip'
+import { useT } from '../../lib/i18n'
 
 interface Props {
   open: boolean
@@ -22,6 +23,7 @@ interface Props {
  * - 关闭弹窗（遮罩 / X / Esc）→ 什么都不做，停留在原处
  */
 export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscardAndContinue, onClose }: Props) {
+  const t = useT()
   if (!open) return null
 
   return (
@@ -38,17 +40,17 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
             <AlertTriangle className="size-icon-lg text-warning-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-surface-800">未保存的更改</h3>
+            <h3 className="text-base font-semibold text-surface-800">{t('unsavedTitle')}</h3>
             <p className="text-sm text-surface-500 mt-1 leading-relaxed">
-              当前简历有尚未保存的修改，是否先保存再离开？
+              {t('unsavedDesc')}
             </p>
           </div>
-          <Tooltip label="取消操作，停留在当前页面">
+          <Tooltip label={t('unsavedCancelHint')}>
             <button
               onClick={onClose}
               disabled={saving}
               className="p-1 -m-1 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors disabled:opacity-50"
-              aria-label="关闭"
+              aria-label={t('close')}
             >
               <X className="size-icon-md" />
             </button>
@@ -60,7 +62,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
             disabled={saving}
             className="btn btn-secondary"
           >
-            不保存
+            {t('discard')}
           </button>
           <button
             onClick={onSaveAndContinue}
@@ -68,7 +70,7 @@ export function UnsavedChangesDialog({ open, saving, onSaveAndContinue, onDiscar
             className="btn btn-primary"
           >
             {saving && <Loader2 className="size-icon-md animate-spin" />}
-            {saving ? '保存中...' : '保存并继续'}
+            {saving ? t('saving') : t('saveAndContinue')}
           </button>
         </div>
       </div>

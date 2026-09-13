@@ -52,6 +52,16 @@ func (s *SystemService) Inject(app *application.App, configMgr *user_config.Mana
 		s.App.Event.Emit(event.WINDOW_CLOSE_REQUESTED)
 		wEvent.Cancel()
 	})
+
+	// 最大化/还原状态钩子：拖动还原、双击标题栏、Win+方向键等**所有**改变最大化
+	// 状态的路径都会触发对应事件。向前端广播真实状态，自绘最大化按钮的图标以此
+	// 为准——避免「拖动还原后图标不同步、此后显示状态与实际相反」的问题。
+	win.RegisterHook(events.Common.WindowMaximise, func(wEvent *application.WindowEvent) {
+		s.App.Event.Emit(event.WINDOW_MAXIMISE_STATE, true)
+	})
+	win.RegisterHook(events.Common.WindowUnMaximise, func(wEvent *application.WindowEvent) {
+		s.App.Event.Emit(event.WINDOW_MAXIMISE_STATE, false)
+	})
 }
 
 // ConfirmWindowClose 前端完成未保存确认（保存或不保存）后调用，真正关闭窗口。

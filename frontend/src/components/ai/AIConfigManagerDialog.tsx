@@ -55,7 +55,8 @@ export function AIConfigManagerDialog({ onClose }: Props) {
   const [configs, setConfigs] = useState<AIInfo[]>([])
   const [activeId, setActiveId] = useState('')
   const [selectedId, setSelectedId] = useState<string>('') // '' 表示新建态
-  const [form, setForm] = useState<Form>(() => emptyForm('配置1'))
+  const defaultName = t('aiConfigDefaultName').replace('{n}', '1')
+  const [form, setForm] = useState<Form>(() => emptyForm(defaultName))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -83,7 +84,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
       selectConfig(res.configs[0])
     } else {
       setSelectedId('')
-      setForm(emptyForm('配置1'))
+      setForm(emptyForm(defaultName))
     }
   }
 
@@ -249,7 +250,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
         if (next) selectConfig(next)
         else {
           setSelectedId('')
-          setForm(emptyForm('配置1'))
+          setForm(emptyForm(defaultName))
         }
       } else {
         await refresh()
