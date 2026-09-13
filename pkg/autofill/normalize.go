@@ -14,18 +14,18 @@ import (
 // 匹配表单控件的主要来源；各经历数组用于更精细的逐个填写。数据 == 对应用户
 // 简历的原始语义，字段键属于扩展与 Go 之间的内部契约，可随能力演进。
 type Payload struct {
-	ResumeName  string            `json:"resume_name"`
-	UpdatedAt   string            `json:"updated_at"`
-	Fields      map[string]string `json:"fields"`
-	Personal    model.Personal    `json:"personal"`
-	Summary     string            `json:"summary"`
-	Education   []model.Education `json:"education"`
-	Jobs        []model.Job       `json:"jobs"`
+	ResumeName  string             `json:"resume_name"`
+	UpdatedAt   string             `json:"updated_at"`
+	Fields      map[string]string  `json:"fields"`
+	Personal    model.Personal     `json:"personal"`
+	Summary     string             `json:"summary"`
+	Education   []model.Education  `json:"education"`
+	Jobs        []model.Job        `json:"jobs"`
 	Internships []model.Internship `json:"internships"`
-	Projects    []model.Project   `json:"projects"`
-	Skills      []string          `json:"skills"`
-	Languages   []model.Language  `json:"languages"`
-	Awards      []model.Award     `json:"awards"`
+	Projects    []model.Project    `json:"projects"`
+	Skills      []string           `json:"skills"`
+	Languages   []model.Language   `json:"languages"`
+	Awards      []model.Award      `json:"awards"`
 }
 
 // Normalize 把简历折叠为扩展可直接消费的 Payload。
@@ -64,10 +64,22 @@ func Normalize(r *model.Resume) Payload {
 	put(f, "birthday", per.Birthday)
 	put(f, "gender", per.Gender)
 	put(f, "target_position", per.JobTitle)
+	put(f, "native_place", per.NativePlace)
+	put(f, "ethnicity", per.Ethnicity)
+	put(f, "political_status", per.PoliticalStatus)
+	put(f, "party_join_date", per.PartyJoinDate)
+	put(f, "marital_status", per.MaritalStatus)
+	put(f, "household_registration", per.HouseholdReg)
+	put(f, "current_residence", per.CurrentResidence)
+	put(f, "title_rank", per.TitleRank)
+	put(f, "summary", p.Summary)
+
+	if per.Age > 0 {
+		put(f, "age", strconv.Itoa(per.Age))
+	}
 	if per.YearsOfExp > 0 {
 		put(f, "years_of_exp", strconv.Itoa(per.YearsOfExp))
 	}
-	put(f, "summary", p.Summary)
 
 	// 取首条可见教育经历填充常用表单字段。
 	if len(p.Education) > 0 {

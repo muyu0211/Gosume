@@ -10,6 +10,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { AnimatedRange } from '../ui/AnimatedRange'
+import { MonthPicker } from '../ui/MonthPicker'
+import { ExtrasEditor } from './ExtrasEditor'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
@@ -280,6 +282,21 @@ export function PersonalSection() {
 
   const clampDim = (v: number) => Math.min(200, Math.max(40, v))
 
+  // 政治面貌 / 婚姻状况选项：value 存中文原文（与模板渲染、autofill 直接兼容），label 走 i18n。
+  const POLITICAL_OPTIONS = [
+    { value: '群众', labelKey: 'polMass' },
+    { value: '共青团员', labelKey: 'polLeague' },
+    { value: '中共党员', labelKey: 'polParty' },
+    { value: '中共预备党员', labelKey: 'polProbationary' },
+    { value: '民主党派成员', labelKey: 'polDemocratic' },
+    { value: '无党派人士', labelKey: 'polNonPartisan' },
+  ]
+  const MARITAL_OPTIONS = [
+    { value: '未婚', labelKey: 'marUnmarried' },
+    { value: '已婚', labelKey: 'marMarried' },
+    { value: '保密', labelKey: 'marSecret' },
+  ]
+
   const handleWidthChange = (w: number) => {
     let newH = animHRef.current
     if (lockRatio) {
@@ -536,9 +553,69 @@ export function PersonalSection() {
           <label className="form-label">{t('wechat')}</label>
           <input className="form-input" value={p.wechat || ''} onChange={handleChange('wechat')} placeholder={t('wechatPlaceholder')} maxLength={50} />
         </div>
-        <div className="col-span-2">
+        {/* 国央企求职场景档案字段：布局/间距/字体/标签样式与上方字段完全一致（同一 grid）。 */}
+        <div>
+          <label className="form-label">{t('nativePlace')}</label>
+          <input className="form-input" value={p.native_place || ''} onChange={handleChange('native_place')} placeholder="河北石家庄" maxLength={50} />
+        </div>
+        <div>
+          <label className="form-label">{t('ethnicity')}</label>
+          <input className="form-input" value={p.ethnicity || ''} onChange={handleChange('ethnicity')} placeholder="汉族" maxLength={20} />
+        </div>
+        <div>
+          <label className="form-label">{t('birthday')}</label>
+          <MonthPicker value={p.birthday || ''} onChange={(v) => updateField('personal.birthday', v)} />
+        </div>
+        <div>
+          <label className="form-label">{t('age')}</label>
+          <input className="form-input" value={p.age ?? ''} onChange={(e) => updateField('personal.age', parseInt(e.target.value) || 0)} type="number" min={16} max={70} placeholder="28" />
+        </div>
+        <div>
+          <label className="form-label">{t('politicalStatus')}</label>
+          <CustomSelect
+            value={p.political_status || ''}
+            onChange={(v) => updateField('personal.political_status', v)}
+            options={POLITICAL_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }) as SelectOption)}
+            placeholder={t('politicalStatus')}
+          />
+        </div>
+        <div>
+          <label className="form-label">{t('maritalStatus')}</label>
+          <CustomSelect
+            value={p.marital_status || ''}
+            onChange={(v) => updateField('personal.marital_status', v)}
+            options={MARITAL_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }) as SelectOption)}
+            placeholder={t('maritalStatus')}
+          />
+        </div>
+        <div>
+          <label className="form-label">{t('partyJoinDate')}</label>
+          <MonthPicker value={p.party_join_date || ''} onChange={(v) => updateField('personal.party_join_date', v)} />
+        </div>
+        <div>
+          <label className="form-label">{t('titleRank')}</label>
+          <input className="form-input" value={p.title_rank || ''} onChange={handleChange('title_rank')} placeholder="工程师 / 中级" maxLength={50} />
+        </div>
+        <div>
+          <label className="form-label">{t('householdRegistration')}</label>
+          <input className="form-input" value={p.household_registration || ''} onChange={handleChange('household_registration')} placeholder="河北省石家庄市" maxLength={100} />
+        </div>
+        <div>
+          <label className="form-label">{t('currentResidence')}</label>
+          <input className="form-input" value={p.current_residence || ''} onChange={handleChange('current_residence')} placeholder="北京市海淀区" maxLength={100} />
+        </div>
+        <div>
           <label className="form-label">{t('yearsOfExp')}</label>
           <input className="form-input" value={p.years_of_exp || ''} onChange={(e) => updateField('personal.years_of_exp', parseInt(e.target.value) || 0)} type="number" min={0} max={50} placeholder="5" />
+        </div>
+        {/* 自定义字段：字段名/字段值由用户输入，支持增删改；复用 ExtrasEditor（与项目成果子项同组件，
+            样式、入场动画一致）。直接删除（无二确），数据写 personal.extras。 */}
+        <div className="col-span-2">
+          <label className="form-label">{t('customFields')}</label>
+          <ExtrasEditor
+            extras={p.extras || []}
+            onChange={(extras) => updateField('personal.extras', extras)}
+          />
         </div>
       </div>
     </div>

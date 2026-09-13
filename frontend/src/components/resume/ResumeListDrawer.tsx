@@ -215,29 +215,56 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
   const allSelected = resumeList.length > 0 && selectedIds.size === resumeList.length
   const batchCount = selectedIds.size
 
+  // 全选按钮宽度过渡：文案在「全选 ↔ 取消全选」间切换会改变宽度，
+  // 用 WAAPI 从旧宽平滑过渡到新宽（时长/曲线与条目动效一致；reduced-motion 直切）。
+  const selectAllBtnRef = useRef<HTMLButtonElement>(null)
+  const handleSelectAllAnimated = useCallback(() => {
+    const el = selectAllBtnRef.current
+    if (!el || !el.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      handleSelectAll()
+      return
+    }
+    const from = el.offsetWidth
+    handleSelectAll()
+    requestAnimationFrame(() => {
+      const to = el.offsetWidth
+      if (to === from) return
+      el.style.overflow = 'hidden'
+      const anim = el.animate(
+        [{ width: from + 'px' }, { width: to + 'px' }],
+        { duration: 200, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+      )
+      const cleanup = () => {
+        el.style.overflow = ''
+      }
+      anim.finished.then(cleanup).catch(cleanup)
+    })
+  }, [handleSelectAll])
+
   if (phase === 'closed') return null
 
   const isActive = phase === 'open' || phase === 'entering'
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex justify-end transition-all duration-300 ${
+      className={`fixed inset-0 z-50 flex justify-end p-3 transition-all duration-300 ${
         isActive
           ? 'bg-[var(--material-overlay)] backdrop-blur-sm'
           : 'bg-transparent backdrop-blur-none'
       }`}
       onClick={onClose}
     >
-      {/* Drawer panel */}
+      {/* Drawer panel：四周留 12px 外边距（悬浮层次）+ 规范模态圆角（--radius-glass-modal 22px）。
+          收起位移用 110% 而非 100% —— 面板与屏幕边缘之间有 12px 间距，100% 位移会在屏内残留 12px。 */}
       <div
         onTransitionEnd={handleTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className={`w-[420px] max-w-[90vw] h-full bg-elev shadow-2xl flex flex-col transition-all duration-300 ${
+        className={`w-[420px] max-w-[90vw] h-full bg-elev shadow-2xl rounded-glass-modal overflow-hidden flex flex-col transition-all duration-300 ${
           phase === 'entering'
-            ? 'translate-x-full'
+            ? 'translate-x-[110%]'
             : phase === 'open'
             ? 'translate-x-0'
-            : 'translate-x-full'
+            : 'translate-x-[110%]'
         }`}
       >
         {/* Header */}
@@ -252,8 +279,9 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           <div className="flex items-center gap-1">
             {resumeList.length > 0 && (
               <button
-                onClick={handleSelectAll}
-                className="px-3 py-1.5 text-xs font-medium text-surface-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                ref={selectAllBtnRef}
+                onClick={handleSelectAllAnimated}
+                className="glass glass-chip h-ctl-sm px-3 text-xs font-medium whitespace-nowrap !text-primary-700 hover:!text-primary-900 transition-colors"
               >
                 {allSelected ? t('deselectAll') : t('selectAll')}
               </button>
@@ -347,12 +375,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
           >
             <div className="flex items-center justify-between px-4 py-2 bg-primary-50 border-b border-primary-100">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleSelectAll}
-                  className="text-xs font-medium text-primary-700 hover:text-primary-900 transition-colors"
-                >
-                  {allSelected ? t('deselectAll') : t('selectAll')}
-                </button>
+                
                 <span className="text-xs text-primary-600">
                   {t('selectedNPieces').replace('{count}', String(batchCount))}
                 </span>
@@ -360,14 +383,14 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleBatchExportClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+                  className="btn btn-primary btn-sm"
                 >
                   <Download className="size-icon-sm" />
                   {t('batchExport')}
                 </button>
                 <button
                   onClick={handleBatchDeleteClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-danger-600 hover:bg-danger-700 rounded-lg transition-colors"
+                  className="btn btn-danger btn-sm"
                 >
                   <Trash2 className="size-icon-sm" />
                   {t('batchDelete')}

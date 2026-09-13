@@ -14,7 +14,9 @@
     ]
   },
   "include": [
-    "src/components/editor",
-    "src/hooks"
+    "src/components/editor/PersonalSection.tsx",
+    "src/components/editor/ExtrasEditor.tsx",
+    "src/types/resume.ts",
+    "src/lib/i18n.ts"
   ]
 }

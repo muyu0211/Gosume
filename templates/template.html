@@ -75,6 +75,36 @@
                     {{if .Personal.Location}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
                             .Meta.Language "城市" "Location"}}</span><span
                             class="r-contact-value">{{.Personal.Location}}</span></div>{{end}}
+                    {{if .Personal.NativePlace}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "籍贯" "Native Place"}}</span><span
+                            class="r-contact-value">{{.Personal.NativePlace}}</span></div>{{end}}
+                    {{if .Personal.Ethnicity}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "民族" "Ethnicity"}}</span><span
+                            class="r-contact-value">{{.Personal.Ethnicity}}</span></div>{{end}}
+                    {{if .Personal.Birthday}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "出生日期" "Date of Birth"}}</span><span
+                            class="r-contact-value">{{.Personal.Birthday}}</span></div>{{end}}
+                    {{if .Personal.Age}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "年龄" "Age"}}</span><span class="r-contact-value">{{.Personal.Age}}
+                            {{i18n .Meta.Language "岁" "yrs"}}</span></div>{{end}}
+                    {{if .Personal.PoliticalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "政治面貌" "Political Status"}}</span><span
+                            class="r-contact-value">{{.Personal.PoliticalStatus}}</span></div>{{end}}
+                    {{if .Personal.MaritalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "婚姻状况" "Marital Status"}}</span><span
+                            class="r-contact-value">{{.Personal.MaritalStatus}}</span></div>{{end}}
+                    {{if .Personal.PartyJoinDate}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "入党/入团时间" "Party Join Date"}}</span><span
+                            class="r-contact-value">{{.Personal.PartyJoinDate}}</span></div>{{end}}
+                    {{if .Personal.HouseholdRegistration}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "户口所在地" "Household Registration"}}</span><span
+                            class="r-contact-value">{{.Personal.HouseholdRegistration}}</span></div>{{end}}
+                    {{if .Personal.CurrentResidence}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "现居住地" "Current Residence"}}</span><span
+                            class="r-contact-value">{{.Personal.CurrentResidence}}</span></div>{{end}}
+                    {{if .Personal.TitleRank}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                            .Meta.Language "职称/职级" "Title · Rank"}}</span><span
+                            class="r-contact-value">{{.Personal.TitleRank}}</span></div>{{end}}
                     {{if .Personal.Website}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
                             .Meta.Language "网站" "Website"}}</span><span
                             class="r-contact-value">{{.Personal.Website}}</span></div>{{end}}
@@ -83,6 +113,9 @@
                     {{if .Personal.LinkedIn}}<div class="r-contact-item"><span
                             class="r-contact-label">LinkedIn</span><span
                             class="r-contact-value">{{.Personal.LinkedIn}}</span></div>{{end}}
+                    {{if .Personal.Extras}}{{range .Personal.Extras}}<div class="r-contact-item"><span
+                            class="r-contact-label">{{.Label}}</span><span
+                            class="r-contact-value">{{mdInline .Value}}</span></div>{{end}}{{end}}
                 </div>
 
                 {{if .Languages}}

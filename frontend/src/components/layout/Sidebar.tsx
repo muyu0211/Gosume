@@ -43,7 +43,7 @@ export function Sidebar({ onExport }: SidebarProps) {
             onClick={() => setActiveSection(id)}
             className={`size-ctl-xl flex items-center justify-center rounded-full transition-all duration-150 group relative ${
               isActive
-                ? 'bg-primary-600 text-white shadow-sm shadow-primary-600/25'
+                ? 'editor-tab-on text-white'
                 : 'text-surface-400 hover:text-surface-600 hover:bg-surface-200'
             } ${isFlash ? 'animate-tab-blink' : ''}`}
           >

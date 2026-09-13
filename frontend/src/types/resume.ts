@@ -73,6 +73,18 @@ export interface Personal {
   gender?: 'male' | 'female' | 'other'
   job_title?: string
   years_of_exp?: number
+  /** 国央企求职场景的常见档案字段（全部可选，旧数据缺省即空）。 */
+  native_place?: string
+  ethnicity?: string
+  political_status?: string
+  party_join_date?: string
+  marital_status?: string
+  household_registration?: string
+  current_residence?: string
+  title_rank?: string
+  age?: number
+  /** 用户自定义键值字段（字段名/字段值自行输入），与 Project.extras 同构。 */
+  extras?: ExtraField[]
 }
 
 export interface PersonalSummary {

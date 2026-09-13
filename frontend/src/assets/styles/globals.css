@@ -987,10 +987,17 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   box-shadow: inset 0 0 0 var(--border-thin) rgb(var(--primary-400));
 }
 
-/* 编辑页左侧模块导航 tab（Sidebar）：**不用玻璃** —— tab 排布密集（gap 2px），
-   叠加玻璃描边/投影后视觉杂乱（用户实测反馈），保持简洁的底色悬停 + 实色选中。
-   曾短暂使用过 .nav-tab 玻璃样式，2026-09-13 按用户决策移除；样式由 markup 内
-   Tailwind 工具类表达（hover:bg-surface-200 / 选中 bg-primary-600），此处不再定义全局类。 */
+/* 编辑页左侧模块导航 tab（Sidebar）激活态：主色实色玻璃（液态玻璃规范对彩色控件的
+   既定配方，同 .btn-primary —— --glass-sheen 光泽渐变 + glass-layers 高光边缘 + 玻璃投影）。
+   ⚠ **不加 backdrop-filter**：tab 间距仅 2px < 模糊半径 10px，会触发「相邻控件互相采样」
+   的串扰 bug（见 .glass-blur 注释）；2026-09-13 用户要求为激活 tab 补充液态玻璃质感，
+   按规范用实色玻璃配方实现（未选中 tab 保持原样不变）。
+   特异度 (0,1,0)，与 .glass 系列同层；仅在 Sidebar markup 中按 activeSection 挂载/摘除。 */
+.editor-tab-on {
+  background-color: rgb(var(--primary-600));
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-layers), var(--glass-shadow);
+}
 
 /* 应用外壳（标题栏 / 侧栏 / 工具栏 / 状态栏）：贴边的整条玻璃面。
    不设圆角与投影 —— 外壳由窗口裁剪，分界用既有的 hairline 边框表达。 */

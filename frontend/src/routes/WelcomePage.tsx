@@ -701,7 +701,7 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="glass glass-card hover-lift group cursor-pointer overflow-hidden animate-card-enter"
+      className="glass glass-card hover-lift group cursor-pointer overflow-hidden animate-card-enter flex flex-col"
       style={{ animationDelay: `${index * 60}ms`, containerType: 'inline-size' }}
     >
       {/* Preview area */}
@@ -792,11 +792,13 @@ function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, is
           </div>
         </div>
       </div>
-      {/* Meta info：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担） */}
-      <div className="glass-plate p-4">
+      {/* Meta info：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担）。
+          flex-1 拉伸填满卡片剩余高度（网格等高拉伸时单行描述卡也占满，不露底部空条），
+          标签 mt-auto 固定贴底 —— 单行/多行描述的卡片标签高度一致。 */}
+      <div className="glass-plate p-4 flex-1 flex flex-col">
         <h3 className="text-sm font-semibold text-surface-800">{template.name}</h3>
         <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
-        <div className="flex gap-1.5 mt-2">
+        <div className="flex gap-1.5 mt-auto pt-2">
           {template.tags.slice(0, 3).map((tag) => (
             <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-surface-100 text-surface-500 font-medium">
               {tag}
