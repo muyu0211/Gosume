@@ -52,7 +52,7 @@ export interface AIProviderPreset {
 
 export const AI_PRESETS: AIProviderPreset[] = [
   { value: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-  { value: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { value: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash' },
   { value: 'qwen', label: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
   { value: 'kimi', label: 'Kimi（月之暗面）', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
   { value: 'zhipu', label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4/', model: 'glm-4-flash' },
@@ -61,7 +61,7 @@ export const AI_PRESETS: AIProviderPreset[] = [
 /** 各供应商的常用模型候选，供「模型名称」下拉快捷选择（用户仍可手动输入任意模型名）。 */
 export const AI_MODELS_BY_PROVIDER: Record<string, string[]> = {
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'o1-mini'],
-  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  deepseek: ['deepseek-flash', 'deepseek-v4-pro'],
   qwen: ['qwen-plus', 'qwen-turbo', 'qwen-max', 'qwen-long'],
   kimi: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
   zhipu: ['glm-4-flash', 'glm-4-air', 'glm-4', 'glm-4-plus'],

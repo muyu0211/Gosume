@@ -369,7 +369,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   exportFmt: { zh: '导出 {fmt}', en: 'Export {fmt}' },
   dragReorder: { zh: '拖拽排序', en: 'Drag to reorder' },
   fieldName: { zh: '字段名', en: 'Field name' },
-  fieldValuePlaceholder: { zh: '字段值（如：React, Go，可加粗）', en: 'Field value (e.g. React, Go; supports bold)' },
+  fieldValuePlaceholder: { zh: '字段值', en: 'Field value' },
   addExtraField: { zh: '添加扩展项', en: 'Add field' },
   hideNotShow: { zh: '隐藏', en: 'Hide' },
   present: { zh: '至今', en: 'Present' },

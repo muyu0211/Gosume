@@ -12,6 +12,7 @@ import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { AnimatedRange } from '../ui/AnimatedRange'
 import { MonthPicker } from '../ui/MonthPicker'
 import { ExtrasEditor } from './ExtrasEditor'
+import { ETHNICITY_OPTIONS, DEFAULT_ETHNICITY, isKnownEthnicity } from '../../lib/ethnicityOptions'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
@@ -297,6 +298,15 @@ export function PersonalSection() {
     { value: '保密', labelKey: 'marSecret' },
   ]
 
+  // 民族选项：集中清单 + 兼容历史自由文本值。
+  // 该字段早期是文本框，存量数据可能不在 56 个民族清单内（如「汉」「穿青人」），
+  // 这类非清单值插到首位原样回显，保证「编辑时已保存的值一定能看到」。
+  // （常见情况直接用模块级常量，不产生新数组，避免每次渲染都换 options 引用。）
+  const ethnicityOptions: SelectOption[] =
+    p && p.ethnicity && !isKnownEthnicity(p.ethnicity)
+      ? [{ value: p.ethnicity, label: p.ethnicity }, ...ETHNICITY_OPTIONS]
+      : ETHNICITY_OPTIONS
+
   const handleWidthChange = (w: number) => {
     let newH = animHRef.current
     if (lockRatio) {
@@ -560,7 +570,20 @@ export function PersonalSection() {
         </div>
         <div>
           <label className="form-label">{t('ethnicity')}</label>
-          <input className="form-input" value={p.ethnicity || ''} onChange={handleChange('ethnicity')} placeholder="汉族" maxLength={20} />
+          {/*
+            民族：选项来自 lib/ethnicityOptions 集中维护的 56 个民族清单。
+            · value/label 都是中文原名，与 political_status / marital_status 一致，
+              模板渲染与后端 autofill 无需映射，提交格式不变（personal.ethnicity 字符串）。
+            · 未选择时展示默认项「汉族」（清单首位），只有用户主动选择才写入数据。
+            · 存量数据是自由文本输入的，可能落在清单之外（如「汉」「穿青人」），
+              这种值原样回显到选项首位，避免显示成空的占位符、也避免用户不小心覆盖掉。
+          */}
+          <CustomSelect
+            value={p.ethnicity || DEFAULT_ETHNICITY}
+            onChange={(v) => updateField('personal.ethnicity', v)}
+            options={ethnicityOptions}
+            placeholder={t('ethnicity')}
+          />
         </div>
         <div>
           <label className="form-label">{t('birthday')}</label>
