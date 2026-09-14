@@ -162,7 +162,7 @@ Go:   gosume/pkg/resume/service.ResumeService.NewResume(templateID string, langu
 - **简历数据**：JSON（`*model.Resume`）序列化存入 SQLite `resumes.data` 列，`is_deleted` 标志软删除。
 - **简历样式定制（per-resume custom_css）**：`resume.CustomCSS` 字符串字段以「带哨兵段的 CSS」承载页边距/内容间距/头像/信息区布局/字体/字号。后端只做存储透传**不解析**哨兵段；段的生成与反向解析契约在**前端** `frontend/src/lib/customCss.ts`（详见 `frontend/AGENTS.md` 页面布局小节）。
 - **模板**：内置模板从 `templates/`（embedded）加载；用户模板存 SQLite `TemplateRepo`。支持导入/导出 `.zip` 模板包（`template_importer`/`template_exporter`）。
-- **AI 配置**：`ai_config.json` 存于数据目录（`user_config` 管理），含多套配置与当前启用 ID，API Key 持久化、回包脱敏。
+- **AI 配置**：`ai_config.json` 存于数据目录（`user_config` 管理），含多套配置与当前启用 ID，API Key 持久化、回包脱敏。**配置无名称字段：模型名即标识与展示名，且在同一 provider 下唯一**，唯一性由 `AIService.SaveAIConfig` 在写入时校验（`findByModel`，忽略大小写）。
 - **主题/语言**：主题经 `SystemService.GetTheme/SetTheme` 持久化到 `config.json`；应用 UI 语言由前端本地存储（不经后端）。
 - **最近文件 / import 日志**：以 JSON 存数据目录；模板导入历史存 SQLite（`ListImportLogs`）。
 - SQLite pragma：WAL 模式、外键约束、5 秒忙等待超时。

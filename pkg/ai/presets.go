@@ -21,7 +21,7 @@ type Preset struct {
 func Presets() map[string]Preset {
 	return map[string]Preset{
 		ProviderOpenAI:   {BaseURL: "https://api.openai.com/v1", Model: "gpt-4o-mini"},
-		ProviderDeepSeek: {BaseURL: "https://api.deepseek.com/v1", Model: "deepseek-chat"},
+		ProviderDeepSeek: {BaseURL: "https://api.deepseek.com", Model: "deepseek-chat"},
 		ProviderQWen:     {BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", Model: "qwen-plus"},
 		ProviderKimi:     {BaseURL: "https://api.moonshot.cn/v1", Model: "moonshot-v1-8k"},
 		ProviderZhipu:    {BaseURL: "https://open.bigmodel.cn/api/paas/v4/", Model: "glm-4-flash"},

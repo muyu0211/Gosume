@@ -421,7 +421,7 @@ export function SettingsPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-surface-700 truncate">
                   <span className="text-surface-400">{t('aiActivePrefix')}</span>
-                  {activeAI?.name || t('aiNoActive')}
+                  {activeAI?.model || t('aiNoActive')}
                 </p>
                 <p className="text-[11px] text-surface-400 truncate">{activeAI?.provider || ''}</p>
               </div>

@@ -24,10 +24,9 @@ interface Props {
   onClose: () => void
 }
 
-/** 当前编辑表单状态。 */
+/** 当前编辑表单状态。配置无自定义名，模型名即标识与展示名。 */
 interface Form {
   id?: string
-  name: string
   provider: string
   base_url: string
   api_key: string
@@ -36,8 +35,7 @@ interface Form {
   keyMasked?: string
 }
 
-const emptyForm = (name: string): Form => ({
-  name,
+const emptyForm = (): Form => ({
   provider: 'custom',
   base_url: '',
   api_key: '',
@@ -55,8 +53,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
   const [configs, setConfigs] = useState<AIInfo[]>([])
   const [activeId, setActiveId] = useState('')
   const [selectedId, setSelectedId] = useState<string>('') // '' 表示新建态
-  const defaultName = t('aiConfigDefaultName').replace('{n}', '1')
-  const [form, setForm] = useState<Form>(() => emptyForm(defaultName))
+  const [form, setForm] = useState<Form>(() => emptyForm())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -84,7 +81,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
       selectConfig(res.configs[0])
     } else {
       setSelectedId('')
-      setForm(emptyForm(defaultName))
+      setForm(emptyForm())
     }
   }
 
@@ -108,7 +105,6 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     setShowKey(false)
     setForm({
       id: info.id,
-      name: info.name,
       provider: info.provider,
       base_url: info.base_url,
       model: info.model,
@@ -124,10 +120,9 @@ export function AIConfigManagerDialog({ onClose }: Props) {
 
   // 新建配置
   const startNew = () => {
-    const n = configs.length + 1
     setSelectedId('')
     setShowKey(false)
-    setForm(emptyForm(t('aiConfigDefaultName').replace('{n}', String(n))))
+    setForm(emptyForm())
     setStatus('')
     setTestMsg('')
   }
@@ -150,13 +145,29 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     }
   }
 
-  // 模型候选 + 自定义
+  // 同一服务商下已配置过的模型（排除当前正在编辑的那套），用于下拉标注与保存前查重。
+  // 大小写不敏感，与后端 findByModel 的唯一性口径一致。
+  const usedModels = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of configs) {
+      if (c.id === form.id) continue
+      if (c.provider !== form.provider) continue
+      set.add(c.model.trim().toLowerCase())
+    }
+    return set
+  }, [configs, form.id, form.provider])
+
+  // 模型候选 + 自定义（已配置的给「已配置」提示，减少误选）
   const modelOptions = useMemo(
     () => [
-      ...(AI_MODELS_BY_PROVIDER[form.provider] ?? []).map((m) => ({ value: m, label: m })),
+      ...(AI_MODELS_BY_PROVIDER[form.provider] ?? []).map((m) => ({
+        value: m,
+        label: m,
+        hint: usedModels.has(m.toLowerCase()) ? t('aiModelAdded') : undefined,
+      })),
       { value: '__custom__', label: t('aiCustomModel') },
     ],
-    [form.provider, t],
+    [form.provider, t, usedModels],
   )
   const modelValue = aiCustom ? '__custom__' : form.model
   const onModelChange = (value: string) => {
@@ -168,10 +179,12 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     setForm((f) => ({ ...f, model: value }))
   }
 
-  // 校验
+  // 校验（后端会再查一次，这里只为即时反馈）
   const validate = (): string | null => {
     if (!/^https?:\/\//.test(form.base_url.trim())) return t('aiInvalidUrl')
-    if (!form.model.trim()) return t('aiModelRequired')
+    const model = form.model.trim()
+    if (!model) return t('aiModelRequired')
+    if (usedModels.has(model.toLowerCase())) return t('aiModelDuplicate').replace('{model}', model)
     if (!form.api_key.trim() && !form.hasKey) return t('aiKeyRequired')
     return null
   }
@@ -189,7 +202,6 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     try {
       const payload: AIConfigInput = {
         id: form.id,
-        name: form.name.trim() || undefined,
         provider: form.provider || 'custom',
         base_url: form.base_url.trim(),
         model: form.model.trim(),
@@ -250,7 +262,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
         if (next) selectConfig(next)
         else {
           setSelectedId('')
-          setForm(emptyForm(defaultName))
+          setForm(emptyForm())
         }
       } else {
         await refresh()
@@ -292,7 +304,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                   <>
                     <ProviderLogo provider={act?.provider || 'custom'} size={20} />
                     <span className="text-xs text-surface-600 truncate">
-                      {t('aiActivePrefix')} {act ? act.name : `— ${t('aiNoActive')}`}
+                      {t('aiActivePrefix')} {act ? act.model : `— ${t('aiNoActive')}`}
                     </span>
                     {act && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-primary-700 bg-primary-50 rounded">
@@ -309,7 +321,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                 <CustomSelect
                   value={activeId}
                   onChange={handleSetActive}
-                  options={configs.map((c) => ({ value: c.id, label: c.name }))}
+                  options={configs.map((c) => ({ value: c.id, label: c.model }))}
                   placeholder={t('aiSwitchActive')}
                 />
               </div>
@@ -340,7 +352,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
                 >
                   <ProviderLogo provider={c.provider} size={22} />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${selectedId === c.id ? 'font-medium text-primary-700' : 'text-surface-700'}`}>{c.name}</p>
+                    <p className={`text-sm truncate ${selectedId === c.id ? 'font-medium text-primary-700' : 'text-surface-700'}`}>{c.model}</p>
                     <p className="text-[11px] text-surface-400 truncate">{c.provider}</p>
                   </div>
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -403,15 +415,9 @@ export function AIConfigManagerDialog({ onClose }: Props) {
             <div className="space-y-3">
               <div className="flex items-center gap-3 mb-1">
                 <ProviderLogo provider={form.provider} size={28} />
-                <div className="flex-1">
-                  <label className="form-label mb-1">{t('aiConfigName')}</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder={t('aiConfigNamePlaceholder')}
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-surface-700 truncate">{form.model.trim() || t('aiNameByModel')}</p>
+                  <p className="text-[11px] text-surface-400">{t('aiNameByModelHint')}</p>
                 </div>
               </div>
 
@@ -514,7 +520,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
       <ConfirmDialog
         open={confirmDelete}
         title={t('aiDeleteTitle')}
-        description={`${t('aiDeleteConfirm')}\n${pendingDelete?.name ?? ''}\n\n${t('aiDeleteKeyNote')}`}
+        description={`${t('aiDeleteConfirm').replace('{model}', pendingDelete?.model ?? '')}\n\n${t('aiDeleteKeyNote')}`}
         confirmText={t('aiDelete')}
         icon={<Trash2 className="size-icon-lg text-danger-600" />}
         onConfirm={handleDelete}

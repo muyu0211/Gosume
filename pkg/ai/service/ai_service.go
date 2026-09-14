@@ -19,9 +19,9 @@ import (
 // AIConfigItem 是返回给前端的单套配置视图。
 // API Key 默认脱敏；only 配置管理列表（ListAIConfigs）经 withKey 下发完整 Key，
 // 供用户在「显示」时查看真实明文。其余场景（如 AI 可用性判定）保持脱敏不返回。
+// 配置没有独立的名称字段：模型名即标识与展示名（同一 provider 下唯一）。
 type AIConfigItem struct {
 	ID        string `json:"id"`
-	Name      string `json:"name"`
 	Provider  string `json:"provider"`
 	BaseURL   string `json:"base_url"`
 	Model     string `json:"model"`
@@ -100,7 +100,6 @@ func (s *AIService) active() (ai.AIUnit, bool) {
 func toItem(u ai.AIUnit, isActive bool, withKey bool) AIConfigItem {
 	item := AIConfigItem{
 		ID:        u.ID,
-		Name:      u.Name,
 		Provider:  u.Provider,
 		BaseURL:   u.BaseURL,
 		Model:     u.Model,
@@ -136,7 +135,6 @@ func (s *AIService) GetAIConfig() *util.Response {
 // SaveAIConfig 新增或更新一套配置。
 // 前端回传的 api_key 若为脱敏串（含 * 占位）表示未改动，沿用已保存的完整 Key。
 func (s *AIService) SaveAIConfig(cfg ai.AIUnit) *util.Response {
-	cfg.Name = strings.TrimSpace(cfg.Name)
 	cfg.Provider = strings.TrimSpace(cfg.Provider)
 	cfg.BaseURL = strings.TrimSpace(cfg.BaseURL)
 	cfg.Model = strings.TrimSpace(cfg.Model)
@@ -166,15 +164,16 @@ func (s *AIService) SaveAIConfig(cfg ai.AIUnit) *util.Response {
 		}
 	} else {
 		cfg.ID = ai.NewID()
-		if cfg.Name == "" {
-			cfg.Name = defaultName(len(c.Configs))
-		}
-	}
-	if cfg.Name == "" {
-		cfg.Name = c.Configs[idx].Name
 	}
 	if cfg.APIKey == "" {
 		return util.DoRsp(util.ErrCode, "API Key 不能为空", nil)
+	}
+
+	// 同一服务商下模型名唯一：新增或改模型撞到别的配置时直接拒绝，
+	// 保证「模型名」能无歧义地指代一套配置。
+	if i, dup := findByModel(c.Configs, cfg.Provider, cfg.Model); dup && (!exist || c.Configs[i].ID != cfg.ID) {
+		log.Warnf("[ai_service] SaveAIConfig: 模型名重复被拒 provider=%s model=%s", cfg.Provider, cfg.Model)
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("「%s」已配置过，同一服务商下模型名不能重复", cfg.Model), nil)
 	}
 
 	// 应用
@@ -193,7 +192,7 @@ func (s *AIService) SaveAIConfig(cfg ai.AIUnit) *util.Response {
 		return util.DoRsp(util.ErrCode, "保存 AI 配置失败，请稍后重试", nil)
 	}
 
-	log.Infof("[ai_service] SaveAIConfig: id=%s name=%s provider=%s model=%s", cfg.ID, cfg.Name, cfg.Provider, cfg.Model)
+	log.Infof("[ai_service] SaveAIConfig: id=%s provider=%s model=%s", cfg.ID, cfg.Provider, cfg.Model)
 	return util.DoRsp(util.SuccCode, "已保存", &AIConfigItem{ID: cfg.ID})
 }
 
@@ -354,8 +353,14 @@ func unitExists(list []ai.AIUnit, id string) bool {
 	return ok
 }
 
-func defaultName(count int) string {
-	return fmt.Sprintf("配置%d", count+1)
+// findByModel 按「服务商 + 模型名」查找配置（忽略大小写，与唯一性口径一致）。
+func findByModel(list []ai.AIUnit, provider, model string) (int, bool) {
+	for i, u := range list {
+		if strings.EqualFold(u.Provider, provider) && strings.EqualFold(u.Model, model) {
+			return i, true
+		}
+	}
+	return -1, false
 }
 
 func toItems(list []ai.AIUnit, activeID string, withKey bool) []AIConfigItem {

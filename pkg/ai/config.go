@@ -13,15 +13,17 @@ const aiConfigFileName = "ai_config.json"
 
 // AIUnit 是单套 AI 配置单元。
 //
+// 配置没有独立的名称：模型名即配置的标识与展示名，且在同一 provider 下唯一
+// （唯一性由 AIService.SaveAIConfig 在写入时校验）。
+//
 // APIKey 为明文存储（0600 权限限制）。对外回包、日志一律经 MaskKey 脱敏，
 // 后续如需更严格安全可升级为系统钥匙串（Windows Credential Manager / macOS Keychain）。
 type AIUnit struct {
 	ID       string `json:"id"`
-	Name     string `json:"name"`     // 自定义配置名（默认如「配置1」）
 	Provider string `json:"provider"` // provider 标识（openai/deepseek/qwen/kimi/zhipu/custom）
 	BaseURL  string `json:"base_url"` // 大模型服务 Base URL（含 /v1 等版本前缀）
 	APIKey   string `json:"api_key"`  // API Key（明文）
-	Model    string `json:"model"`    // 模型名
+	Model    string `json:"model"`    // 模型名，同时作为配置标识与展示名
 }
 
 // AIConfig 是 AI 配置的根容器：多套配置 + 单「当前启用」。
