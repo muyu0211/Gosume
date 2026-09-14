@@ -23,13 +23,27 @@ import { BACKGROUND_PRESETS, type BackgroundId } from '../lib/background'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
 
-/** 左右分栏宽度（%）持久化键与范围。 */
+/**
+ * 左右分栏宽度（%）持久化键与范围。
+ * 上限取 50：左栏最多占界面一半，右侧工具箱至少保住另一半，
+ * 避免左栏被拖到把工具箱挤成一条缝。
+ */
 const SPLIT_KEY = 'gosume-settings-split'
-const SPLIT_RANGE = { min: 28, max: 72 }
+const SPLIT_RANGE = { min: 28, max: 50 }
+/** 首次打开（无持久化值）时的默认分栏宽度。 */
+const DEFAULT_SPLIT = 42
 
+/**
+ * 读取持久化的分栏宽度，钳制在 SPLIT_RANGE 内。
+ * ⚠ 必须先判断 getItem 的 null：Number(null) === 0 是**有限数**，
+ *    直接 Number(getItem()) 会让「没有存过值」走到钳制分支落到 min，
+ *    空串同理（Number('') 也是 0），故 null / 空白串 / 非数字一并回落到默认值。
+ */
 function readSplit(): number {
-  const v = Number(localStorage.getItem(SPLIT_KEY))
-  if (!Number.isFinite(v)) return 42
+  const raw = localStorage.getItem(SPLIT_KEY)
+  if (raw === null || raw.trim() === '') return DEFAULT_SPLIT
+  const v = Number(raw)
+  if (!Number.isFinite(v)) return DEFAULT_SPLIT
   return Math.min(SPLIT_RANGE.max, Math.max(SPLIT_RANGE.min, v))
 }
 
@@ -135,12 +149,12 @@ export function SettingsPage() {
         return
       }
 
-      // 存在更新
+      // 检查是否存在更新
       if (info.has_update) {
         setUpdateInfo(info)
       } else {
         setUpdateStatus('latest')
-        setUpdateMsg(info.tips || t('upToDate'))
+        setUpdateMsg(t('upToDate'))
       }
     } catch (err) {
       setUpdateStatus('error')
