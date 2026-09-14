@@ -182,17 +182,15 @@ export function StylePanel() {
 
   return (
     <div
-      className="flex-shrink-0 overflow-hidden bg-surface-100 relative"
+      className="flex-shrink-0 overflow-hidden relative"
       style={{
         width: open ? width : 0,
         transition: dragging ? 'none' : 'width 220ms ease',
       }}
     >
-      {/* 内层固定宽度：动画/拖拽期间内容不重排，仅由外层 overflow-hidden 裁切；
-          左缘边框放在内层，收起动画时随内容一起滑出，避免 0 宽外层残留 1px 竖线。
-          内容透明度随呼出/隐藏淡入淡出，与宽度滑动配合成弹入弹出效果（拖拽时无过渡）。 */}
+
       <div
-        className="h-full flex flex-col border-l border-surface-200"
+        className="h-full flex flex-col border-l border-surface-200 glass-shell"
         style={{
           width,
           opacity: open ? 1 : 0,

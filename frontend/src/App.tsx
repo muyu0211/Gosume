@@ -2,12 +2,15 @@ import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { Events } from '@wailsio/runtime'
 import { TitleBar } from './components/layout/TitleBar'
+import { AppBackground } from './components/layout/AppBackground'
 import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { CommunityPage } from './routes/CommunityPage'
 import { useResumeStore } from './stores/resumeStore'
 import { useThemeStore } from './stores/themeStore'
+import { useAppStore } from './stores/appStore'
+import { applyBackgroundToDocument } from './lib/background'
 import { applyPlatformToDocument } from './lib/platform'
 import { useLiquidGlass } from './hooks/useLiquidGlass'
 import { isWails, callService } from './services/backend'
@@ -37,6 +40,12 @@ export default function App() {
 
   // 加载持久化主题选项并覆盖启动默认值；选择「跟随系统」时监听系统深浅色
   // 变化，自动在麦色/深色间切换（PR-10）。
+  // 启动时把本地持久化的壁纸选项写进 <html data-app-bg>（store 初值已读取，
+  // 但 DOM 属性要在这里补一次，否则首屏仍是纯底色）。
+  useEffect(() => {
+    applyBackgroundToDocument(useAppStore.getState().background)
+  }, [])
+
   useEffect(() => {
     useThemeStore.getState().ensureLoaded().catch(() => { /* default applies */ })
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -60,7 +69,10 @@ export default function App() {
 
   return (
     <HashRouter>
-      <div className="h-screen flex flex-col bg-surface-50">
+      {/* 壁纸层放最前：z-index:-1，绘制在所有普通内容之下（见 globals.css）。
+          必须在挂载时就有正确的 data-app-bg —— 状态初值直接取自本地持久化值。 */}
+      <div className="h-screen flex flex-col app-canvas">
+        <AppBackground />
         <TitleBar />
         <div className="flex-1 overflow-hidden">
         <Routes>

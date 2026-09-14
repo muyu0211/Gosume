@@ -250,6 +250,8 @@ html[data-theme='classic'] {
   --accent-pink: 255 45 85;
   --accent-graphite: 142 142 147;
 
+  --bg-glow: 0.30;
+
   /* 层级背景 & 外壳 */
   --elev: 255 255 255;
   --app-bg: #FBFBFD;
@@ -367,6 +369,9 @@ html[data-theme='wheat'] {
   --accent-pink: 255 45 85;
   --accent-graphite: 142 142 147;
 
+  /* 暖调主题的光斑略降：暖白底本身就偏暖，再叠饱和色容易发闷 */
+  --bg-glow: 0.28;
+
   --elev: 255 255 255;
   --app-bg: #FFFDFA;
   --titlebar-bg: #FFFDFA;
@@ -478,6 +483,10 @@ html[data-theme='obsidian'] {
   --accent-pink: 255 55 95;
   --accent-graphite: 152 152 157;
 
+  /* 深色下提高浓度：低透明度的彩色压在近黑底上几乎不可见，
+     提上去才有「深空里的极光」效果，同时不至于把正文压掉（光斑在边缘）。 */
+  --bg-glow: 0.42;
+
   --elev: 44 44 46; /* #2C2C2E 卡片/浮层 */
   --app-bg: #1C1C1E;
   --titlebar-bg: #1C1C1E;
@@ -510,6 +519,133 @@ html[data-theme='obsidian'] {
   --selection-fg: #FFFFFF;
 }
 
+/* ===== 应用背景壁纸（渐变）=====
+   入口：设置页「外观 · 背景」；选中项写入 <html data-app-bg="...">。
+
+   · 资源形态：**纯 CSS 渐变，不引入任何图片文件** —— 0 字节、不占加载、随窗口
+     无损缩放，且能直接吃主题装饰色 --accent-*，一套配方同时覆盖浅色与深色主题。
+   · 单一来源：壁纸层（.app-bg-face）与设置页色板（.app-bg-swatch）都只消费
+     --bg-image，所以「预览小图」与「实际背景」必然一致，不会有两份配色漂移。
+   · 深浅主题：光斑颜色固定用装饰色，浓度由各主题的 --bg-glow 控制
+     （浅色 0.28~0.30 保持简约，深色 0.42 才在近黑底上看得见）。
+   · 渐变收尾用 `rgb(... / 0)` 而不是 transparent 关键字：显式同色零_alpha，
+     彻底避免插值时途经灰阶的隐患。 */
+[data-app-bg='none'] {
+  --bg-image: none;
+}
+
+/* 极光：靛蓝 + 紫 + 青（冷调，最贴近玻璃拟态的常见示例） */
+[data-app-bg='aurora'] {
+  --bg-image:
+    radial-gradient(120% 95% at 6% -6%, rgb(var(--accent-indigo) / var(--bg-glow)) 0%, rgb(var(--accent-indigo) / 0) 58%),
+    radial-gradient(115% 90% at 96% 2%, rgb(var(--accent-purple) / var(--bg-glow)) 0%, rgb(var(--accent-purple) / 0) 60%),
+    radial-gradient(130% 110% at 74% 104%, rgb(var(--accent-teal) / var(--bg-glow)) 0%, rgb(var(--accent-teal) / 0) 62%);
+}
+
+/* 晨曦：粉 + 橙 + 黄（暖调，日出方向的柔和光斑） */
+[data-app-bg='dawn'] {
+  --bg-image:
+    radial-gradient(120% 95% at 4% -4%, rgb(var(--accent-pink) / var(--bg-glow)) 0%, rgb(var(--accent-pink) / 0) 55%),
+    radial-gradient(115% 95% at 98% 6%, rgb(var(--accent-orange) / var(--bg-glow)) 0%, rgb(var(--accent-orange) / 0) 58%),
+    radial-gradient(130% 110% at 62% 106%, rgb(var(--accent-yellow) / var(--bg-glow)) 0%, rgb(var(--accent-yellow) / 0) 62%);
+}
+
+/* 薄荷：青 + 蓝 + 绿（清透，浅色下最克制的一档） */
+[data-app-bg='mint'] {
+  --bg-image:
+    radial-gradient(120% 95% at 2% 0%, rgb(var(--accent-teal) / var(--bg-glow)) 0%, rgb(var(--accent-teal) / 0) 56%),
+    radial-gradient(110% 85% at 98% 16%, rgb(var(--accent-blue) / var(--bg-glow)) 0%, rgb(var(--accent-blue) / 0) 54%),
+    radial-gradient(130% 110% at 26% 106%, rgb(var(--accent-green) / var(--bg-glow)) 0%, rgb(var(--accent-green) / 0) 60%);
+}
+
+/* 暮色：靛蓝 + 紫 + 粉（比极光更沉，光斑集中在下半部） */
+[data-app-bg='dusk'] {
+  --bg-image:
+    radial-gradient(125% 100% at 10% -8%, rgb(var(--accent-indigo) / var(--bg-glow)) 0%, rgb(var(--accent-indigo) / 0) 54%),
+    radial-gradient(125% 110% at 88% 96%, rgb(var(--accent-purple) / var(--bg-glow)) 0%, rgb(var(--accent-purple) / 0) 60%),
+    radial-gradient(120% 100% at 22% 108%, rgb(var(--accent-pink) / var(--bg-glow)) 0%, rgb(var(--accent-pink) / 0) 58%);
+}
+
+/* 沙丘：橙 + 黄 + 红（暖沙尘，与麦色主题最搭） */
+[data-app-bg='dune'] {
+  --bg-image:
+    radial-gradient(120% 95% at 6% -4%, rgb(var(--accent-orange) / var(--bg-glow)) 0%, rgb(var(--accent-orange) / 0) 56%),
+    radial-gradient(115% 95% at 94% 4%, rgb(var(--accent-yellow) / var(--bg-glow)) 0%, rgb(var(--accent-yellow) / 0) 58%),
+    radial-gradient(130% 110% at 70% 106%, rgb(var(--accent-red) / var(--bg-glow)) 0%, rgb(var(--accent-red) / 0) 60%);
+}
+
+/* 石墨：纯灰度层次（只要纵深不要颜色，最保守的一档） */
+[data-app-bg='graphite'] {
+  --bg-image:
+    radial-gradient(120% 95% at 4% -6%, rgb(var(--accent-graphite) / var(--bg-glow)) 0%, rgb(var(--accent-graphite) / 0) 56%),
+    radial-gradient(120% 100% at 96% 100%, rgb(var(--accent-graphite) / var(--bg-glow)) 0%, rgb(var(--accent-graphite) / 0) 58%),
+    radial-gradient(110% 90% at 90% 0%, rgb(var(--accent-graphite) / var(--bg-glow)) 0%, rgb(var(--accent-graphite) / 0) 52%);
+}
+
+/* 启用壁纸时：页面画布转透明让壁纸透出（带过渡，切换不闪），
+   并把容器类玻璃略微调透（0.78→0.72）—— 这是「通透感增强」的直接来源：
+   底下一有色彩层次，玻璃的模糊与折射才看得出来；0.72 仍保证正文 4.5:1 以上。
+   ⚠ 只降容器档：控件档（--lg-tint）维持不变，小控件上的文字余量更小。 */
+html[data-app-bg]:not([data-app-bg='none']) .app-canvas {
+  background-color: transparent;
+}
+
+html[data-app-bg]:not([data-app-bg='none']) {
+  --lg-tint-panel: 0.72;
+  --lg-tint-modal: 0.84;
+}
+
+/* 页面画布：默认铺主题底色；启用壁纸后由上面的规则转透明。
+   只加在页面根元素上，不要加到卡片/面板（那里该用 glass-* 系列）。 */
+.app-canvas {
+  background-color: rgb(var(--surface-50));
+  transition: background-color var(--dur-slow) var(--ease-apple);
+}
+
+/* 壁纸层：铺满窗口、固定在内容之下（z-index:-1 → 绘制顺序在普通内容之下，
+   但仍在 html 画布背景之上），不接收指针事件。
+   ⚠ 不要用 z-index:0/auto —— 那会让它盖在未定位的页面内容之上。 */
+.app-bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 壁纸层的两个「面」：换壁纸时新的那一面淡入、旧的淡出（交叉溶解）。
+   background-image 本身不可插值，所以只能靠两层叠着做交叉淡入。 */
+.app-bg-face {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-image);
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-apple);
+}
+
+.app-bg-face.is-on {
+  opacity: 1;
+}
+
+/* 设置页的壁纸色板：直接吃 --bg-image（与被选中的真实背景同一份定义），
+   渐变用百分比定位，缩到色板尺寸仍然是同一张「图」的取景。 */
+.app-bg-swatch {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background-color: rgb(var(--surface-50));
+  background-image: var(--bg-image);
+  box-shadow: inset 0 0 0 var(--border-thin) var(--hairline-strong);
+  transition: box-shadow var(--dur-fast) var(--ease-apple);
+}
+
+/* 选中态：2px 主色内描边（inset，不占布局）。必须排在上一条之后 —— 同为 (0,1,0)。 */
+.app-bg-swatch-on {
+  box-shadow: inset 0 0 0 var(--border-thick) rgb(var(--primary-500));
+}
+
 /* ===== 无障碍回退 ===== */
 
 /* 关闭透明度：材质退化为不透明实色（仍可读）
@@ -533,6 +669,14 @@ html[data-theme='obsidian'] {
     /* 模糊也一并关掉：降低透明度的本意就是「接近实色」，此时模糊已无意义，
        还省掉一层合成开销。 */
     --lg-blur: 0px;
+  }
+
+  /* 壁纸只调低容器档玻璃的不透明度（见「应用背景壁纸」段），在关闭透明度的
+     场景下必须让位 —— 这里 (0,3,1) 压过那条 (0,2,1) 的常规规则，
+     保证剩下的可读性兜底不被壁纸设置削弱。 */
+  html[data-theme][data-app-bg]:not([data-app-bg='none']) {
+    --lg-tint-panel: 0.98;
+    --lg-tint-modal: 0.98;
   }
 }
 

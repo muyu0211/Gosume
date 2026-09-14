@@ -180,7 +180,7 @@ export function CommunityPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-surface-50">
+    <AnimatedPage className="h-full flex flex-col app-canvas">
       {/* Header */}
       <header className="glass-shell flex items-center gap-3 px-8 py-5 border-b border-surface-100">
         <button onClick={() => navigate('/')} className="flex items-center gap-1.5 btn-ghost btn-sm">

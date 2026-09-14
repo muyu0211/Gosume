@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download, Plug, Copy, Check, Wrench, Sparkles, Eye, EyeOff, Settings2 } from 'lucide-react'
+import { Settings, Globe, Palette, HardDrive, FolderOpen, Info, ArrowLeft, Loader2, CheckCircle, AlertCircle, Download, Plug, Copy, Check, Wrench, Sparkles, Eye, EyeOff, Settings2, Image as ImageIcon } from 'lucide-react'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
@@ -19,6 +19,7 @@ import { AI_PRESETS, AI_MODELS_BY_PROVIDER, getAIConfig, saveAIConfig, testConne
 import { extractErrorMessage } from '../lib/errorUtils'
 import { useT } from '../lib/i18n'
 import type { ThemeMode } from '../lib/theme'
+import { BACKGROUND_PRESETS, type BackgroundId } from '../lib/background'
 
 const AUTOSAVE_PREF_KEY = 'resume-craft-autosave-enabled'
 
@@ -81,6 +82,14 @@ export function SettingsPage() {
   const handleThemeChange = async (mode: ThemeMode) => {
     await useThemeStore.getState().setMode(mode)
   }
+  // 背景壁纸：选项写入 appStore（持久化 localStorage + 立即写入 <html data-app-bg>），
+  // 切换后当前页面即刻变化，无需刷新。
+  const background = useAppStore((s) => s.background)
+  const setBackground = useAppStore((s) => s.setBackground)
+  const handleBackgroundChange = (id: BackgroundId) => {
+    setBackground(id)
+  }
+
   const themeOptions: Array<{ value: ThemeMode; titleKey: string; descKey: string }> = [
     { value: 'system', titleKey: 'themeSystem', descKey: 'themeSystemDesc' },
     { value: 'wheat', titleKey: 'themeWheat', descKey: 'themeWheatDesc' },
@@ -223,9 +232,12 @@ export function SettingsPage() {
   }
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-surface-50">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-6 py-4 bg-elev border-b border-surface-100">
+    <AnimatedPage className="h-full flex flex-col app-canvas">
+      {/* Header：底色走 .glass-shell（= rgb(var(--elev) / var(--lg-tint-panel)) + 背景模糊），
+          与社区页顶栏、编辑页 Toolbar 同一套 —— 不再用不透明的 bg-elev，
+          否则启用壁纸后顶部会压出一块不透的实色，与页面整体割裂。
+          返回按钮 / 标题文字用的都是主题文字令牌，对比度不受影响。 */}
+      <header className="flex items-center gap-3 px-6 py-4 glass-shell border-b border-surface-100">
         <Tooltip label={t('back')}>
           <button
             onClick={() => navigate(-1)}
@@ -309,6 +321,40 @@ export function SettingsPage() {
                 </div>
               </label>
             ))}
+          </div>
+        </section>
+
+        {/* 背景壁纸：纯 CSS 渐变铺在界面底层，选中即时生效，本页即可实时预览 */}
+        <section className="form-section">
+          <div className="form-section-header">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="size-icon-md text-surface-400" />
+              <span className="form-section-title">{t('bgSection')}</span>
+            </div>
+          </div>
+          <p className="text-xs text-surface-400 mb-3">{t('bgDesc')}</p>
+          <div className="grid grid-cols-4 gap-3">
+            {BACKGROUND_PRESETS.map((preset) => {
+              const on = background === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => handleBackgroundChange(preset.id)}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  {/* 色板直接吃 --bg-image，与应用真实背景同源（不存在两份配色） */}
+                  <span
+                    data-app-bg={preset.id}
+                    className={on ? 'app-bg-swatch app-bg-swatch-on' : 'app-bg-swatch'}
+                  />
+                  <span className={`text-xs truncate ${on ? 'font-medium text-primary-600' : 'text-surface-500'}`}>
+                    {t(preset.labelKey)}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </section>
 

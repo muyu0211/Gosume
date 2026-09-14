@@ -144,7 +144,7 @@ export function EditorPage() {
   }
 
   return (
-    <AnimatedPage className="h-full flex flex-col bg-surface-50">
+    <AnimatedPage className="h-full flex flex-col app-canvas">
       {/* Toolbar */}
       <Toolbar
         onSave={handleSave}
@@ -234,7 +234,7 @@ export function EditorPage() {
 function EditorSkeleton() {
   const t = useT()
   return (
-    <div className="h-full flex flex-col bg-surface-50">
+    <div className="h-full flex flex-col app-canvas">
       {/* Toolbar skeleton */}
       <div className="h-12 flex items-center gap-2 px-3 bg-elev/80 border-b border-surface-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-md bg-surface-200 animate-shimmer" />
