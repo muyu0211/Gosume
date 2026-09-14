@@ -570,8 +570,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
     en: 'Name: largest heading; Heading: section/item titles; Body: main text; Detail: dates/places.',
   },
   resizePanelHint: {
-    zh: '拖拽面板左缘可调整宽度（{min}–{max}px）',
-    en: 'Drag the left edge to resize ({min}–{max}px)',
+    zh: '拖拽面板左缘可调整宽度',
+    en: 'Drag the left edge to resize',
   },
   resizeHandleTitle: { zh: '拖拽调整面板宽度', en: 'Drag to resize panel' },
   fontSystem: { zh: '系统内置', en: 'System' },

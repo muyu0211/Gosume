@@ -198,6 +198,7 @@ export function StylePanel() {
         }}
       >
         {/* 拖拽调宽手柄（面板展开时可见） */}
+        
         <div
           className="absolute left-0 top-0 bottom-0 w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors touch-none"
           onPointerDown={startResize}
@@ -307,7 +308,7 @@ export function StylePanel() {
           <div className="flex items-center justify-between px-1 pt-1">
             <span className="text-[10px] text-surface-400 flex items-center gap-1.5">
               <AlignVerticalJustifyStart className="w-3 h-3" />
-              {t('resizePanelHint').replace('{min}', String(STYLE_PANEL_MIN_WIDTH)).replace('{max}', String(STYLE_PANEL_MAX_WIDTH))}
+              {t('resizePanelHint')}
             </span>
           </div>
         </div>

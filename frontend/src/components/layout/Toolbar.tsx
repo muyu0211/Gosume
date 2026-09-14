@@ -156,14 +156,16 @@ export function Toolbar({ onSave, onExport, onHome, saveStatus = 'idle' }: Toolb
       <div className="flex items-center gap-1 ml-auto">
         <TemplateSwitcher />
         {/* 中英一键切换：翻转简历语言，模板章节标题与编辑器板块名随 .Meta.Language 本地化 */}
-        <button
-          onClick={() => updateField('meta.language', (resume?.meta?.language || 'zh-CN') === 'zh-CN' ? 'en-US' : 'zh-CN')}
-          className="btn-ghost btn-sm inline-flex items-center gap-1"
-          title={t('toggleLanguage')}
-        >
-          <Languages className="size-icon-md" />
-          <span className="text-xs">{resume?.meta?.language === 'en-US' ? 'English' : '中文'}</span>
-        </button>
+        <Tooltip label={t('toggleLanguage')}>
+          <button
+            onClick={() => updateField('meta.language', (resume?.meta?.language || 'zh-CN') === 'zh-CN' ? 'en-US' : 'zh-CN')}
+            className="btn-ghost btn-sm inline-flex items-center gap-1"
+          >
+            <Languages className="size-icon-md" />
+            <span className="text-xs">{resume?.meta?.language === 'en-US' ? 'English' : '中文'}</span>
+          </button>
+        </Tooltip>
+        
         <Tooltip label={grayscale ? t('grayscaleOff') : t('grayscaleOn')}>
           <button
             onClick={toggleGrayscale}
