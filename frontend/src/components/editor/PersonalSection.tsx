@@ -408,10 +408,11 @@ export function PersonalSection() {
       {p.avatar && (
         <div className="flex items-stretch gap-3 mb-4">
           <div className="glass glass-card flex-[4] min-w-0 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-surface-600">{t('displaySize')}</span>
-            <div className="flex items-center gap-2">
-              <div className="w-[128px] flex-shrink-0">
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 min-w-0">
+            <span className="text-xs font-medium text-surface-600 min-w-0 truncate">{t('displaySize')}</span>
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1.5 min-w-0 ml-auto">
+              <div className="w-[128px] min-w-[72px] max-w-full">
                 <CustomSelect
                   value={ratioPreset}
                   onChange={handlePresetChange}
@@ -419,7 +420,7 @@ export function PersonalSection() {
                   triggerClassName="!px-2 !py-0.5"
                 />
               </div>
-              <label className="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer select-none shrink-0">
                 <input
                   type="checkbox"
                   checked={lockRatio}
@@ -427,14 +428,14 @@ export function PersonalSection() {
                     setLockRatio(e.target.checked)
                     if (!e.target.checked) setRatioPreset('custom')
                   }}
-                  className="size-icon-sm rounded accent-primary-600"
+                  className="size-icon-sm rounded accent-primary-600 shrink-0"
                 />
-                {t('lockRatio')}
+                <span className="whitespace-nowrap">{t('lockRatio')}</span>
               </label>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
                 <span>{t('width')}</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarW}px</span>
@@ -449,7 +450,7 @@ export function PersonalSection() {
                 className="range-slider w-full"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center justify-between text-[12px] text-surface-500 mb-1">
                 <span>{t('height')}</span>
                 <span className="tabular-nums font-medium text-surface-700">{avatarH}px</span>

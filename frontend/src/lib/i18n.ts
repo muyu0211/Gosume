@@ -477,8 +477,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   deletingElipsis: { zh: '删除中…', en: 'Deleting…' },
   batchDeleteConfirmTitle: { zh: '批量删除确认', en: 'Batch delete confirmation' },
   batchDeleteConfirm: {
-    zh: '确定要删除选中的 {count} 份简历吗？此操作不可撤销。',
-    en: 'Delete {count} selected resumes? This cannot be undone.',
+    zh: '确定要删除 {count} 份简历吗？此操作不可撤销。',
+    en: 'Delete {count} resumes? This cannot be undone.',
   },
   deleteNPieces: { zh: '删除 {count} 份', en: 'Delete {count}' },
   batchExport: { zh: '批量导出', en: 'Batch export' },
@@ -569,11 +569,6 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '姓名=最大标题；标题=章节/条目标题；正文=主要文本；细节=日期/地点等次要信息。',
     en: 'Name: largest heading; Heading: section/item titles; Body: main text; Detail: dates/places.',
   },
-  resizePanelHint: {
-    zh: '拖拽面板左缘可调整宽度',
-    en: 'Drag the left edge to resize',
-  },
-  resizeHandleTitle: { zh: '拖拽调整面板宽度', en: 'Drag to resize panel' },
   fontSystem: { zh: '系统内置', en: 'System' },
   fontOpenSource: { zh: '开源', en: 'Open source' },
 

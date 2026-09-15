@@ -24,6 +24,10 @@ interface Props {
 
 /** 面板最大高度（与 max-h-56 一致），用于展开方向自适应估算。 */
 const PANEL_MAX_HEIGHT = 224
+/** 面板最小宽度：窄容器下触发器可能只有几十 px，面板同宽会让选项文字全被挤掉。 */
+const PANEL_MIN_WIDTH = 120
+/** 面板与视口边缘的最小留白（同时用于左侧回推，防止右侧溢出）。 */
+const VIEWPORT_MARGIN = 8
 
 /**
  * Gosume 风格的自定义下拉选择器，替代原生 <select>。
@@ -60,8 +64,9 @@ export function CustomSelect({
     if (!btn) return
     const rect = btn.getBoundingClientRect()
     const top = rect.bottom + 6
-    const left = rect.left
-    const width = btn.offsetWidth
+    const width = Math.max(btn.offsetWidth, PANEL_MIN_WIDTH)
+    const maxLeft = Math.max(VIEWPORT_MARGIN, window.innerWidth - width - VIEWPORT_MARGIN)
+    const left = Math.min(Math.max(VIEWPORT_MARGIN, rect.left), maxLeft)
     const availableBelow = Math.max(80, window.innerHeight - rect.bottom - 14)
     const maxHeight = Math.min(PANEL_MAX_HEIGHT, availableBelow)
     setPos({ top, left, width, maxHeight })

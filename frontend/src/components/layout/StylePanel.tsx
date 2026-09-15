@@ -15,6 +15,7 @@ import { FONT_OPTIONS, findFontOption } from '../../lib/fontOptions'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { useT } from '../../lib/i18n'
 import { ChevronsLeftRight, Rows3, AlignVerticalJustifyStart, Type } from 'lucide-react'
+import { Tooltip } from '../ui/Tooltip'
 
 /**
  * 编辑页右侧栏：收纳样式排版功能（页边距 / 内容间距 / 字体），随 Toolbar 开关按钮
@@ -198,15 +199,11 @@ export function StylePanel() {
         }}
       >
         {/* 拖拽调宽手柄（面板展开时可见） */}
-        
         <div
           className="absolute left-0 top-0 bottom-0 w-1 bg-surface-200 hover:bg-primary-400 cursor-col-resize transition-colors touch-none"
           onPointerDown={startResize}
-          title={t('resizeHandleTitle')}
         />
 
-        {/* 滚动容器右缘留 4px（mr-1）：滚动条整体离开面板右缘，避免阻碍窗口大小调节。
-            与简历预览页 PreviewPanel 的滚动容器同一方案。 */}
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 mr-1">
           <div className="text-xs font-semibold text-surface-700 px-1 pt-0.5">{t('layoutStyle')}</div>
 
@@ -308,7 +305,7 @@ export function StylePanel() {
           <div className="flex items-center justify-between px-1 pt-1">
             <span className="text-[10px] text-surface-400 flex items-center gap-1.5">
               <AlignVerticalJustifyStart className="w-3 h-3" />
-              {t('resizePanelHint')}
+              {t('resizeHandleTitle')}
             </span>
           </div>
         </div>

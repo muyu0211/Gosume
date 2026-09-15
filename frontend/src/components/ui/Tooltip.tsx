@@ -44,9 +44,8 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
   const [pos, setPos] = useState<TipPos>({ top: 0, left: 0 })
   // 鼠标悬停延迟计时器：离开/失焦即取消，避免「划过也弹」与「离开后迟到弹出」。
   const timerRef = useRef<number | null>(null)
-  // 点击抑制标记：点击（mousedown）会紧随触发 focus，若不抑制会在点击瞬间弹出，
-  // 且焦点不离开就一直挂显。置位后本次聚焦周期内的 focus 不再立显，blur 时复位。
   const suppressRef = useRef(false)
+  const pointRef = useRef<{ x: number; y: number } | null>(null)
   const clearTimer = () => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
@@ -94,11 +93,10 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
 
   const reveal = () => {
     setOpen(true)
-    // 先以当前（或占位）位置渲染，useLayoutEffect 在绘制前完成真实定位
   }
 
-  /** 鼠标进入：延迟 HOVER_DELAY 后才显示；期间离开会被 clearTimer 取消。 */
   const revealDelayed = () => {
+    if (suppressRef.current) return
     clearTimer()
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null
@@ -111,10 +109,15 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     setOpen(false)
   }
 
-  /** 鼠标按下：点击即视为「不提示」——取消悬停计时、立即隐藏已显示的提示，
-      并抑制紧随 focus 的立显（键盘 Tab 聚焦不经过 mousedown，不受影响）。 */
+  /** 鼠标按下 / 点击：取消悬停计时、立即隐藏已显示的提示，并抑制后续立显。 */
   const onPress = () => {
     suppressRef.current = true
+    hide()
+  }
+
+  /** 离开：解除抑制（下次真正重新进入才再提示）并隐藏。 */
+  const handleLeave = () => {
+    suppressRef.current = false
     hide()
   }
 
@@ -131,6 +134,39 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, side])
 
+  useEffect(() => {
+    if (!open) return
+    const onMove = (e: PointerEvent) => {
+      pointRef.current = { x: e.clientX, y: e.clientY }
+      const wrap = wrapRef.current
+      if (!wrap) return
+      if (!wrap.contains(e.target as Node)) hide()
+    }
+    const onResize = () => {
+      const wrap = wrapRef.current
+      const p = pointRef.current
+      if (suppressRef.current || !wrap || !p) {
+        hide()
+        return
+      }
+      const r = wrap.getBoundingClientRect()
+      const inside = p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom
+      if (inside) updatePos()
+      else hide()
+    }
+    const hideNow = () => hide()
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('blur', hideNow)
+    return () => {
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('blur', hideNow)
+    }
+    // hide / updatePos 只依赖 setState 与 ref，稳定
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
   // 滚动跟随：面板内部滚动（target 在 wrap 内）不重算，其余滚动时跟随避免 fixed 漂移。
   useEffect(() => {
     if (!open) return
@@ -140,6 +176,7 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
     }
     window.addEventListener('scroll', onScroll, true)
     return () => window.removeEventListener('scroll', onScroll, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   return (
@@ -147,8 +184,9 @@ export function Tooltip({ label, children, side = 'bottom', className = '' }: To
       ref={wrapRef}
       className={`inline-flex ${className}`}
       onMouseEnter={revealDelayed}
-      onMouseLeave={hide}
-      onMouseDown={onPress}
+      onMouseLeave={handleLeave}
+      onPointerDown={onPress}
+      onClick={onPress}
       onFocus={handleFocus}
       onBlur={() => {
         suppressRef.current = false
