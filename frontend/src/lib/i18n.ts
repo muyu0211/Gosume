@@ -58,7 +58,6 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   useZhInterface: { zh: '使用中文界面', en: 'Use Chinese interface' },
   appearance: { zh: '外观', en: 'Appearance' },
   themeSystem: { zh: '跟随系统', en: 'Follow system' },
-  themeSystemDesc: { zh: '系统浅色用暖白，系统深色用深色', en: 'Light→warm light, dark→dark' },
   themeWheat: { zh: '麦色', en: 'Warm' },
   themeWheatDesc: { zh: '暖白中性面，暖橙强调', en: 'Warm neutral with orange accent' },
   themeObsidian: { zh: '深色', en: 'Dark' },

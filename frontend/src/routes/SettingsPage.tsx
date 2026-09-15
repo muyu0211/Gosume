@@ -105,7 +105,7 @@ export function SettingsPage() {
   }
 
   const themeOptions: Array<{ value: ThemeMode; titleKey: string; descKey: string }> = [
-    { value: 'system', titleKey: 'themeSystem', descKey: 'themeSystemDesc' },
+    { value: 'system', titleKey: 'themeSystem', descKey: 'themeSystem' },
     { value: 'wheat', titleKey: 'themeWheat', descKey: 'themeWheatDesc' },
     { value: 'obsidian', titleKey: 'themeObsidian', descKey: 'themeObsidianDesc' },
     { value: 'classic', titleKey: 'themeClassic', descKey: 'themeClassicDesc' },
