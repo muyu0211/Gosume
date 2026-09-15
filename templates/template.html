@@ -265,7 +265,10 @@
                 <!-- 自定义区块 -->
                 {{if .Custom}}
                 {{range .Custom}}
-                <div class="section-title" data-section="custom">{{.Title}}</div>
+                <!-- data-section-id：自定义模块**逐个**参与板块排序的稳定标识
+                     （同一个 data-section="custom" 无法区分多个自定义模块）。
+                     仅新增属性，不改任何类名，不影响分页核心的 DOM 契约。 -->
+                <div class="section-title" data-section="custom" data-section-id="{{.ID}}">{{.Title}}</div>
                 {{range .Items}}
                 <div class="custom-item" data-id="{{.ID}}" data-section="custom">
                     <h4>{{mdInline .Title}}</h4>

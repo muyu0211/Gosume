@@ -538,6 +538,15 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
 
   // 编辑页样式排版面板
   layoutStyle: { zh: '样式排版', en: 'Layout & Style' },
+  sectionOrder: { zh: '板块顺序', en: 'Section Order' },
+  sectionOrderHint: {
+    zh: '拖动或用上下箭头调整板块在简历中的先后；空板块不参与排序。',
+    en: 'Drag or use arrows to reorder sections; empty ones are excluded.',
+  },
+  sectionOrderEmpty: { zh: '暂无可排序的板块', en: 'No sections to sort' },
+  sectionUp: { zh: '上移', en: 'Move up' },
+  sectionDown: { zh: '下移', en: 'Move down' },
+  sectionOrderReset: { zh: '恢复默认', en: 'Reset' },
   pageMargin: { zh: '页边距', en: 'Page Margins' },
   marginVertical: { zh: '上下', en: 'Vertical' },
   marginHorizontal: { zh: '左右', en: 'Horizontal' },

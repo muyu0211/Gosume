@@ -55,6 +55,13 @@ export interface ResumeMeta {
   updated_at: string
   export_count: number
   name: string
+  /**
+   * 板块渲染顺序（板块 key 数组）：内置板块用 id（education/jobs/…），
+   * 自定义模块每个独立占位，key 为 `custom:<sectionId>`。
+   * 缺省 / 空 = 使用默认顺序（见 lib/sectionOrder.ts）；非法项与已删除的自定义
+   * 模块会被忽略，缺失项按默认顺序补齐——旧数据零迁移。
+   */
+  section_order?: string[]
 }
 
 export interface Personal {

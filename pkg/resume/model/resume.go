@@ -51,6 +51,12 @@ type ResumeMeta struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	ExportCount int       `json:"export_count"`
+	// SectionOrder 板块渲染顺序：内置板块用 id（education/jobs/…），自定义模块
+	// 每个独立占位（"custom:<sectionId>"）。为空表示使用默认顺序
+	// （前端 lib/sectionOrder.ts 的 DEFAULT 顺序），因此旧数据无需迁移。
+	// ⚠ 本字段缺失会导致用户排好的顺序在保存后丢失（SetResume 走结构体反序列化），
+	//    新增/调整简历字段时务必与前端 types/resume.ts 同步。
+	SectionOrder []string `json:"section_order,omitempty"`
 }
 
 // SchemaVersion 是简历数据的 schema 版本，与 App 版本（config.yaml 的 app.version）

@@ -3,7 +3,8 @@ import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project,
 import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
 import { callService, isWails } from '../services/backend'
 import { paginateHTMLString } from '../lib/exportHtml'
-import { renderTemplate } from '../lib/templateEngine'
+import { renderResumeHtml } from '../lib/templateEngine'
+import { orderContextOf, normalizeOrder, presentSections } from '../lib/sectionOrder'
 import { loadTemplateContent } from '../services/templateService'
 import { injectGlobalVarsCss } from '../lib/layoutPresets'
 import { buildCustomCss, parseCustomCss, type ResumeStyleState } from '../lib/customCss'
@@ -114,6 +115,11 @@ interface ResumeState {
   moveProject: (from: number, to: number) => void
   moveLanguage: (from: number, to: number) => void
   moveAward: (from: number, to: number) => void
+
+  /** 板块级排序：把「当前会渲染的板块」列表里 from 位置的板块移到 to。 */
+  moveSection: (from: number, to: number) => void
+  /** 清除板块顺序定制，回到默认顺序。 */
+  resetSectionOrder: () => void
 
   addLanguage: () => void
   updateLanguage: (index: number, lang: Partial<Language>) => void
@@ -261,7 +267,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // 链路：renderTemplate → custom_css 注入），保证测量内容与保存内容严格一致。
       const templateId = useTemplateStore.getState().activeTemplateId || DEFAULT_TEMPLATE_ID
       const tmpl = await loadTemplateContent(templateId)
-      const rendered = renderTemplate(tmpl, resume)
+      const rendered = renderResumeHtml(tmpl, resume)
       const html = injectGlobalVarsCss(rendered, resume)
       const paginated = await paginateHTMLString(html, 'continuous')
       const h = await callService<number>(
@@ -476,6 +482,28 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     const [item] = skills.splice(from, 1)
     skills.splice(to, 0, item)
     set({ resume: { ...resume, skills }, isDirty: true })
+  },
+
+  // 板块级排序：只对「当前会渲染的板块」排序，顺序表不记录空板块
+  // （它们本来就不会出现在简历里）。缺失项由 normalizeOrder 按默认顺序补齐，
+  // 所以后续新增内容不会丢位置。
+  moveSection: (from, to) => {
+    const resume = get().resume
+    if (!resume) return
+    const ctx = orderContextOf(resume)
+    const present = new Set(presentSections(resume, (k) => k).map((s) => s.key))
+    const current = normalizeOrder(resume.meta?.section_order, ctx).filter((k) => present.has(k))
+    if (from < 0 || to < 0 || from >= current.length || to >= current.length || from === to) return
+    const next = [...current]
+    const [item] = next.splice(from, 1)
+    next.splice(to, 0, item)
+    get().updateField('meta.section_order', next)
+  },
+
+  resetSectionOrder: () => {
+    if (!get().resume) return
+    // 置为 undefined：JSON 序列化时该键消失，回到「默认顺序」语义。
+    get().updateField('meta.section_order', undefined)
   },
 
   moveProject: (from, to) => {

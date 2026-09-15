@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useResumeStore } from '../stores/resumeStore'
 import { useTemplateStore } from '../stores/templateStore'
-import { renderTemplate, type TemplateSet } from '../lib/templateEngine'
+import { renderResumeHtml, type TemplateSet } from '../lib/templateEngine'
 import { loadTemplateContent } from '../services/templateService'
 import { injectGlobalVarsCss } from '../lib/layoutPresets'
 
@@ -30,7 +30,8 @@ export function usePreview() {
     setPreviewLoading(true)
     try {
       const tmpl = await getTemplate()
-      const rendered = renderTemplate(tmpl, resume)
+      // 走 renderResumeHtml（含板块顺序重排），保证预览与导出/打印一致
+      const rendered = renderResumeHtml(tmpl, resume)
       // 注入 per-resume custom_css（空则不注入 → 模板原生外观）。
       const htmlWithVars = injectGlobalVarsCss(rendered, resume)
       setPreviewHtml(htmlWithVars)

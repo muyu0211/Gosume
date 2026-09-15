@@ -4,7 +4,7 @@ import { Events } from '@wailsio/runtime'
 import { useResumeStore } from '../../stores/resumeStore'
 import { callService, isWails } from '../../services/backend'
 import { paginateHTMLString } from '../../lib/exportHtml'
-import { renderTemplate } from '../../lib/templateEngine'
+import { renderResumeHtml } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
 import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { useT } from '../../lib/i18n'
@@ -181,7 +181,7 @@ export function ResumeListDrawer({ open, onClose, onOpenResume }: Props) {
         const name = resume.personal.full_name || resume.meta.name || t('resumeTitlePlaceholder')
         const templateId = resume.meta.template_id || 'a406004d-d3b8-4900-969f-8094f8e85cf0'
         const tmpl = await loadTemplateContent(templateId)
-        const rendered = renderTemplate(tmpl, resume)
+        const rendered = renderResumeHtml(tmpl, resume)
         // 注入 per-resume custom_css（空则不注入 → 模板原生外观）。
         const htmlWithVars = injectGlobalVarsCss(rendered, resume)
         const paginatedHtml = await paginateHTMLString(htmlWithVars, batchExportFormat === 'png' ? 'continuous' : 'paged')

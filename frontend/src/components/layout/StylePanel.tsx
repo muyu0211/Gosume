@@ -1,7 +1,13 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useEditorStore, STYLE_PANEL_MIN_WIDTH, STYLE_PANEL_MAX_WIDTH } from '../../stores/editorStore'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useAppStore } from '../../stores/appStore'
 import { AnimatedRange } from '../ui/AnimatedRange'
+import { useDragReorder } from '../../hooks/useDragReorder'
+import { useFlipSwap } from '../../hooks/useFlipSwap'
+import { useStretchBox } from '../../hooks/useStretchBox'
+import { getSectionTitle } from '../../lib/resumeSections'
+import { orderContextOf, normalizeOrder, presentSections } from '../../lib/sectionOrder'
 import {
   MARGIN_PX_MIN,
   MARGIN_PX_MAX,
@@ -14,7 +20,7 @@ import { parseCustomCss, DISPLAY_DEFAULT_LAYOUT } from '../../lib/customCss'
 import { FONT_OPTIONS, findFontOption } from '../../lib/fontOptions'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { useT } from '../../lib/i18n'
-import { ChevronsLeftRight, Rows3, AlignVerticalJustifyStart, Type } from 'lucide-react'
+import { ChevronsLeftRight, Rows3, AlignVerticalJustifyStart, Type, ListOrdered, GripVertical, ChevronUp, ChevronDown, RotateCcw } from 'lucide-react'
 import { Tooltip } from '../ui/Tooltip'
 
 /**
@@ -119,6 +125,123 @@ function PanelCard({ title, icon, summary, children }: { title: string; icon: Re
   )
 }
 
+/**
+ * 板块顺序排序卡：拖动或上下箭头调整板块在简历中的先后。
+ *
+ * - 只列出「当前会渲染」的板块（空板块/全隐藏不参与），避免排了没效果；
+ * - 自定义模块**每个独立一行**（key = custom:<id>），可与内置板块任意穿插；
+ * - 拖拽复用 useDragReorder；上下按钮是触屏与键盘的保底路径（HTML5 DnD 触屏不可用）；
+ * - 顺序存 resume.meta.section_order，缺省即默认顺序，可一键恢复；
+ * - 交换走 FLIP 动画（useFlipSwap）：拖拽落位与上下按钮**共用同一条路径**，
+ *   动作前 capture 位置，提交后 transform 过渡；只动样式不动数据。
+ */
+function SectionOrderCard() {
+  const t = useT()
+  const language = useAppStore((s) => s.language)
+  const resume = useResumeStore((s) => s.resume)
+  const moveSection = useResumeStore((s) => s.moveSection)
+  const resetSectionOrder = useResumeStore((s) => s.resetSectionOrder)
+
+  const items = useMemo(() => {
+    if (!resume) return []
+    const ctx = orderContextOf(resume)
+    const present = presentSections(resume, (kind) => getSectionTitle(kind, language))
+    const rank = new Map(normalizeOrder(resume.meta?.section_order, ctx).map((k, i) => [k, i]))
+    // 稳定排序：按当前生效顺序排列（未在顺序表里的排最后）
+    return [...present].sort(
+      (a, b) => (rank.get(a.key) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.key) ?? Number.MAX_SAFE_INTEGER),
+    )
+  }, [resume, language])
+
+  // 交换动画：依赖 items 的 key 序列，顺序变化后自动播放 FLIP
+  const { capture, register } = useFlipSwap(useMemo(() => items.map((i) => i.key), [items]))
+  // 排序入口统一（拖拽落位与上下按钮共用）：先记录位置 → 再改顺序
+  const reorder = useCallback(
+    (from: number, to: number) => {
+      capture()
+      moveSection(from, to)
+    },
+    [capture, moveSection],
+  )
+  const { draggedIdx, overIdx, onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(reorder)
+  // 卡片尺寸拉伸动画（自身尺寸变化 / 子元素挂载卸载引起的高度变化）
+  const { clipRef, contentRef } = useStretchBox()
+
+  const hasCustom = !!resume?.meta?.section_order?.length
+  const showReset = hasCustom && items.length > 0
+
+  return (
+    // 尺寸拉伸动画：本卡片自身尺寸变化（面板变窄致文案换行、恢复默认按钮出现/消失）
+    // 与子元素挂载/卸载引起的高度变化，统一由 useStretchBox 平滑过渡。
+    <div ref={clipRef}>
+      <div ref={contentRef}>
+    <PanelCard title={t('sectionOrder')} icon={<ListOrdered className="w-3 h-3" />}>
+      {items.length === 0 ? (
+        <p className="text-[10px] text-surface-400">{t('sectionOrderEmpty')}</p>
+      ) : (
+      <>
+      <p className="text-[10px] text-surface-400 mb-2 leading-relaxed">{t('sectionOrderHint')}</p>
+      <div className="space-y-1.5">
+        {items.map((item, idx) => (
+          <div
+            key={item.key}
+            ref={register(item.key)}
+            className={`glass-entry flex items-center gap-1.5 px-2 py-1.5 ${
+              overIdx === idx && draggedIdx !== idx ? 'glass-entry-dragover' : ''
+            } ${draggedIdx === idx ? 'opacity-40' : ''}`}
+            onDragOver={(e) => onDragOver(e, idx)}
+            onDrop={() => onDrop(idx)}
+          >
+            <div
+              draggable
+              onDragStart={() => onDragStart(idx)}
+              onDragEnd={onDragEnd}
+              className={`cursor-grab active:cursor-grabbing p-0.5 -ml-0.5 rounded hover:bg-surface-200 transition-colors ${
+                draggedIdx === idx ? 'text-primary-500' : 'text-surface-300'
+              }`}
+            >
+              <GripVertical className="size-icon-sm" />
+            </div>
+            <span className="text-[12px] font-medium text-surface-700 truncate flex-1 min-w-0">{item.label}</span>
+            <button
+              type="button"
+              disabled={idx === 0}
+              onClick={() => reorder(idx, idx - 1)}
+              aria-label={t('sectionUp')}
+              className="btn-ghost btn-xs !px-1 disabled:opacity-30"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              disabled={idx === items.length - 1}
+              onClick={() => reorder(idx, idx + 1)}
+              aria-label={t('sectionDown')}
+              className="btn-ghost btn-xs !px-1 disabled:opacity-30"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+      {showReset && (
+        <button
+          type="button"
+          onClick={resetSectionOrder}
+          className="btn-secondary btn-xs mt-2 inline-flex items-center gap-1"
+        >
+          <RotateCcw className="size-icon-sm" />
+          {t('sectionOrderReset')}
+        </button>
+      )}
+      </>
+      )}
+    </PanelCard>
+      </div>
+    </div>
+  )
+}
+
 export function StylePanel() {
   const t = useT()
   const open = useEditorStore((s) => s.stylePanelOpen)
@@ -206,6 +329,8 @@ export function StylePanel() {
 
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 mr-1">
           <div className="text-xs font-semibold text-surface-700 px-1 pt-0.5">{t('layoutStyle')}</div>
+
+          <SectionOrderCard />
 
           <PanelCard title={t('pageMargin')} icon={<ChevronsLeftRight className="w-3 h-3" />} summary={`${marginY}×${marginX}px`}>
             <SliderRow

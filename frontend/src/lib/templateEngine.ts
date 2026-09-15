@@ -1,6 +1,7 @@
 import type { Resume } from '../types/resume'
 import { markdownToHtml } from './markdown'
 import { resolveAvatar } from './defaultAvatar'
+import { orderContextOf, normalizeOrder, reorderSectionsHtml } from './sectionOrder'
 
 type TemplateFunc = (...args: string[]) => string
 
@@ -66,6 +67,24 @@ export function renderTemplate(tmpl: TemplateSet, resume: Resume): string {
   // 渲染后再注入，不经过 Go-style 求值，规避 CSS 中 {{ 被误解析；
   // 插到 </head> 前，source order 晚于模板 styles.css，保证覆盖优先级。
   return injectGlobalStyleTag(rendered, tmpl.globalCss)
+}
+
+/**
+ * 渲染简历的**唯一入口**：renderTemplate + 板块顺序重排。
+ *
+ * 所有产出「用于展示/导出」的 HTML 的地方（预览、保存前测量、单份导出、批量导出）
+ * 都必须走这里，否则板块顺序会在某条链路上不一致（预览对了导出没变）。
+ *
+ * 重排发生在**分页之前**：此时文档尚未被分页核心切页，顺序改动对预览、
+ * 导出、打印同时生效，且不触碰分页核心的 DOM 契约。
+ */
+export function renderResumeHtml(tmpl: TemplateSet, resume: Resume): string {
+  const rendered = renderTemplate(tmpl, resume)
+  // 未定制顺序（绝大多数简历）→ 直接返回，不做 DOMParser 往返（零开销）
+  const stored = resume.meta?.section_order
+  if (!stored || stored.length === 0) return rendered
+  const ctx = orderContextOf(resume)
+  return reorderSectionsHtml(rendered, normalizeOrder(stored, ctx), ctx)
 }
 
 /** 把全局统一样式包成 <style id="resume-base"> 插到 </head> 前（为空时原样返回）。 */

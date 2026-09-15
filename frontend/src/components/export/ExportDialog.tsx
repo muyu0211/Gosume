@@ -5,7 +5,7 @@ import { FileText, Image, FileJson, X, Download, Loader2, Check, AlertCircle } f
 import { callService } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
 import { paginateHTMLString } from '../../lib/exportHtml'
-import { renderTemplate } from '../../lib/templateEngine'
+import { renderResumeHtml } from '../../lib/templateEngine'
 import { loadTemplateContent } from '../../services/templateService'
 import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
@@ -66,7 +66,7 @@ export function ExportDialog({ onClose }: Props) {
         // renderTemplate 含全局样式 → custom_css 注入 → 分页），不依赖可能滞后的
         const templateId = resume.meta.template_id || DEFAULT_TEMPLATE_ID
         const tmpl = await loadTemplateContent(templateId)
-        const rendered = renderTemplate(tmpl, resume)
+        const rendered = renderResumeHtml(tmpl, resume)
         const htmlWithVars = injectGlobalVarsCss(rendered, resume)
 
         const pageMode = selectedFormat === 'png' || selectedFormat === '单页pdf' ? 'continuous' : 'paged'
