@@ -22,7 +22,7 @@ Taskfile.yml         # 任务运行器入口（dev、build、package、docker �
 ## 分层架构（自底向上装配）
 
 1. `main.go` 将 `frontend/dist`（生产构建）和 `templates/`（统一 HTML、全局 CSS、内置模板）嵌入 Go 二进制。
-2. `pkg/config` 加载 `config.yaml`（`GlobalConfig`）；`pkg/user_config` 定位数据目录与用户配置。
+2. `pkg/config` 加载 `config.yaml`（`GlobalConfig`）；`pkg/config` 定位数据目录与用户配置。
 3. `pkg/app/app.go` 负责组装全部组件：配置 → 日志 → 存储层（ResumeRepo/TemplateRepo/ProjectRepo）→ 模板加载器 → 渲染相关 → 无头浏览器导出 → 各服务 → Wails 窗口 → 依赖注入 → 事件与数据目录热切换回调。
 4. Go 服务（分散在 `pkg/resume/service`、`pkg/ai/service`、`pkg/autofill/service`、`pkg/tool/service`）实现 Wails `application.Service`，注册为 Wails 服务；前端通过 `frontend/src/services/backend.ts` 的 `callService("ServiceName", "Method", ...args)` 按 `包.结构体.方法` 全名绑定调用。
 5. 前端通过 Vite 打包；开发模式用 `task dev`（Wails 开发服务器，支持热重载）。

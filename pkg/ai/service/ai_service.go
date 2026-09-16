@@ -9,8 +9,8 @@ import (
 	"unicode/utf8"
 
 	"gosume/pkg/ai"
+	"gosume/pkg/config"
 	"gosume/pkg/log"
-	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -43,6 +43,11 @@ type TestConnectionResponse struct {
 	Message   string `json:"message,omitempty"`
 }
 
+// AIProvidersResponse 是厂商预设列表回包（前端下拉联动的数据源）。
+type AIProvidersResponse struct {
+	Providers []ai.ProviderPreset `json:"providers"`
+}
+
 // testTimeout 是「测试连接」的单次超时（比真实 Chat 更短，快速反馈）。
 const (
 	testTimeout = 15 * time.Second
@@ -66,10 +71,10 @@ type PolishResponse struct {
 }
 
 // AIService 提供 AI 服务的多配置管理与大模型调用入口，
-// 为后续 Agent / 简历生成等功能铺路。配置经 user_config 的数据目录落盘。
+// 为后续 Agent / 简历生成等功能铺路。配置经 config 的数据目录落盘。
 type AIService struct {
 	App       *application.App
-	configMgr *user_config.Manager
+	configMgr *config.Manager
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
@@ -78,7 +83,7 @@ func (s *AIService) ServiceName() string {
 }
 
 // Inject 注入依赖：数据目录配置管理器（用于读写 ai_config.json）。
-func (s *AIService) Inject(app *application.App, configMgr *user_config.Manager) {
+func (s *AIService) Inject(app *application.App, configMgr *config.Manager) {
 	s.App = app
 	s.configMgr = configMgr
 }
@@ -121,6 +126,13 @@ func (s *AIService) ListAIConfigs() *util.Response {
 		items = append(items, toItem(u, u.ID == cfg.ActiveID, true))
 	}
 	return util.DoRsp(util.SuccCode, "成功", &AIConfigListResponse{ActiveID: cfg.ActiveID, Configs: items})
+}
+
+// ListAIProviders 返回后端集中维护的厂商预设（展示名 / Base URL / 默认模型 / 候选模型）。
+// 厂商配置以 pkg/ai/presets.go 为唯一来源，前端只负责渲染，不再硬编码任何厂商参数；
+// 增删厂商或调整模型只改后端即可，无需发版前端。
+func (s *AIService) ListAIProviders() *util.Response {
+	return util.DoRsp(util.SuccCode, "成功", &AIProvidersResponse{Providers: ai.ProviderPresets()})
 }
 
 // GetAIConfig 返回当前启用配置（脱敏）；供 AI 润色可用性判定与测试。

@@ -18,7 +18,6 @@ import (
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_export"
 	tsvc "gosume/pkg/tool/service"
-	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -50,7 +49,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	rootPath := util.GetRootPath()
 
 	// 用户配置管理器
-	userCfgMgr := user_config.InitConfigManager(rootPath)
+	userCfgMgr := config.InitConfigManager(rootPath)
 
 	// 获取数据目录
 	dataDir := userCfgMgr.DataDir()

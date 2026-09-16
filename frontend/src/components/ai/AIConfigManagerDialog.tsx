@@ -7,8 +7,9 @@ import { Expandable } from '../ui/Expandable'
 import { Tooltip } from '../ui/Tooltip'
 import { ProviderLogo } from './ProviderLogo'
 import {
-  AI_PRESETS,
-  AI_MODELS_BY_PROVIDER,
+  listAIProviders,
+  providerLabel,
+  providerModels,
   listAIConfigs,
   saveAIConfig,
   deleteAIConfig,
@@ -16,8 +17,10 @@ import {
   testConnection,
   type AIInfo,
   type AIConfigInput,
+  type AIProviderPreset,
 } from '../../services/aiService'
 import { extractErrorMessage } from '../../lib/errorUtils'
+import { useAppStore } from '../../stores/appStore'
 import { useT } from '../../lib/i18n'
 
 interface Props {
@@ -49,7 +52,9 @@ const emptyForm = (): Form => ({
  */
 export function AIConfigManagerDialog({ onClose }: Props) {
   const t = useT()
+  const lang = useAppStore((s) => s.language)
   const modalRef = useRef<ModalHandle>(null)
+  const [presets, setPresets] = useState<AIProviderPreset[]>([])
   const [configs, setConfigs] = useState<AIInfo[]>([])
   const [activeId, setActiveId] = useState('')
   const [selectedId, setSelectedId] = useState<string>('') // '' 表示新建态
@@ -89,7 +94,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     ;(async () => {
       setLoading(true)
       try {
-        await refresh()
+        await Promise.all([listAIProviders().then(setPresets), refresh()])
       } catch {
         /* 展示层失败静默 */
       } finally {
@@ -127,21 +132,22 @@ export function AIConfigManagerDialog({ onClose }: Props) {
     setTestMsg('')
   }
 
-  // provider 下拉选项（预设 + 自定义）
+  // provider 下拉选项
   const providerOptions = useMemo(
     () => [
-      ...AI_PRESETS.map((p) => ({ value: p.value, label: p.label, hint: p.baseUrl })),
+      ...presets.map((p) => ({ value: p.value, label: providerLabel(p, lang), hint: p.base_url })),
       { value: 'custom', label: t('aiCustomProvider') },
     ],
-    [t],
+    [presets, lang, t],
   )
 
   const onProviderChange = (value: string) => {
-    setForm((f) => ({ ...f, provider: value }))
-    const preset = AI_PRESETS.find((p) => p.value === value)
+    const preset = presets.find((p) => p.value === value)
     if (preset) {
       setAiCustom(false)
-      setForm({ ...form, provider: value, base_url: preset.baseUrl, model: preset.model })
+      setForm((f) => ({ ...f, provider: value, base_url: preset.base_url, model: preset.model }))
+    } else {
+      setForm((f) => ({ ...f, provider: value }))
     }
   }
 
@@ -160,14 +166,14 @@ export function AIConfigManagerDialog({ onClose }: Props) {
   // 模型候选 + 自定义（已配置的给「已配置」提示，减少误选）
   const modelOptions = useMemo(
     () => [
-      ...(AI_MODELS_BY_PROVIDER[form.provider] ?? []).map((m) => ({
+      ...providerModels(presets, form.provider).map((m) => ({
         value: m,
         label: m,
         hint: usedModels.has(m.toLowerCase()) ? t('aiModelAdded') : undefined,
       })),
       { value: '__custom__', label: t('aiCustomModel') },
     ],
-    [form.provider, t, usedModels],
+    [presets, form.provider, t, usedModels],
   )
   const modelValue = aiCustom ? '__custom__' : form.model
   const onModelChange = (value: string) => {

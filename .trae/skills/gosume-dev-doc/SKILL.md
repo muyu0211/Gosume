@@ -107,7 +107,7 @@ description: "Generates standardized Gosume development documents (需求文档/
 ## 三、撰写流程
 
 1. **澄清**：先用 `AskUserQuestion` 确认——是哪类文档（PRD/开发方案）？是否有总览/上游文档？优先级与版本？缺口信息不足时不得凭空臆造。
-2. **摸底**：用 Grep/Read 核对既有实现与惯例（同一目录是否有 PRD 可互链、项目 `pkg/{app,service,user_config}` 与 `frontend/src/services|lib|components` 的真实命名），引用真实路径。
+2. **摸底**：用 Grep/Read 核对既有实现与惯例（同一目录是否有 PRD 可互链、项目 `pkg/{app,service,config}` 与 `frontend/src/services|lib|components` 的真实命名），引用真实路径。
 3. **选型**：本 Skill 仅产出文档，不写实现代码；文档里给出「复用 vs 新建」结论即可，不擅自扩大范围。
 4. **产出**：按上文对应章节模板生成，落盘到 `docs/{目录}/`。落盘后**用 NotifyUser 提示用户审阅**。
 5. **互链**：PRD 与开发方案通过「上游/配套」字段互相链接；跨期依赖写明引用文档。

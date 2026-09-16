@@ -64,10 +64,7 @@ export function UpdateDialog({ info, onClose }: UpdateDialogProps) {
   // 更新说明（release_notes）按行拆分为列表（appcast 的 notes 以 \n 分隔）。
   // tips 是区别于更新说明的「更新提示」，单独展示在更新说明下方（带警告图标）；
   // tips 的兜底文案由后端负责（beta 包未传时默认提示谨慎更新），前端只做空值处理。
-  const notes = (info.release_notes ?? '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  const notes = (info.release_notes ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
   const tips = (info.tips ?? '').trim()
 
   // 动态内容区：各 stage 的内容并排叠放为 grid 行，active 行展开为 1fr、

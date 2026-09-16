@@ -20,7 +20,7 @@
 
 ### 1. 后端：移除全局字段 + 增加 per-resume 字段
 
-- `pkg/user_config/layout_presets.go`：从 `GlobalLayout` 删除 `AvatarRadius`、`HeaderLayout`；删除 `HeaderLayoutCenter/Left/Right` 常量；`DefaultGlobalLayout` 移除对应默认；`ValidateGlobalLayout` 移除对应校验（AvatarRadius 校验、HeaderLayout 取值校验）。全局布局只剩 pageMargin + spacing。
+- `pkg/config/layout_presets.go`：从 `GlobalLayout` 删除 `AvatarRadius`、`HeaderLayout`；删除 `HeaderLayoutCenter/Left/Right` 常量；`DefaultGlobalLayout` 移除对应默认；`ValidateGlobalLayout` 移除对应校验（AvatarRadius 校验、HeaderLayout 取值校验）。全局布局只剩 pageMargin + spacing。
 
 - `pkg/resume/model/personal.go`：`Personal` 增加（与 `AvatarWidth` 同风格，nil 语义）：
 
@@ -74,7 +74,7 @@
 
 ## 涉及文件
 
-- `pkg/user_config/layout_presets.go`（删全局字段/常量/默认/校验）
+- `pkg/config/layout_presets.go`（删全局字段/常量/默认/校验）
 
 - `pkg/resume/model/personal.go`（加 per-resume 字段）
 

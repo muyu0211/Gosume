@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"sync/atomic"
 
-	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -22,7 +21,7 @@ import (
 // SystemService 提供系统相关的信息与工具方法（窗口控制、路径、配置等）。
 type SystemService struct {
 	App            *application.App
-	configMgr      *user_config.Manager
+	configMgr      *config.Manager
 	win            *application.WebviewWindow
 	closeConfirmed atomic.Bool
 }
@@ -33,7 +32,7 @@ func (s *SystemService) ServiceName() string {
 }
 
 // Inject 依赖注入
-func (s *SystemService) Inject(app *application.App, configMgr *user_config.Manager, win *application.WebviewWindow) {
+func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, win *application.WebviewWindow) {
 	s.App = app
 	s.configMgr = configMgr
 	s.win = win
@@ -138,9 +137,9 @@ func (s *SystemService) GetTheme() *util.Response {
 // SetTheme 校验并持久化用户主题选项。
 // 取值不合法或为空时回退到默认主题（跟随系统）。
 func (s *SystemService) SetTheme(theme string) *util.Response {
-	if !user_config.IsValidTheme(theme) {
-		log.Warnf("[system_service] SetTheme: 非法主题取值 %q，回退为 %s", theme, user_config.DefaultTheme)
-		theme = user_config.DefaultTheme
+	if !config.IsValidTheme(theme) {
+		log.Warnf("[system_service] SetTheme: 非法主题取值 %q，回退为 %s", theme, config.DefaultTheme)
+		theme = config.DefaultTheme
 	}
 	if err := s.configMgr.SetTheme(theme); err != nil {
 		log.Errorf("[system_service] SetTheme: 持久化失败 %q: %v", theme, err)

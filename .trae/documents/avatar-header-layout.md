@@ -30,7 +30,7 @@
 
 ## 实施步骤
 
-### 1. 后端字段 — `pkg/user_config/layout_presets.go`
+### 1. 后端字段 — `pkg/config/layout_presets.go`
 
 - `GlobalLayout` 增加字段（镜像 `AvatarRadius *int` 的 nil 语义）：
 
@@ -148,7 +148,7 @@
 
 ## 涉及文件
 
-- `pkg/user_config/layout_presets.go`（struct/默认/校验）
+- `pkg/config/layout_presets.go`（struct/默认/校验）
 
 - `frontend/src/lib/layoutPresets.ts`（类型、默认、`isDoubleColumnCss`、`headerLayoutOverlayCss`、`injectGlobalVarsCss` 门控）
 

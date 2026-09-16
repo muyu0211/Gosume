@@ -24,7 +24,6 @@ import (
 	ghttp "gosume/pkg/remote/http"
 	"gosume/pkg/resume/dto"
 	"gosume/pkg/resume/helper"
-	"gosume/pkg/user_config"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -50,11 +49,11 @@ const (
 // UpdateService 提供在线更新能力：检查版本、下载更新包、触发静默替换。
 type UpdateService struct {
 	App       *application.App
-	configMgr *user_config.Manager // 用户配置管理器
-	state     atomic.Int32         // 下载状态机：-1=空闲；0~100=下载中（值为进度%）。0 是下载开始时的初始进度，因此空闲态必须显式置为 -1，避免 Go 零值(0)被误判为“正在下载进度0”。
-	cancel    context.CancelFunc   // 取消正在进行的下载。
-	helper    *exec.Cmd            // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
-	cache     *UpdateInfoResponse  // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
+	configMgr *config.Manager     // 用户配置管理器
+	state     atomic.Int32        // 下载状态机：-1=空闲；0~100=下载中（值为进度%）。0 是下载开始时的初始进度，因此空闲态必须显式置为 -1，避免 Go 零值(0)被误判为“正在下载进度0”。
+	cancel    context.CancelFunc  // 取消正在进行的下载。
+	helper    *exec.Cmd           // 等待主进程退出的 Helper 进程（CancelUpdate 可终止）。
+	cache     *UpdateInfoResponse // 检查结果会话缓存：仅成功结果入缓存，进程生命周期内有效
 
 	helperMu sync.Mutex // helper 互斥锁
 	cancelMu sync.Mutex // 下载取消锁。
@@ -91,7 +90,7 @@ func (s *UpdateService) ServiceName() string {
 }
 
 // Inject 依赖注入。
-func (s *UpdateService) Inject(app *application.App, configMgr *user_config.Manager) {
+func (s *UpdateService) Inject(app *application.App, configMgr *config.Manager) {
 	s.App = app
 	s.configMgr = configMgr
 	s.state.Store(-1) // 初始化空闲态

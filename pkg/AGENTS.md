@@ -36,7 +36,6 @@ pkg/
 │   ├── template_export/ #   无头浏览器导出（browser.go，rod）
 │   └── template_market/ #   模板市场客户端（community API）
 ├── tool/service/        # ToolService（证件照保存等独立工具）
-├── user_config/         # 用户配置管理器（数据目录定位、布局/主题/AI 配置等管理）
 └── util/                # 通用工具：util.go、response.go（统一响应）、parse_path.go
 ```
 
@@ -136,7 +135,7 @@ Go:   gosume/pkg/resume/service.ResumeService.NewResume(templateID string, langu
 
 所有组装在 `pkg/app/app.go` 的 `New()` 中完成（顺序：配置 → 用户配置管理器 → 日志 → 存储层 → 模板加载器 → 统一 HTML / 全局 CSS → 导出管理器 → 服务 → Wails 应用与窗口 → 注入 → 事件与回调）：
 
-1. `user_config.InitConfigManager(rootPath)` 定位数据目录；`config.GlobalConfig` 来自 config.yaml。
+1. `config.InitConfigManager(rootPath)` 定位数据目录；`config.GlobalConfig` 来自 config.yaml。
 2. 存储层：`ResumeRepo`（简历）、`TemplateRepo`（模板）、`ProjectRepo`（项目文件）。
 3. 模板加载器 `template.Loader` + 统一 HTML `template.html` + 全局统一样式 `resume-global.css`。
 4. 服务实例后调用 `.Inject(...)` 注入依赖：
@@ -162,7 +161,7 @@ Go:   gosume/pkg/resume/service.ResumeService.NewResume(templateID string, langu
 - **简历数据**：JSON（`*model.Resume`）序列化存入 SQLite `resumes.data` 列，`is_deleted` 标志软删除。
 - **简历样式定制（per-resume custom_css）**：`resume.CustomCSS` 字符串字段以「带哨兵段的 CSS」承载页边距/内容间距/头像/信息区布局/字体/字号。后端只做存储透传**不解析**哨兵段；段的生成与反向解析契约在**前端** `frontend/src/lib/customCss.ts`（详见 `frontend/AGENTS.md` 页面布局小节）。
 - **模板**：内置模板从 `templates/`（embedded）加载；用户模板存 SQLite `TemplateRepo`。支持导入/导出 `.zip` 模板包（`template_importer`/`template_exporter`）。
-- **AI 配置**：`ai_config.json` 存于数据目录（`user_config` 管理），含多套配置与当前启用 ID，API Key 持久化、回包脱敏。**配置无名称字段：模型名即标识与展示名，且在同一 provider 下唯一**，唯一性由 `AIService.SaveAIConfig` 在写入时校验（`findByModel`，忽略大小写）。
+- **AI 配置**：`ai_config.json` 存于数据目录（`config` 管理），含多套配置与当前启用 ID，API Key 持久化、回包脱敏。**配置无名称字段：模型名即标识与展示名，且在同一 provider 下唯一**，唯一性由 `AIService.SaveAIConfig` 在写入时校验（`findByModel`，忽略大小写）。
 - **主题/语言**：主题经 `SystemService.GetTheme/SetTheme` 持久化到 `config.json`；应用 UI 语言由前端本地存储（不经后端）。
 - **最近文件 / import 日志**：以 JSON 存数据目录；模板导入历史存 SQLite（`ListImportLogs`）。
 - SQLite pragma：WAL 模式、外键约束、5 秒忙等待超时。

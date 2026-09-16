@@ -72,7 +72,7 @@ custom\_css 由若干哨兵分段拼接，每段仅在该类值存在时输出�
 | `pkg/resume/model/personal.go`         | 删除 `AvatarWidth/AvatarHeight/AvatarRadius/HeaderLayout` 四个字段                                                                                                |
 | `pkg/resume/service/resume_service.go` | `Inject` 参数与 `LoadResume` 保持原样（无 configMgr 依赖、无样式折叠逻辑）                                                                                                      |
 | `pkg/resume/service/system_service.go` | 删除 `GetLayout`、`SaveLayout` 方法（前端不再调用）                                                                                                                      |
-| `pkg/user_config/user_config.go`       | 删除 `UserConfig.Layout` 字段与 `GetLayout`/`SetLayout` 方法（config.json 遗留 layout 字段由反序列化自动忽略）                                                                    |
+| `pkg/config/config.go`       | 删除 `UserConfig.Layout` 字段与 `GetLayout`/`SetLayout` 方法（config.json 遗留 layout 字段由反序列化自动忽略）                                                                    |
 | `pkg/app/app.go`                       | `resumeSvc.Inject(app, resumeStore)`（两处组装保持原样）                                                                                                              |
 
 ### 前端（TypeScript/React）
@@ -108,7 +108,7 @@ custom\_css 由若干哨兵分段拼接，每段仅在该类值存在时输出�
 
 ## 涉及文件总览
 
-后端：`pkg/resume/model/resume.go`、`pkg/resume/model/personal.go`、`pkg/resume/service/system_service.go`、`pkg/user_config/user_config.go`、`pkg/app/app.go`
+后端：`pkg/resume/model/resume.go`、`pkg/resume/model/personal.go`、`pkg/resume/service/system_service.go`、`pkg/config/config.go`、`pkg/app/app.go`
 
 前端：`lib/customCss.ts`(新)、`lib/layoutPresets.ts`、`types/resume.ts`、`stores/resumeStore.ts`、`stores/layoutStore.ts`(删)、`hooks/usePreview.ts`、`components/preview/PreviewPanel.tsx`、`components/editor/PersonalSection.tsx`、`components/layout/LayoutPopover.tsx`、`components/export/ExportDialog.tsx`、`components/resume/ResumeListDrawer.tsx`、`routes/EditorPage.tsx`、`App.tsx`
 
