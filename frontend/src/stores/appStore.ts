@@ -19,6 +19,9 @@ const APP_LANG_KEY = 'gosume-app-language'
 
 export type AppLanguage = 'zh-CN' | 'en-US'
 
+/** 首页一级 Tab：我的简历 / 简历模板。 */
+export type HomeTab = 'resumes' | 'templates'
+
 function readInit(): AppLanguage {
   return localStorage.getItem(APP_LANG_KEY) === 'en-US' ? 'en-US' : 'zh-CN'
 }
@@ -30,6 +33,9 @@ interface AppState {
   background: BackgroundId
   /** 持久化并立即生效（写入 <html data-app-bg>，由 CSS 提供渐变）。 */
   setBackground: (id: BackgroundId) => void
+
+  homeTab: HomeTab
+  setHomeTab: (tab: HomeTab) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -44,4 +50,7 @@ export const useAppStore = create<AppState>((set) => ({
     applyBackgroundToDocument(id)
     set({ background: id })
   },
+
+  homeTab: 'resumes',
+  setHomeTab: (tab) => set({ homeTab: tab }),
 }))

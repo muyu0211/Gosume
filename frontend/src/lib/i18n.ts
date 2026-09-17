@@ -465,6 +465,27 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   deleteImportLogFailed: { zh: '删除导入记录失败', en: 'Delete import history failed' },
   overwriteImported: { zh: '已覆盖导入', en: 'Imported (overwrite)' },
 
+  // 首页 Tab 栏（我的简历 / 简历模板）
+  homeTabLabel: { zh: '首页视图切换', en: 'Home view' },
+  homeTabResumes: { zh: '我的简历', en: 'My resumes' },
+  homeTabTemplates: { zh: '简历模板', en: 'Templates' },
+  openResume: { zh: '打开', en: 'Open' },
+  newResumeAction: { zh: '新建简历', en: 'New resume' },
+  searchResumes: { zh: '搜索简历', en: 'Search resumes' },
+  sortBy: { zh: '排序', en: 'Sort' },
+  sortUpdatedDesc: { zh: '最近更新', en: 'Last updated' },
+  sortNameAsc: { zh: '名称 A→Z', en: 'Name A→Z' },
+  previewUnavailable: { zh: '预览不可用', en: 'Preview unavailable' },
+  loadResumesFailed: { zh: '简历列表加载失败', en: 'Failed to load resumes' },
+  noMatchResumes: { zh: '没有匹配的简历', en: 'No matching resumes' },
+  // 路由级错误边界（兜底渲染异常，避免整页白屏）
+  errorBoundaryTitle: { zh: '页面出错了', en: 'Something went wrong' },
+  errorBoundaryDesc: { zh: '界面渲染时发生异常，已阻止页面崩溃。可重试或返回首页。', en: 'A render error was caught. Retry or go back home.' },
+  errorBoundaryRetry: { zh: '重试', en: 'Retry' },
+  errorBoundaryHome: { zh: '返回首页', en: 'Home' },
+  goSelectTemplate: { zh: '去选模板', en: 'Browse templates' },
+  resumeTemplateUnknown: { zh: '未知模板', en: 'Unknown template' },
+
   // 全部简历抽屉
   selectAll: { zh: '全选', en: 'Select all' },
   deselectAll: { zh: '取消全选', en: 'Deselect all' },
@@ -488,6 +509,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   exportDoneLabel: { zh: '完成', en: 'Done' },
   exportingStatus: { zh: '正在导出', en: 'Exporting' },
   exportFinishedStatus: { zh: '导出完成', en: 'Export complete' },
+  // 用户在原生保存对话框点了「取消」：导出中止时的状态文案（区别于正常完成）
+  exportCanceledStatus: { zh: '已取消导出', en: 'Export canceled' },
   piecesCount: { zh: '{n} 份', en: '{n} items' },
   batchExportTitle: { zh: '批量导出', en: 'Batch export' },
   batchExportDesc: {

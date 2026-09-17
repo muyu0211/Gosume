@@ -7,6 +7,7 @@ import { WelcomePage } from './routes/WelcomePage'
 import { EditorPage } from './routes/EditorPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { CommunityPage } from './routes/CommunityPage'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { useResumeStore } from './stores/resumeStore'
 import { useThemeStore } from './stores/themeStore'
 import { useAppStore } from './stores/appStore'
@@ -75,12 +76,15 @@ export default function App() {
         <AppBackground />
         <TitleBar />
         <div className="flex-1 overflow-hidden">
-        <Routes>
-          <Route path="/" element={<WelcomePage />} />
-          <Route path="/editor" element={<EditorPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/community" element={<CommunityPage />} />
-        </Routes>
+          {/* 渲染异常兜底：任何子树抛错都不会卸载整棵树（否则整窗白屏） */}
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<WelcomePage />} />
+              <Route path="/editor" element={<EditorPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/community" element={<CommunityPage />} />
+            </Routes>
+          </ErrorBoundary>
         </div>
       </div>
     </HashRouter>

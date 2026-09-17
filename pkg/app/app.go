@@ -145,6 +145,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
 	event.AddEvent(event.EXPORT_COMPLETED, "1")
+	event.AddEvent(event.EXPORT_CANCELED, "1")
 	event.AddEvent(event.FILE_OPENED, "1")
 	event.AddEvent(event.FILE_SAVED, "1")
 	event.AddEvent(event.FILE_IMPORTED, "1")

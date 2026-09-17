@@ -218,23 +218,29 @@ func (s *ExportService) exportBatch(items []exportItem, exportType string, scale
 	total := len(items)
 
 	for i, item := range items {
+		// 只统计「已成功落盘」的份数。
+		s.app.Event.Emit(event.EXPORT_PROGRESS, int(float64(len(saved))/float64(total)*100))
+
 		data, err := s.renderOne(item.HTML, opts)
 		if err != nil {
 			log.Errorf("[export_service] exportBatch: 渲染跳过 name=%s: %v", item.Name, err)
 			continue
 		}
 
-		s.app.Event.Emit(event.EXPORT_PROGRESS, int(float64(i+1)/float64(total)*100))
-
 		safeName := dedupName(util.SanitizeFilename(item.Name), usedNames)
 		defaultName := fmt.Sprintf("%s.%s", safeName, formatSuffix(opts.FileFormat))
 
 		if exportDir == "" {
 			filePath, err := s.showSaveDialog(defaultName, opts, "批量导出 — 选择保存位置")
+			// 用户取消或对话框出错：此时还没有保存目录，后续文件无从落盘，
 			if err != nil {
+				log.Infof("[export_service] exportBatch: 保存对话框取消/失败，终止批量导出，已保存 %d/%d", len(saved), total)
 				return saved, nil
 			}
 			if filePath == "" {
+				log.Infof("[export_service] exportBatch: 用户取消保存（第 %d/%d 份），终止批量导出，已保存 %d 份", i+1, total, len(saved))
+				// 通知前端「已取消」
+				s.app.Event.Emit(event.EXPORT_CANCELED, "canceled")
 				return saved, nil
 			}
 			exportDir = filepath.Dir(filePath)
@@ -249,6 +255,9 @@ func (s *ExportService) exportBatch(items []exportItem, exportType string, scale
 			}
 			saved = append(saved, filePath)
 		}
+
+		// 仅在文件真正写入成功后递增进度
+		s.app.Event.Emit(event.EXPORT_PROGRESS, int(float64(len(saved))/float64(total)*100))
 	}
 
 	log.Infof("[export_service] exportBatch: 批量导出完成，成功 %d/%d", len(saved), total)

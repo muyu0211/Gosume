@@ -1,0 +1,8 @@
+﻿src/lib/defaultAvatar.ts(1,23): error TS2307: Cannot find module '../assets/svg/identity.svg?raw' or its corresponding type declarations.
+src/services/templateService.ts(13,33): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+src/services/templateService.ts(21,40): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+src/services/templateService.ts(29,38): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+src/services/templateService.ts(36,33): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+src/services/templateService.ts(41,32): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+src/services/templateService.ts(160,7): error TS2322: Type '{}' is not assignable to type 'string'.
+src/services/templateService.ts(168,43): error TS2322: Type '{}' is not assignable to type 'string'.

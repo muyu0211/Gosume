@@ -173,7 +173,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       if (resume) {
         const id = await callService<string>('ResumeService', 'GetTemplateID')
         console.log('[resumeStore] newResume: backend OK, currentId =', id || '(empty)')
-        set({ resume, isDirty: false, filePath: null, currentId: id || null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
+        // 后端 model.Resume 的切片字段都带 omitempty，nil 切片会被整体省略，
+        // 前端拿到的是一个「少字段」的对象（与 createEmptyResume 的 [] 不一致）。
+        // 这里以空简历为基线补齐，保证渲染层拿到结构完整的数据，避免后续按
+        // 数组假设访问（.map/.length）时抛异常。
+        const merged: Resume = { ...createEmptyResume(templateId), ...resume }
+        set({ resume: merged, isDirty: false, filePath: null, previewHtml: '', currentId: id || null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return
       }
     } catch (err) {
@@ -182,7 +187,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
   },
 
-  setResume: (resume) => set({ resume, isDirty: false, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
+  setResume: (resume) => set({ resume, isDirty: false, filePath: null, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
 
   updateField: (path, value) => {
     const resume = get().resume
@@ -216,7 +221,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
         const migrated = migratePersonalSummary(resume)
-        set({ resume: migrated, isDirty: false, currentId: id, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
+        set({ resume: migrated, isDirty: false, filePath: null, currentId: id, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return migrated
       }
     } catch (err) {

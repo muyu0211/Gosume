@@ -1,25 +1,27 @@
-import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { Clock, ArrowRight, Sparkles, Settings, List, Upload, FileUp, Loader2, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2, Heart, Download, Star, PackageOpen, Globe, Moon, Palette, Sun } from 'lucide-react'
+import { Clock, Sparkles, Settings, Upload, FileUp, Loader2, Trash2, CheckCircle2, PackageOpen, Globe, Moon, Palette, Sun, FileText, LayoutTemplate } from 'lucide-react'
 import { useThemeStore } from '../stores/themeStore'
 import { nextExplicitTheme } from '../lib/theme'
-import { ResumeListDrawer } from '../components/resume/ResumeListDrawer'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
 import { AnimatedPage } from '../components/ui/AnimatedPage'
+import { CrossFade } from '../components/ui/CrossFade'
+import { TabRail } from '../components/ui/TabRail'
 import { Tooltip } from '../components/ui/Tooltip'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Modal, type ModalHandle } from '../components/ui/Modal'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
-import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate, listTemplateCategories, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
+import { MyResumesPanel } from '../components/resume/MyResumesPanel'
+import { TemplateGalleryPanel } from '../components/template/TemplateGalleryPanel'
+import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
-import { resolvePaper } from '../lib/paper'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { createSampleResume } from '../services/sampleData'
 import { callService, isWails } from '../services/backend'
 import { generateAllThumbnails } from '../services/thumbnailService'
-import type { TemplateMeta, TemplateCategory, ImportLog } from '../types/template'
+import type { ImportLog } from '../types/template'
 import type { ResumeListItem } from '../types/resume'
 import type { FileParseResult, FileImportResponse } from '../types/gosume_file'
 import { migratePersonalSummary } from '../types/resume'
@@ -35,9 +37,6 @@ let sessionUpdateInfo: UpdateInfo | null = null
 export function WelcomePage() {
   const navigate = useNavigate()
   const t = useT()
-  const lang = useAppStore((s) => s.language)
-  const [recentFiles, setRecentFiles] = useState<ResumeListItem[]>([])
-  const [showDrawer, setShowDrawer] = useState(false)
 
   // 主题切换按钮：点击在三套显式主题间轮换（经典→麦色→深色→经典）。
   const appliedTheme = useThemeStore((s) => s.applied)
@@ -50,24 +49,17 @@ export function WelcomePage() {
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [importingTemplate, setImportingTemplate] = useState(false)
   const [importError, setImportError] = useState('')
-  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
   const [importingGosume, setImportingGosume] = useState(false)
   const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
   const [importSuccess, setImportSuccess] = useState('')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
-  const [marketCategories, setMarketCategories] = useState<TemplateCategory[]>([])
-  const [activeCategory, setActiveCategory] = useState('')
-  const [favoriteOnly, setFavoriteOnly] = useState(false)
-  const [favLoadingId, setFavLoadingId] = useState<string | null>(null)
-  const [exportingId, setExportingId] = useState<string | null>(null)
   const [importLogs, setImportLogs] = useState<ImportLog[]>([])
   const [showImportLogs, setShowImportLogs] = useState(false)
   const [deleteLogTarget, setDeleteLogTarget] = useState<ImportLog | null>(null)
   const [deletingLogId, setDeletingLogId] = useState<number | null>(null)
-  const PAGE_SIZE = 8
+  /** 首次简历列表加载状态：用于展示骨架屏，避免空态闪现。 */
+  const [listLoaded, setListLoaded] = useState(false)
   const templates = useTemplateStore((s) => s.templates)
   const setTemplates = useTemplateStore((s) => s.setTemplates)
   const setActiveTemplate = useTemplateStore((s) => s.setActiveTemplate)
@@ -76,28 +68,13 @@ export function WelcomePage() {
   const loadResume = useResumeStore((s) => s.loadResume)
   const setResumeList = useResumeStore((s) => s.setResumeList)
   const setResume = useResumeStore((s) => s.setResume)
-  const clearResume = useResumeStore((s) => s.clearResume)
-  const categoryOf = (t: TemplateMeta) => (t.category && t.category.trim()) || 'custom'
+  const resumeList = useResumeStore((s) => s.resumeList)
 
-  // 按分类/收藏过滤后的模板列表（本地筛选，模板体量小无需后端分页）
-  const marketTemplates = useMemo(
-    () => templates.filter((t) => {
-      if (activeCategory && categoryOf(t) !== activeCategory) return false
-      if (favoriteOnly && !t.is_favorite) return false
-      return true
-    }),
-    [templates, activeCategory, favoriteOnly],
-  )
-
-  const totalPages = Math.max(1, Math.ceil(marketTemplates.length / PAGE_SIZE))
-  const paginatedTemplates = marketTemplates.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  )
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages)
-  }, [marketTemplates.length])
+  // 首页 Tab：打开应用固定停在【我的简历】（不再因「暂无简历」自动跳到模板页，
+  // 空态卡片上另有「去挑选模板」入口）。切到【简历模板】只发生在用户当次点击
+  // Tab 或点「新建简历」时，且为会话级状态、不跨启动保留。
+  const homeTab = useAppStore((s) => s.homeTab)
+  const setHomeTab = useAppStore((s) => s.setHomeTab)
 
   useEffect(() => {
     loadData()
@@ -122,11 +99,6 @@ export function WelcomePage() {
     try {
       const metas = await loadTemplateMetas()
       setTemplates(metas)
-
-      // 模板市场：同步分类列表（失败静默，非 Wails 场景可忽略）
-      try {
-        setMarketCategories(await listTemplateCategories())
-      } catch { /* 忽略 */ }
 
       const previews: Record<string, string> = {}
       for (const meta of metas) {
@@ -154,50 +126,48 @@ export function WelcomePage() {
 
     try {
       const list = await callService<ResumeListItem[]>('ResumeService', 'ListResumes')
-      if (list) {
-        setResumeList(list)
-        setRecentFiles(list)
-      }
-    } catch { /* empty list */ }
+      if (list) setResumeList(list)
+    } catch { /* empty list */ } finally {
+      setListLoaded(true)
+    }
   }
 
+  // 「新建 / 打开 / 导入」统一约定：先拿到简历数据，再跳转编辑页。
+  // 不能在 await 之前 clearResume() —— 那会让 store 在等待后端期间处于
+  // resume === null 的空窗；一旦这一步失败就会带着 null 跳进编辑页，
+  // 命中空态骨架后又被挂载 effect 踢回首页，表现为「内容被清空 + 白屏」。
+  // newResume / loadResume / setResume 内部已完整重置（previewHtml、
+  // currentId、filePath、测量结果），调用方无需提前清空。
   const handleNewResume = async (templateId: string) => {
-    clearResume()
     setActiveTemplate(templateId)
     await newResume(templateId)
+    if (!useResumeStore.getState().resume) return
     navigate('/editor')
   }
 
+  /** 工具条「新建简历」：先切到【简历模板】，由用户挑模板后再创建并进入编辑页。 */
+  const handleCreateResume = () => {
+    setHomeTab('templates')
+  }
+
   const handlePreviewWithSample = async (templateId: string) => {
-    clearResume()
     setActiveTemplate(templateId)
     const sampleResume = createSampleResume(templateId)
     try {
       await callService('ResumeService', 'InitResume', sampleResume)
-      setResume(sampleResume)
-      navigate('/editor')
     } catch (err) {
       console.error('InitResume failed:', err)
       // 失败时仍进入编辑器（内存态可用），后续保存会重新创建记录
-      setResume(sampleResume)
-      navigate('/editor')
     }
-  }
-
-  const handleOpenRecent = async (id: string) => {
-    clearResume()
-    const resume = await loadResume(id)
-    if (resume && resume.meta?.template_id) {
-      setActiveTemplate(resume.meta.template_id)
-    }
+    setResume(sampleResume)
     navigate('/editor')
   }
 
-  const handleOpenFromDrawer = async (id: string) => {
-    setShowDrawer(false)
-    clearResume()
+  const handleOpenResume = async (id: string) => {
     const resume = await loadResume(id)
-    if (resume && resume.meta?.template_id) {
+    // 加载失败：保留首页与当前数据，不跳转，避免把用户带进空编辑页
+    if (!resume) return
+    if (resume.meta?.template_id) {
       setActiveTemplate(resume.meta.template_id)
     }
     navigate('/editor')
@@ -246,15 +216,12 @@ export function WelcomePage() {
       // 刷新简历列表（覆盖改变了 name/updated_at）
       try {
         const list = await callService<ResumeListItem[]>('ResumeService', 'ListResumes')
-        if (list) {
-          setResumeList(list)
-          setRecentFiles(list)
-        }
+        if (list) setResumeList(list)
       } catch { /* 忽略，列表随下次加载刷新 */ }
       // 覆盖后直接进入编辑页继续编辑（与打开简历一致的加载流程）
-      clearResume()
       const loaded = await loadResume(result.id)
-      if (loaded && loaded.meta?.template_id) {
+      if (!loaded) return
+      if (loaded.meta?.template_id) {
         setActiveTemplate(loaded.meta.template_id)
       }
       navigate('/editor')
@@ -263,52 +230,26 @@ export function WelcomePage() {
 
     // 新建：用导入数据进入编辑器
     if (!resume) return
-    clearResume()
     setActiveTemplate(finalTemplateId)
     // 兼容历史数据：早期顶层 summary 字段迁移到 personal_summary 结构
     setResume(migratePersonalSummary(resume))
     navigate('/editor')
   }
 
-  const handleDeleteTemplate = (id: string, name: string) => {
-    setDeleteTarget({ id, name })
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return
-    const { id } = deleteTarget
-    setDeletingTemplateId(id)
-    setImportError('')
-    try {
-      await deleteTemplate(id)
-      await loadData()
-    } catch (err) {
-      console.error('Delete template failed:', err)
-      setImportError(extractErrorMessage(err, t('deleteTemplateFailed')))
-    } finally {
-      setDeletingTemplateId(null)
-      setDeleteTarget(null)
-    }
-  }
-
   // 收藏 / 取消收藏（写入后端并同步 store，卡片即时反映）
   const handleToggleFavorite = async (id: string, favorite: boolean) => {
-    setFavLoadingId(id)
     setImportError('')
     try {
       if (isWails()) await setTemplateFavorite(id, favorite)
-      setTemplates(templates.map((t) => (t.id === id ? { ...t, is_favorite: favorite } : t)))
+      setTemplates(templates.map((tpl) => (tpl.id === id ? { ...tpl, is_favorite: favorite } : tpl)))
     } catch (err) {
       console.error('Toggle favorite failed:', err)
       setImportError(extractErrorMessage(err, favorite ? t('favoriteFailed') : t('unfavoriteFailed')))
-    } finally {
-      setFavLoadingId(null)
     }
   }
 
   // 导出分享包（弹出原生保存对话框，成功返回文件路径）
-  const handleExportTemplate = async (id: string, name: string) => {
-    setExportingId(id)
+  const handleExportTemplate = async (id: string) => {
     setImportError('')
     setImportSuccess('')
     try {
@@ -317,8 +258,6 @@ export function WelcomePage() {
     } catch (err) {
       console.error('Export template failed:', err)
       setImportError(extractErrorMessage(err, t('exportShareFailed')))
-    } finally {
-      setExportingId(null)
     }
   }
 
@@ -347,13 +286,6 @@ export function WelcomePage() {
       setDeletingLogId(null)
       setDeleteLogTarget(null)
     }
-  }
-
-  // 切换分类筛选（重置到第一页）
-  const handleSelectCategory = (category: string) => {
-    setActiveCategory(category)
-    setFavoriteOnly(false)
-    setCurrentPage(1)
   }
 
   return (
@@ -412,13 +344,6 @@ export function WelcomePage() {
             {importingGosume ? <Loader2 className="size-icon-md animate-spin" /> : <FileUp className="size-icon-md shrink-0" />}
             <span className="hidden md:inline">{t('importResume')}</span>
           </button>
-          <button
-            onClick={() => setShowDrawer(true)}
-            className="btn-secondary btn-sm"
-          >
-            <List className="size-icon-md shrink-0" />
-            <span className="hidden md:inline">{t('allResumes')}</span>
-          </button>
           <Tooltip label={themeTitle}>
             <button
               onClick={handleCycleTheme}
@@ -459,115 +384,44 @@ export function WelcomePage() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto px-8 pb-8 mr-1">
-        {/* Template Selection */}
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-5">
-            <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
-              {t('chooseTemplateToStart')}
-            </h2>
-            <div className="flex-1 h-px bg-surface-200" />
-          </div>
-          {/* 分类筛选 / 收藏（模板市场能力整合到主页） */}
-          <div className="flex items-center gap-2 mb-5 flex-wrap">
-            <FilterChip
-              active={!activeCategory && !favoriteOnly}
-              onClick={() => { setActiveCategory(''); setFavoriteOnly(false); setCurrentPage(1) }}
-            >
-              {t('all')}
-            </FilterChip>
-            {marketCategories.map((cat) => (
-              <FilterChip
-                key={cat.name}
-                active={activeCategory === cat.name && !favoriteOnly}
-                onClick={() => handleSelectCategory(cat.name)}
-              >
-                {cat.name === 'custom' ? t('uncategorized') : cat.name}
-              </FilterChip>
-            ))}
-            <div className="flex-1" />
-            <FilterChip
-              active={favoriteOnly}
-              onClick={() => { setFavoriteOnly(!favoriteOnly); setCurrentPage(1) }}
-            >
-              <Star className="size-icon-sm" />
-              {t('myFavorites')}
-            </FilterChip>
-          </div>
-          {paginatedTemplates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-surface-300">
-              <Star className="size-ctl-lg mb-2" />
-              <p className="text-sm">{t('noTemplateInCategory')}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-5" key={currentPage}>
-              {paginatedTemplates.map((tmpl, i) => (
-                <TemplateCard
-                  key={tmpl.id}
-                  template={tmpl}
-                  previewHtml={previewHtmls[tmpl.id]}
-                  onSelect={() => handleNewResume(tmpl.id)}
-                  onPreview={() => handlePreviewWithSample(tmpl.id)}
-                  onDelete={!tmpl.is_builtin ? () => handleDeleteTemplate(tmpl.id, tmpl.name) : undefined}
-                  isDeleting={deletingTemplateId === tmpl.id}
-                  favorite={!!tmpl.is_favorite}
-                  favLoading={favLoadingId === tmpl.id}
-                  sharing={exportingId === tmpl.id}
-                  onToggleFavorite={() => handleToggleFavorite(tmpl.id, !tmpl.is_favorite)}
-                  onShare={() => handleExportTemplate(tmpl.id, tmpl.name)}
-                  index={i}
-                />
-              ))}
-            </div>
-          )}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </section>
-
-        {/* Recent Files */}
-        {recentFiles.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-5">
-              <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider">
-                {t('recentOpened')}
-              </h2>
-              <div className="flex-1 h-px bg-surface-200" />
-            </div>
-            <div className="space-y-1.5 max-w-lg">
-              {recentFiles.slice(0, 3).map((file) => (
-                <div
-                  key={file.id}
-                  className="glass-entry glass-hover flex items-center gap-4 px-4 py-3 cursor-pointer transition-all duration-150 group"
-                  onClick={() => handleOpenRecent(file.id)}
-                >
-                  <div className="size-ctl-lg rounded-lg bg-surface-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
-                    <Clock className="size-icon-md text-surface-400 group-hover:text-primary-500 transition-colors" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-surface-700 truncate">{file.name}</p>
-                    <p className="text-xs text-surface-400 mt-0.5">
-                      {new Date(file.updated_at).toLocaleString(lang === 'en-US' ? 'en-US' : 'zh-CN')}
-                    </p>
-                  </div>
-                  <ArrowRight className="size-icon-md text-surface-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all" />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
-
-      <ResumeListDrawer
-        open={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        onOpenResume={handleOpenFromDrawer}
-      />
+      {/* 主体：左侧 Tab 栏 + 右侧主内容区 */}
+      <div className="flex-1 flex overflow-hidden">
+        <TabRail
+          value={homeTab}
+          onChange={setHomeTab}
+          ariaLabel={t('homeTabLabel')}
+          className="w-[180px] flex-shrink-0 px-3"
+          items={[
+            { value: 'resumes', label: t('homeTabResumes'), icon: FileText, badge: resumeList.length },
+            { value: 'templates', label: t('homeTabTemplates'), icon: LayoutTemplate },
+          ]}
+        />
+        <main className="flex-1 overflow-auto px-8 pb-8 mr-1">
+          <CrossFade trigger={homeTab}>
+            {homeTab === 'resumes' ? (
+              <MyResumesPanel
+                resumes={resumeList}
+                loading={!listLoaded}
+                onOpen={handleOpenResume}
+                onNewResume={handleCreateResume}
+                onGotoTemplates={() => setHomeTab('templates')}
+              />
+            ) : (
+              <TemplateGalleryPanel
+                previewHtmls={previewHtmls}
+                onNewResume={handleNewResume}
+                onPreviewWithSample={handlePreviewWithSample}
+                onDeleteTemplate={async (id) => {
+                  await deleteTemplate(id)
+                  await loadData()
+                }}
+                onToggleFavorite={handleToggleFavorite}
+                onShare={handleExportTemplate}
+              />
+            )}
+          </CrossFade>
+        </main>
+      </div>
 
       {importPreview && (
         <ImportPreviewDialog
@@ -583,17 +437,6 @@ export function WelcomePage() {
           onClose={() => setShowUpdateDialog(false)}
         />
       )}
-
-      <ConfirmDialog
-        open={!!deleteTarget}
-        title={t('deleteTemplate')}
-        description={t('deleteTemplateConfirm').replace('{name}', deleteTarget?.name || '')}
-        confirmText={t('delete')}
-        danger
-        loading={!!deletingTemplateId}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeleteTarget(null)}
-      />
 
       {/* 模板导入记录 */}
       {showImportLogs && (
@@ -617,210 +460,6 @@ export function WelcomePage() {
       />
     </AnimatedPage>
     </>
-  )
-}
-
-function Pagination({ currentPage, totalPages, onPageChange }: {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-}) {
-  const t = useT()
-  return (
-    <div className="flex items-center justify-center gap-1 mt-6">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label={t('prevPage')}
-      >
-        <ChevronLeft className="size-icon-md" />
-      </button>
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`size-ctl-md rounded-full text-sm font-medium transition-colors ${page === currentPage
-            ? 'bg-primary-600 text-white shadow-sm'
-            : 'text-surface-500 hover:text-surface-700 hover:bg-surface-100'
-            }`}
-        >
-          {page}
-        </button>
-      ))}
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-600 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label={t('nextPage')}
-      >
-        <ChevronRight className="size-icon-md" />
-      </button>
-    </div>
-  )
-}
-
-function TemplateCard({ template, previewHtml, onSelect, onPreview, onDelete, isDeleting = false, favorite = false, favLoading = false, sharing = false, onToggleFavorite, onShare, index = 0 }: {
-  template: TemplateMeta
-  previewHtml?: string
-  onSelect: () => void
-  onPreview: () => void
-  onDelete?: () => void
-  isDeleting?: boolean
-  favorite?: boolean
-  favLoading?: boolean
-  sharing?: boolean
-  onToggleFavorite?: () => void
-  onShare?: () => void
-  index?: number
-}) {
-  const t = useT()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.16)
-  const [isHovered, setIsHovered] = useState(false)
-  const paper = useMemo(
-    () => resolvePaper(template.paper_size, template.orientations?.[0]),
-    [template.paper_size, template.orientations],
-  )
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const update = () => {
-      const w = el.clientWidth
-      if (w > 0) setScale(w / paper.pxW)
-    }
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [paper.pxW])
-
-  return (
-    <div
-      onClick={onSelect}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="glass glass-card hover-lift group cursor-pointer overflow-hidden animate-card-enter flex flex-col"
-      style={{ animationDelay: `${index * 60}ms`, containerType: 'inline-size' }}
-    >
-      {/* Preview area */}
-      <div ref={containerRef} className="relative overflow-hidden bg-surface-100" style={{ aspectRatio: `${paper.mmW} / ${paper.mmH}` }}>
-        {previewHtml ? (
-          <iframe
-            srcDoc={previewHtml}
-            className="absolute border-0 pointer-events-none"
-            style={{
-              width: paper.pxW,
-              height: paper.pxH,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-            }}
-            title={template.name}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-2 border-surface-200 border-t-surface-400 animate-spin" />
-          </div>
-        )}
-
-        {/* 收藏星标（点击独立于卡片选中；置于左上角，避免被右侧 hover 面板遮挡） */}
-        {onToggleFavorite && (
-          <Tooltip label={favorite ? t('unfavorite') : t('favorite')} className="absolute top-2.5 left-2.5">
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
-              disabled={favLoading}
-              className={`size-ctl-md rounded-full flex items-center justify-center shadow-md transition-all ${favorite ? 'bg-warning-400 text-white hover:bg-warning-500' : 'bg-elev/90 text-surface-400 hover:text-warning-500 hover:shadow-lg'
-                } disabled:opacity-60`}
-            >
-              {favLoading ? <Loader2 className="size-icon-md animate-spin" /> : <Heart className={`size-icon-md ${favorite ? 'fill-current' : ''}`} />}
-            </button>
-          </Tooltip>
-        )}
-
-        {/* Hover blur overlay + preview button — slides in from right */}
-        <div
-          className="absolute inset-y-0 right-0 flex items-center justify-center transition-transform duration-300 ease-out"
-          style={{
-            // 宽度自适应内容（≥1/3 卡片宽），避免英文按钮文本比面板宽导致溢出露边；
-            // translateX(100%) 按自身宽度移动，内容不超出时即可完全移出卡片。
-            width: 'max-content',
-            minWidth: '33.333%',
-            maxWidth: '75%',
-            transform: isHovered ? 'translateX(0)' : 'translateX(100%)',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Gaussian blur backdrop（背景色取自主题 --elev：浅色白色磨砂，深色自动变深） */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backdropFilter: 'blur(12px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(12px) saturate(1.2)',
-              background: 'rgb(var(--elev) / 0.25)',
-            }}
-          />
-          {/* Preview + delete buttons on top of blur */}
-          <div className="relative z-10 flex flex-col items-center gap-2 px-4">
-            <button
-              onClick={(e) => { e.stopPropagation(); onPreview() }}
-              className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-surface-800 text-sm font-medium active:scale-95 transition-all duration-150 disabled:opacity-50"
-            >
-              <Eye className="size-icon-md shrink-0" />
-              <span className="preview-label truncate min-w-0">{t('preview')}</span>
-            </button>
-            {onShare && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onShare() }}
-                disabled={sharing}
-                className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-primary-600 text-sm font-medium hover:text-primary-700 active:scale-95 transition-all duration-150 disabled:opacity-50"
-              >
-                {sharing ? <Loader2 className="size-icon-md animate-spin" /> : <Download className="size-icon-md shrink-0" />}
-                <span className="preview-label truncate min-w-0">{t('export')}</span>
-              </button>
-            )}
-            {!template.is_builtin && onDelete && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete() }}
-                disabled={isDeleting}
-                className="preview-btn glass flex items-center justify-center gap-2 px-4 py-2 max-w-full min-w-[112px] rounded-full text-danger-600 text-sm font-medium hover:text-danger-700 active:scale-95 transition-all duration-150 disabled:opacity-50"
-              >
-                {isDeleting ? <Loader2 className="size-icon-md animate-spin" /> : <Trash2 className="size-icon-md shrink-0" />}
-                <span className="preview-label truncate min-w-0">{t('delete')}</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Meta info：玻璃叠层（半透明 + 高光描边，模糊由外层卡片的玻璃承担）。
-          flex-1 拉伸填满卡片剩余高度（网格等高拉伸时单行描述卡也占满，不露底部空条），
-          标签 mt-auto 固定贴底 —— 单行/多行描述的卡片标签高度一致。 */}
-      <div className="glass-plate p-4 flex-1 flex flex-col">
-        <h3 className="text-sm font-semibold text-surface-800">{template.name}</h3>
-        <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{template.description}</p>
-        <div className="flex gap-1.5 mt-auto pt-2">
-          {template.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-surface-100 text-surface-500 font-medium">
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// 分类筛选胶囊（模板市场能力整合到主页）
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`glass glass-chip w-24 h-ctl-sm flex items-center justify-center gap-1.5 px-3 text-xs font-medium leading-none transition-colors ${
-        active ? 'glass-chip-on' : ''
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 
