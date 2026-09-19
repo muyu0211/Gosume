@@ -72,7 +72,6 @@ export const CHINA_ETHNICITIES: string[] = [
   '珞巴族',
 ]
 
-/** 默认民族：汉族（列表首位）。表单未选择时以此作为展示默认值。 */
 export const DEFAULT_ETHNICITY: string = CHINA_ETHNICITIES[0]
 
 /** CustomSelect 选项格式（结构兼容 SelectOption）。 */

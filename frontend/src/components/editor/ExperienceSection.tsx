@@ -3,6 +3,7 @@ import { useResumeStore } from '../../stores/resumeStore'
 import type { Job, Project, Internship } from '../../types/resume'
 import { Plus, Trash2, ChevronDown, ChevronRight, Briefcase, FolderGit2, Building, GripVertical, EyeOff } from 'lucide-react'
 import { VisibilityToggle } from '../ui/VisibilityToggle'
+import { Checkbox } from '../ui/Checkbox'
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
@@ -161,15 +162,11 @@ export function ExperienceSection({ type, title }: Props) {
                           />
                         </div>
                       </div>
-                      <label className="flex items-center gap-2 text-xs text-surface-500">
-                        <input
-                          type="checkbox"
-                          checked={(item as Job).is_current || false}
-                          onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Job).end_date } as Partial<Job>)}
-                          className="accent-primary-600"
-                        />
-                        {t('currentEmployed')}
-                      </label>
+                      <Checkbox
+                        checked={(item as Job).is_current || false}
+                        onChange={(v) => updateItem(idx, { is_current: v, end_date: v ? '' : (item as Job).end_date } as Partial<Job>)}
+                        label={<span className="text-xs text-surface-500">{t('currentEmployed')}</span>}
+                      />
                       <div>
                         <label className="form-label">{t('workLocation')}</label>
                         <input className="form-input" value={(item as Job).location || ''} onChange={(e) => updateItem(idx, { location: e.target.value } as Partial<Job>)} placeholder="北京" maxLength={100} />
@@ -216,15 +213,11 @@ export function ExperienceSection({ type, title }: Props) {
                           />
                         </div>
                       </div>
-                      <label className="flex items-center gap-2 text-xs text-surface-500">
-                        <input
-                          type="checkbox"
-                          checked={(item as Project).is_current || false}
-                          onChange={(e) => updateItem(idx, { is_current: e.target.checked, end_date: e.target.checked ? '' : (item as Project).end_date } as Partial<Project>)}
-                          className="accent-primary-600"
-                        />
-                        {t('currentProject')}
-                      </label>
+                      <Checkbox
+                        checked={(item as Project).is_current || false}
+                        onChange={(v) => updateItem(idx, { is_current: v, end_date: v ? '' : (item as Project).end_date } as Partial<Project>)}
+                        label={<span className="text-xs text-surface-500">{t('currentProject')}</span>}
+                      />
                       <div>
                         <div className="flex items-center justify-between">
                           <label className="form-label mb-0">{t('projectSummary')}</label>

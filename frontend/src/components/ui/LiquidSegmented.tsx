@@ -19,6 +19,14 @@ interface Props<T extends string> {
   disabled?: boolean
   /** 追加到外层容器的类名（宽度、外边距等）。 */
   className?: string
+  /**
+   * 无障碍语义：
+   * - `tablist`（默认）：切换的是面板/视图（tabpanel 场景），沿用 tab 语义。
+   * - `radiogroup`：纯取值切换（如清晰度 1x/1.5x/2x），用 radio 语义更准确。
+   */
+  semantic?: 'tablist' | 'radiogroup'
+  /** 尺寸档：`sm`（默认，工具条/页签）｜ `md`（与 label 同行的富场景，加高加宽）。 */
+  size?: 'sm' | 'md'
 }
 
 /**
@@ -31,8 +39,11 @@ interface Props<T extends string> {
  *
  * 选中态**不是**按钮自身背景，而是抽离成一个独立的绝对定位胶囊 `.seg-pill`：
  *
- * - **位移走 transform**：`translate3d(x, y, 0)`，x/y 由 `getBoundingClientRect()`
- *   实测「目标按钮相对容器」的差值算出，因此文字长度不同的选项也能精确贴合。
+ * - **位移走 transform**：`translate3d(x, y, 0)`，x/y 取目标按钮的
+ *   `offsetLeft / offsetTop`（`.seg` 是 `position: relative`，即 offsetParent，
+ *   所以这组值本身就是「相对容器」的位移）。**用布局尺寸而非
+ *   `getBoundingClientRect()`** —— 后者是视觉矩形，会被祖先的
+ *   `transform` 动画（如模态入场 `scaleY`）缩放，导致首帧测量错乱，详见 place() 注释。
  * - **宽度必须一起改**：不能用 `scaleX` 缩放——那会把胶囊两端的圆角一起拉扁。
  *   胶囊是 `position:absolute`，改它的 width/height 不会让兄弟按钮重排。
  * - **过渡按需挂载**：过渡写在 `.is-animated` 上，`place(false)` 时不挂该类，
@@ -46,9 +57,8 @@ interface Props<T extends string> {
  *
  * roving tabindex：整个控件只占一个 Tab 停靠点，内部用方向键 / Home / End 切换。
  *
- * 注意：这里沿用 `role="tablist" / role="tab"`（与预览页一致）。若用在不控制
- * tabpanel 的纯切换场景，语义上更准确的是 `radiogroup` + `radio` + `aria-checked`，
- * 届时把两个 role 换掉即可，其余逻辑不用动。
+ * 注意：默认沿用 `role="tablist" / role="tab"`（与预览页一致）。用在纯切换
+ * （不控制 tabpanel）场景时传 `semantic="radiogroup"`，语义更准确。
  */
 export function LiquidSegmented<T extends string = string>({
   value,
@@ -57,6 +67,8 @@ export function LiquidSegmented<T extends string = string>({
   ariaLabel,
   disabled = false,
   className = '',
+  semantic = 'tablist',
+  size = 'sm',
 }: Props<T>) {
   const rootRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
@@ -68,14 +80,9 @@ export function LiquidSegmented<T extends string = string>({
     return i >= 0 ? i : 0
   }, [items, value])
 
-  // place 需要保持稳定引用（ResizeObserver 只订阅一次），
-  // 因此把会变的数据放进 ref，由 effect 同步。
   const stateRef = useRef({ items, activeIndex })
-  useEffect(() => {
-    stateRef.current = { items, activeIndex }
-  }, [items, activeIndex])
+  stateRef.current = { items, activeIndex }
 
-  /** 把胶囊对位到当前选中按钮。animate=false 时瞬间就位（首次渲染 / 尺寸重算）。 */
   const place = useCallback((animate: boolean) => {
     const root = rootRef.current
     const pill = pillRef.current
@@ -88,18 +95,17 @@ export function LiquidSegmented<T extends string = string>({
       return
     }
 
-    const rootRect = root.getBoundingClientRect()
-    const rect = btn.getBoundingClientRect()
-    // 尚未布局（隐藏 / 零宽）时先藏起来，等 ResizeObserver 回调再定位
-    if (!rect.width || !rect.height) {
+    const w = btn.offsetWidth
+    const h = btn.offsetHeight
+    if (!w || !h) {
       pill.style.opacity = '0'
       return
     }
 
     pill.classList.toggle('is-animated', animate)
-    pill.style.width = `${rect.width}px`
-    pill.style.height = `${rect.height}px`
-    pill.style.transform = `translate3d(${rect.left - rootRect.left}px, ${rect.top - rootRect.top}px, 0)`
+    pill.style.width = `${w}px`
+    pill.style.height = `${h}px`
+    pill.style.transform = `translate3d(${btn.offsetLeft}px, ${btn.offsetTop}px, 0)`
     pill.style.opacity = '1'
   }, [])
 
@@ -116,7 +122,6 @@ export function LiquidSegmented<T extends string = string>({
     place(false)
   }, [itemsKey, place])
 
-  // 容器尺寸变化 → 无动画重算
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
@@ -190,8 +195,8 @@ export function LiquidSegmented<T extends string = string>({
     <div
       ref={rootRef}
       data-lg
-      className={`seg ${className}`}
-      role="tablist"
+      className={`seg ${size === 'md' ? 'seg-md' : ''} ${className}`}
+      role={semantic === 'radiogroup' ? 'radiogroup' : 'tablist'}
       aria-label={ariaLabel}
       aria-orientation="horizontal"
       aria-disabled={disabled || undefined}
@@ -208,9 +213,10 @@ export function LiquidSegmented<T extends string = string>({
               btnRefs.current[item.value] = el
             }}
             type="button"
-            role="tab"
+            role={semantic === 'radiogroup' ? 'radio' : 'tab'}
             className="seg-btn"
-            aria-selected={selected}
+            aria-checked={semantic === 'radiogroup' ? selected : undefined}
+            aria-selected={semantic === 'radiogroup' ? undefined : selected}
             tabIndex={selected ? 0 : -1}
             disabled={disabled || item.disabled}
             onClick={() => {

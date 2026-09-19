@@ -5,6 +5,7 @@ import { AnimatedPage } from '../components/ui/AnimatedPage'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { Switch } from '../components/ui/Switch'
+import { RadioGroup } from '../components/ui/RadioGroup'
 import { ToolsPanel } from '../components/tools/ToolsPanel'
 import { AIConfigManagerDialog } from '../components/ai/AIConfigManagerDialog'
 import { ProviderLogo } from '../components/ai/ProviderLogo'
@@ -274,36 +275,16 @@ export function SettingsPage() {
               <span className="form-section-title">{t('languageSection')}</span>
             </div>
           </div>
-          <div className="space-y-3">
-            <label className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer">
-              <input
-                type="radio"
-                name="language"
-                value="zh-CN"
-                checked={appLang === 'zh-CN'}
-                onChange={() => handleLanguageChange('zh-CN')}
-                className="accent-primary-600"
-              />
-              <div>
-                <p className="text-sm font-medium text-surface-700">简体中文</p>
-                <p className="text-xs text-surface-400">{t('useZhInterface')}</p>
-              </div>
-            </label>
-            <label className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer">
-              <input
-                type="radio"
-                name="language"
-                value="en-US"
-                checked={appLang === 'en-US'}
-                onChange={() => handleLanguageChange('en-US')}
-                className="accent-primary-600"
-              />
-              <div>
-                <p className="text-sm font-medium text-surface-700">English</p>
-                <p className="text-xs text-surface-400">Use English interface</p>
-              </div>
-            </label>
-          </div>
+          <RadioGroup<'zh-CN' | 'en-US'>
+            layout="card"
+            value={appLang}
+            onChange={handleLanguageChange}
+            ariaLabel={t('languageSection')}
+            options={[
+              { value: 'zh-CN', label: '简体中文', description: t('useZhInterface') },
+              { value: 'en-US', label: 'English', description: 'Use English interface' },
+            ]}
+          />
         </section>
 
         {/* Appearance: theme mode (follow system / classic / wheat / obsidian) */}
@@ -314,27 +295,17 @@ export function SettingsPage() {
               <span className="form-section-title">{t('appearance')}</span>
             </div>
           </div>
-          <div className="space-y-2">
-            {themeOptions.map((opt) => (
-              <label
-                key={opt.value}
-                className="glass-entry glass-hover flex items-center gap-3 p-3 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="theme"
-                  value={opt.value}
-                  checked={themeMode === opt.value}
-                  onChange={() => handleThemeChange(opt.value)}
-                  className="accent-primary-600"
-                />
-                <div>
-                  <p className="text-sm font-medium text-surface-700">{t(opt.titleKey)}</p>
-                  <p className="text-xs text-surface-400">{t(opt.descKey)}</p>
-                </div>
-              </label>
-            ))}
-          </div>
+          <RadioGroup<ThemeMode>
+            layout="card"
+            value={themeMode}
+            onChange={(mode) => void handleThemeChange(mode)}
+            ariaLabel={t('appearance')}
+            options={themeOptions.map((opt) => ({
+              value: opt.value,
+              label: t(opt.titleKey),
+              description: t(opt.descKey),
+            }))}
+          />
         </section>
 
         {/* 背景壁纸：纯 CSS 渐变铺在界面底层，选中即时生效，本页即可实时预览 */}

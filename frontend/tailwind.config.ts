@@ -97,6 +97,14 @@ export default {
       // ----- 苹果风圆角尺度 -----
       // radius ≈ min(height / 4, 12px)：控件 7/9、卡片 12、模态 16。
       // 覆盖后既有 rounded-md/lg/xl/2xl 自动换成苹果尺度，无需逐文件改类名。
+      // 苹果风玻璃底色常用的低透明度步进（6/8/12）不在 Tailwind 默认刻度里，
+      // 缺失会导致 bg-*/6、/8、/12 整类**静默不生成**（JobSummaryBar 选中态
+      // 只剩「已过期」有底色的根因）。补齐后 slash 透明度按设计值生效。
+      opacity: {
+        6: '6%',
+        8: '8%',
+        12: '12%',
+      },
       borderRadius: {
         none: '0px',
         DEFAULT: '6px',

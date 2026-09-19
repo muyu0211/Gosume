@@ -19,8 +19,10 @@ const APP_LANG_KEY = 'gosume-app-language'
 
 export type AppLanguage = 'zh-CN' | 'en-US'
 
-/** 首页一级 Tab：我的简历 / 简历模板。 */
-export type HomeTab = 'resumes' | 'templates'
+/**
+ * 首页一级 Tab：我的简历 / 简历模板 / 求职进程。
+ */
+export type HomeTab = 'resumes' | 'templates' | 'jobs'
 
 function readInit(): AppLanguage {
   return localStorage.getItem(APP_LANG_KEY) === 'en-US' ? 'en-US' : 'zh-CN'

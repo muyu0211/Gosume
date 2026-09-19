@@ -156,6 +156,48 @@
   }
 }
 
+/* 
+  模态卡片的尺寸过渡（2026-09-18）。
+ */
+.gosume-modal-size {
+  interpolate-size: allow-keywords;
+}
+
+.gosume-modal-size.glass-modal {
+  transition:
+    height var(--dur-base) var(--ease-apple),
+    width var(--dur-base) var(--ease-apple),
+    background var(--dur-base) var(--ease-apple),
+    box-shadow var(--dur-base) var(--ease-apple),
+    transform var(--dur-instant) var(--ease-apple),
+    opacity var(--dur-fast) linear,
+    color var(--dur-hover) var(--ease-apple);
+}
+
+/* useLayoutTransition 三拍写值法的拍1 抑制类：把上面的过渡整条按住，
+   供「写旧起点值」那一拍使用；摘掉即自然回落，绝不手动改 el.style.transition
+   （留空 inline 声明会永久废掉该元素的过渡）。 */
+.gosume-no-layout-transition {
+  transition: none !important;
+}
+
+/* 拉伸过渡的中间帧：卡片显式高度小于内容所需（新内容在动画开始时就已整体挂载），
+   卡片内 overflow-auto 滚动体会被瞬时压出经典滚动条又收回 → 闪烁抖动。
+   scrollbar-width:none 不保留 gutter（区别于 overflow:hidden / gutter:stable），
+   内容宽度恒定无回流；落定后 JS 摘掉 data-layout-transitioning，规则自动失效。
+   窗口真放不下（90vh 天花板）时动画不跑、标记不在 → 内部滚动零破坏。 */
+[data-layout-transitioning],
+[data-layout-transitioning] .gosume-modal-scroll {
+  scrollbar-width: none;
+}
+[data-layout-transitioning]::-webkit-scrollbar,
+[data-layout-transitioning] .gosume-modal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 旧内核不支持 interpolate-size 时退化为瞬跳，
+   属可接受的优雅降级（WebView2 内核远高于要求的 129）。 */
+
 /* ===== 主题令牌 =====
    主题机制：Tailwind 的 surface/primary 色板由 CSS 变量驱动。
    <html data-theme="classic|wheat|obsidian"> 决定变量取值。
@@ -1285,6 +1327,37 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   animation: page-enter 0.25s ease-out both;
 }
 
+/*
+  ⚠ 页面容器**不能长期保留下行 transform / will-change：transform** 之外的
+  「包含块」副作用，否则页面内的 `position: fixed` 浮层会被它捕获。
+
+  背景（实际踩坑，2026-09-18）：`animation-fill-mode: both` 让 `to` 帧的
+  `transform: translateY(0)` **永久生效**——`transform` 只要不是 `none`，
+  该元素就成为固定定位元素的**包含块**（containing block），同时 `overflow:hidden`
+  的祖先还会裁剪它。于是求职进程「设置」模态出现三个症状：
+    ① 遮罩从「视口」变成「面板内容框」（实测 1168×320 at 212,126，应为 1416×808 at 0,0），
+       表现为背景模糊只覆盖一小块；
+    ② 卡片被祖先 `overflow:hidden` 裁掉下半部分；
+    ③ 居中是相对面板而非视口，视觉上偏移、被其他元素压住。
+
+  修法：动画播完后把动画撤销（`animationend` 后由类名移除，见 .animate-page-enter-done），
+  此时 `transform` 回到 `none`，包含块副作用消失，`fixed` 重新相对视口解析。
+  动画时长/曲线/关键帧**均未改动**，进出场观感完全一致。
+*/
+.animate-page-enter-done {
+  animation: none;
+}
+
+/* CrossFade 的切页内容动画：同样必须播完即撤。
+   原因同上——`animation-fill-mode: both` 让 `to` 帧的 transform 永久生效，
+   该元素就成了 fixed / absolute 浮层的包含块。实测它是首页「求职进程」面板里
+   真正的包含块来源（`.animate-page-enter` 只是它的外层）。
+   ⚠ 不要改成 `forwards`/`none` 之类的 fill-mode 试图形容——
+   位移终点与静态样式一致，撤销后视觉无跳变，这是唯一无副作用的写法。 */
+.animate-section-enter-done {
+  animation: none;
+}
+
 /* Update badge pop animation（新版本角标弹性入场） */
 @keyframes badge-pop {
   0% {
@@ -1850,7 +1923,8 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   color: rgb(var(--surface-800));
 }
 
-.seg-btn[aria-selected='true'] {
+.seg-btn[aria-selected='true'],
+.seg-btn[aria-checked='true'] {
   color: rgb(var(--surface-900));
   font-weight: 600;
 }
@@ -1866,6 +1940,19 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 .seg-btn:disabled {
   opacity: 0.45;
   pointer-events: none;
+}
+
+/* md 档：与 label 同行的富场景（如导出对话框的清晰度行）。
+   按钮加高到控件中档、加宽内边距并放大一号字，使与相邻文字比例协调；
+   胶囊位置由组件按 offset* 实测，改档位不需要动 JS。 */
+.seg-md {
+  padding: 3px;
+  font-size: 15px;
+}
+
+.seg-md .seg-btn {
+  height: var(--ctl-md);
+  padding: 0 16px;
 }
 
 /* 关键：用一份隐藏的加粗副本把加粗后的宽度预留出来。

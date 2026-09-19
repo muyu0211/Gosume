@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { Clock, Sparkles, Settings, Upload, FileUp, Loader2, Trash2, CheckCircle2, PackageOpen, Globe, Moon, Palette, Sun, FileText, LayoutTemplate } from 'lucide-react'
+import { Clock, Sparkles, Settings, Upload, FileUp, Loader2, Trash2, CheckCircle2, PackageOpen, Globe, Moon, Palette, Sun, FileText, LayoutTemplate, CalendarClock } from 'lucide-react'
 import { useThemeStore } from '../stores/themeStore'
 import { nextExplicitTheme } from '../lib/theme'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
@@ -15,6 +15,8 @@ import { Modal, type ModalHandle } from '../components/ui/Modal'
 import { UpdateDialog, type UpdateInfo } from '../components/ui/UpdateDialog'
 import { MyResumesPanel } from '../components/resume/MyResumesPanel'
 import { TemplateGalleryPanel } from '../components/template/TemplateGalleryPanel'
+import { JobSummaryCard } from '../components/recruit/JobSummaryCard'
+import { RecruitPanel } from '../components/recruit/RecruitPanel'
 import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
 import { renderTemplate } from '../lib/templateEngine'
 import { extractErrorMessage } from '../lib/errorUtils'
@@ -392,21 +394,30 @@ export function WelcomePage() {
           ariaLabel={t('homeTabLabel')}
           className="w-[180px] flex-shrink-0 px-3"
           items={[
-            { value: 'resumes', label: t('homeTabResumes'), icon: FileText, badge: resumeList.length },
+            {
+              value: 'resumes',
+              label: t('homeTabResumes'),
+              icon: FileText,
+              badge: resumeList.length || undefined,
+            },
             { value: 'templates', label: t('homeTabTemplates'), icon: LayoutTemplate },
+            { value: 'jobs', label: t('homeTabJobs'), icon: CalendarClock },
           ]}
         />
         <main className="flex-1 overflow-auto px-8 pb-8 mr-1">
           <CrossFade trigger={homeTab}>
             {homeTab === 'resumes' ? (
-              <MyResumesPanel
-                resumes={resumeList}
-                loading={!listLoaded}
-                onOpen={handleOpenResume}
-                onNewResume={handleCreateResume}
-                onGotoTemplates={() => setHomeTab('templates')}
-              />
-            ) : (
+              <div className="flex flex-col gap-4">
+                <JobSummaryCard />
+                <MyResumesPanel
+                  resumes={resumeList}
+                  loading={!listLoaded}
+                  onOpen={handleOpenResume}
+                  onNewResume={handleCreateResume}
+                  onGotoTemplates={() => setHomeTab('templates')}
+                />
+              </div>
+            ) : homeTab === 'templates' ? (
               <TemplateGalleryPanel
                 previewHtmls={previewHtmls}
                 onNewResume={handleNewResume}
@@ -418,6 +429,8 @@ export function WelcomePage() {
                 onToggleFavorite={handleToggleFavorite}
                 onShare={handleExportTemplate}
               />
+            ) : (
+              <RecruitPanel />
             )}
           </CrossFade>
         </main>

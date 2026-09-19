@@ -11,11 +11,19 @@ import { injectGlobalVarsCss } from '../../lib/layoutPresets'
 import { getTemplatePaper, contentHeightRatio, ratioLevel } from '../../lib/contentHeight'
 import { Expandable } from '../ui/Expandable'
 import { Modal, type ModalHandle } from '../ui/Modal'
+import { RadioGroup } from '../ui/RadioGroup'
+import { LiquidSegmented } from '../ui/LiquidSegmented'
 import { useT } from '../../lib/i18n'
 
 const DEFAULT_TEMPLATE_ID = 'a406004d-d3b8-4900-969f-8094f8e85cf0'
-/** 一页 PDF 的 PNG 渲染像素密度（固定，不向用户暴露清晰度选项）。 */
 const ONE_PAGE_PNG_SCALE = 2.0
+
+/** PNG 清晰度档位（LiquidSegmented 用字符串 key，onChange 处映射回数值）。 */
+const SCALE_ITEMS: Array<{ value: '1' | '1.5' | '2'; label: string }> = [
+  { value: '1', label: '1x' },
+  { value: '1.5', label: '1.5x' },
+  { value: '2', label: '2x' },
+]
 
 interface Props {
   onClose: () => void
@@ -120,54 +128,34 @@ export function ExportDialog({ onClose }: Props) {
       <div className="p-6 space-y-5">
           <div>
             <label className="text-sm font-medium text-surface-600 mb-3 block">{t('chooseFormat')}</label>
-            <div className="space-y-2">
-              {formats.map(({ id, labelKey, descKey, icon: Icon }) => (
-                <label
-                  key={id}
-                  className={`glass-entry glass-hover flex items-start gap-4 p-4 cursor-pointer transition-all duration-150 ${
-                    selectedFormat === id ? 'glass-entry-selected' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="format"
-                    value={id}
-                    checked={selectedFormat === id}
-                    onChange={() => { setSelectedFormat(id); setStatus('idle'); setErrorMsg('') }}
-                    className="mt-0.5 accent-primary-600"
-                  />
-                  <Icon className={`size-icon-lg mt-0.5 ${selectedFormat === id ? 'text-primary-500' : 'text-surface-400'}`} />
-                  <div>
-                    <p className="text-sm font-medium text-surface-700">{t(labelKey)}</p>
-                    <p className="text-xs text-surface-400 mt-0.5">{t(descKey)}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <RadioGroup<ExportFormat>
+              layout="card"
+              value={selectedFormat}
+              onChange={(id) => { setSelectedFormat(id); setStatus('idle'); setErrorMsg('') }}
+              ariaLabel={t('chooseFormat')}
+              options={formats.map(({ id, labelKey, descKey, icon: Icon }) => ({
+                value: id,
+                label: t(labelKey),
+                description: t(descKey),
+                icon: <Icon />,
+              }))}
+            />
           </div>
 
           <Expandable show={selectedFormat === 'png'} gapTop={20}>
-            <div>
-              <label className="text-sm font-medium text-surface-600 mb-3 block">{t('clarity')}</label>
-              <div className="flex gap-2">
-                {[
-                  { value: 1, label: '1x' },
-                  { value: 1.5, label: '1.5x' },
-                  { value: 2, label: '2x' },
-                ].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => setScale(value)}
-                    className={`glass glass-hover rounded-full px-4 py-2 text-sm transition-all duration-150 ${
-                      scale === value
-                        ? '!bg-primary-600 text-white font-medium'
-                        : 'text-surface-600'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            {/* 同行布局：label 左、清晰度右。.seg 的玻璃投影伸出约 18px(下)/12px(左右)/6px(上)，
+                而 Expandable 内层是 overflow-hidden —— 四周必须留出内边距，否则阴影被裁：
+                pt-2 保上沿 6px、pb-5 保下沿 18px、pr-4 保右沿 12px（左为文字无投影）。 */}
+            <div className="flex items-center justify-between gap-3 pt-2 pb-5 pr-4">
+              <label className="text-sm font-medium text-surface-600">{t('clarity')}</label>
+              <LiquidSegmented<'1' | '1.5' | '2'>
+                semantic="radiogroup"
+                size="md"
+                value={String(scale) as '1' | '1.5' | '2'}
+                onChange={(v) => setScale(Number(v))}
+                items={SCALE_ITEMS}
+                ariaLabel={t('clarity')}
+              />
             </div>
           </Expandable>
 

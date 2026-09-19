@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { CustomSelect } from '../ui/CustomSelect'
 import { Expandable } from '../ui/Expandable'
 import { Modal, type ModalHandle } from '../ui/Modal'
+import { RadioGroup } from '../ui/RadioGroup'
 import type { FileParseResult, FileImportResponse } from '../../types/gosume_file'
 
 interface Props {
@@ -183,45 +184,27 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
             {/* 导入方式 */}
             <div>
               <label className="text-sm font-medium text-surface-600 mb-2 block">{t('importMethod')}</label>
-              <div className="space-y-2">
-                <label
-                  className={`glass-entry glass-hover flex items-start gap-3 p-4 cursor-pointer transition-all ${
-                    mode === 'new' ? 'glass-entry-selected' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="import-mode"
-                    checked={mode === 'new'}
-                    onChange={() => setMode('new')}
-                    className="mt-0.5 accent-primary-600"
-                  />
-                  <FilePlus2 className={`size-icon-lg mt-0.5 ${mode === 'new' ? 'text-primary-500' : 'text-surface-400'}`} />
-                  <div>
-                    <p className="text-sm font-medium text-surface-700">{t('newResumeOption')}</p>
-                    <p className="text-xs text-surface-400 mt-0.5">{t('newResumeDesc')}</p>
-                  </div>
-                </label>
-
-                <label
-                  className={`glass-entry glass-hover flex items-start gap-3 p-4 cursor-pointer transition-all ${
-                    mode === 'overwrite' ? 'glass-entry-selected' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="import-mode"
-                    checked={mode === 'overwrite'}
-                    onChange={() => setMode('overwrite')}
-                    className="mt-0.5 accent-primary-600"
-                  />
-                  <RefreshCw className={`size-icon-lg mt-0.5 ${mode === 'overwrite' ? 'text-primary-500' : 'text-surface-400'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-surface-700">{t('overwriteResumeOption')}</p>
-                    <p className="text-xs text-surface-400 mt-0.5">{t('overwriteResumeDesc')}</p>
-                  </div>
-                </label>
-                <Expandable show={mode === 'overwrite'} className="pl-8" gapTop={8}>
+              <RadioGroup<ImportMode>
+                layout="card"
+                value={mode}
+                onChange={setMode}
+                ariaLabel={t('importMethod')}
+                options={[
+                  {
+                    value: 'new',
+                    label: t('newResumeOption'),
+                    description: t('newResumeDesc'),
+                    icon: <FilePlus2 />,
+                  },
+                  {
+                    value: 'overwrite',
+                    label: t('overwriteResumeOption'),
+                    description: t('overwriteResumeDesc'),
+                    icon: <RefreshCw />,
+                  },
+                ]}
+              />
+              <Expandable show={mode === 'overwrite'} className="pl-8" gapTop={8}>
                   <CustomSelect
                     value={targetId}
                     onChange={setTargetId}
@@ -234,7 +217,6 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
                     emptyText={t('noResumeToOverwrite')}
                   />
                 </Expandable>
-              </div>
             </div>
 
             <Expandable show={!!error} gapTop={20}>

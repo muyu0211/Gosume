@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -10,10 +10,12 @@ interface Props {
 /**
  * Wraps content with a crossfade transition: old content fades out (100ms)
  * while new content fades in with animate-section-enter (200ms).
+
  */
 export function CrossFade({ children, trigger, className }: Props) {
   const [rendered, setRendered] = useState<ReactNode>(children)
   const [exiting, setExiting] = useState(false)
+  const [entered, setEntered] = useState(true)
   const prevTrigger = useRef(trigger)
 
   // trigger 未变化时把最新 children 同步进 rendered。
@@ -27,6 +29,7 @@ export function CrossFade({ children, trigger, className }: Props) {
   useEffect(() => {
     if (trigger !== prevTrigger.current) {
       setExiting(true)
+      setEntered(false)
       prevTrigger.current = trigger
       const timer = setTimeout(() => {
         setRendered(children)
@@ -36,12 +39,24 @@ export function CrossFade({ children, trigger, className }: Props) {
     }
   }, [children, trigger])
 
+  // 兜底摘除动画：无头环境可能不派发 animation 事件。
+  useEffect(() => {
+    if (entered) return
+    const timer = window.setTimeout(() => setEntered(true), 400)
+    return () => window.clearTimeout(timer)
+  }, [entered])
+
   return (
     <div className={`relative ${className || ''}`}>
       <div
         className={`transition-opacity duration-150 ${exiting ? 'opacity-0' : 'opacity-100'}`}
       >
-        <div className={exiting ? '' : 'animate-section-enter'}>
+        <div
+          onAnimationEnd={exiting ? undefined : () => setEntered(true)}
+          className={
+            exiting ? '' : entered ? 'animate-section-enter-done' : 'animate-section-enter'
+          }
+        >
           {rendered}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useT } from '../../lib/i18n'
+import { Checkbox } from './Checkbox'
 
 export interface ConfirmDialogProps {
   /** Whether the dialog is shown. */
@@ -83,15 +84,12 @@ export function ConfirmDialog({
         </div>
         <div className="flex items-center justify-between gap-3 mt-6">
           {showDontAskAgain ? (
-            <label className="flex items-center gap-2 text-xs text-surface-500 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="size-icon-sm rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                checked={dontAskAgain}
-                onChange={(e) => onDontAskAgainChange?.(e.target.checked)}
-              />
-              <span>{dontAskAgainText ?? t('dontAskAgain')}</span>
-            </label>
+            <Checkbox
+              checked={dontAskAgain}
+              onChange={(v) => onDontAskAgainChange?.(v)}
+              ariaLabel={dontAskAgainText ?? t('dontAskAgain')}
+              label={<span className="text-xs text-surface-500">{dontAskAgainText ?? t('dontAskAgain')}</span>}
+            />
           ) : (
             <span />
           )}

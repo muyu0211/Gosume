@@ -293,7 +293,13 @@ updateField('jobs[0].company', '某公司')
 
 > **代码复用（核心原则：避免重复造轮子）。** 新增任何 UI / 逻辑 / 工具前，先判断项目里是否已有可复用的实现：
 >
-> * **UI 组件优先复用** `components/ui/` 的通用件（`Modal`、`ConfirmDialog`、`CustomSelect`、`Tooltip`、`RichTextField`、`AnimatedRange`、`VisibilityToggle`、`Expandable` 等）与 `components/layout/` 组件，**禁止自造同类组件**。确实需要新组件时，尽量做**通用、可配置（props 化）、可拓展**的通用件并放回 `components/ui/`，避免写死只在单处可用的样式逻辑。
+> * **UI 组件优先复用** `components/ui/` 的通用件（`Modal`、`ConfirmDialog`、`CustomSelect`、`MultiSelect`、`Checkbox`、`RadioGroup`、`Switch`、`Tooltip`、`RichTextField`、`AnimatedRange`、`VisibilityToggle`、`Expandable` 等）与 `components/layout/` 组件，**禁止自造同类组件**。确实需要新组件时，尽量做**通用、可配置（props 化）、可拓展**的通用件并放回 `components/ui/`，避免写死只在单处可用的样式逻辑。
+>
+> * **禁止用裸原生表单控件**：`input[type=checkbox]` / `input[type=radio]` / `<select>` 在深色主题下由内核给默认色，**无法令牌化**，与苹果风控件不一致。勾选一律用 `components/ui/Checkbox.tsx`，单选一律用 `components/ui/RadioGroup.tsx`，下拉一律用 `components/ui/CustomSelect.tsx`（多选用 `MultiSelect.tsx`）。
+>
+> * **输入类控件统一的视觉语言**：`bg-elev` + `border-hairline border-surface-200` + `rounded-md` + `h-ctl-lg` + `hover:border-surface-300` + `focus:border-primary-500 focus:shadow-focus`。多行文本追加 `!h-auto py-2 resize-none`（否则会被 `h-ctl-lg` 压成一行）。同一行里的原生输入与自绘下拉必须看起来是一套。
+>
+> * **分组不要再套矩形边框**：玻璃材质本身已有一层描边与阴影，再给分组加 `border rounded-*` 会出现「双层框」的脏感。分组之间用一条 `border-t border-hairline border-surface-300` 分隔线即可，配小标题（`text-xs text-surface-500`）即可建立层级。
 > * **逻辑/常量优先复用** `lib/` 下的封装（`templateEngine`、`paginationCore`、`customCss`、`layoutPresets`、`paper`、`markdown`、`errorUtils`、`i18n`、`theme`、`fontOptions`、`resumeSections` 等）与 `hooks/`（`useAutoSave`、`usePreview` 等），新增能力前先搜索是否已存在同能力实现。
 > * **样式组件可复用可拓展**：主轴方向是「一套通用组件 + props 驱动差异」，而非为每个场景复制一份组件；样式尽量用主题令牌 + Tailwind 组合，避免组件内硬编码不可改的魔法值。
 > * 借助**成熟第三方库**（lucide-react、html2canvas、zod 等）而非自研，引入前确认能力覆盖且维护良好。
@@ -316,6 +322,7 @@ updateField('jobs[0].company', '某公司')
 * 超高内容滚动：整体滚动用 `cardClassName="overflow-auto"`；固定 Header/Footer 用 `flex flex-col overflow-hidden` + Header/Footer `flex-shrink-0` + 内容 `flex-1 overflow-auto`（如 `AIConfigManagerDialog`：状态提示常驻 Footer）。
 * 次级确认框用 `ConfirmDialog`（overlay 统一 `var(--material-overlay)`，随主题变深；**不写 `bg-black/25`**），靠 DOM 顺序叠层，勿再叠 z-index。
 * 自定义浮层（下拉等）用 Portal 到 `document.body` + `fixed` + `z-[9999]`（参考 `CustomSelect.tsx`/`Tooltip.tsx`）；面板外部滚动时重算定位。
+* ⚠ **浮层的滚动监听必须区分事件源**：面板自身滚动（滚轮滚选项）**不得**关闭面板，只重算定位；外部滚动才跟随/关闭。写成 `window.addEventListener('scroll', () => close(), true)` 会导致「滑一下滚轮菜单就消失」。参考 `CustomSelect.tsx` / `MultiSelect.tsx` 的 `onScroll` 判定。
 
 ### Tooltip / 原生提示规范
 

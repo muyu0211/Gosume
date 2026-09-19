@@ -8,11 +8,12 @@ import { useT } from '../../lib/i18n'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
+import { Checkbox } from '../ui/Checkbox'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
 import { AnimatedRange } from '../ui/AnimatedRange'
 import { MonthPicker } from '../ui/MonthPicker'
 import { ExtrasEditor } from './ExtrasEditor'
-import { ETHNICITY_OPTIONS, DEFAULT_ETHNICITY, isKnownEthnicity } from '../../lib/ethnicityOptions'
+import { ETHNICITY_OPTIONS, isKnownEthnicity } from '../../lib/ethnicityOptions'
 
 const MAX_PHOTO_SIZE = 3 * 1024 * 1024 // 3MB
 const MAX_PHOTO_DIMENSION = 400 // max width/height in px
@@ -420,18 +421,15 @@ export function PersonalSection() {
                   triggerClassName="!px-2 !py-0.5"
                 />
               </div>
-              <label className="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer select-none shrink-0">
-                <input
-                  type="checkbox"
-                  checked={lockRatio}
-                  onChange={(e) => {
-                    setLockRatio(e.target.checked)
-                    if (!e.target.checked) setRatioPreset('custom')
-                  }}
-                  className="size-icon-sm rounded accent-primary-600 shrink-0"
-                />
-                <span className="whitespace-nowrap">{t('lockRatio')}</span>
-              </label>
+              <Checkbox
+                checked={lockRatio}
+                onChange={(v) => {
+                  setLockRatio(v)
+                  if (!v) setRatioPreset('custom')
+                }}
+                className="shrink-0"
+                label={<span className="text-xs text-surface-500 whitespace-nowrap">{t('lockRatio')}</span>}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -571,19 +569,12 @@ export function PersonalSection() {
         </div>
         <div>
           <label className="form-label">{t('ethnicity')}</label>
-          {/*
-            民族：选项来自 lib/ethnicityOptions 集中维护的 56 个民族清单。
-            · value/label 都是中文原名，与 political_status / marital_status 一致，
-              模板渲染与后端 autofill 无需映射，提交格式不变（personal.ethnicity 字符串）。
-            · 未选择时展示默认项「汉族」（清单首位），只有用户主动选择才写入数据。
-            · 存量数据是自由文本输入的，可能落在清单之外（如「汉」「穿青人」），
-              这种值原样回显到选项首位，避免显示成空的占位符、也避免用户不小心覆盖掉。
-          */}
           <CustomSelect
-            value={p.ethnicity || DEFAULT_ETHNICITY}
+            value={p.ethnicity || ''}
             onChange={(v) => updateField('personal.ethnicity', v)}
             options={ethnicityOptions}
             placeholder={t('ethnicity')}
+            clearable
           />
         </div>
         <div>
@@ -601,6 +592,7 @@ export function PersonalSection() {
             onChange={(v) => updateField('personal.political_status', v)}
             options={POLITICAL_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }) as SelectOption)}
             placeholder={t('politicalStatus')}
+            clearable
           />
         </div>
         <div>
@@ -610,6 +602,7 @@ export function PersonalSection() {
             onChange={(v) => updateField('personal.marital_status', v)}
             options={MARITAL_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }) as SelectOption)}
             placeholder={t('maritalStatus')}
+            clearable
           />
         </div>
         <div>

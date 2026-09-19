@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 interface ExpandableProps {
   show: boolean
@@ -18,8 +18,22 @@ interface ExpandableProps {
  *
  * 注意：子内容无需额外处理，内层已做 `min-h-0 + overflow-hidden`，
  * 收起时内容会被裁剪且不可见（opacity 同步淡出）。
+ *
+ * `data-expanding` 标记（2026-09-19）：过渡进行期间挂在根节点，供
+ * `useLayoutTransition`（模态卡片拉伸）识别——Expandable 动画期间卡片尺寸
+ * 连续变化，卡片级过渡若同时启动会形成双重动画/反复打断，必须让路。
  */
 export function Expandable({ show, children, duration = 250, className = '', gapTop = 0 }: ExpandableProps) {
+  const [expanding, setExpanding] = useState(false)
+
+  // 过渡窗口期打标记：transitionend（grid-template-rows）提前摘 + 定时兜底
+  //（headless 等环境可能不派发 transitionend）。
+  useEffect(() => {
+    setExpanding(true)
+    const id = window.setTimeout(() => setExpanding(false), duration + 80)
+    return () => window.clearTimeout(id)
+  }, [show, duration])
+
   const eased = 'cubic-bezier(0.33, 1, 0.68, 1)'
   const gridStyle: CSSProperties = {
     display: 'grid',
@@ -28,7 +42,16 @@ export function Expandable({ show, children, duration = 250, className = '', gap
     transition: `grid-template-rows ${duration}ms ${eased}, margin-top ${duration}ms ${eased}`,
   }
   return (
-    <div className={className} style={gridStyle}>
+    <div
+      className={className}
+      style={gridStyle}
+      data-expanding={expanding || undefined}
+      onTransitionEnd={(e) => {
+        if (e.target === e.currentTarget && e.propertyName === 'grid-template-rows') {
+          setExpanding(false)
+        }
+      }}
+    >
       <div
         className="min-h-0 overflow-hidden"
         style={{

@@ -487,7 +487,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   resumeTemplateUnknown: { zh: '未知模板', en: 'Unknown template' },
 
   // 全部简历抽屉
-  selectAll: { zh: '全选', en: 'Select all' },
+  selectAll: { zh: '全选', en: 'All' },
   deselectAll: { zh: '取消全选', en: 'Deselect all' },
   noSavedResumes: { zh: '暂无保存的简历', en: 'No saved resumes' },
   savedResumesWillShow: { zh: '创建新简历后将在此显示', en: 'Your new resumes will appear here' },
@@ -747,6 +747,156 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   ratingFailed: { zh: '评分提交失败', en: 'Rating failed' },
   templatePublished: { zh: '模板已发布到社区（ID: {id}）', en: 'Published to gallery (ID: {id})' },
   publishFailed: { zh: '发布到社区失败', en: 'Publish failed' },
+
+  // ── 求职进程（校招进度汇总）────────────────────────────────────────
+  // 注意：枚举类（环节 / 状态 / 来源 / 类型）只有 UI label 走 i18n，
+  // 落库 value 是英文原名（见 `lib/recruit/options.ts`，只存 key 不存文案）。
+  homeTabJobs: { zh: '求职进程', en: 'Applications' },
+  recruitTitle: { zh: '求职进程', en: 'Applications' },
+  multiNoOptions: { zh: '无选项', en: 'No options'}, 
+
+  // 视图切换与工具条
+  viewList: { zh: '列表', en: 'List' },
+  viewTimeline: { zh: '时间轴', en: 'Timeline' },
+  viewCalendar: { zh: '日历', en: 'Calendar' },
+  searchPlaceholder: { zh: '搜索公司 / 岗位 / 备注', en: 'Search company, role or note' },
+  clearFilters: { zh: '清除', en: 'Clear' },
+  filterKind: { zh: '类型', en: 'Type' },
+  filterCompany: { zh: '公司', en: 'Company' },
+  filterStage: { zh: '环节', en: 'Stage' },
+  filterStatus: { zh: '状态', en: 'Status' },
+  filterSource: { zh: '来源', en: 'Source' },
+  noMatchJob: { zh: '没有匹配的通知', en: 'No matching notices' },
+  prevMonth: { zh: '上一月', en: 'Previous month' },
+  nextMonth: { zh: '下一月', en: 'Next month' },
+  unknownFooter: { zh: '{count} 条未定时间', en: '{count} unscheduled' },
+
+  // 摘要条与告警标签
+  summaryToday: { zh: '今日', en: 'Today' },
+  summaryNear: { zh: '临近', en: 'Soon' },
+  summaryOverdue: { zh: '已过期', en: 'Overdue' },
+  urgencyOverdue: { zh: '已过期', en: 'Overdue' },
+  urgencyToday: { zh: '今日', en: 'Today' },
+  urgencyNear: { zh: '临近', en: 'Soon' },
+  urgencyUnknown: { zh: '待定时间', en: 'Unscheduled' },
+  overdueBanner: { zh: '{count} 条已过期，确认后请标记错过', en: '{count} overdue — mark them missed' },
+  markMissedAll: { zh: '全部标记错过', en: 'Mark all missed' },
+
+  // 状态流转与条目操作
+  markPending: { zh: '恢复待处理', en: 'Mark pending' },
+  markDone: { zh: '标记完成', en: 'Mark done' },
+  markMissed: { zh: '标记错过', en: 'Mark missed' },
+  markDropped: { zh: '标记放弃', en: 'Mark dropped' },
+  jobAdd: { zh: '添加通知', en: 'Add notice' },
+  jobEdit: { zh: '编辑通知', en: 'Edit notice' },
+  jobDelete: { zh: '删除通知', en: 'Delete notice' },
+  jobDeleteConfirm: { zh: '删除这条通知？', en: 'Delete this notice?' },
+  deleteCascadeHint: { zh: '该通知下还有 {count} 条子通知', en: '{count} child notices still linked' },
+  deleteKeepNotices: { zh: '仅删除本条', en: 'Delete this only' },
+  undo: { zh: '撤销', en: 'Undo' },
+  undoHint: { zh: '已删除通知', en: 'Notice deleted' },
+
+  // 加载 / 空态
+  recruitLoading: { zh: '正在加载求职进程…', en: 'Loading applications…' },
+  recruitEmpty: { zh: '还没有通知记录，点「添加通知」开始', en: 'No notices yet — add your first one' },
+  recruitLoadFailed: { zh: '求职进程加载失败', en: 'Failed to load applications' },
+
+  // 录入弹窗（手动 / 粘贴）
+  entryTabManual: { zh: '手动添加', en: 'Manual' },
+  entryTabPaste: { zh: '粘贴原文', en: 'Paste' },
+  parsePasteHint: { zh: '粘贴邮件 / 短信原文，自动识别字段', en: 'Paste the email / SMS text to fill fields' },
+  parseConfirmHint: { zh: '识别置信度较低，请确认', en: 'Low confidence — please confirm' },
+  fieldCompany: { zh: '公司', en: 'Company' },
+  fieldPosition: { zh: '岗位', en: 'Position' },
+  fieldStage: { zh: '环节', en: 'Stage' },
+  fieldRound: { zh: '轮次', en: 'Round' },
+  roundN: { zh: '第 {count} 轮', en: 'Round {count}' },
+  fieldEventTime: { zh: '举办时间', en: 'Event time' },
+  fieldDeadline: { zh: '截止时间', en: 'Deadline' },
+  fieldLink: { zh: '链接', en: 'Link' },
+  fieldLocation: { zh: '地点', en: 'Location' },
+  fieldSource: { zh: '信息来源', en: 'Source' },
+  fieldNote: { zh: '备注', en: 'Note' },
+  fieldParent: { zh: '所属通知', en: 'Parent notice' },
+  parentNone: { zh: '无（作为主通知）', en: 'None (top-level)' },
+  allDay: { zh: '全天', en: 'All day' },
+  online: { zh: '线上', en: 'Online' },
+
+  // 日期 / 时刻选择器（DateTimePicker）
+  dateTimePlaceholder: { zh: '选择日期与时间', en: 'Choose date & time' },
+  monthSuffix: { zh: '月', en: '' },
+  fieldTime: { zh: '时间', en: 'Time' },
+  allDayNoTime: { zh: '全天事件，无需选择时刻', en: 'All-day event — no time needed' },
+
+  // 重复通知合并
+  dupTitle: { zh: '发现重复通知', en: 'Duplicate notice found' },
+  dupWeakHint: { zh: '与 {date} 的条目相似，可能是同一环节的新通知', en: 'Similar to the {date} entry — likely an update' },
+  dupField: { zh: '字段', en: 'Field' },
+  dupCurrent: { zh: '现有', en: 'Current' },
+  dupIncoming: { zh: '新录入', en: 'Incoming' },
+  dupUpdate: { zh: '更新现有', en: 'Update existing' },
+  dupKeepBoth: { zh: '都保留', en: 'Keep both' },
+  dupCancel: { zh: '取消', en: 'Cancel' },
+
+  // 列表分组
+  archiveSection: { zh: '已归档（{count}）', en: 'Archived ({count})' },
+
+  // 公司面板
+  companyPanelTitle: { zh: '公司信息', en: 'Company' },
+  companyAliases: { zh: '别名（逗号分隔）', en: 'Aliases (comma separated)' },
+  companyWebsite: { zh: '公司主页', en: 'Website' },
+  companyCareer: { zh: '招聘页面', en: 'Careers page' },
+  companyContact: { zh: '联系方式', en: 'Contact' },
+  companyJobs: { zh: '相关通知（{count}）', en: 'Notices ({count})' },
+  companyDeleteBlocked: {
+    zh: '还有 {count} 条通知关联该公司，删除后这些通知将变为未关联',
+    en: '{count} notices still link here — they become unlinked',
+  },
+  progressLabel: { zh: '当前进度', en: 'Progress' },
+
+  // 设置弹窗（阈值 / 导出 / 导入）
+  settingsNearThreshold: { zh: '临近提醒阈值', en: 'Remind me before' },
+  thresholdHours: { zh: '{count} 小时', en: '{count} h' },
+  settingsSaveRaw: { zh: '保存通知原文', en: 'Keep original text' },
+  exportCsv: { zh: '导出 CSV', en: 'Export CSV' },
+  exportJson: { zh: '导出 JSON', en: 'Export JSON' },
+  importJson: { zh: '导入 JSON', en: 'Import JSON' },
+  importStrategy: { zh: '重复条目处理策略', en: 'On duplicate entries' },
+  importSkip: { zh: '跳过', en: 'Skip' },
+  importOverwrite: { zh: '覆盖', en: 'Overwrite' },
+  importNew: { zh: '作为新条目', en: 'Add as new' },
+  importReport: {
+    zh: '导入完成：新增 {created}、覆盖 {overwritten}、跳过 {skipped}',
+    en: 'Imported: {created} added, {overwritten} updated, {skipped} skipped',
+  },
+  jobExportDone: { zh: '已导出到：{path}', en: 'Exported to: {path}' },
+
+  // 枚举：类型 / 环节 / 状态 / 来源
+  kindApply: { zh: '投递', en: 'Application' },
+  kindNotice: { zh: '通知', en: 'Notice' },
+  stageApply: { zh: '投递', en: 'Applied' },
+  stageAssessment: { zh: '测评', en: 'Assessment' },
+  stageWritten: { zh: '笔试', en: 'Written test' },
+  stageInterview: { zh: '面试', en: 'Interview' },
+  stageTalk: { zh: '洽谈', en: 'Talk' },
+  stageOffer: { zh: '录用', en: 'Offer' },
+  stageOther: { zh: '其他', en: 'Other' },
+  statusPending: { zh: '待处理', en: 'Pending' },
+  statusDone: { zh: '已完成', en: 'Done' },
+  statusDropped: { zh: '已放弃', en: 'Dropped' },
+  statusMissed: { zh: '已错过', en: 'Missed' },
+  statusArchived: { zh: '已归档', en: 'Archived' },
+  sourceManual: { zh: '手动', en: 'Manual' },
+  sourceEmail: { zh: '邮件', en: 'Email' },
+  sourceSms: { zh: '短信', en: 'SMS' },
+  sourceOther: { zh: '其他', en: 'Other' },
+
+  // 相对时间：`lib/recruit/time.ts` 只返回 key + 参数，由组件取词后插值
+  relToday: { zh: '今天', en: 'Today' },
+  relTomorrow: { zh: '明天', en: 'Tomorrow' },
+  relYesterday: { zh: '昨天', en: 'Yesterday' },
+  relInDays: { zh: '{count} 天后', en: 'in {count} days' },
+  relPastDays: { zh: '{count} 天前', en: '{count} days ago' },
 }
 
 /** 非响应式取词（事件回调/非组件场景用）。 */

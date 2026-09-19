@@ -12,6 +12,7 @@ import (
 	"gosume/pkg/config"
 	"gosume/pkg/event"
 	"gosume/pkg/log"
+	recruitsvc "gosume/pkg/recruit/service"
 	"gosume/pkg/resume/model"
 	"gosume/pkg/resume/repo"
 	rsvc "gosume/pkg/resume/service"
@@ -62,6 +63,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	resumeStore := initResumeStore(dataDir)
 	templateStore := initTemplateStore(resumeStore, builtinTemplates)
 	initLegacyMigration(templateStore, dataDir)
+	settingsRepo := initRecruitSettingsRepo(resumeStore)
 
 	// 模板加载器
 	templateLoader := template.NewLoader(templateStore)
@@ -98,6 +100,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	aiSvc := &aiavc.AIService{}
 	autofillSvc := &asvc.AutofillService{}
 	toolSvc := &tsvc.ToolService{}
+	recruitSvc := &recruitsvc.RecruitService{}
 
 	// 一键填入本地桥：当前简历数据经 127.0.0.1 暴露给浏览器扩展。
 	autofillBridge := autofill.NewBridge(dataDir, config.GlobalConfig.App.Version, func() *model.Resume {
@@ -125,6 +128,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(aiSvc),
 		application.NewService(autofillSvc),
 		application.NewService(toolSvc),
+		application.NewService(recruitSvc),
 	}
 
 	// Wails 应用与窗口
@@ -141,6 +145,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	aiSvc.Inject(app, userCfgMgr)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
+	recruitSvc.Inject(settingsRepo)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)

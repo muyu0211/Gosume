@@ -6,10 +6,10 @@ import {
 } from 'lucide-react'
 import { AnimatedRange } from '../ui/AnimatedRange'
 import { Tooltip } from '../ui/Tooltip'
+import { Checkbox } from '../ui/Checkbox'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { callService, isWails } from '../../services/backend'
 import { extractErrorMessage } from '../../lib/errorUtils'
-// useT → 响应式（渲染用）；t → 非响应式（effect/回调等不随语言重建的闭包里用）
 import { useT, t as tStatic } from '../../lib/i18n'
 import {
   SIZE_PRESETS, BG_PRESETS, mmToPx, centerCropToSize,
@@ -527,11 +527,11 @@ export function IdPhotoTool({ onBack }: Props) {
           <section className="form-section">
             <div className="form-section-header">
               <span className="form-section-title">{t('aiBg')}</span>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={bgEnabled}
-                onChange={(e) => setBgEnabled(e.target.checked)}
-                className="size-icon-md rounded accent-primary-600"
+                onChange={setBgEnabled}
+                ariaLabel={t('aiBg')}
+                className="shrink-0"
               />
             </div>
             <div className={`grid transition-all duration-200 ${bgEnabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>

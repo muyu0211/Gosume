@@ -5,7 +5,6 @@ import { ChevronDown, Check } from 'lucide-react'
 export interface SelectOption {
   value: string
   label: string
-  /** 可选次级信息（如更新时间、版本号），显示在 label 下方小字。 */
   hint?: string
 }
 
@@ -16,6 +15,11 @@ interface Props {
   placeholder?: string
   emptyText?: string
   disabled?: boolean
+  /**
+   * 开启「再次点击当前已选项 = 取消选择」：点击选中项时回调空串（''），由调用方把字段置空。
+   * 默认 false —— 保持纯单选语义（必选下拉、筛选器等不应被清空）。
+   */
+  clearable?: boolean
   /** 外层宽度控制（默认 w-full）。 */
   className?: string
   /** 追加到触发按钮上的样式（可覆盖内置 padding 等，用 !important 修饰符）。 */
@@ -47,6 +51,7 @@ export function CustomSelect({
   placeholder = '请选择',
   emptyText = '暂无可用选项',
   disabled = false,
+  clearable = false,
   className = '',
   triggerClassName = '',
 }: Props) {
@@ -100,13 +105,17 @@ export function CustomSelect({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
+    /** 窗口尺寸变化（含最大/还原）后重新贴合触发器。 */
+    const onResize = () => updatePos()
     document.addEventListener('mousedown', handler)
     document.addEventListener('keydown', onKey)
+    window.addEventListener('resize', onResize)
     return () => {
       document.removeEventListener('mousedown', handler)
       document.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', onResize)
     }
-  }, [open, close])
+  }, [open, close, updatePos])
 
   return (
     <div className={`relative ${className}`}>
@@ -144,7 +153,9 @@ export function CustomSelect({
                   key={opt.value}
                   type="button"
                   onClick={() => {
-                    onChange(opt.value)
+                    // 可清空模式下，再次点击当前已选中的项 = 取消选择，回传空串交给调用方置空；
+                    // 未开启时行为与原来完全一致（写回选项值）。
+                    onChange(clearable && opt.value === value ? '' : opt.value)
                     close()
                   }}
                   className={`glass-menu-item w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${
