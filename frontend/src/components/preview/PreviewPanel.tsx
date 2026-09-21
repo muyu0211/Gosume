@@ -679,7 +679,7 @@ export function PreviewPanel() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden mr-1">
+    <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden overlay-scroll mr-1">
       <div
         ref={paperDivRef}
         className="animate-preview-enter"

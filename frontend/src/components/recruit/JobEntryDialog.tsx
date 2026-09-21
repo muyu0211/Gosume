@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../../lib/i18n'
 import { Modal, type ModalHandle } from '../ui/Modal'
 import { CustomSelect } from '../ui/CustomSelect'
+import { Combobox } from '../ui/Combobox'
 import { LiquidSegmented } from '../ui/LiquidSegmented'
 import { DateTimePicker } from '../ui/DateTimePicker'
 import { Checkbox } from '../ui/Checkbox'
 import { useRecruitStore } from '../../stores/recruitStore'
-import { optionsOf, KIND_LIST, KIND_KEYS, STAGE_LIST, STAGE_KEYS, SOURCE_LIST, SOURCE_KEYS } from '../../lib/recruit/options'
+import { optionsOf, STAGE_LIST, STAGE_KEYS } from '../../lib/recruit/options'
 import { composeRFC3339, toDateInput, toTimeInput } from '../../lib/recruit/time'
 import { normalizeCompany } from '../../lib/recruit/normalize'
+import { companyOptions } from '../../lib/recruit/stats'
 import type {
   DuplicateCandidate,
   JobKind,
@@ -29,9 +31,9 @@ interface Props {
 
 type EntryTab = 'manual' | 'paste'
 
-/** 表单内部状态：时间拆成 date/time 两个字符串，保存前再合成 RFC3339。 */
+/** 表单内部状态：时间拆成 date/time 两个字符串，保存前再合成 RFC3339。
+ *  类型不再单独存状态：`stage === 'apply'` 即投递，其余环节均为通知（保存时派生）。 */
 interface FormState {
-  kind: JobKind
   company: string
   position: string
   stage: JobStage
@@ -49,12 +51,11 @@ interface FormState {
   parent_id: string | null
 }
 
-function emptyForm(kind: JobKind = 'notice'): FormState {
+function emptyForm(): FormState {
   return {
-    kind,
     company: '',
     position: '',
-    stage: kind === 'apply' ? 'apply' : 'interview',
+    stage: 'interview',
     round_no: 0,
     eventDate: '',
     eventTime: '',
@@ -72,7 +73,6 @@ function emptyForm(kind: JobKind = 'notice'): FormState {
 
 function formOf(job: JobProcess): FormState {
   return {
-    kind: job.kind,
     company: job.company,
     position: job.position,
     stage: job.stage,
@@ -122,10 +122,21 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
 
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }))
 
+  // 类型由环节值派生（合并控件）：环节选「投递」即投递记录，其余环节均为通知。
+  // 存储契约层的 kind 字段保持不变，仅表单内部不再单独维护状态。
+  const kind: JobKind = form.stage === 'apply' ? 'apply' : 'notice'
+
+  // 公司组合输入候选：已有记录的公司（companyOptions 按 norm 去重 + 排序，展示名唯一）。
+  // 无记录时为空数组 → 面板不展开，纯手动输入，不报错。
+  const companyList = useMemo(
+    () => companyOptions(jobs).map((c) => ({ value: c.name, label: c.name })),
+    [jobs],
+  )
+
   // 关联投递候选项：同公司归一化名下的 apply 记录
   const parentOptions = useMemo(() => {
     const norm = normalizeCompany(form.company)
-    const list = jobs.filter((j) => j.kind === 'apply' && (!norm || j.company_norm === norm))
+    const list = jobs.filter((j) => j.stage === 'apply' && (!norm || j.company_norm === norm))
     return [
       { value: '', label: t('parentNone') },
       ...list.map((j) => ({
@@ -134,6 +145,24 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
       })),
     ]
   }, [jobs, form.company, t])
+
+  // 关联投递自动预选（仅新建模式）：同公司 apply 唯一 → 自动选中；多个 → 取时间最新的。
+  // 用户手动改过关联后（parentTouched）不再自动覆盖；编辑模式保持既有数据不动。
+  const parentTouched = useRef(false)
+  useEffect(() => {
+    if (initial || form.stage === 'apply' || form.parent_id || parentTouched.current) return
+    const norm = normalizeCompany(form.company)
+    if (!norm) return
+    const candidates = jobs.filter((j) => j.stage === 'apply' && j.company_norm === norm)
+    if (candidates.length === 0) return
+    const pick =
+      candidates.length === 1
+        ? candidates[0]
+        : [...candidates].sort((a, b) =>
+            (b.event_time ?? b.deadline ?? '').localeCompare(a.event_time ?? a.deadline ?? ''),
+          )[0]
+    patch({ parent_id: pick.id })
+  }, [initial, form.stage, form.company, form.parent_id, jobs])
 
   // 粘贴解析：防抖 300ms（后端解析本身很快，防抖只为避免逐字符请求）
   useEffect(() => {
@@ -215,12 +244,11 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
     setSaving(true)
     setError('')
     const draft: JobProcessDraft = {
-      kind: form.kind,
       company: form.company.trim(),
       company_norm: normalizeCompany(form.company),
       position: form.position.trim(),
-      stage: form.kind === 'apply' ? 'apply' : form.stage,
-      round_no: form.kind === 'apply' ? 0 : form.round_no,
+      stage: form.stage,
+      round_no: kind === 'apply' ? 0 : form.round_no,
       event_time: composeRFC3339(form.eventDate, form.eventTime || undefined, form.all_day),
       event_end: null,
       deadline: composeRFC3339(form.deadlineDate, form.deadlineTime || undefined, false),
@@ -236,7 +264,7 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
       raw_text: settings.saveRawText ? raw.trim() || null : null,
       confidence: parsed?.confidence ?? {},
       company_id: initial?.company_id ?? null,
-      parent_id: form.kind === 'notice' ? form.parent_id || null : null,
+      parent_id: kind === 'notice' ? form.parent_id || null : null,
     }
     try {
       if (initial) {
@@ -301,11 +329,13 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('fieldCompany')} hint={lowConfidence('company') ? t('parseConfirmHint') : ''}>
-            <input
+            <Combobox
               value={form.company}
-              onChange={(e) => patch({ company: e.target.value })}
-              className={inputClass('company')}
+              onChange={(v) => patch({ company: v })}
+              options={companyList}
               placeholder={t('fieldCompany')}
+              inputClassName={inputClass('company')}
+              ariaLabel={t('fieldCompany')}
             />
           </Field>
 
@@ -318,35 +348,29 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
             />
           </Field>
 
+          {/* 环节下拉兼任类型切换（合并控件）：选「投递」= 投递记录，其余环节 = 通知。
+              不再锁定 disabled——「改环节 = 改类型」正是合并后的预期语义。 */}
           <Field label={t('fieldStage')}>
             <CustomSelect
               value={form.stage}
               onChange={(v) => patch({ stage: v as JobStage })}
               options={optionsOf(t, STAGE_LIST, STAGE_KEYS)}
-              disabled={form.kind === 'apply'}
-            />
-          </Field>
-
-          <Field label={t('fieldRound')}>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={form.round_no || ''}
-              onChange={(e) => patch({ round_no: Number.parseInt(e.target.value, 10) || 0 })}
-              className={inputClass('round_no')}
-              placeholder="0"
             />
           </Field>
 
           <Field label={t('fieldEventTime')} hint={lowConfidence('event_time') ? t('parseConfirmHint') : ''}>
-            <DateTimePicker
-              date={form.eventDate}
-              time={form.eventTime}
-              onDateChange={(v) => patch({ eventDate: v })}
-              onTimeChange={(v) => patch({ eventTime: v })}
-              allDay={form.all_day}
-            />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex-1 min-w-0">
+                <DateTimePicker
+                  date={form.eventDate}
+                  time={form.eventTime}
+                  onDateChange={(v) => patch({ eventDate: v })}
+                  onTimeChange={(v) => patch({ eventTime: v })}
+                  allDay={form.all_day}
+                />
+              </div>
+              <Checkbox checked={form.all_day} onChange={(v) => patch({ all_day: v })} label={t('allDay')} />
+            </div>
           </Field>
 
           <Field label={t('fieldDeadline')}>
@@ -368,49 +392,43 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
           </Field>
 
           <Field label={t('fieldLocation')}>
-            <input
-              value={form.location}
-              onChange={(e) => patch({ location: e.target.value })}
-              className={inputClass('location')}
-              placeholder={t('fieldLocation')}
-            />
-          </Field>
-
-          <Field label={t('fieldSource')}>
-            <CustomSelect
-              value={form.source}
-              onChange={(v) => patch({ source: v as JobSource })}
-              options={optionsOf(t, SOURCE_LIST, SOURCE_KEYS)}
-            />
-          </Field>
-
-          <Field label={t('kindApply')}>
-            <CustomSelect
-              value={form.kind}
-              onChange={(v) => {
-                const kind = v as JobKind
-                patch({ kind, stage: kind === 'apply' ? 'apply' : form.stage })
-              }}
-              options={optionsOf(t, KIND_LIST, KIND_KEYS)}
-            />
-          </Field>
-
-          {form.kind === 'notice' && (
-            <div className="col-span-2">
-              <Field label={t('fieldParent')}>
-                <CustomSelect
-                  value={form.parent_id ?? ''}
-                  onChange={(v) => patch({ parent_id: v || null })}
-                  options={parentOptions}
-                />
-              </Field>
+            <div className="flex items-center gap-2 min-w-0">
+              <input
+                value={form.location}
+                onChange={(e) => patch({ location: e.target.value })}
+                className={inputClass('location')}
+                placeholder={t('fieldLocation')}
+              />
+              <Checkbox checked={form.online} onChange={(v) => patch({ online: v })} label={t('online')} />
             </div>
+          </Field>
+
+          {kind === 'notice' && (
+            <Field label={t('fieldRound')}>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                value={form.round_no || ''}
+                onChange={(e) => patch({ round_no: Number.parseInt(e.target.value, 10) || 0 })}
+                className={inputClass('round_no')}
+                placeholder="0"
+              />
+            </Field>
           )}
 
-          <div className="col-span-2 flex items-center gap-4">
-            <Checkbox checked={form.all_day} onChange={(v) => patch({ all_day: v })} label={t('allDay')} />
-            <Checkbox checked={form.online} onChange={(v) => patch({ online: v })} label={t('online')} />
-          </div>
+          {kind === 'notice' && (form.parent_id || parentOptions.length > 1) && (
+            <Field label={t('fieldParent')}>
+              <CustomSelect
+                value={form.parent_id ?? ''}
+                onChange={(v) => {
+                  parentTouched.current = true
+                  patch({ parent_id: v || null })
+                }}
+                options={parentOptions}
+              />
+            </Field>
+          )}
 
           <div className="col-span-2">
             <Field label={t('fieldNote')}>

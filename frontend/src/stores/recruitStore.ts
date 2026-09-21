@@ -45,7 +45,6 @@ import { dayKey } from '../lib/recruit/time'
 
 /** 默认筛选：只看待处理（归档区单独展示）。仅用于**初始视图**。 */
 export const DEFAULT_FILTERS: JobFilters = {
-  kinds: [],
   companies: [],
   stages: [],
   statuses: ['pending'],
@@ -61,7 +60,6 @@ export const DEFAULT_FILTERS: JobFilters = {
  * 每次返回全新数组实例，避免浅拷贝与 DEFAULT_FILTERS 共享引用被就地污染。
  */
 const emptyFilters = (): JobFilters => ({
-  kinds: [],
   companies: [],
   stages: [],
   statuses: [],

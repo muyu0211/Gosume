@@ -40,6 +40,20 @@ func initRecruitSettingsRepo(resumeStore *resume_repo.ResumeRepo) *recruit_repo.
 	return r
 }
 
+// initRecruitRepos 初始化求职进程条目（job_process）与公司档案（job_company）存储，
+// 复用简历存储的数据库连接。失败属于不可恢复错误，直接 panic。
+func initRecruitRepos(resumeStore *resume_repo.ResumeRepo) (*recruit_repo.JobRepo, *recruit_repo.CompanyRepo) {
+	jobRepo, err := recruit_repo.NewJobRepo(resumeStore.DB())
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init job_process store: %v", err))
+	}
+	companyRepo, err := recruit_repo.NewCompanyRepo(resumeStore.DB())
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init job_company store: %v", err))
+	}
+	return jobRepo, companyRepo
+}
+
 // initLegacyMigration 把历史的文件式用户模板导入数据库，
 // 导入成功后将原目录改名备份，避免重复导入。
 func initLegacyMigration(templateStore *resume_repo.TemplateRepo, dataDir string) {

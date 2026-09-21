@@ -338,7 +338,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
         {/* Body：左列表 + 右表单（稳定高度，随内容在各自滚动区展示） */}
         <div className="flex flex-1 overflow-hidden">
           {/* 列表：inset 面板——完整边框 + 圆角，与玻璃模态的层次关系更清晰 */}
-          <div className="w-[248px] m-2 border border-surface-200 rounded-lg overflow-y-auto p-1.5 flex-shrink-0">
+          <div className="w-[248px] m-2 border border-surface-200 rounded-lg overflow-y-auto overlay-scroll p-1.5 flex-shrink-0">
             {loading ? (
               <div className="flex items-center justify-center py-8 text-surface-300">
                 <Loader2 className="size-icon-lg animate-spin" />
@@ -417,7 +417,7 @@ export function AIConfigManagerDialog({ onClose }: Props) {
           </div>
 
           {/* 表单 */}
-          <div className="flex-1 overflow-y-auto p-5 min-h-[380px]">
+          <div className="flex-1 overflow-y-auto overlay-scroll p-5 min-h-[380px]">
             <div className="space-y-3">
               <div className="flex items-center gap-3 mb-1">
                 <ProviderLogo provider={form.provider} size={28} />

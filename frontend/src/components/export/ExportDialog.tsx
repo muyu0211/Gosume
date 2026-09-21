@@ -110,7 +110,7 @@ export function ExportDialog({ onClose }: Props) {
   }, [resume, selectedFormat, scale, t])
 
   return (
-    <Modal ref={modalRef} onClose={onClose} width="w-[480px]" cardClassName="overflow-auto">
+    <Modal ref={modalRef} onClose={onClose} width="w-[480px]" cardClassName="overflow-auto overlay-scroll">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100">
         <div className="flex items-center gap-2">

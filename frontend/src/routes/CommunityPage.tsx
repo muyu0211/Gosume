@@ -252,7 +252,7 @@ export function CommunityPage() {
       )}
 
       {/* 主内容 */}
-      <main className="flex-1 overflow-auto px-8 py-5 mr-1">
+      <main className="flex-1 overflow-auto overlay-scroll px-8 py-5 mr-1">
         {!configured ? (
           <div className="flex flex-col items-center justify-center py-24 text-surface-300">
             <Globe className="size-ctl-xl mb-3" />
@@ -510,7 +510,7 @@ function DetailModal({ template, ratingId, detailScore, downloading, onSelectSco
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto px-6 py-4">
+      <div className="flex-1 overflow-auto overlay-scroll px-6 py-4">
         <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">{t('templateDesc')}</h3>
         <p className="text-sm text-surface-600 leading-relaxed whitespace-pre-wrap">{template.description || t('noDescription')}</p>
 

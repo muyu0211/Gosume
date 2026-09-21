@@ -7,7 +7,7 @@
  * 否则 Wails 序列化后会静默丢字段。
  */
 
-/** 条目类型。apply=投递记录，notice=招聘通知。 */
+/** 条目类型stage==='apply' 即投递，其余环节均为通知。 */
 export type JobKind = 'apply' | 'notice'
 
 /** 环节。apply 条目恒为 'apply'。 */
@@ -43,7 +43,6 @@ export type JobConfidence = Partial<Record<ConfidentField, Confidence>>
 /** 主实体：求职进程条目。 */
 export interface JobProcess {
   id: string
-  kind: JobKind
   company: string
   /** 归一化公司名（去空格/括号后缀/大小写），用于去重与分组 */
   company_norm: string
@@ -68,7 +67,7 @@ export interface JobProcess {
   raw_text?: string | null
   confidence: JobConfidence
   company_id: string | null
-  /** kind=notice 时指向所属 apply */
+  /** 非投递条目（stage!=='apply'）指向所属投递记录 */
   parent_id: string | null
   created_at: string
   updated_at: string
@@ -132,10 +131,8 @@ export interface DuplicateCandidate {
   diffs: Array<{ field: keyof JobProcess; current: string; incoming: string }>
 }
 
-/** 列表筛选（会话内保留，不持久化）。 */
+/** 列表筛选（会话内保留，不持久化）。类型维度已并入环节（选「投递」= 投递记录）。 */
 export interface JobFilters {
-  /** 空＝全部 */
-  kinds: JobKind[]
   /** company_norm 列表 */
   companies: string[]
   stages: JobStage[]

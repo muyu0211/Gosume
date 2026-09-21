@@ -161,7 +161,7 @@ export function EditorPage() {
         {/* Editor + Preview Split */}
         <div ref={splitRef} className="flex-1 flex overflow-hidden">
           {/* Editor Panel */}
-          <div style={{ width: `${splitRatio * 100}%` }} className="overflow-auto border-r border-surface-200">
+          <div style={{ width: `${splitRatio * 100}%` }} className="overflow-auto overlay-scroll border-r border-surface-200">
             <div className="p-4">
               <EditorPanel />
             </div>
@@ -252,7 +252,7 @@ function EditorSkeleton() {
         </div>
 
         {/* Editor panel skeleton */}
-        <div className="flex-1 overflow-auto border-r border-surface-200">
+        <div className="flex-1 overflow-auto overlay-scroll border-r border-surface-200">
           <div className="p-5 space-y-5">
             {/* Section header */}
             <div className="flex items-center gap-2 mb-3">

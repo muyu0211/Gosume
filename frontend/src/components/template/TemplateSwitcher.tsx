@@ -158,7 +158,7 @@ export function TemplateSwitcher() {
             <Layout className="w-3 h-3" />
             {t('switchStyle')}
           </div>
-          <div className="max-h-[380px] overflow-y-auto py-1">
+          <div className="max-h-[380px] overflow-y-auto overlay-scroll py-1">
           {templates.map((tmpl) => {
             const thumb = thumbnails[tmpl.id]
             const color = tmpl.colors?.primary || FALLBACK_COLORS[tmpl.id] || '#64748B'

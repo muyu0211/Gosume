@@ -78,7 +78,7 @@ export function CompanyPanel({ norm, onClose }: Props) {
         </Tooltip>
       </div>
 
-      <div className="flex-1 overflow-auto px-4 py-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-auto overlay-scroll px-4 py-4 flex flex-col gap-4">
         <div>
           <div className="text-base font-medium text-surface-800 truncate">
             {related[0]?.company ?? norm}

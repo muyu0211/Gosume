@@ -19,13 +19,16 @@ interface Props {
 
 type Entry = Job | Project | Internship
 
+const EMPTY_ITEMS: Entry[] = []
+
 export function ExperienceSection({ type, title }: Props) {
   const t = useT()
-  const items = useResumeStore((s) => {
+  const stored = useResumeStore((s) => {
     if (type === 'jobs') return s.resume?.jobs
     if (type === 'internships') return s.resume?.internships
     return s.resume?.projects
-  }) as Entry[]
+  }) as Entry[] | undefined
+  const items = stored || EMPTY_ITEMS
   const addItem = useResumeStore((s) => {
     if (type === 'jobs') return s.addJob
     if (type === 'internships') return s.addInternship
@@ -65,16 +68,16 @@ export function ExperienceSection({ type, title }: Props) {
             <FolderGit2 className="size-icon-md text-primary-600" />
           )}
           <span className="form-section-title">{title}</span>
-          <span className="text-xs text-surface-400">({items?.length || 0})</span>
+          <span className="text-xs text-surface-400">({items.length})</span>
         </div>
-        <button onClick={() => { addItem(); setExpanded({[items?.length || 0]: true}) }} className="btn-primary btn-xs">
+        <button onClick={() => { addItem(); setExpanded({[items.length]: true}) }} className="btn-primary btn-xs">
           <Plus className="w-3 h-3" />
           {t('add')}
         </button>
       </div>
 
       <div ref={listRef} className="space-y-2">
-        {items?.map((item, idx) => {
+        {items.map((item, idx) => {
           const isExpanded = expanded[idx] ?? (idx === items.length - 1 && items.length <= 2)
           const isHidden = !!(item as Entry).hidden
           const name = type === 'jobs' || type === 'internships' ? (item as Job).company : (item as Project).name
@@ -264,7 +267,7 @@ export function ExperienceSection({ type, title }: Props) {
           )
         })}
 
-        {(!items || items.length === 0) && (
+        {items.length === 0 && (
           <div className="text-center py-6 text-sm text-surface-400">
             {t('emptyClickAdd')}
           </div>

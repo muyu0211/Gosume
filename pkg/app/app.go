@@ -64,6 +64,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	templateStore := initTemplateStore(resumeStore, builtinTemplates)
 	initLegacyMigration(templateStore, dataDir)
 	settingsRepo := initRecruitSettingsRepo(resumeStore)
+	jobRepo, companyRepo := initRecruitRepos(resumeStore)
 
 	// 模板加载器
 	templateLoader := template.NewLoader(templateStore)
@@ -145,7 +146,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	aiSvc.Inject(app, userCfgMgr)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
-	recruitSvc.Inject(settingsRepo)
+	recruitSvc.Inject(jobRepo, companyRepo, settingsRepo)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)
@@ -177,6 +178,17 @@ func New(assets, builtinTemplates embed.FS) *App {
 
 		if err := templateStore.Reopen(resumeStore.DB(), builtinTemplates); err != nil {
 			log.Errorf("[main] failed to reopen template store: %v", err)
+		}
+
+		// 求职进程存储跟随共享连接（Reopen 会关闭旧连接并创建新实例，必须逐一重指）
+		if err := settingsRepo.Reopen(resumeStore.DB()); err != nil {
+			log.Errorf("[main] failed to reopen recruit settings store: %v", err)
+		}
+		if err := jobRepo.Reopen(resumeStore.DB()); err != nil {
+			log.Errorf("[main] failed to reopen job_process store: %v", err)
+		}
+		if err := companyRepo.Reopen(resumeStore.DB()); err != nil {
+			log.Errorf("[main] failed to reopen job_company store: %v", err)
 		}
 
 		log.Init(newDir, "Gosume", log.INFO, true)

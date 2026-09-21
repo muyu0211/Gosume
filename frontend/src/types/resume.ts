@@ -248,6 +248,31 @@ export function createEmptyResume(templateId: string): Resume {
   }
 }
 
+/**
+ * 把所有列表字段归一为数组（缺省/null → `[]`）。
+ *
+ * 后端 `model.Resume` 的切片字段都带 `omitempty`：nil 或空切片在 JSON 里被
+ * **整体省略**，前端拿到的是一个「少字段」的对象（也可显式为 null）。
+ * 渲染层大量按数组假设访问（`.map` / `.length`），缺失会直接抛
+ * *Cannot read properties of undefined (reading 'length')*。
+ * 以空简历为基线补齐 + 逐个字段兜底，保证进入 store 的数据始终是完整结构。
+ */
+export function normalizeResumeLists(resume: Resume): Resume {
+  const base = createEmptyResume(resume.meta?.template_id ?? '')
+  return {
+    ...base,
+    ...resume,
+    internships: resume.internships ?? [],
+    jobs: resume.jobs ?? [],
+    projects: resume.projects ?? [],
+    education: resume.education ?? [],
+    skills: resume.skills ?? [],
+    languages: resume.languages ?? [],
+    awards: resume.awards ?? [],
+    custom: resume.custom ?? [],
+  }
+}
+
 export function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 10)
 }

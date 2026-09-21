@@ -761,7 +761,6 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   viewCalendar: { zh: '日历', en: 'Calendar' },
   searchPlaceholder: { zh: '搜索公司 / 岗位 / 备注', en: 'Search company, role or note' },
   clearFilters: { zh: '清除', en: 'Clear' },
-  filterKind: { zh: '类型', en: 'Type' },
   filterCompany: { zh: '公司', en: 'Company' },
   filterStage: { zh: '环节', en: 'Stage' },
   filterStatus: { zh: '状态', en: 'Status' },
@@ -816,6 +815,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   fieldLink: { zh: '链接', en: 'Link' },
   fieldLocation: { zh: '地点', en: 'Location' },
   fieldSource: { zh: '信息来源', en: 'Source' },
+  fieldKind: { zh: '条目类型', en: 'Type' },
+  noticeUnlinked: { zh: '未关联', en: 'Unlinked' },
   fieldNote: { zh: '备注', en: 'Note' },
   fieldParent: { zh: '所属通知', en: 'Parent notice' },
   parentNone: { zh: '无（作为主通知）', en: 'None (top-level)' },
@@ -871,9 +872,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   },
   jobExportDone: { zh: '已导出到：{path}', en: 'Exported to: {path}' },
 
-  // 枚举：类型 / 环节 / 状态 / 来源
-  kindApply: { zh: '投递', en: 'Application' },
-  kindNotice: { zh: '通知', en: 'Notice' },
+  // 枚举：环节 / 状态 / 来源
   stageApply: { zh: '投递', en: 'Applied' },
   stageAssessment: { zh: '测评', en: 'Assessment' },
   stageWritten: { zh: '笔试', en: 'Written test' },

@@ -44,6 +44,13 @@ func (r *SettingsRepo) initSchema() error {
 	return err
 }
 
+// Reopen 重新指向数据库连接（数据目录热切换时由装配层调用：
+// ResumeRepo.Reopen 会关闭旧连接并创建新实例，共享连接的 repo 必须跟随）。
+func (r *SettingsRepo) Reopen(db *sql.DB) error {
+	r.db = db
+	return r.initSchema()
+}
+
 // Get 读取设置；表为空（首次使用）或读取失败时返回默认值。
 func (r *SettingsRepo) Get() JobSettings {
 	var s JobSettings

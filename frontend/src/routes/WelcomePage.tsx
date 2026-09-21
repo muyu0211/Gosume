@@ -404,7 +404,7 @@ export function WelcomePage() {
             { value: 'jobs', label: t('homeTabJobs'), icon: CalendarClock },
           ]}
         />
-        <main className="flex-1 overflow-auto px-8 pb-8 mr-1">
+        <main className="flex-1 overflow-auto overlay-scroll px-8 pb-8 mr-1">
           <CrossFade trigger={homeTab}>
             {homeTab === 'resumes' ? (
               <div className="flex flex-col gap-4">
@@ -495,7 +495,7 @@ function ImportLogsDialog({ logs, deletingId, onDelete, onClose }: {
         </div>
         <span className="text-base font-semibold text-surface-700">{t('importLogsTitle')}</span>
       </div>
-      <div className="flex-1 overflow-auto px-6 py-3">
+      <div className="flex-1 overflow-auto overlay-scroll px-6 py-3">
         {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-surface-300">
             <Clock className="size-ctl-lg mb-2" />

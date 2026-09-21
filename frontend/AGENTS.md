@@ -216,10 +216,8 @@ try {
 
 开工：读本小节 → 读落地规范 → 读改造成进度 → 跑
 `node docs/Gosume苹果风主题/工具/verify-theme-contracts.mjs --gate` 与
-`node docs/Gosume苹果风主题/工具/scan-style-violations.mjs --by-file` → 与台账快照对比
-（**数字劣于台账说明上一轮留了回归，先修再开工**）→ 只做一个批次。
-收工：当前阶段门禁全绿 → 本批 0 错误 → `npx tsc --noEmit` → 构建 → 三主题 × 中英双语走查 →
-更新台账与落地规范 → 写交接摘要。详见 `docs/Gosume苹果风主题/参考/08-跨轮次工作流.md`。
+`node docs/Gosume苹果风主题/工具/scan-style-violations.mjs --by-file`。
+收工：当前阶段门禁全绿 → 本批 0 错误 → `npx tsc --noEmit` → 构建 → 写交接摘要。详见 `docs/Gosume苹果风主题/参考/08-跨轮次工作流.md`。
 
 ### 简历字段更新
 

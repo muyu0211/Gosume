@@ -266,7 +266,7 @@ export function SettingsPage() {
 
       {/* Settings Content: left = base settings, right = toolbox, split is draggable */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden">
-        <div className="min-w-0 overflow-y-auto p-6" style={{ flexBasis: `${split}%`, flexShrink: 0 }}>
+        <div className="min-w-0 overflow-y-auto overlay-scroll p-6" style={{ flexBasis: `${split}%`, flexShrink: 0 }}>
           {/* Language */}
         <section className="form-section">
           <div className="form-section-header">
@@ -527,7 +527,7 @@ export function SettingsPage() {
         />
 
         {/* Right column: toolbox */}
-        <div className="flex-1 min-w-0 overflow-y-auto p-6 border-l border-surface-100">
+        <div className="flex-1 min-w-0 overflow-y-auto overlay-scroll p-6 border-l border-surface-100">
           <div className="form-section-header mb-4">
             <div className="flex items-center gap-2">
               <Wrench className="size-icon-md text-surface-400" />

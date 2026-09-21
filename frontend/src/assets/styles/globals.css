@@ -771,27 +771,44 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar styles —— Apple overlay 风格：
-   轨道透明、滑块为半透明胶囊、hover 才明显；用透明边框做内缩使滑块看起来更细。 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ===== 悬浮滚动条（lib/overlayScrollbar.ts 驱动）=====
+   滚动容器隐藏原生滚动条（零布局占位，内容不因滚动条出现被挤压/位移），
+   滑块为绝对定位胶囊悬浮于内容之上，hover 容器或拖拽时显现。 */
+.overlay-scroll-host {
+  scrollbar-width: none;
 }
-
-::-webkit-scrollbar-track {
-  background: transparent;
+.overlay-scroll-host::-webkit-scrollbar {
+  display: none;
 }
-
-::-webkit-scrollbar-thumb {
-  background: rgb(var(--surface-400) / 0.45);
-  background-clip: content-box;
-  border: 2px solid transparent;
+.overlay-scroll-thumb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 24px;
+  opacity: 0;
+  transition: opacity var(--dur-fast) linear;
+  cursor: default;
+  z-index: 20;
+  touch-action: none;
+}
+.overlay-scroll-thumb::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 5px;
+  height: 100%;
   border-radius: var(--radius-full);
+  background: rgb(var(--surface-400) / 0.5);
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--surface-400) / 0.75);
-  background-clip: content-box;
+.overlay-scroll-host:hover .overlay-scroll-thumb,
+.overlay-scroll-thumb.is-dragging {
+  opacity: 1;
+}
+.overlay-scroll-thumb:hover::before,
+.overlay-scroll-thumb.is-dragging::before {
+  background: rgb(var(--surface-400) / 0.8);
 }
 
 /* ===== 编辑器表单（苹果风）=====

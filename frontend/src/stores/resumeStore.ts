@@ -1,6 +1,6 @@
 import { create, type StoreApi } from 'zustand'
 import type { Resume, Personal, Job, Internship, Education, SkillGroup, Project, Language, Award, ResumeListItem, ExtraField, CustomSection, CustomItem } from '../types/resume'
-import { createEmptyResume, generateId, migratePersonalSummary } from '../types/resume'
+import { createEmptyResume, generateId, migratePersonalSummary, normalizeResumeLists } from '../types/resume'
 import { callService, isWails } from '../services/backend'
 import { paginateHTMLString } from '../lib/exportHtml'
 import { renderResumeHtml } from '../lib/templateEngine'
@@ -177,7 +177,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         // 前端拿到的是一个「少字段」的对象（与 createEmptyResume 的 [] 不一致）。
         // 这里以空简历为基线补齐，保证渲染层拿到结构完整的数据，避免后续按
         // 数组假设访问（.map/.length）时抛异常。
-        const merged: Resume = { ...createEmptyResume(templateId), ...resume }
+        const merged: Resume = normalizeResumeLists({ ...createEmptyResume(templateId), ...resume })
         set({ resume: merged, isDirty: false, filePath: null, previewHtml: '', currentId: id || null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return
       }
@@ -187,7 +187,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ resume: createEmptyResume(templateId), isDirty: false, filePath: null, currentId: null, avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
   },
 
-  setResume: (resume) => set({ resume, isDirty: false, filePath: null, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
+  // 与 loadResume 同源：进入 store 前先把列表字段归一为数组，
+  // 保证渲染层按数组假设访问（.map/.length）不会因后端 omitempty 的缺字段而抛异常。
+  setResume: (resume) => set({ resume: normalizeResumeLists(resume), isDirty: false, filePath: null, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null }),
 
   updateField: (path, value) => {
     const resume = get().resume
@@ -220,7 +222,10 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     try {
       const resume = await callService<Resume>('ResumeService', 'LoadResume', id)
       if (resume) {
-        const migrated = migratePersonalSummary(resume)
+        // 后端 model.Resume 的切片字段带 omitempty：空切片在 JSON 里被整体省略
+        // （见 newResume 的同类处理）。这里同样先归一，避免打开旧简历后切到
+        // 「工作经历 / 实习 / 项目」等板块时按数组访问缺失字段而抛异常。
+        const migrated = normalizeResumeLists(migratePersonalSummary(resume))
         set({ resume: migrated, isDirty: false, filePath: null, currentId: id, previewHtml: '', avatarRenderedSize: null, nativeLayout: null, contentHeight: null })
         return migrated
       }

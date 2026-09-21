@@ -34,7 +34,6 @@ function matchKeyword(job: JobProcess, kw: string, includeRaw: boolean): boolean
 export function filterJobs(jobs: JobProcess[], filters: JobFilters, ctx: FilterCtx): JobProcess[] {
   const includeRaw = ctx.includeRaw === true
   return jobs.filter((j) => {
-    if (filters.kinds.length && !filters.kinds.includes(j.kind)) return false
     if (filters.companies.length && !filters.companies.includes(j.company_norm)) return false
     if (filters.stages.length && !filters.stages.includes(j.stage)) return false
     if (filters.statuses.length && !filters.statuses.includes(j.status)) return false

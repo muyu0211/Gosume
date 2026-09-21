@@ -6,11 +6,6 @@
  */
 import type { JobKind, JobSource, JobStage, JobStatus } from '../../types/recruit'
 
-export const KIND_KEYS: Record<JobKind, string> = {
-  apply: 'kindApply',
-  notice: 'kindNotice',
-}
-
 export const STAGE_KEYS: Record<JobStage, string> = {
   apply: 'stageApply',
   assessment: 'stageAssessment',
@@ -37,7 +32,6 @@ export const SOURCE_KEYS: Record<JobSource, string> = {
 }
 
 /** 顺序即下拉展示顺序。 */
-export const KIND_LIST: JobKind[] = ['apply', 'notice']
 export const STAGE_LIST: JobStage[] = [
   'apply',
   'assessment',
@@ -49,6 +43,10 @@ export const STAGE_LIST: JobStage[] = [
 ]
 export const STATUS_LIST: JobStatus[] = ['pending', 'done', 'dropped', 'missed', 'archived']
 export const SOURCE_LIST: JobSource[] = ['manual', 'email', 'sms', 'other']
+
+export function kindOfStage(stage: JobStage): JobKind {
+  return stage === 'apply' ? 'apply' : 'notice'
+}
 
 /** 把 key 表 + 顺序表转成 CustomSelect 的 options。 */
 export function optionsOf<T extends string>(

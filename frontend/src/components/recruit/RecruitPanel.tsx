@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Undo2 } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { useRecruitStore } from '../../stores/recruitStore'
-import { buildList, buildTimeline } from '../../lib/recruit/grouping'
+import { buildList, buildTimeline, filterJobs } from '../../lib/recruit/grouping'
 import { companyOptions, overdueJobs, summaryCounts } from '../../lib/recruit/stats'
-import { optionsOf, KIND_LIST, KIND_KEYS, SOURCE_LIST, SOURCE_KEYS, STAGE_LIST, STAGE_KEYS, STATUS_LIST, STATUS_KEYS } from '../../lib/recruit/options'
+import { optionsOf, STAGE_LIST, STAGE_KEYS, STATUS_LIST, STATUS_KEYS } from '../../lib/recruit/options'
 import { MultiSelect } from '../ui/MultiSelect'
 import { JobSummaryBar } from './JobSummaryBar'
 import { JobToolbar } from './JobToolbar'
@@ -84,6 +84,15 @@ export function RecruitPanel() {
     () => list.active.concat(list.archived).filter((j) => j.event_time || j.deadline),
     [list],
   )
+  // 日历视图数据源：绕过 urgency（今日/临近/已过期）时间告警筛选——日历本身
+  const calendarData = useMemo(() => {
+    if (view !== 'calendar') return { timed: [], unknown: [] }
+    const filtered = filterJobs(jobs, { ...filters, urgencies: [] }, ctx)
+    return {
+      timed: filtered.filter((j) => j.event_time || j.deadline),
+      unknown: filtered.filter((j) => !j.event_time && !j.deadline),
+    }
+  }, [view, jobs, filters, ctx])
 
   /** 摘要条点击：切换告警快捷筛选（再点一次取消）。 */
   const pickUrgency = (u: (typeof filters.urgencies)[number]) => {
@@ -117,7 +126,6 @@ export function RecruitPanel() {
   // 「干净」基线 = 全字段为空（与 resetFilters 的 emptyFilters 对齐）。
   // 初始视图 statuses=['pending'] 是一个生效筛选，因此清除按钮会正常出现。
   const filterDirty =
-    filters.kinds.length > 0 ||
     filters.stages.length > 0 ||
     filters.sources.length > 0 ||
     filters.companies.length > 0 ||
@@ -130,7 +138,7 @@ export function RecruitPanel() {
       <JobSummaryBar counts={counts} active={filters.urgencies[0] ?? null} onPick={pickUrgency} />
 
       {overdue.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-danger-600/8 border border-hairline border-danger-200">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-glass-card bg-danger-600/8 border border-hairline border-danger-200">
           <span className="text-sm text-danger-600 flex-1 min-w-0">
             {t('overdueBanner').replace('{count}', String(overdue.length))}
           </span>
@@ -158,16 +166,8 @@ export function RecruitPanel() {
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      {/* 筛选行：多选下拉，空＝不限 */}
+      {/* 筛选行：多选下拉，空＝不限（类型已并入环节：选「投递」即筛投递记录） */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="w-[120px]">
-          <MultiSelect
-            value={filters.kinds}
-            onChange={(v) => setFilters({ kinds: v as JobProcess['kind'][] })}
-            options={optionsOf(t, KIND_LIST, KIND_KEYS)}
-            placeholder={t('filterKind')}
-          />
-        </div>
         <div className="w-[140px]">
           <MultiSelect
             value={filters.companies}
@@ -190,14 +190,6 @@ export function RecruitPanel() {
             onChange={(v) => setFilters({ statuses: v as JobProcess['status'][] })}
             options={optionsOf(t, STATUS_LIST, STATUS_KEYS)}
             placeholder={t('filterStatus')}
-          />
-        </div>
-        <div className="w-[120px]">
-          <MultiSelect
-            value={filters.sources}
-            onChange={(v) => setFilters({ sources: v as JobProcess['source'][] })}
-            options={optionsOf(t, SOURCE_LIST, SOURCE_KEYS)}
-            placeholder={t('filterSource')}
           />
         </div>
         {filterDirty && (
@@ -230,8 +222,8 @@ export function RecruitPanel() {
           <JobTimeline groups={timeline} unknown={unknownJobs} {...cardHandlers} />
         ) : (
           <JobCalendar
-            jobs={timedJobs}
-            unknownCount={unknownJobs.length}
+            jobs={calendarData.timed}
+            unknownCount={calendarData.unknown.length}
             onPickUnknown={() => setFilters({ urgencies: ['unknown'], statuses: [] })}
             {...cardHandlers}
           />
@@ -288,8 +280,10 @@ export function RecruitPanel() {
       />
 
       {/* 删除撤销：内存级 5 秒，不做持久化 */}
+      {/* 圆角由 .glass-card 提供（--radius-glass-card）；不再叠加 rounded-lg
+          （12px 字面值，且同为单类选择器、写在 utilities 之后会被覆盖，是死类名）。 */}
       {undo && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] glass glass-card rounded-lg px-4 py-2 flex items-center gap-3 animate-dropdown-enter">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] glass glass-card px-4 py-2 flex items-center gap-3 animate-dropdown-enter">
           <span className="text-sm text-surface-600 truncate">{t('undoHint')}</span>
           <button
             type="button"

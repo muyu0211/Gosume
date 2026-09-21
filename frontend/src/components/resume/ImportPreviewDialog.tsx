@@ -128,7 +128,7 @@ export function ImportPreviewDialog({ preview, onClose, onImported }: Props) {
         </div>
 
         {/* Content — 中间唯一可滚动区域 */}
-        <div className="p-6 space-y-5 flex-1 overflow-auto">
+        <div className="p-6 space-y-5 flex-1 overflow-auto overlay-scroll">
           {/* 预览摘要 */}
           <div className="hairline-frame rounded-glass-card bg-surface-50/50 p-4">
             <p className="text-base font-semibold text-surface-800 truncate">

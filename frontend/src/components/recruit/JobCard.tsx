@@ -1,10 +1,10 @@
-import { CheckCircle2, CircleSlash, ExternalLink, Mail, MessageSquare, PencilLine, Trash2, XCircle, MapPin } from 'lucide-react'
+import { CheckCircle2, CircleSlash, ExternalLink, Mail, MessageSquare, PencilLine, Trash2, XCircle, MapPin, Video } from 'lucide-react'
 import type { JobProcess, JobStatus } from '../../types/recruit'
 import { useT } from '../../lib/i18n'
 import { Tooltip } from '../ui/Tooltip'
 import { jobUrgencyMeta } from '../../lib/recruit/urgency'
 import { fmtDateTime, fmtRelative } from '../../lib/recruit/time'
-import { STAGE_KEYS, KIND_KEYS } from '../../lib/recruit/options'
+import { STAGE_KEYS } from '../../lib/recruit/options'
 
 interface Props {
   job: JobProcess
@@ -59,32 +59,41 @@ export function JobCard({
     : ''
 
   return (
-    <div className="glass glass-card rounded-lg flex overflow-hidden transition-shadow duration-fast hover:shadow-md">
-      {/* 左侧状态色条：3px，颜色即告警等级 */}
-      <div className={`w-[3px] shrink-0 ${meta.barClass}`} />
+    <div className="glass glass-card rounded-lg flex overflow-hidden transition-shadow duration-fast hover:shadow-md relative">
+      {/* 环节水印：背景层大字（中间偏右——左侧多为文字行会被遮挡，右侧大部分情况留白），一眼识别当前求职阶段 */}
+      <span
+        aria-hidden
+        className="absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold italic leading-none text-surface-600/8 select-none pointer-events-none whitespace-nowrap"
+      >
+        {t(STAGE_KEYS[job.stage])}
+      </span>
 
-      <div className="flex-1 min-w-0 p-3 flex items-start gap-3">
+      {/* 左侧状态色条：颜色即告警等级 */}
+      <div className={`w-[5px] shrink-0 ${meta.barClass}`} />
+
+      <div className="relative flex-1 min-w-0 p-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          {/* 第一行：类型 / 环节 / 公司 · 岗位 */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="shrink-0 text-xs text-surface-400">{t(KIND_KEYS[job.kind])}</span>
-            <span className="shrink-0 text-xs font-medium text-surface-600">
-              {t(STAGE_KEYS[job.stage])}
-            </span>
-            {job.kind === 'notice' && job.round_no > 0 && (
-              <span className="shrink-0 text-xs text-surface-400 tabular-nums">
-                {t('roundN').replace('{count}', String(job.round_no))}
-              </span>
-            )}
+          {/* 第一行：公司 → 岗位 → 轮次 →（行尾）是否关联；环节改由背景水印承载 */}
+          <div className="flex items-center gap-x-2 gap-y-0.5 min-w-0 flex-wrap">
             <button
               type="button"
               onClick={() => onOpenCompany(job.company_norm)}
-              className="text-sm text-surface-800 font-medium truncate min-w-0 hover:text-primary-600 transition-colors duration-fast"
+              className="shrink-0 max-w-[12rem] text-sm text-surface-800 font-medium truncate hover:text-primary-600 transition-colors duration-fast"
             >
               {job.company}
             </button>
             {job.position && (
-              <span className="text-sm text-surface-500 truncate min-w-0">· {job.position}</span>
+              <span className="flex-1 min-w-0 text-sm text-surface-500 truncate">{job.position}</span>
+            )}
+            {job.stage !== 'apply' && job.round_no > 0 && (
+              <span className="shrink-0 text-xs text-surface-400 tabular-nums">
+                {t('roundN').replace('{count}', String(job.round_no))}
+              </span>
+            )}
+            {job.stage !== 'apply' && !job.parent_id && (
+              <span className="ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded-sm bg-surface-600/10 text-surface-500">
+                {t('noticeUnlinked')}
+              </span>
             )}
           </div>
 
@@ -104,8 +113,7 @@ export function JobCard({
             )}
           </div>
 
-          {/* 第三行：链接 / 地点 / 来源 */}
-          <div className="mt-1 flex items-center gap-3 text-xs text-surface-400 min-w-0">
+          <div className="mt-1 flex items-center gap-x-3 gap-y-1 text-xs text-surface-400 min-w-0 flex-wrap">
             {job.link && (
               <button
                 type="button"
@@ -117,21 +125,27 @@ export function JobCard({
               </button>
             )}
             {job.location && (
-              <span className="flex items-center gap-1 min-w-0 truncate">
+              <span className="flex items-center gap-1 shrink-0 max-w-full truncate">
                 <MapPin className="size-icon-sm shrink-0" strokeWidth={1.75} />
                 <span className="truncate">{job.location}</span>
+              </span>
+            )}
+            {job.online && (
+              <span className="flex items-center gap-1 shrink-0">
+                <Video className="size-icon-sm" strokeWidth={1.75} />
+                {t('online')}
               </span>
             )}
             <span className="flex items-center gap-1 shrink-0">
               <SourceIcon className="size-icon-sm" strokeWidth={1.75} />
               {t(`source${cap(job.source)}`)}
             </span>
-            {job.note && <span className="truncate min-w-0 text-surface-400">{job.note}</span>}
+            {job.note && <span className="flex-1 min-w-0 truncate text-surface-400">{job.note}</span>}
           </div>
         </div>
 
         {/* 操作区：纯图标按钮，均带 Tooltip */}
-        <div className="shrink-0 flex items-center gap-0.5">
+        <div className="relative shrink-0 flex items-center gap-0.5">
           {job.status === 'pending' ? (
             <>
               <Tooltip label={t('markDone')}>

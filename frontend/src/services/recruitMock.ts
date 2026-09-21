@@ -20,6 +20,7 @@ import type {
 } from '../types/recruit'
 import { dayKey, parseRFC3339, toUTCms } from '../lib/recruit/time'
 import { normalizeCompany } from '../lib/recruit/normalize'
+import { kindOfStage } from '../lib/recruit/options'
 import { arriveAt } from '../lib/recruit/time'
 
 const STORAGE_KEY = 'gosume-recruit-mock'
@@ -63,7 +64,6 @@ function at(dayOffset: number, hour: number, minute = 0): string {
 /** 种子数据：覆盖 今日 / 临近 / 已过期 / 时间待定 / 已完成 五类。 */
 function seed(): MockDB {
   const mk = (
-    kind: JobProcess['kind'],
     company: string,
     position: string,
     stage: JobProcess['stage'],
@@ -75,7 +75,6 @@ function seed(): MockDB {
     const norm = normalizeCompany(company)
     return {
       id: uid(),
-      kind,
       company,
       company_norm: norm,
       position,
@@ -102,15 +101,15 @@ function seed(): MockDB {
     }
   }
 
-  const bdApply = mk('apply', '字节跳动', '后端开发工程师', 'apply', 0, at(-12, 10), 'done', {
+  const bdApply = mk('字节跳动', '后端开发工程师', 'apply', 0, at(-12, 10), 'done', {
     source: 'email',
     link: 'https://jobs.bytedance.com/campus',
   })
-  const txApply = mk('apply', '腾讯科技', '前端开发工程师', 'apply', 0, at(-8, 15), 'done', {
+  const txApply = mk('腾讯科技', '前端开发工程师', 'apply', 0, at(-8, 15), 'done', {
     link: 'https://join.qq.com',
   })
-  const mtApply = mk('apply', '美团', '数据分析师', 'apply', 0, at(-6, 20), 'done')
-  const aliApply = mk('apply', '阿里巴巴', '算法工程师', 'apply', 0, at(-5, 9), 'done')
+  const mtApply = mk('美团', '数据分析师', 'apply', 0, at(-6, 20), 'done')
+  const aliApply = mk('阿里巴巴', '算法工程师', 'apply', 0, at(-5, 9), 'done')
 
   return {
     settings: { nearThresholdHours: 48, saveRawText: false },
@@ -134,7 +133,7 @@ function seed(): MockDB {
       mtApply,
       aliApply,
       // 今日 19:00 笔试
-      mk('notice', '字节跳动', '后端开发工程师', 'written', 1, at(0, 19), 'pending', {
+      mk('字节跳动', '后端开发工程师', 'written', 1, at(0, 19), 'pending', {
         source: 'email',
         online: true,
         link: 'https://campus.bytedance.com/exam/8842',
@@ -142,47 +141,47 @@ function seed(): MockDB {
         note: '开考前 15 分钟可进入',
       }),
       // 后天 10:00 一面（临近）
-      mk('notice', '字节跳动', '后端开发工程师', 'interview', 1, at(2, 10), 'pending', {
+      mk('字节跳动', '后端开发工程师', 'interview', 1, at(2, 10), 'pending', {
         source: 'email',
         online: true,
         link: 'https://meeting.bytedance.com/abc',
         parent_id: bdApply.id,
       }),
       // 昨天 14:00 测评（已过期）
-      mk('notice', '腾讯科技', '前端开发工程师', 'assessment', 1, at(-1, 14), 'pending', {
+      mk('腾讯科技', '前端开发工程师', 'assessment', 1, at(-1, 14), 'pending', {
         source: 'sms',
         parent_id: txApply.id,
         note: '测评链接 48 小时内有效',
       }),
       // 20 小时后截止（临近）
-      mk('notice', '腾讯科技', '前端开发工程师', 'assessment', 1, null, 'pending', {
+      mk('腾讯科技', '前端开发工程师', 'assessment', 1, null, 'pending', {
         source: 'email',
         online: true,
         deadline: at(1, 10),
         parent_id: txApply.id,
       }),
       // 时间待定
-      mk('notice', '美团', '数据分析师', 'written', 1, null, 'pending', {
+      mk('美团', '数据分析师', 'written', 1, null, 'pending', {
         source: 'sms',
         parent_id: mtApply.id,
         note: '具体时间另行通知',
       }),
       // 5 天后（不告警）
-      mk('notice', '美团', '数据分析师', 'interview', 1, at(5, 14), 'pending', {
+      mk('美团', '数据分析师', 'interview', 1, at(5, 14), 'pending', {
         online: true,
         location: '线上',
         parent_id: mtApply.id,
       }),
       // 已完成
-      mk('notice', '阿里巴巴', '算法工程师', 'written', 1, at(-3, 19), 'done', {
+      mk('阿里巴巴', '算法工程师', 'written', 1, at(-3, 19), 'done', {
         parent_id: aliApply.id,
       }),
       // 已错过
-      mk('notice', '阿里巴巴', '算法工程师', 'interview', 1, at(-2, 10), 'missed', {
+      mk('阿里巴巴', '算法工程师', 'interview', 1, at(-2, 10), 'missed', {
         parent_id: aliApply.id,
       }),
       // Offer
-      mk('notice', '小红书', '客户端开发工程师', 'offer', 0, at(-1, 11), 'pending', {
+      mk('小红书', '客户端开发工程师', 'offer', 0, at(-1, 11), 'pending', {
         source: 'email',
         note: '需在 3 天内答复',
       }),
@@ -225,12 +224,12 @@ async function withLatency<T>(fn: () => T): Promise<T> {
   return fn()
 }
 
-/** 去重指纹（与后端约定一致）。 */
+/** 去重指纹（与后端约定一致）：stage==='apply' 即投递族，其余为通知族。 */
 function fingerprint(j: JobProcess | JobProcessDraft): string {
   const norm = j.company_norm || normalizeCompany(j.company)
   const d = parseRFC3339(arriveAt(j))
   const day = d ? dayKey(d) : ''
-  return j.kind === 'apply'
+  return j.stage === 'apply'
     ? `a|${norm}|${j.position}|${day}`
     : `n|${norm}|${j.stage}|${j.round_no}|${day}`
 }
@@ -328,7 +327,7 @@ export function mockFindDuplicates(dto: JobProcessDraft): Promise<DuplicateCandi
       .filter(
         (j) =>
           j.company_norm === norm &&
-          (j.kind === dto.kind ? j.stage === dto.stage : true) &&
+          (j.stage === dto.stage ? true : kindOfStage(j.stage) !== kindOfStage(dto.stage)) &&
           (!day || !parseRFC3339(arriveAt(j)) || dayKey(parseRFC3339(arriveAt(j))!) === dayKey(day)),
       )
       .slice(0, 5)
