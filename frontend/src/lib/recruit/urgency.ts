@@ -8,7 +8,7 @@
  * 是否「已错过」由用户自己确认后手动标记。
  */
 import type { JobProcess, Urgency } from '../../types/recruit'
-import { arriveAt, dayKey, toUTCms } from './time'
+import { dayKey, toUTCms } from './time'
 
 /** 标签的视觉映射。类名必须是**字面量**，否则 Tailwind 摇树会清掉。 */
 export interface UrgencyMeta {
@@ -70,6 +70,20 @@ const METAS: Record<Exclude<Urgency, 'none'>, UrgencyMeta> = {
 }
 
 /**
+ * 告警判定的基准时间：**截止时间优先**。
+ *
+ * deadline 是用户要赶的线（报名 / 确认 / 提交截止），有它就以它判过期与临近；
+ * 没有截止时间才回退举办时间 event_time（如投递记录只有投递时间）。
+ * 均空 → null（时间待定）。
+ *
+ * ⚠ 与 time.ts 的 `arriveAt`（event_time 优先）区分：那是日历分组 / 排序用的
+ * 「展示时间」；告警语义必须以 deadline 为先。
+ */
+function alertAt(job: Pick<JobProcess, 'event_time' | 'deadline'>): string | null {
+  return job.deadline || job.event_time || null
+}
+
+/**
  * 计算条目的临近标签。
  *
  * @param now        当前 UTC 毫秒（由调用方统一注入，保证整屏一致）
@@ -77,7 +91,7 @@ const METAS: Record<Exclude<Urgency, 'none'>, UrgencyMeta> = {
  */
 export function computeUrgency(job: JobProcess, now: number, thresholdHours: number): Urgency {
   if (job.status !== 'pending') return 'none'
-  const at = arriveAt(job)
+  const at = alertAt(job)
   if (!at) return 'unknown'
   const ms = toUTCms(at)
   if (ms == null) return 'unknown'

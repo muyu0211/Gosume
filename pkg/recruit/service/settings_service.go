@@ -1,33 +1,40 @@
 package service
 
 import (
+	"context"
+	"sync"
+
+	"gosume/pkg/ai"
 	"gosume/pkg/log"
 	recruitrepo "gosume/pkg/recruit/repo"
 	"gosume/pkg/util"
 )
 
 // RecruitService 求职进程模块的后端服务。
-//
-// 分期实现（PRD）：设置项 + 条目 CRUD + 公司档案已就绪（2026-09-19）；
-// Parse（粘贴解析）与导出导入待后续批次——前端已有的对应调用在绑定实现前
-// 会失败，属于已知未实现，不是缺陷。
 type RecruitService struct {
 	settingsRepo *recruitrepo.SettingsRepo
 	jobRepo      *recruitrepo.JobRepo
 	companyRepo  *recruitrepo.CompanyRepo
+	chat         ai.ChatFunc // AI 对话能力（Parse 粘贴解析用；nil 视为未配置）
+
+	// 前端关闭弹窗时调 CancelParse 触发，见 parse_service.go。
+	parseMu     sync.Mutex
+	parseCancel context.CancelFunc
 }
 
 // ServiceName 返回服务名，供 Wails 绑定与前端调用使用。
-// ⚠ 绑定全名第三段取结构体名，必须与前端 registerServicePackage 登记的包路径一致。
 func (s *RecruitService) ServiceName() string {
 	return "RecruitService"
 }
 
-// Inject 注入存储（全部复用 gosume.db 共享连接）。
-func (s *RecruitService) Inject(jobRepo *recruitrepo.JobRepo, companyRepo *recruitrepo.CompanyRepo, settingsRepo *recruitrepo.SettingsRepo) {
+// Inject 注入存储（全部复用 gosume.db 共享连接）与 AI 对话能力。
+// chat 由装配层传 ai.NewDynamicChat(...)：每次调用实时读取当前启用配置，
+// 热切换/改配置即时生效，本服务不感知数据目录。
+func (s *RecruitService) Inject(jobRepo *recruitrepo.JobRepo, companyRepo *recruitrepo.CompanyRepo, settingsRepo *recruitrepo.SettingsRepo, chat ai.ChatFunc) {
 	s.jobRepo = jobRepo
 	s.companyRepo = companyRepo
 	s.settingsRepo = settingsRepo
+	s.chat = chat
 }
 
 // supportedThresholds 临近阈值合法档位（PRD Q3：12 / 24 / 48 / 72）。
@@ -39,10 +46,6 @@ func (s *RecruitService) GetSettings() *util.Response {
 }
 
 // SetSettings 部分更新模块设置。
-//
-// patch 的键与前端 JobSettings 字段名一致（nearThresholdHours / saveRawText），
-// Wails 会把 JSON 对象解成 map[string]any（数值为 float64）。
-// 只更新**出现的键**——saveRawText=false 是合法值，不能用零值判断是否提供。
 func (s *RecruitService) SetSettings(patch map[string]any) *util.Response {
 	cur := s.settingsRepo.Get()
 

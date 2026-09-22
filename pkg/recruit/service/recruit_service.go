@@ -30,8 +30,6 @@ func strPtr(s string) *string {
 	return &s
 }
 
-// ───────────────────────────── 条目 ─────────────────────────────
-
 // ListJobs 全量返回条目（不排序——排序/分区/筛选由前端 grouping 完成）。
 func (s *RecruitService) ListJobs() *util.Response {
 	jobs, err := s.jobRepo.List()
@@ -123,7 +121,7 @@ func (s *RecruitService) CreateJob(dto recruitmodel.JobProcess, strategy *string
 	}
 
 	j := dto
-	j.ID = ""                     // 新建必由后端生成；前端不传 id
+	j.ID = "" // 新建必由后端生成；前端不传 id
 	j.Company = strings.TrimSpace(j.Company)
 	j.CompanyNorm = normalizeCompany(j.Company)
 	j.CreatedAt, j.UpdatedAt = "", "" // repo.Create 生成

@@ -102,6 +102,11 @@ export function JobCard({
             <span className={`text-sm ${meta.emphasize ? 'font-semibold' : ''} ${meta.urgency === 'none' ? 'text-surface-600' : meta.textClass}`}>
               {timeText(job, t)}
             </span>
+            {job.deadline && job.event_time && (
+              <span className="text-xs text-surface-400">
+                {t('deadlineShort')} {fmtDateTime(job.deadline, job.all_day)}
+              </span>
+            )}
             {relLabel && <span className="text-xs text-surface-400">{relLabel}</span>}
             {meta.labelKey && (
               <span className={`text-xs px-1.5 py-0.5 rounded-sm ${meta.chipClass} ${meta.textClass}`}>

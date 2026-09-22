@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Loader2, Sparkles, X } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { Modal, type ModalHandle } from '../ui/Modal'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { CustomSelect } from '../ui/CustomSelect'
 import { Combobox } from '../ui/Combobox'
 import { LiquidSegmented } from '../ui/LiquidSegmented'
 import { DateTimePicker } from '../ui/DateTimePicker'
 import { Checkbox } from '../ui/Checkbox'
 import { useRecruitStore } from '../../stores/recruitStore'
+import { cancelParse } from '../../services/recruitService'
 import { optionsOf, STAGE_LIST, STAGE_KEYS } from '../../lib/recruit/options'
 import { composeRFC3339, toDateInput, toTimeInput } from '../../lib/recruit/time'
 import { normalizeCompany } from '../../lib/recruit/normalize'
@@ -51,11 +54,14 @@ interface FormState {
   parent_id: string | null
 }
 
+/** 新建表单的环节预设值（UI 默认，非用户输入——AI 回填时应可覆盖，见 DEFAULT_STAGE 判断）。 */
+const DEFAULT_STAGE: JobStage = 'interview'
+
 function emptyForm(): FormState {
   return {
     company: '',
     position: '',
-    stage: 'interview',
+    stage: DEFAULT_STAGE,
     round_no: 0,
     eventDate: '',
     eventTime: '',
@@ -95,8 +101,9 @@ function formOf(job: JobProcess): FormState {
  * 录入 / 编辑弹层。
  *
  * - 手动页签：完整字段；公司为必填（空则保存按钮禁用）。
- * - 粘贴页签：防抖 300ms 调后端 `Parse`，结果回填表单；**低置信度字段只标黄提示，
- *   不自动改用户已填的值**。
+ * - 粘贴页签：用户点「解析」按钮**手动**触发后端 `Parse`（AI 解析，不自动发起）；
+ *   解析中按钮转加载并禁用防重复提交，结果回填表单；**低置信度字段只标黄提示，
+ *   不自动改用户已填的值**；原文再次编辑后旧结果过期清空，需重新解析。
  * - 保存若命中去重指纹，后端返回 `duplicate`，这里把「更新/新建/取消」交给父级处理。
  *
  * 控件一律走项目已封装的 UI 组件，不用原生控件：
@@ -117,8 +124,12 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
   const [form, setForm] = useState<FormState>(() => (initial ? formOf(initial) : emptyForm()))
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState<ParseResult | null>(null)
+  const [parsing, setParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  /** 解析进行中点关闭 → 先二确（关闭将取消后台 AI 解析）。 */
+  const [confirmClose, setConfirmCloseOpen] = useState(false)
 
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }))
 
@@ -164,21 +175,35 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
     patch({ parent_id: pick.id })
   }, [initial, form.stage, form.company, form.parent_id, jobs])
 
-  // 粘贴解析：防抖 300ms（后端解析本身很快，防抖只为避免逐字符请求）
-  useEffect(() => {
-    if (tab !== 'paste') return
-    const text = raw.trim()
-    if (!text) {
+  // 粘贴解析：**手动触发**（点「解析」按钮才调后端，不自动发起）。
+  // 解析中禁用按钮防重复提交；原文再次编辑后旧结果/提示过期，清空待重新解析。
+  const parsedRawRef = useRef<string | null>(null)
+
+  const handleRawChange = (v: string) => {
+    setRaw(v)
+    if (v.trim() !== parsedRawRef.current) {
       setParsed(null)
-      return
+      setParseError('')
     }
-    const id = window.setTimeout(() => {
-      parse(text, new Date().toISOString())
-        .then((res) => setParsed(res))
-        .catch(() => setParsed(null))
-    }, 300)
-    return () => window.clearTimeout(id)
-  }, [raw, tab, parse])
+  }
+
+  const handleParse = () => {
+    const text = raw.trim()
+    if (!text || parsing) return
+    setParsing(true)
+    setParseError('')
+    parse(text, new Date().toISOString())
+      .then((res) => {
+        parsedRawRef.current = text
+        setParsed(res)
+      })
+      .catch((err) => {
+        setParsed(null)
+        // 失败需可见（含「非就业相关内容」的 300 判别提示，后端 message 已是成品文案）
+        setParseError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => setParsing(false))
+  }
 
   // 解析结果回填：只填**当前为空**的字段，且不覆盖用户手改过的值
   useEffect(() => {
@@ -188,7 +213,10 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
       const next = { ...prev }
       if (f.company && !next.company) next.company = f.company
       if (f.position && !next.position) next.position = f.position
-      if (f.stage && !next.stage) next.stage = f.stage
+      // 环节下拉带预设默认值（DEFAULT_STAGE='interview'），`!next.stage` 永远为假，
+      // 会把 AI 识别的环节全部挡掉——默认值视为「未填」允许覆盖；用户手动改过
+      // 的非默认值则保留。source 同理（默认 'manual'，见下方判断）。
+      if (f.stage && (!next.stage || next.stage === DEFAULT_STAGE)) next.stage = f.stage
       if (typeof f.round_no === 'number' && !next.round_no) next.round_no = f.round_no
       if (f.event_time) {
         if (!next.eventDate) {
@@ -282,12 +310,40 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
     }
   }
 
+  // 关闭即取消进行中的粘贴解析（幂等；解析 promise 随后以取消失败落空，弹窗已关无感知）。
+  // Modal 的所有关闭路径（close 按钮 / 业务 close()）最终都会触发 onClose。
+  const handleClose = () => {
+    cancelParse()
+    onClose()
+  }
+
+  /** 关闭入口：解析进行中先二确，其余直接走退场动画。 */
+  const requestClose = () => {
+    if (parsing) {
+      setConfirmCloseOpen(true)
+      return
+    }
+    modalRef.current?.close()
+  }
+
   return (
-    <Modal ref={modalRef} onClose={onClose} width="w-[640px]" cardClassName="flex flex-col overflow-hidden">
+    <>
+    <Modal ref={modalRef} onClose={handleClose} dismissible={false} width="w-[640px]" cardClassName="flex flex-col overflow-hidden">
       <div className="px-6 pt-5 pb-3">
-        <h2 className="text-base font-semibold text-surface-800">
-          {initial ? t('jobEdit') : t('jobAdd')}
-        </h2>
+        <div className="flex items-start justify-between">
+          <h2 className="text-base font-semibold text-surface-800">
+            {initial ? t('jobEdit') : t('jobAdd')}
+          </h2>
+          {/* 唯一关闭入口：此弹窗需长时停留（粘贴 + AI 解析），已禁用 Esc / 遮罩误触关闭 */}
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label={t('close')}
+            className="p-1.5 -mr-1.5 text-surface-400 hover:text-surface-600 rounded-lg hover:bg-surface-100 transition-colors"
+          >
+            <X className="size-icon-lg" />
+          </button>
+        </div>
         <div className="mt-3">
           <LiquidSegmented<EntryTab>
             value={tab}
@@ -312,13 +368,40 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
         {tab === 'paste' && (
           <div className="mb-4">
             <p className="text-xs text-surface-400 mb-2">{t('parsePasteHint')}</p>
-            <textarea
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-              rows={5}
-              className={textareaClass('company')}
-              placeholder={t('parsePasteHint')}
-            />
+            {/* 字数计数器悬浮在文本域内右下角（maxLength=1000 为 UTF-16 上限，与计数口径一致） */}
+            <div className="relative">
+              <textarea
+                value={raw}
+                onChange={(e) => handleRawChange(e.target.value)}
+                rows={5}
+                maxLength={1000}
+                className={`${textareaClass('company')} pb-6`}
+                placeholder={t('parsePasteHint')}
+              />
+              <span
+                aria-hidden
+                className="absolute bottom-2 right-3 text-xs text-surface-400 pointer-events-none select-none"
+              >
+                {raw.length}/1000
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="text-xs text-surface-400 min-w-0">{t('parseAITip')}</p>
+              <button
+                type="button"
+                onClick={handleParse}
+                disabled={parsing || !raw.trim()}
+                className="btn btn-secondary h-ctl-sm text-xs shrink-0"
+              >
+                {parsing ? (
+                  <Loader2 className="size-icon-md animate-spin" />
+                ) : (
+                  <Sparkles className="size-icon-md" />
+                )}
+                {parsing ? t('parseParsing') : t('parseTrigger')}
+              </button>
+            </div>
+            {parseError && <p className="mt-2 text-xs text-danger-700">{parseError}</p>}
             {parsed?.warnings.map((w) => (
               <p key={w} className="mt-2 text-xs text-warning-700">
                 {t(w)}
@@ -447,7 +530,7 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
       </div>
 
       <div className="px-6 py-4 flex items-center justify-end gap-2">
-        <button type="button" onClick={() => modalRef.current?.close()} className="btn btn-secondary">
+        <button type="button" onClick={requestClose} className="btn btn-secondary">
           {t('cancel')}
         </button>
         <button type="button" onClick={handleSave} disabled={!canSave} className="btn btn-primary">
@@ -455,6 +538,22 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
         </button>
       </div>
     </Modal>
+
+    {/* 解析中关闭的二确：确认后才真正取消后台解析并退场 */}
+    <ConfirmDialog
+      open={confirmClose}
+      danger
+      title={t('parseCloseTitle')}
+      description={t('parseCloseDesc')}
+      confirmText={t('parseCloseConfirm')}
+      cancelText={t('parseCloseCancel')}
+      onConfirm={() => {
+        setConfirmCloseOpen(false)
+        modalRef.current?.close()
+      }}
+      onCancel={() => setConfirmCloseOpen(false)}
+    />
+    </>
   )
 }
 

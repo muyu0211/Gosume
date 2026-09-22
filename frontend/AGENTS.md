@@ -77,10 +77,11 @@ const resume = await callService<Resume>('ResumeService', 'NewResume', templateI
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, ImportSharePackage, ValidateForTemplate, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ListCategories, ListTemplatesByCategory, SetTemplateFavorite, ListImportLogs, DeleteImportLog, ExportTemplatePackage |
 | `ExportService` | Export, ExportBatch, GetResumeContentHeight |
 | `FileService` | ExportFile, ParseFile, ImportFile |
-| `SystemService` | ConfirmWindowClose, MinimizeWindow, MaximizeWindow, IsWindowMaximised, CloseWindow, QuitApp, GetAppVersion, GetDataDir, GetTheme, SetTheme, GetOS, GetAppDataDir, PickDataDir, SetDataDir, OpenExternalURL, ShowInFolder |
+| `SystemService`（pkg/setting） | ConfirmWindowClose, MinimizeWindow, MaximizeWindow, IsWindowMaximised, CloseWindow, QuitApp, GetAppVersion, GetTheme, SetTheme, GetOS, GetDataDir, GetAppDataDir, PickDataDir, SetDataDir, OpenExternalURL, ShowInFolder |
+| `AIConfigService`（pkg/setting） | ListAIProviders, ListAIConfigs, GetAIConfig, SaveAIConfig, SetActiveAIConfig, DeleteAIConfig, TestConnection |
 | `UpdateService` | GetDownloadProgress, CheckUpdate, DownloadUpdate, ApplyUpdate, CancelUpdate |
 | `CommunityService` | GetCommunityInfo, ListCommunityTemplates, GetCommunityTemplate, DownloadCommunityTemplate, PublishCommunityTemplate, RateCommunityTemplate |
-| `AIService` | ListAIConfigs, GetAIConfig, SaveAIConfig, SetActiveAIConfig, DeleteAIConfig, TestConnection, Chat, Polish |
+| `AIService`（pkg/resume/service） | Chat, Polish |
 | `AutofillService` | GetStatus, Start, Stop, RotateToken |
 | `ToolService` | SaveImage |
 

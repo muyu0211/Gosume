@@ -805,6 +805,19 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   entryTabPaste: { zh: '粘贴原文', en: 'Paste' },
   parsePasteHint: { zh: '粘贴邮件 / 短信原文，自动识别字段', en: 'Paste the email / SMS text to fill fields' },
   parseConfirmHint: { zh: '识别置信度较低，请确认', en: 'Low confidence — please confirm' },
+  // 解析 warnings
+  parseNonChinese: { zh: '当前仅支持中文通知解析，请手动填写', en: 'Only Chinese notices are supported — please fill manually' },
+  parseTruncated: { zh: '原文超过 1000 字，超出部分未参与识别', en: 'Text exceeds 1000 characters; the rest was ignored' },
+  parseNoCompany: { zh: '未识别到公司名，请手动填写', en: 'Company not detected — please fill manually' },
+  // AI 解析 UI
+  parseTrigger: { zh: '解析', en: 'Parse' },
+  parseAITip: { zh: '原文将发送至已配置的 AI 服务进行识别', en: 'The text will be sent to your configured AI service' },
+  parseParsing: { zh: 'AI 解析中…', en: 'AI parsing…' },
+  // 解析中关闭弹窗的二确
+  parseCloseTitle: { zh: '解析尚未完成', en: 'Parse still running' },
+  parseCloseDesc: { zh: '关闭窗口将取消正在进行的 AI 解析，确定关闭吗？', en: 'Closing now will cancel the ongoing AI parse. Close anyway?' },
+  parseCloseConfirm: { zh: '取消解析并关闭', en: 'Cancel parse & close' },
+  parseCloseCancel: { zh: '继续解析', en: 'Keep parsing' },
   fieldCompany: { zh: '公司', en: 'Company' },
   fieldPosition: { zh: '岗位', en: 'Position' },
   fieldStage: { zh: '环节', en: 'Stage' },
@@ -812,6 +825,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   roundN: { zh: '第 {count} 轮', en: 'Round {count}' },
   fieldEventTime: { zh: '举办时间', en: 'Event time' },
   fieldDeadline: { zh: '截止时间', en: 'Deadline' },
+  deadlineShort: { zh: '截止', en: 'Due' },
   fieldLink: { zh: '链接', en: 'Link' },
   fieldLocation: { zh: '地点', en: 'Location' },
   fieldSource: { zh: '信息来源', en: 'Source' },

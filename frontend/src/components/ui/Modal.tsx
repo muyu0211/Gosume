@@ -14,6 +14,10 @@ interface ModalProps {
   width?: string
   /** 追加到卡片的样式（滚动 / 布局相关，如 overflow-auto 或 flex 布局）。 */
   cardClassName?: string
+  /** 是否允许 Esc / 点击遮罩关闭（默认允许）。
+   *  长时停留的表单弹窗（如录入 + AI 解析）应设为 false：
+   *  仅经业务自带的关闭按钮（ref.close()）退出，防止误触导致后台任务中断。 */
+  dismissible?: boolean
   children: ReactNode
 }
 
@@ -35,7 +39,7 @@ type Phase = 'entering' | 'open' | 'exiting'
  * 用法：父组件条件渲染本组件；挂载即播放入场，close() 播放退场后调用 onClose。
  */
 export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
-  { onClose, width = 'w-[520px]', cardClassName = '', children },
+  { onClose, width = 'w-[520px]', cardClassName = '', dismissible = true, children },
   ref,
 ) {
   const [phase, setPhase] = useState<Phase>('entering')
@@ -54,14 +58,14 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
   const close = useCallback(() => setPhase('exiting'), [])
   useImperativeHandle(ref, () => ({ close }), [close])
 
-  // Escape 关闭
+  // Escape 关闭（dismissible=false 时禁用，仅业务关闭按钮可退出）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape' && dismissible) close()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [close])
+  }, [close, dismissible])
 
   const handleAnimationEnd = () => {
     // 退出动画执行完（animationend 必然触发）后再卸载，避免覆盖层残留导致页面不可点击
@@ -75,7 +79,7 @@ export const Modal = forwardRef<ModalHandle, ModalProps>(function Modal(
       className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
         isActive ? 'bg-[var(--material-overlay)] backdrop-blur-sm' : 'bg-transparent backdrop-blur-none'
       }`}
-      onClick={close}
+      onClick={dismissible ? close : undefined}
     >
       <div
         ref={transitionRef}

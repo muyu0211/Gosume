@@ -97,6 +97,13 @@ export function parseJobText(raw: string, receivedAt: string | null): Promise<Pa
   )
 }
 
+/** 取消进行中的粘贴解析（幂等：无进行中任务时后端为空操作）。
+ *  录入弹窗关闭（Modal onClose）时调用，终止后台 LLM 调用与重试循环。 */
+export function cancelParse(): void {
+  if (USE_MOCK) return
+  void callService(S, 'CancelParse').catch(() => { /* 忽略：取消失败不影响关闭流程 */ })
+}
+
 export function findDuplicates(dto: JobProcessDraft): Promise<DuplicateCandidate[]> {
   if (USE_MOCK) return mockFindDuplicates(dto)
   return callService<DuplicateCandidate[]>(S, 'FindDuplicates', dto).then((d) => d ?? [])

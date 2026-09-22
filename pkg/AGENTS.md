@@ -17,8 +17,7 @@
 ```
 pkg/
 ├── app/                 # 组装与生命周期（app.go 装配全部组件）
-├── ai/                  # AI 能力：client.go 大模型客户端、config.go 配置容器、presets.go 预设、prompts.go 提示词、types.go 类型
-│   └── service/         #   AIService（Wails 服务）
+├── ai/                  # AI 调用 SDK（独立、零业务/Wails 依赖）：chat.go ChatFunc+NewDynamicChat、client.go 大模型客户端、config.go 配置容器、presets.go 厂商预设、types.go 协议类型
 ├── autofill/            # 「一键填入」本地桥：127.0.0.1 暴露当前简历给浏览器扩展
 │   └── service/         #   AutofillService
 ├── config/              # 全局配置（config.yaml 解析，GlobalConfig）
@@ -26,12 +25,14 @@ pkg/
 ├── log/                 # zap 日志封装
 ├── remote/              # 远程服务客户端
 │   └── http/            #   统一 HTTP 客户端（clients/options/response/stdclient）
+├── recruit/             # 求职进程记录：model / parse（粘贴解析纯函数）/ repo / service（RecruitService，含 AI 粘贴解析编排）
+├── setting/             # 设置域（package setting）：SystemService（窗口/主题/OS 工具）、data_dir（数据目录迁移热切换）、AIConfigService（AI 配置管理）
 ├── resume/              # 简历核心
 │   ├── dto/             #   数据传输对象（Template、market 等）
 │   ├── helper/          #   平台相关（helper_unix.go / helper_windows.go）
 │   ├── model/           #   简历数据模型（resume 含 CustomCSS 字段、personal/experience/education/skill）
 │   ├── repo/            #   SQLite 存储（ResumeRepo / TemplateRepo / ProjectRepo）
-│   ├── service/         #   Wails 服务层（Resume/Template/Export/File/System/Update/Community）
+│   ├── service/         #   Wails 服务层（Resume/Template/Export/File/System/Update/Community/AI）
 │   ├── template/        #   模板加载/校验/导入导出（Loader、*_exporter/importer/validator/resolve）
 │   ├── template_export/ #   无头浏览器导出（browser.go，rod）
 │   └── template_market/ #   模板市场客户端（community API）
@@ -82,8 +83,8 @@ Go:   gosume/pkg/resume/service.ResumeService.NewResume(templateID string, langu
 
 | 服务 | Go 包 |
 |------|-------|
-| `ResumeService` `TemplateService` `ExportService` `FileService` `SystemService` `UpdateService` `CommunityService` | `gosume/pkg/resume/service`（默认包） |
-| `AIService` | `gosume/pkg/ai/service` |
+| `ResumeService` `TemplateService` `ExportService` `FileService` `UpdateService` `CommunityService` `AIService`（Chat/Polish） | `gosume/pkg/resume/service`（默认包） |
+| `SystemService` `AIConfigService` | `gosume/pkg/setting` |
 | `AutofillService` | `gosume/pkg/autofill/service` |
 | `ToolService` | `gosume/pkg/tool/service` |
 
@@ -97,12 +98,39 @@ Go:   gosume/pkg/resume/service.ResumeService.NewResume(templateID string, langu
 | `TemplateService` | ListTemplates, GetTemplate, GetTemplateContent, ImportTemplatePackage, ImportSharePackage, ValidateForTemplate, CreateTemplate, UpdateTemplate, DeleteTemplate, CloneTemplate, ListCategories, ListTemplatesByCategory, SetTemplateFavorite, ListImportLogs, DeleteImportLog, ExportTemplatePackage |
 | `ExportService` | `Export`(→`string`,返回裸串), `ExportBatch`(→`[]string`,返回裸切片), GetResumeContentHeight |
 | `FileService` | ExportFile, ParseFile, ImportFile |
-| `SystemService` | ConfirmWindowClose, MinimizeWindow, MaximizeWindow, IsWindowMaximised, CloseWindow, QuitApp, GetAppVersion, GetDataDir, GetTheme, SetTheme, GetOS, GetAppDataDir, PickDataDir, SetDataDir, OpenExternalURL, ShowInFolder |
+| `SystemService` | ConfirmWindowClose, MinimizeWindow, MaximizeWindow, IsWindowMaximised, CloseWindow, QuitApp, GetAppVersion, GetTheme, SetTheme, GetOS, GetDataDir, GetAppDataDir, PickDataDir, SetDataDir, OpenExternalURL, ShowInFolder |
+| `AIConfigService` | ListAIProviders, ListAIConfigs, GetAIConfig, SaveAIConfig, SetActiveAIConfig, DeleteAIConfig, TestConnection |
+| `AIService` | Chat, Polish |
 | `UpdateService` | GetDownloadProgress(→`int`,返回裸值), CheckUpdate, DownloadUpdate, ApplyUpdate, CancelUpdate |
 | `CommunityService` | GetCommunityInfo, ListCommunityTemplates, GetCommunityTemplate, DownloadCommunityTemplate, PublishCommunityTemplate, RateCommunityTemplate |
 | `AIService` | ListAIConfigs, GetAIConfig, SaveAIConfig, SetActiveAIConfig, DeleteAIConfig, TestConnection, Chat, Polish |
 | `AutofillService` | GetStatus, Start, Stop, RotateToken |
 | `ToolService` | SaveImage |
+
+### AI SDK（pkg/ai）使用规约
+
+`pkg/ai` 是**独立的 AI 调用 SDK**：只负责配置容器、OpenAI 兼容协议客户端与「绑定当前配置」的对话函数，不含任何业务措辞（润色/解析提示词都在各自业务 service 内）。
+
+**依赖红线**：`pkg/ai` 禁止 import 任何 `*/service`、`pkg/util`、`wails/*`；只允许 `pkg/log`、`pkg/remote/http`、`pkg/config` 等基础设施。
+
+**对外接口**（`pkg/ai/chat.go`）：
+
+- `ChatFunc` —— 统一对话签名 `(ctx, msgs, temperature *float64, maxTokens *int) (string, error)`；
+- `ConfigSource` —— 配置来源 `func() (AIUnit, bool)`，**每次调用时求值**；
+- `NewDynamicChat(src ConfigSource) ChatFunc` —— 每次调用实时读取当前启用配置（改配置/数据目录热切换即时生效，无需重注入），未配置返回 `ErrNoActiveConfig`（不出网）；
+- `Client.Chat / Client.Test` —— 直接面向单套配置的协议调用。
+
+**业务接入模式**：
+
+```go
+// app.go 装配：闭包按当前数据目录实时读配置
+recruitSvc.Inject(jobRepo, companyRepo, settingsRepo,
+    ai.NewDynamicChat(func() (ai.AIUnit, bool) { return ai.LoadConfig(userCfgMgr.DataDir()).Active() }))
+```
+
+- 业务侧只拿 `ai.ChatFunc`，不感知配置文件与数据目录；
+- 错误处理用 `errors.Is(err, ai.ErrNoActiveConfig)` 映射用户文案，SDK 不返回面向用户的句子；
+- 业务级调用策略（temperature=0、maxTokens 分级、业务超时、重试退避）**留在业务侧**（如 `recruit/service` 的 `chatOnce`），不要下沉进 SDK。
 
 ### 服务层代码规范
 

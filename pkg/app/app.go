@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	aiavc "gosume/pkg/ai/service"
+	"gosume/pkg/ai"
 	"gosume/pkg/autofill"
 	asvc "gosume/pkg/autofill/service"
 	"gosume/pkg/config"
@@ -18,6 +18,7 @@ import (
 	rsvc "gosume/pkg/resume/service"
 	"gosume/pkg/resume/template"
 	"gosume/pkg/resume/template_export"
+	settingSvc "gosume/pkg/setting"
 	tsvc "gosume/pkg/tool/service"
 	"gosume/pkg/util"
 
@@ -77,7 +78,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		tempHTML = []byte{}
 	}
 
-	// 全局统一样式：对所有模板生效（Gosume 三期改造），跟随 template.html 一同内嵌。
+	// 全局统一样式：对所有模板生效，跟随 template.html 一同内嵌。
 	tempGlobalCSS, err := builtinTemplates.ReadFile("templates/resume-global.css")
 	if err != nil {
 		log.Errorf("[main] read resume-global.css: %v", err)
@@ -94,11 +95,12 @@ func New(assets, builtinTemplates embed.FS) *App {
 	resumeSvc := &rsvc.ResumeService{}
 	templateSvc := &rsvc.TemplateService{}
 	exportSvc := &rsvc.ExportService{}
-	systemSvc := &rsvc.SystemService{}
 	fileSvc := &rsvc.FileService{}
 	updateSvc := &rsvc.UpdateService{}
 	communitySvc := &rsvc.CommunityService{}
-	aiSvc := &aiavc.AIService{}
+	aiSvc := &rsvc.AIService{}
+	systemSvc := &settingSvc.SystemService{}
+	aiConfigSvc := &settingSvc.AIConfigService{}
 	autofillSvc := &asvc.AutofillService{}
 	toolSvc := &tsvc.ToolService{}
 	recruitSvc := &recruitsvc.RecruitService{}
@@ -123,6 +125,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 		application.NewService(templateSvc),
 		application.NewService(exportSvc),
 		application.NewService(systemSvc),
+		application.NewService(aiConfigSvc),
 		application.NewService(fileSvc),
 		application.NewService(updateSvc),
 		application.NewService(communitySvc),
@@ -135,18 +138,27 @@ func New(assets, builtinTemplates embed.FS) *App {
 	// Wails 应用与窗口
 	app, window := createApp(assets, svcs)
 
+	// AI 配置来源：按当前数据目录实时读取 AI 配置——热切换/改配置即时生效，
+	// 热切换流程无需对持有者重新注入。
+	aiSource := func() (ai.AIUnit, bool) {
+		return ai.LoadConfig(userCfgMgr.DataDir()).Active()
+	}
+	// 通用对话能力（润色 / Chat）：原样调用。
+	aiChat := ai.NewDynamicChat(aiSource)
+
 	// 依赖注入
 	resumeSvc.Inject(app, resumeStore)
 	templateSvc.Inject(app, templateLoader, templateStore, string(tempHTML), string(tempGlobalCSS))
 	exportSvc.Inject(app, browserManager)
 	systemSvc.Inject(app, userCfgMgr, window)
+	aiConfigSvc.Inject(userCfgMgr)
 	fileSvc.Inject(app, resumeStore, templateLoader, resumeSvc)
 	updateSvc.Inject(app, userCfgMgr)
 	communitySvc.Inject(app, templateLoader, templateStore)
-	aiSvc.Inject(app, userCfgMgr)
+	aiSvc.Inject(aiChat)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
-	recruitSvc.Inject(jobRepo, companyRepo, settingsRepo)
+	recruitSvc.Inject(jobRepo, companyRepo, settingsRepo, aiChat)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)

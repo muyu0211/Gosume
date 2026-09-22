@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { Checkbox } from './Checkbox'
@@ -56,9 +57,13 @@ export function ConfirmDialog({
 
   const resolvedIcon = icon ?? (danger ? <AlertTriangle className="size-icon-lg text-danger-600" /> : null)
 
-  return (
+  // Portal 到 body：调用方可能处于任何层叠上下文中（如其他模态的子树），
+  // 内联渲染会被祖先的 transform/filter 困在低层级、被 Modal 盖住。
+  // z-[60] 高于普通模态（z-50），保证确认框叠在其上；同级多个 portal 时按
+  // DOM 先后排序，ConfirmDialog 挂载更晚，自然位于所属模态之上。
+  return createPortal(
     <div
-      className="fixed inset-0 bg-[var(--material-overlay)] backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-50"
+      className="fixed inset-0 bg-[var(--material-overlay)] backdrop-blur-sm flex items-center justify-center animate-dialog-overlay-enter z-[60]"
       onClick={onCancel}
     >
       <div
@@ -112,6 +117,7 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

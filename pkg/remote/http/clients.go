@@ -93,9 +93,13 @@ func buildClient(svc *config.ServiceConfig) *cli {
 		c.SetProxy(proxy)
 	}
 
-	// 统一 User-Agent，便于服务端识别客户端与版本
-	app := config.GlobalConfig.App
-	c.SetHeader("User-Agent", fmt.Sprintf("%s/%s", app.Name, app.Version))
+	// 统一 User-Agent，便于服务端识别客户端与版本。
+	// GlobalConfig 为 nil（单测 / 库形态独立使用，未加载 config.yaml）时降级为默认 UA。
+	name, version := "gosume", "dev"
+	if config.GlobalConfig != nil {
+		name, version = config.GlobalConfig.App.Name, config.GlobalConfig.App.Version
+	}
+	c.SetHeader("User-Agent", fmt.Sprintf("%s/%s", name, version))
 
 	// 默认每请求新建独立上下文；超时等全局设置已作用到客户端
 	return &cli{service: svc, client: c}

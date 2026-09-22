@@ -1,8 +1,8 @@
 /**
- * AI 服务调用封装（后端 AIService）。
+ * AI 服务调用封装。
  *
- * 与后端 pkg/ai/service/ai_service.go 一一对应。覆盖：多套 AI 配置的管理
- * （列表/新增/更新/删除/单选启用/测试连接）与编辑器 AI 润色（Polish）。
+ * 配置管理走后端 pkg/setting/ai_config_service.go（AIConfigService）；
+ * 编辑器 AI 润色（Polish）与通用对话走 pkg/resume/service/ai_service.go（AIService）。
  */
 
 import { callService } from './backend'
@@ -76,7 +76,7 @@ let providersCache: AIProviderPreset[] | null = null
 export const listAIProviders = async (): Promise<AIProviderPreset[]> => {
   if (providersCache) return providersCache
   try {
-    const res = await callService<AIProviderList>('AIService', 'ListAIProviders')
+    const res = await callService<AIProviderList>('AIConfigService', 'ListAIProviders')
     providersCache = res?.providers ?? []
   } catch (e) {
     console.warn('[aiService] ListAIProviders 失败，厂商下拉降级为自定义', e)
@@ -96,24 +96,24 @@ export function providerModels(presets: AIProviderPreset[], provider: string): s
 }
 
 /** 列出全部 AI 配置（Key 脱敏）与当前启用 ID。 */
-export const listAIConfigs = () => callService<AIConfigList>('AIService', 'ListAIConfigs')
+export const listAIConfigs = () => callService<AIConfigList>('AIConfigService', 'ListAIConfigs')
 
 /** 返回当前启用配置（脱敏）；未启用返回空对象。供 AI 润色可用性判定。 */
-export const getAIConfig = () => callService<AIInfo>('AIService', 'GetAIConfig')
+export const getAIConfig = () => callService<AIInfo>('AIConfigService', 'GetAIConfig')
 
 /** 新增或更新一套配置（带 id 为更新，否则新建）。 */
-export const saveAIConfig = (cfg: AIConfigInput) => callService<AIInfo | null>('AIService', 'SaveAIConfig', cfg)
+export const saveAIConfig = (cfg: AIConfigInput) => callService<AIInfo | null>('AIConfigService', 'SaveAIConfig', cfg)
 
 /** 删除一套配置（连同其 Key），返回删除后的列表。 */
-export const deleteAIConfig = (id: string) => callService<AIConfigList>('AIService', 'DeleteAIConfig', id)
+export const deleteAIConfig = (id: string) => callService<AIConfigList>('AIConfigService', 'DeleteAIConfig', id)
 
 /** 将某套配置设为当前启用。 */
-export const setActiveAIConfig = (id: string) => callService<null>('AIService', 'SetActiveAIConfig', id)
+export const setActiveAIConfig = (id: string) => callService<null>('AIConfigService', 'SetActiveAIConfig', id)
 
 /** 对指定配置测试连接；id 为空时测试当前启用配置。 */
-export const testConnection = (id = '') => callService<TestConnectionResult>('AIService', 'TestConnection', id)
+export const testConnection = (id = '') => callService<TestConnectionResult>('AIConfigService', 'TestConnection', id)
 
-/** AI 润色处理模式（与后端 pkg/ai/prompts.go 对齐）。 */
+/** AI 润色处理模式（与后端 pkg/resume/service/ai_polish_prompt.go 对齐）。 */
 export type PolishMode = 'polish' | 'expand' | 'condense' | 'formal' | 'concise'
 
 export interface PolishResult {
