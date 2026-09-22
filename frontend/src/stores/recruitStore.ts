@@ -43,11 +43,10 @@ import {
 import { extractErrorMessage } from '../lib/errorUtils'
 import { dayKey } from '../lib/recruit/time'
 
-/** 默认筛选：只看待处理（归档区单独展示）。仅用于**初始视图**。 */
 export const DEFAULT_FILTERS: JobFilters = {
   companies: [],
   stages: [],
-  statuses: ['pending'],
+  statuses: [],
   sources: [],
   urgencies: [],
   keyword: '',
@@ -55,9 +54,6 @@ export const DEFAULT_FILTERS: JobFilters = {
 
 /**
  * 「清除所有筛选条件」的目标态：全字段清空（状态 = 全部）。
- * ⚠ 不要复用 DEFAULT_FILTERS——它的 `statuses: ['pending']` 是**初始视图基线**，
- * 不是「无筛选」；resetFilters 曾误用它导致清除后状态下拉被设回【待处理】（实际踩坑）。
- * 每次返回全新数组实例，避免浅拷贝与 DEFAULT_FILTERS 共享引用被就地污染。
  */
 const emptyFilters = (): JobFilters => ({
   companies: [],

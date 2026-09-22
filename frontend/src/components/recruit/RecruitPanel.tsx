@@ -94,10 +94,9 @@ export function RecruitPanel() {
     }
   }, [view, jobs, filters, ctx])
 
-  /** 摘要条点击：切换告警快捷筛选（再点一次取消）。 */
   const pickUrgency = (u: (typeof filters.urgencies)[number]) => {
     const on = filters.urgencies.includes(u)
-    setFilters({ urgencies: on ? [] : [u], statuses: on ? ['pending'] : [] })
+    setFilters({ urgencies: on ? [] : [u] })
   }
 
   const handleDelete = async () => {
@@ -123,8 +122,8 @@ export function RecruitPanel() {
     thresholdHours: threshold,
   }
 
-  // 「干净」基线 = 全字段为空（与 resetFilters 的 emptyFilters 对齐）。
-  // 初始视图 statuses=['pending'] 是一个生效筛选，因此清除按钮会正常出现。
+  // 「干净」基线 = 全字段为空（与 resetFilters 的 emptyFilters 对齐）；
+  // 初始视图即无筛选，filterDirty 为 false，不显示「清除」按钮。
   const filterDirty =
     filters.stages.length > 0 ||
     filters.sources.length > 0 ||
