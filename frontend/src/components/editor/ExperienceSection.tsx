@@ -7,9 +7,10 @@ import { Checkbox } from '../ui/Checkbox'
 import { MonthPicker } from '../ui/MonthPicker'
 import { RichTextField } from '../ui/RichTextField'
 import { useDragReorder } from '../../hooks/useDragReorder'
-import { useEntryTransition, useListEnterAnimation } from '../../hooks/useEntryTransition'
+import { useEntryTransition } from '../../hooks/useEntryTransition'
 import { ExtrasEditor } from './ExtrasEditor'
 import { AIPolishControl } from './AIPolishControl'
+import { HighlightsBlock } from './HighlightsBlock'
 import { useT } from '../../lib/i18n'
 
 interface Props {
@@ -238,12 +239,13 @@ export function ExperienceSection({ type, title }: Props) {
 
                   {/* Highlights */}
                   <div>
-                    <label className="form-label">{t('keyHighlights')}</label>
-                    <HighlightsEditor
+                    <HighlightsBlock
+                      label={t('keyHighlights')}
                       highlights={(item as { highlights?: string[] }).highlights || []}
                       onChange={(highlights) => updateItem(idx, { highlights } as Partial<Entry>)}
                       onRequestRemove={(subIdx) => requestHighlightDelete(sectionKind, idx, subIdx)}
                       delKeyPrefix={`highlight:${sectionKind}:${idx}`}
+                      context={[(item as Job).company, (item as Job).title].filter(Boolean).join(' · ')}
                     />
                   </div>
 
@@ -277,47 +279,7 @@ export function ExperienceSection({ type, title }: Props) {
   )
 }
 
-function HighlightsEditor({ highlights, onChange, onRequestRemove, delKeyPrefix }: { highlights: string[]; onChange: (h: string[]) => void; onRequestRemove?: (highlightIndex: number) => void; delKeyPrefix: string }) {
-  const t = useT()
-  const addHighlight = () => onChange([...highlights, ''])
-  const updateHighlight = (idx: number, value: string) => {
-    const updated = [...highlights]
-    updated[idx] = value
-    onChange(updated)
-  }
-  const removeHighlight = (idx: number) => {
-    if (onRequestRemove) {
-      onRequestRemove(idx)
-      return
-    }
-    onChange(highlights.filter((_, i) => i !== idx))
-  }
-  const enterRef = useListEnterAnimation(highlights.length, '.hl-row')
-
-  return (
-    <div ref={enterRef} className="space-y-1.5">
-      {highlights.map((h, i) => (
-        <div key={i} data-del-key={`${delKeyPrefix}:${i}`} className="hl-row flex gap-1">
-          <div className="flex items-center px-1 pt-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
-          </div>
-          <RichTextField
-            variant="inline"
-            minHeight={36}
-            value={h}
-            onChange={(v) => updateHighlight(i, v)}
-            placeholder={`${t('highlights')} ${i + 1}`}
-            maxLength={500}
-          />
-          <button onClick={() => removeHighlight(i)} className="p-1 text-danger-500 hover:bg-danger-100 hover:text-danger-600 rounded-md transition-colors flex-shrink-0">
-            <Trash2 className="size-icon-sm" />
-          </button>
-        </div>
-      ))}
-      <button onClick={addHighlight} className="btn-ghost btn-xs text-primary-600">
-        <Plus className="w-3 h-3" />
-        {t('addHighlight')}
-      </button>
-    </div>
-  )
+/** `pending` → `Pending`，用于拼 `statusPending` / `sourceEmail` 这类 key。 */
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }

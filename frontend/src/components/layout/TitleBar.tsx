@@ -59,6 +59,12 @@ export function TitleBar() {
   return (
     <div className="titlebar">
       <div className="titlebar-drag" onDoubleClick={handleMaximize}>
+        <img
+          src="/gosume-logo.svg"
+          alt=""
+          draggable={false}
+          className="titlebar-logo select-none"
+        />
         <span className="titlebar-title">Gosume</span>
       </div>
 

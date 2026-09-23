@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	ai "gosume/pkg/ai"
 	"gosume/pkg/log"
 	recruitmodel "gosume/pkg/recruit/model"
 )
@@ -89,40 +90,11 @@ func (f ParseFields) Count() int {
 	return n
 }
 
-// ExtractJSON 从模型回复中截取首个平衡的 JSON 对象：
-// 容忍 ```json 围栏、前后解释文字；按括号深度扫描并跳过字符串字面量。
+// ExtractJSON 从模型回复中截取首个平衡的 JSON 对象。
+// 实现已泛化并上移至 pkg/ai（支持对象与数组），此处保留导出别名以
+// 维持 recruit 既有调用点不变。
 func ExtractJSON(s string) (string, error) {
-	start := strings.IndexByte(s, '{')
-	if start < 0 {
-		return "", errors.New("模型回复中未找到 JSON 对象")
-	}
-	inStr, esc, depth := false, false, 0
-	for i := start; i < len(s); i++ {
-		c := s[i]
-		if inStr {
-			switch {
-			case esc:
-				esc = false
-			case c == '\\':
-				esc = true
-			case c == '"':
-				inStr = false
-			}
-			continue
-		}
-		switch c {
-		case '"':
-			inStr = true
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return s[start : i+1], nil
-			}
-		}
-	}
-	return "", errors.New("JSON 对象不完整")
+	return ai.ExtractJSON(s)
 }
 
 // normalizeTime 时间归一化：接受 RFC3339 / 无偏移时刻 / 纯日期，

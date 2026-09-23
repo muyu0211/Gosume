@@ -24,6 +24,34 @@ const SOURCE_ICON = {
   other: PencilLine,
 } as const
 
+/** 归档态（非 pending）的状态视觉：图标 + 语义色 chip + 直达切换按钮（文案 / hover）。 */
+const ARCHIVED_STATUS_META = {
+  done: {
+    icon: CheckCircle2,
+    textClass: 'text-success-600',
+    chipClass: 'bg-success-600/10',
+    markKey: 'markDone',
+    hoverClass: 'hover:text-success-600 hover:bg-success-500/10',
+  },
+  missed: {
+    icon: XCircle,
+    textClass: 'text-danger-600',
+    chipClass: 'bg-danger-600/10',
+    markKey: 'markMissed',
+    hoverClass: 'hover:text-danger-600 hover:bg-danger-500/10',
+  },
+  dropped: {
+    icon: CircleSlash,
+    textClass: 'text-surface-500',
+    chipClass: 'bg-surface-600/10',
+    markKey: 'markDropped',
+    hoverClass: 'hover:text-surface-600 hover:bg-surface-600/8',
+  },
+} as const
+
+/** 全部终态（归档直达切换的遍历源，渲染时剔除当前状态）。 */
+const TERMINAL_STATUSES = ['done', 'missed', 'dropped'] as const
+
 /** 时间行文案：优先事件时间，其次截止时间，都没有则为「时间待定」。 */
 function timeText(job: JobProcess, t: (k: string) => string): string {
   if (job.event_time) return fmtDateTime(job.event_time, job.all_day)
@@ -51,6 +79,9 @@ export function JobCard({
   const meta = jobUrgencyMeta(job, now, thresholdHours)
   const rel = fmtRelative(job.event_time ?? job.deadline, now)
   const SourceIcon = SOURCE_ICON[job.source]
+  // 归档条目的状态视觉（pending 为 null）：图标 + 语义色 chip
+  const statusMeta = job.status === 'pending' ? null : ARCHIVED_STATUS_META[job.status]
+  const StatusIcon = statusMeta?.icon
 
   const relLabel = rel
     ? rel.key === 'relDate'
@@ -73,8 +104,10 @@ export function JobCard({
 
       <div className="relative flex-1 min-w-0 p-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          {/* 第一行：公司 → 岗位 → 轮次 →（行尾）是否关联；环节改由背景水印承载 */}
-          <div className="flex items-center gap-x-2 gap-y-0.5 min-w-0 flex-wrap">
+          {/* 第一行：公司 → 岗位 → 轮次 →（行尾）是否关联；环节改由背景水印承载。
+              min-h-ctl-md 与右侧操作按钮列（size-ctl-md）同高，保证「未关联 / 第x轮」
+              与标记完成、编辑、删除按钮在同一水平线上。 */}
+          <div className="flex items-center gap-x-2 gap-y-0.5 min-w-0 flex-wrap min-h-ctl-md">
             <button
               type="button"
               onClick={() => onOpenCompany(job.company_norm)}
@@ -113,8 +146,13 @@ export function JobCard({
                 {t(meta.labelKey)}
               </span>
             )}
-            {job.status !== 'pending' && (
-              <span className="text-xs text-surface-400">{t(`status${cap(job.status)}`)}</span>
+            {statusMeta && StatusIcon && (
+              <span
+                className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-sm ${statusMeta.chipClass} ${statusMeta.textClass}`}
+              >
+                <StatusIcon className="size-icon-sm" />
+                {t(`status${cap(job.status)}`)}
+              </span>
             )}
           </div>
 
@@ -182,15 +220,22 @@ export function JobCard({
               </Tooltip>
             </>
           ) : (
-            <Tooltip label={t('markPending')}>
-              <button
-                type="button"
-                onClick={() => onSetStatus(job.id, 'pending')}
-                className="h-ctl-md px-2 rounded-md text-xs text-surface-500 hover:text-primary-600 hover:bg-primary-600/8 active:scale-[0.98] transition-colors duration-fast"
-              >
-                {t('markPending')}
-              </button>
-            </Tooltip>
+            // 归档直达切换：除当前状态外的全部终态均可一键直达（含已放弃），无需先恢复待处理
+            TERMINAL_STATUSES.filter((st) => st !== job.status).map((st) => {
+              const m = ARCHIVED_STATUS_META[st]
+              const Icon = m.icon
+              return (
+                <Tooltip key={st} label={t(m.markKey)}>
+                  <button
+                    type="button"
+                    onClick={() => onSetStatus(job.id, st)}
+                    className={`size-ctl-md rounded-md flex items-center justify-center active:scale-[0.98] transition-colors duration-fast ${m.hoverClass}`}
+                  >
+                    <Icon className="size-icon-md" strokeWidth={1.75} />
+                  </button>
+                </Tooltip>
+              )
+            })
           )}
           <Tooltip label={t('jobEdit')}>
             <button

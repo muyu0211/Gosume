@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -111,4 +112,95 @@ func (s *AIService) Polish(req PolishRequest) *util.Response {
 
 	log.Infof("[resume.ai] Polish: 完成 mode=%s semantic=%s inputRunes=%d outputRunes=%d", req.Mode, req.Semantic, utf8.RuneCountInString(req.Text), utf8.RuneCountInString(reply))
 	return util.DoRsp(util.SuccCode, "成功", &PolishResponse{Result: reply})
+}
+
+// polishListMaxItems 单次整组亮点润色的条目数上限（防滥用与超长请求）。
+const polishListMaxItems = 30
+
+// PolishListRequest 是一次「关键亮点」整组润色请求。
+type PolishListRequest struct {
+	Items   []string `json:"items"`   // 非空 bullet，顺序即编辑器顺序
+	Mode    string   `json:"mode"`    // polish | expand | condense
+	Context string   `json:"context"` // 条目上下文（公司 · 职位 等），可空
+	Lang    string   `json:"lang"`    // 简历渲染语言（沿用现有语义）
+}
+
+// PolishListResponse 是整组润色回包：results[i] 与请求 items[i] 位置对应。
+type PolishListResponse struct {
+	Results []string `json:"results"`
+}
+
+// PolishHighlights 对「关键亮点」整组进行 AI 改写（方案 v0.3 §4）。
+// 响应为与 items 等长的 JSON 字符串数组（位置对应）；条目数不一致、截断、
+// 解析失败等任何错误都整组不回写（前端保持原样）。
+func (s *AIService) PolishHighlights(req PolishListRequest) *util.Response {
+	if !isPolishMode(polishMode(req.Mode)) {
+		log.Warnf("[resume.ai] PolishHighlights: 不支持的润色模式=%s", req.Mode)
+		return util.DoRsp(util.ErrCode, "不支持的润色模式", nil)
+	}
+
+	// 过滤空白条目（前端已过滤，此处兜底），并做条目数 / 聚合长度护栏
+	items := make([]string, 0, len(req.Items))
+	for _, it := range req.Items {
+		if v := strings.TrimSpace(it); v != "" {
+			items = append(items, v)
+		}
+	}
+	if len(items) == 0 {
+		return util.DoRsp(util.ErrCode, "亮点内容为空", nil)
+	}
+	if len(items) > polishListMaxItems {
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("亮点条目过多（%d 条），请精简后再润色", len(items)), nil)
+	}
+	total := 0
+	for _, it := range items {
+		total += utf8.RuneCountInString(it)
+	}
+	if total > polishMaxInputRunes {
+		log.Warnf("[resume.ai] PolishHighlights: 聚合长度超限已拦截 total=%d", total)
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("亮点总字数约 %d，超出上限 %d，请先精简", total, polishMaxInputRunes), nil)
+	}
+
+	msgs := buildPolishListMessages(polishMode(req.Mode), req.Context, items)
+
+	ctx, cancel := context.WithTimeout(context.Background(), polishTimeout)
+	defer cancel()
+
+	maxTok := maxPolishResultTokens
+	reply, err := s.chat(ctx, msgs, ai.WithMaxTokens(maxTok))
+	if errors.Is(err, ai.ErrNoActiveConfig) {
+		log.Warnf("[resume.ai] PolishHighlights: 未完成 AI 配置，请求被拦截")
+		return util.DoRsp(util.ErrCode, "未配置 AI，请先在设置页完成配置", nil)
+	}
+	if errors.Is(err, ai.ErrTruncated) {
+		// 整组 JSON 输出比单文本多转义开销，思考型模型更易触发；重试无意义，文案引导处理
+		log.Errorf("[resume.ai] PolishHighlights: 输出被截断: %v", err)
+		return util.DoRsp(util.ErrCode, "模型输出超出长度限制，建议精简亮点或更换模型", nil)
+	}
+	if err != nil {
+		log.Errorf("[resume.ai] PolishHighlights: 调用失败: %v", err)
+		return util.DoRsp(util.ErrCode, "润色失败，请稍后重试", nil)
+	}
+
+	// 提取 + 解析 + 条目数校验：任何一步失败都整组不回写
+	body, err := ai.ExtractJSON(reply)
+	if err != nil {
+		log.Errorf("[resume.ai] PolishHighlights: %v", err)
+		return util.DoRsp(util.ErrCode, "AI 返回格式异常，请重试", nil)
+	}
+	var results []string
+	if err := json.Unmarshal([]byte(body), &results); err != nil {
+		log.Errorf("[resume.ai] PolishHighlights: JSON 解析失败: %v", err)
+		return util.DoRsp(util.ErrCode, "AI 返回格式异常，请重试", nil)
+	}
+	if len(results) != len(items) {
+		log.Warnf("[resume.ai] PolishHighlights: 条目数不一致 items=%d results=%d", len(items), len(results))
+		return util.DoRsp(util.ErrCode, "AI 返回的条目数不一致，请重试", nil)
+	}
+	for i, r := range results {
+		results[i] = strings.TrimSpace(r)
+	}
+
+	log.Infof("[resume.ai] PolishHighlights: 完成 mode=%s items=%d", req.Mode, len(items))
+	return util.DoRsp(util.SuccCode, "成功", &PolishListResponse{Results: results})
 }

@@ -123,3 +123,12 @@ export interface PolishResult {
 /** 对一段开放文本按指定模式进行 AI 润色，返回润色后的文本。 */
 export const polishText = (text: string, mode: PolishMode, semantic: string, lang: string) =>
   callService<PolishResult>('AIService', 'Polish', { text, mode, semantic, lang })
+
+/** 整组亮点润色回包：results[i] 与请求 items[i] 位置对应。 */
+export interface PolishHighlightsResult {
+  results: string[]
+}
+
+/** 对「关键亮点」整组进行 AI 改写（items 为非空 bullet，顺序即编辑器顺序）。 */
+export const polishHighlights = (items: string[], mode: PolishMode, context: string, lang: string) =>
+  callService<PolishHighlightsResult>('AIService', 'PolishHighlights', { items, mode, context, lang })

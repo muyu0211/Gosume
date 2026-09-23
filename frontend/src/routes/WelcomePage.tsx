@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTemplateStore } from '../stores/templateStore'
 import { useResumeStore } from '../stores/resumeStore'
-import { Clock, Sparkles, Settings, Upload, FileUp, Loader2, Trash2, CheckCircle2, PackageOpen, Globe, Moon, Palette, Sun, FileText, LayoutTemplate, CalendarClock } from 'lucide-react'
+import { Clock, Settings, Upload, FileUp, Loader2, Trash2, CheckCircle2, PackageOpen, Globe, Moon, Palette, Sun, FileText, LayoutTemplate, CalendarClock } from 'lucide-react'
 import { useThemeStore } from '../stores/themeStore'
 import { nextExplicitTheme } from '../lib/theme'
 import { ImportPreviewDialog } from '../components/resume/ImportPreviewDialog'
@@ -297,8 +297,14 @@ export function WelcomePage() {
       <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="size-ctl-xl rounded-xl bg-primary-600 flex items-center justify-center shadow-sm shadow-primary-600/25">
-              <Sparkles className="size-icon-lg text-white" />
+            {/* logo 底座：跟随主题令牌（浅色=浅底 / 深色=深底），避免奶油纸形与相近背景融合 */}
+            <div className="size-ctl-xl rounded-xl bg-elev border-surface-200 flex items-center justify-center">
+              <img
+                src="/gosume-logo.svg"
+                alt="Gosume"
+                draggable={false}
+                className="size-8 select-none"
+              />
             </div>
             {/* 新版本角标：启动检查到更新时渲染，点击弹出更新对话框（复用设置页 UpdateDialog） */}
             {updateInfo && (

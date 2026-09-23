@@ -1687,6 +1687,14 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   --wails-draggable: drag;
 }
 
+.titlebar-logo {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  display: block;
+}
+
 .titlebar-title {
   font-size: 12px;
   font-weight: 600;
