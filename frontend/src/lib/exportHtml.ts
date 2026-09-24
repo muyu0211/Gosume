@@ -19,6 +19,7 @@
  */
 
 import { paginateResume, readPageStyle, waitForDocumentReady, type PageStyle, type PageMode } from './paginationCore'
+import { applyContactFit } from './contactFit'
 import { DEFAULT_PAPER } from './paper'
 
 // ── Serialization ────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ export async function paginateHTMLString(previewHtml: string, mode: PageMode = '
     // yield one more frame to let the browser settle before splitting.
     await waitForDocumentReady(doc)
     await nextFrame()
-
+    applyContactFit(doc)
     paginateInIframe(doc, mode)
     return cleanAndSerialize(doc)
   } finally {

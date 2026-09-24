@@ -70,12 +70,14 @@ body {
     border: 2pt solid rgba(255,255,255,0.5);
 }
 
-/* 联系方式：白字横向信息带（隐藏小节标题） */
+/* 联系方式：连续无缝 4 列栅格（白字，隐藏小节标题）
+   条目按 contact→basic→links 顺序进入同一 4 列网格连续填充（无组间断行），
+   标签定宽使值起始位置成列，
+   行距统一（保留渐变头部的分隔线与白字风格）。 */
 .r-subtitle { display: none; }
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 3pt 14pt;
     margin-top: 10pt;
     padding-top: 8pt;
@@ -83,7 +85,15 @@ body {
     font-size: 8pt;
     color: rgba(255,255,255,0.9);
 }
-.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { font-weight: 600; color: #fff; }
 .r-langs { display: flex; flex-wrap: wrap; gap: 3pt 14pt; margin-top: 4pt; font-size: 8.5pt; color: rgba(255,255,255,0.9); }
 

@@ -99,13 +99,51 @@ templates/
       <header class="r-header">        ← 个人信息区（本质同类的四子块，排布由 CSS 决定）
         ├─ .r-header-text             ← 姓名/英文名/职位/年限
         ├─ .r-avatar                  ← 头像（仅在简历含头像数据时渲染）
-        ├─ .r-contact                 ← 联系方式（含小节标题 .r-subtitle）
+        ├─ .r-contact                 ← 联系方式（含小节标题 .r-subtitle；条目按语义包在
+        │                                .r-contact-group 三组内，见下方说明）
         └─ .r-langs                   ← 语言（仅在含语言数据时渲染，含 .r-subtitle）
       <main   class="r-main">          ← 各章节（section-title 与条目为兄弟节点）
     </div>
   </div>
 </body>
 ```
+
+> **联系方式分组（.r-contact-group）**：`.r-contact` 内的条目按语义包在三个
+> `.r-contact-group`（`data-group` 属性标识）里：
+> `contact`=邮箱/手机/微信/QQ；`basic`=城市/籍贯/民族/出生日期/年龄/政治面貌/婚姻状况/
+> 入党时间/户口所在地/现居住地/职称职级/自定义 Extras；`links`=网站/GitHub/LinkedIn。
+> 组内条目沿用 `.r-contact-item/-label/-value` 类名契约，分页核心不感知该包裹层
+> （单栏 `.r-header` 为页 1 前置整块，双栏侧栏整体复用，均不拆到组这一层）。
+> **未适配分组布局的模板**（仅剩 4 个双栏侧栏模板）由全局 CSS
+> （`templates/resume-global.css`）的 `.r-contact-group { display: contents; }` 兜底，
+> 条目仍作为 `.r-contact` 的直接 flex/grid 子项参与 gap 排布，视觉与包裹前一致；
+> **全部 20 个单栏模板**在各模板 CSS 中把 `.r-contact` 覆盖为**连续无缝 4 列栅格**
+> （`.r-contact-group` 覆盖为 `display: contents`，条目按 contact→basic→links 顺序进入
+> 同一网格连续填充、无组间断行；contact/basic/links 组内标签**不定宽**（占自然宽度），
+> 条目内以固定 `gap` 统一标签-值间距（不做标签定宽，值起始不强制成列——定宽成列与
+> 间距统一数学互斥，已选定间距统一）；
+> 头像居中模板需在 `.r-contact` 上显式 `width: 100%; text-align: left`，覆盖 `.r-header`
+> 的 `justify-items: center` / `text-align: center` 对栅格的收缩与继承），
+> 兼顾对齐与空间利用率。
+> **长条目自适应跨列**：统一 HTML 尾部内置一段自适应脚本——渲染后测量每个
+> `.r-contact-item` 的内容所需宽度（label 宽 + 条目 gap + 值强制 `white-space: nowrap`
+> 后的 `scrollWidth`），超出单格宽时设置 `grid-column: span 2/3/4`（上限为列数），
+> 避免长值（网站/GitHub/LinkedIn 等）在格内换行；脚本幂等（先重置 span 再测量），
+> 绑定 `DOMContentLoaded` / `load` / `resize`；非栅格布局（双栏侧栏竖排）自动跳过；
+> 跨列结果以内联样式落在条目上，分页克隆原样保留，`overflow-wrap: anywhere`
+> 仍保留作兜底（span 满格仍放不下才换行）。
+> **执行归属（关键）**：编辑页预览（`PreviewPanel.tsx`）与导出（`exportHtml.ts`）的
+> iframe 为 `sandbox="allow-same-origin"` 禁脚本，内嵌脚本不执行，且编辑态 morphdom
+> 增量更新后必须重测——统一由前端 `frontend/src/lib/contactFit.ts` 的
+> `applyContactFit(doc)` 外层执行，调用点在**文档 ready 之后、分页/截图之前**：
+> PreviewPanel（覆盖全量重写与 morph 增量两条路径，源容器上设置后分页克隆自动带
+> span）、exportHtml（导出分页前）、thumbnailService（截图前幂等补跑）。内嵌脚本
+> 保留服务无外层 JS 的场景（直接打开导出 HTML、模板画廊/简历页 srcdoc 预览），
+> 两处逻辑一致且幂等，叠加调用无副作用。
+> **头部布局预设（前端 customCss.ts 的 headerLayoutOverlayCss）注意**：center 分支
+> 对 `.r-contact` 必须 `justify-self: stretch; width: 100%; text-align: left`——栅格
+> 满宽后 4 列才严格等分、条目起点成列；不能用 `justify-self: center` 收缩（1fr 列
+> 退化为不等宽内容列，条目开头参差，且自适应跨列的测量基准失效）。
 
 > **分页产物契约（M1 组件级 + M2 行级分页）**：分页核心（`frontend/src/lib/paginationCore.ts`）把放不下当前页剩余空间的条目按内部组件拆分跨页。拆分产物为「头部部分克隆（保留 `data-id`，留在当前页）」+「续接部分克隆（去掉 `data-id`、改打 `data-cont-of="<原data-id>"`，位于续页）」；两类克隆**均复用条目原有类名与** **`data-section`**，模板 CSS 的间距/字体注入规则自动生效，模板无需感知拆分。分页核心对组件的拆分/保留判定采用**通用结构规则**：叶子文本块（无块级子元素）按行断页、含块级子元素的容器按子组件拆分；仅少数「语义整体」组件（`.section-title`、`.exp-header`、`.edu-header`、`.skill-item`、`.skill-dots`）在引擎内登记为整体保留。新增模板组件沿用统一 HTML 的类名契约即可自动接入分页，无需改引擎（除非是「含块级子元素的一行式语义单元」，才需在 `KEEP_WHOLE` 中追加）。
 
@@ -129,7 +167,7 @@ templates/
 2. **头像**：统一 HTML 仅在简历含头像数据时渲染 `.r-avatar`；**位置完全由 CSS 决定**
    （双栏放侧栏、单栏可右置/居中/左置），不固定。是否显示同样由模板 CSS 决定。
    `features.avatar` 仅为元数据，不参与渲染。
-3. **小节标题**：`.r-subtitle`（"个人信息"/"语言"）默认渲染；单栏横向信息带如不需要，
+3. **小节标题**：`.r-subtitle`（"个人信息"/"语言"）默认渲染；单栏模板如不需要，
    用 `.r-subtitle { display: none; }` 隐藏（双栏侧栏通常保留）。
 4. **章节类名沿用约定**：`.section-title`、`.experience-item`、`.exp-header`、`.exp-location`、
    `.exp-summary`、`.education-item`、`.edu-header`、`.edu-detail`、`.edu-courses`、`.award-item`、
@@ -198,7 +236,7 @@ templates/
 | 页面容器    | `.resume-page`（内层单页）、`.resume-container`（内容包裹层）                                                         |
 | 语义区     | `.r-header`（个人信息区）、`.r-main`（章节区）                                                                       |
 | 头部      | `.r-header-text`、`.r-name`、`.r-ename`、`.r-jobtitle`、`.r-yoe`、`.r-avatar`（头像，位置由 CSS 定）                  |
-| 联系方式/语言 | `.r-contact`、`.r-contact-item`、`.r-contact-label`、`.r-contact-value`、`.r-langs`、`.r-lang`、`.r-subtitle` |
+| 联系方式/语言 | `.r-contact`、`.r-contact-group`（语义分组包裹层）、`.r-contact-item`、`.r-contact-label`、`.r-contact-value`、`.r-langs`、`.r-lang`、`.r-subtitle` |
 | 章节标题    | `.section-title`                                                                                        |
 | 经历条目    | `.experience-item`、`.exp-header`、`.exp-summary`                                                         |
 | 教育条目    | `.education-item`、`.edu-header`、`.edu-detail`                                                           |

@@ -39,6 +39,16 @@
  * 均仅在对应数值存在时注入；未设置时模板自身 .r-avatar img 样式原样生效。
  */
 
+/* ── 联系方式分组包裹层兜底 ─────────────────────────────── */
+/* 统一 HTML 将 .r-contact 条目按语义包进 .r-contact-group（data-group=
+   contact/basic/links）。display:contents 使包裹层在布局中"透明"：
+   未适配分组布局的模板（居中竖排单栏、双栏侧栏）里，条目仍作为
+   .r-contact 的直接 flex/grid 子项参与 gap 排布，视觉与改造前完全一致。
+   单栏横向信息带模板在各模板 CSS 中覆盖为对齐网格布局。 */
+.r-contact-group {
+    display: contents;
+}
+
 /* ── Markdown 列表 marker 收敛（原 template.html 内嵌）──────────────── */
 /* markdown 生成的列表落在 .exp-summary/.summary/.extra-value 内，模板的
  .highlights 样式不命中；这里统一收敛列表样式：marker 用 li::before 绝对

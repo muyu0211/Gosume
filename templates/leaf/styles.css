@@ -66,19 +66,27 @@ body {
 .r-avatar { margin-bottom: 8pt; }
 .r-avatar img { width: 56pt; height: 56pt; object-fit: cover; border-radius: 50%; border: 2pt solid var(--primary-color); }
 
-/* 联系方式：居中横向信息带（隐藏小节标题） */
+/* 联系方式：连续无缝 4 列栅格信息带（隐藏小节标题） */
 .r-subtitle { display: none; }
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 3pt 12pt;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3pt 6pt;
+    width: 100%;
+    text-align: left;
     margin-top: 8pt;
     font-size: 8pt;
     color: var(--muted-color);
 }
-.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 3pt;
+    min-width: 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { font-weight: 600; color: var(--heading-color); }
 .r-langs { display: flex; flex-wrap: wrap; justify-content: center; gap: 3pt 14pt; font-size: 8.5pt; }
 

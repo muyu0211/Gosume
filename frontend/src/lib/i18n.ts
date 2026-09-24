@@ -253,7 +253,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   age: { zh: '年龄', en: 'Age' },
   householdRegistration: { zh: '户口所在地', en: 'Household registration' },
   currentResidence: { zh: '现居住地', en: 'Current residence' },
-  titleRank: { zh: '职称/职级', en: 'Title / Rank' },
+  titleRank: { zh: '职称', en: 'Title' },
   customFields: { zh: '自定义字段', en: 'Custom fields' },
   polMass: { zh: '群众', en: 'Masses' },
   polLeague: { zh: '共青团员', en: 'Youth League member' },

@@ -59,16 +59,28 @@ body {
 
 .r-avatar img { width: 47pt; height: 66pt; object-fit: cover; border-radius: 3pt; }
 
-/* 联系方式：横向信息带（隐藏小节标题） */
+/* 联系方式：连续无缝 4 列栅格（隐藏小节标题）
+   条目按 contact→basic→links 顺序进入同一 4 列网格连续填充（无组间断行），
+   标签定宽使值起始位置成列，
+   行距统一（保留模板的小字号密排风格）。 */
 .r-subtitle { display: none; }
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4pt 16pt;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3pt 16pt;
     margin-top: 8pt;
 }
-.r-contact-item { display: flex; gap: 2pt; font-size: 7.5pt; color: var(--muted-color); line-height: 1.6; }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    font-size: 7.5pt;
+    color: var(--muted-color);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { font-weight: 600; }
 .r-langs { display: flex; flex-wrap: wrap; gap: 3pt 14pt; font-size: 8.5pt; margin-top: 4pt; }
 

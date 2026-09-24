@@ -108,7 +108,7 @@ export function headerLayoutOverlayCss(hl: HeaderLayout | null): string {
         '.r-header{grid-template-columns:1fr!important;grid-template-areas:"avatar" "text" "contact" "langs"!important;text-align:center!important;}',
         '.r-avatar{grid-area:avatar!important;margin:0 0 8pt 0!important;justify-self:center!important;}',
         '.r-header-text{grid-area:text!important;text-align:center!important;}',
-        '.r-contact{grid-area:contact!important;justify-self:center!important;}',
+        '.r-contact{grid-area:contact!important;justify-self:stretch!important;width:100%!important;text-align:left!important;}',
         '.r-langs{grid-area:langs!important;justify-self:center!important;}',
       ].join('\n')
     case 'avatar-left':
@@ -294,9 +294,29 @@ export function stripHeaderLayoutCss(css: string): string {
   return nextIdx === -1 ? before.trimEnd() : before + rest.slice(nextIdx)
 }
 
+// ── 渲染端规范化 ─────────────────────────────────────────────────────────
+/**
+ * 修正历史版本生成、已存库的旧规则（不迁移库数据：渲染注入时即时纠正，
+ * 用户下次保存样式时自然写入新规则）。
+ *
+ * 已知旧值：headerLayout=center 段的 .r-contact 曾生成
+ * `justify-self:center`——把满宽 4 列栅格收缩为内容宽，1fr 列退化为
+ * 不等宽内容列，条目起点参差。统一替换为满宽形态（stretch + width:100%
+ * + 条目左对齐），与居中头部模板原生形态一致。
+ */
+const LEGACY_CENTER_CONTACT =
+  '.r-contact{grid-area:contact!important;justify-self:center!important;}'
+const FIXED_CENTER_CONTACT =
+  '.r-contact{grid-area:contact!important;justify-self:stretch!important;width:100%!important;text-align:left!important;}'
+
+export function normalizeLegacyCustomCss(css: string): string {
+  if (!css || !css.includes(LEGACY_CENTER_CONTACT)) return css
+  return css.split(LEGACY_CENTER_CONTACT).join(FIXED_CENTER_CONTACT)
+}
+
 /** 返回当前简历的注入规则；空串表示无样式定制（渲染原生外观）。 */
 export function resolveCustomCss(resume: { custom_css?: string }): string {
-  return resume.custom_css ?? ''
+  return normalizeLegacyCustomCss(resume.custom_css ?? '')
 }
 
 function escapeRegExp(str: string): string {

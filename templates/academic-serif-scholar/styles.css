@@ -88,19 +88,29 @@ body {
 
 .r-header-text { margin-bottom: 8pt; }
 
-/* 联系方式：横向居中，隐藏小节标题 */
+/* 联系方式：连续无缝 4 列栅格信息带（隐藏小节标题，冒号风格标签不定宽） */
 .r-subtitle { display: none; }
 
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 4pt 16pt;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3pt 6pt;
+    width: 100%;
+    text-align: left;
     font-size: 9.5pt;
     margin-bottom: 4pt;
 }
 
-.r-contact-item { display: inline-flex; align-items: baseline; color: var(--muted-color); }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    color: var(--muted-color);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { color: var(--muted-color); }
 .r-contact-label::after { content: ": "; }
 .r-contact-value { color: var(--text-color); }

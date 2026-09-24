@@ -74,16 +74,27 @@ body {
     border: 2pt solid var(--accent-bg);
 }
 
-/* 单栏横向信息带：隐藏小节标题 */
+/* 单栏横向信息带：隐藏小节标题
+   联系方式改为连续无缝 4 列栅格：条目按 contact→basic→links 顺序进入
+   同一网格连续填充（无组间断行），保留冒号风格。 */
 .r-subtitle { display: none; }
 
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 3pt 14pt;
     font-size: 9.5pt;
 }
-.r-contact-item { display: inline-flex; align-items: baseline; color: var(--muted-color); }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    color: var(--muted-color);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { color: var(--muted-color); }
 .r-contact-label::after { content: ": "; }
 .r-contact-value { color: var(--text-color); }

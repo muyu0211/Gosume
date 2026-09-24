@@ -18,7 +18,13 @@
           <header class="r-header">     ← 个人信息区（姓名/职位 + 头像 + 联系方式 + 语言）
             ├─ .r-header-text          ← 姓名/英文名/职位/年限
             ├─ .r-avatar               ← 头像（仅在有头像数据时渲染）
-            ├─ .r-contact              ← 联系方式
+            ├─ .r-contact              ← 联系方式（条目按语义包在 .r-contact-group 三组内：
+            │                              contact=邮箱/手机/微信/QQ，basic=城市/籍贯/民族/出生日期/
+            │                              年龄/政治面貌/婚姻/入党时间/户口/现居/职称/自定义 Extras，
+            │                              links=网站/GitHub/LinkedIn；未适配模板经全局
+            │                              display:contents 兜底，布局不受影响。
+            │                              尾部自适应脚本：栅格布局下条目内容放不下当前格时
+            │                              自动跨列 span 2/3/4，避免值内换行）
             └─ .r-langs                ← 语言（仅在有语言数据时渲染）
           <main class="r-main">        ← 各章节（section-title 与条目为兄弟节点，扁平）
         </div>
@@ -61,61 +67,67 @@
 
                 <div class="r-contact">
                     <div class="r-subtitle">{{i18n .Meta.Language "个人信息" "Personal"}}</div>
-                    {{if .Personal.Email}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "邮箱" "Email"}}</span><span class="r-contact-value">{{.Personal.Email}}</span>
-                    </div>{{end}}
-                    {{if .Personal.Phone}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "手机" "Phone"}}</span><span class="r-contact-value">{{.Personal.Phone}}</span>
-                    </div>{{end}}
-                    {{if .Personal.Wechat}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "微信" "WeChat"}}</span><span
-                            class="r-contact-value">{{.Personal.Wechat}}</span></div>{{end}}
-                    {{if .Personal.QQ}}<div class="r-contact-item"><span class="r-contact-label">QQ</span><span
-                            class="r-contact-value">{{.Personal.QQ}}</span></div>{{end}}
-                    {{if .Personal.Location}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "城市" "Location"}}</span><span
-                            class="r-contact-value">{{.Personal.Location}}</span></div>{{end}}
-                    {{if .Personal.NativePlace}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "籍贯" "Native Place"}}</span><span
-                            class="r-contact-value">{{.Personal.NativePlace}}</span></div>{{end}}
-                    {{if .Personal.Ethnicity}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "民族" "Ethnicity"}}</span><span
-                            class="r-contact-value">{{.Personal.Ethnicity}}</span></div>{{end}}
-                    {{if .Personal.Birthday}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "出生日期" "Date of Birth"}}</span><span
-                            class="r-contact-value">{{.Personal.Birthday}}</span></div>{{end}}
-                    {{if .Personal.Age}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "年龄" "Age"}}</span><span class="r-contact-value">{{.Personal.Age}}
-                            {{i18n .Meta.Language "岁" "yrs"}}</span></div>{{end}}
-                    {{if .Personal.PoliticalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "政治面貌" "Political Status"}}</span><span
-                            class="r-contact-value">{{.Personal.PoliticalStatus}}</span></div>{{end}}
-                    {{if .Personal.MaritalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "婚姻状况" "Marital Status"}}</span><span
-                            class="r-contact-value">{{.Personal.MaritalStatus}}</span></div>{{end}}
-                    {{if .Personal.PartyJoinDate}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "入党/入团时间" "Party Join Date"}}</span><span
-                            class="r-contact-value">{{.Personal.PartyJoinDate}}</span></div>{{end}}
-                    {{if .Personal.HouseholdRegistration}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "户口所在地" "Household Registration"}}</span><span
-                            class="r-contact-value">{{.Personal.HouseholdRegistration}}</span></div>{{end}}
-                    {{if .Personal.CurrentResidence}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "现居住地" "Current Residence"}}</span><span
-                            class="r-contact-value">{{.Personal.CurrentResidence}}</span></div>{{end}}
-                    {{if .Personal.TitleRank}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "职称/职级" "Title · Rank"}}</span><span
-                            class="r-contact-value">{{.Personal.TitleRank}}</span></div>{{end}}
-                    {{if .Personal.Website}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
-                            .Meta.Language "网站" "Website"}}</span><span
-                            class="r-contact-value">{{.Personal.Website}}</span></div>{{end}}
-                    {{if .Personal.GitHub}}<div class="r-contact-item"><span class="r-contact-label">GitHub</span><span
-                            class="r-contact-value">{{.Personal.GitHub}}</span></div>{{end}}
-                    {{if .Personal.LinkedIn}}<div class="r-contact-item"><span
-                            class="r-contact-label">LinkedIn</span><span
-                            class="r-contact-value">{{.Personal.LinkedIn}}</span></div>{{end}}
-                    {{if .Personal.Extras}}{{range .Personal.Extras}}<div class="r-contact-item"><span
-                            class="r-contact-label">{{.Label}}</span><span
-                            class="r-contact-value">{{mdInline .Value}}</span></div>{{end}}{{end}}
+                    <div class="r-contact-group" data-group="contact">
+                        {{if .Personal.Email}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "邮箱" "Email"}}</span><span class="r-contact-value">{{.Personal.Email}}</span>
+                        </div>{{end}}
+                        {{if .Personal.Phone}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "手机" "Phone"}}</span><span class="r-contact-value">{{.Personal.Phone}}</span>
+                        </div>{{end}}
+                        {{if .Personal.Wechat}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "微信" "WeChat"}}</span><span
+                                class="r-contact-value">{{.Personal.Wechat}}</span></div>{{end}}
+                        {{if .Personal.QQ}}<div class="r-contact-item"><span class="r-contact-label">QQ</span><span
+                                class="r-contact-value">{{.Personal.QQ}}</span></div>{{end}}
+                    </div>
+                    <div class="r-contact-group" data-group="basic">
+                        {{if .Personal.Location}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "城市" "Location"}}</span><span
+                                class="r-contact-value">{{.Personal.Location}}</span></div>{{end}}
+                        {{if .Personal.NativePlace}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "籍贯" "Native Place"}}</span><span
+                                class="r-contact-value">{{.Personal.NativePlace}}</span></div>{{end}}
+                        {{if .Personal.Ethnicity}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "民族" "Ethnicity"}}</span><span
+                                class="r-contact-value">{{.Personal.Ethnicity}}</span></div>{{end}}
+                        {{if .Personal.Birthday}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "出生日期" "Date of Birth"}}</span><span
+                                class="r-contact-value">{{.Personal.Birthday}}</span></div>{{end}}
+                        {{if .Personal.Age}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "年龄" "Age"}}</span><span class="r-contact-value">{{.Personal.Age}}
+                                {{i18n .Meta.Language "岁" "yrs"}}</span></div>{{end}}
+                        {{if .Personal.PoliticalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "政治面貌" "Political Status"}}</span><span
+                                class="r-contact-value">{{.Personal.PoliticalStatus}}</span></div>{{end}}
+                        {{if .Personal.MaritalStatus}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "婚姻状况" "Marital Status"}}</span><span
+                                class="r-contact-value">{{.Personal.MaritalStatus}}</span></div>{{end}}
+                        {{if .Personal.PartyJoinDate}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "入党/入团时间" "Party Join Date"}}</span><span
+                                class="r-contact-value">{{.Personal.PartyJoinDate}}</span></div>{{end}}
+                        {{if .Personal.HouseholdRegistration}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "户口所在地" "Household Registration"}}</span><span
+                                class="r-contact-value">{{.Personal.HouseholdRegistration}}</span></div>{{end}}
+                        {{if .Personal.CurrentResidence}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "现居住地" "Current Residence"}}</span><span
+                                class="r-contact-value">{{.Personal.CurrentResidence}}</span></div>{{end}}
+                        {{if .Personal.TitleRank}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "职称" "Title"}}</span><span
+                                class="r-contact-value">{{.Personal.TitleRank}}</span></div>{{end}}
+                        {{if .Personal.Extras}}{{range .Personal.Extras}}<div class="r-contact-item"><span
+                                class="r-contact-label">{{.Label}}</span><span
+                                class="r-contact-value">{{mdInline .Value}}</span></div>{{end}}{{end}}
+                    </div>
+                    <div class="r-contact-group" data-group="links">
+                        {{if .Personal.Website}}<div class="r-contact-item"><span class="r-contact-label">{{i18n
+                                .Meta.Language "网站" "Website"}}</span><span
+                                class="r-contact-value">{{.Personal.Website}}</span></div>{{end}}
+                        {{if .Personal.GitHub}}<div class="r-contact-item"><span class="r-contact-label">GitHub</span><span
+                                class="r-contact-value">{{.Personal.GitHub}}</span></div>{{end}}
+                        {{if .Personal.LinkedIn}}<div class="r-contact-item"><span
+                                class="r-contact-label">LinkedIn</span><span
+                                class="r-contact-value">{{.Personal.LinkedIn}}</span></div>{{end}}
+                    </div>
                 </div>
 
                 {{if .Languages}}
@@ -287,6 +299,60 @@
             </main>
         </div>
     </div>
+    <script>
+        /* 联系方式条目自适应跨列：单栏 4 列栅格中，条目内容放不下当前格时
+           按需占 2/3/4 格（grid-column: span N），避免长值（网站/GitHub/LinkedIn 等）
+           在格内换行。非栅格布局（双栏侧栏竖排等）自动跳过。
+           幂等：先重置 span 再测量，重复执行安全；分页克隆的内联 span 样式原样保留。
+           注意：编辑页预览与导出链路的 iframe 为 sandbox 禁脚本，本脚本不执行——
+           由前端 frontend/src/lib/contactFit.ts 的 applyContactFit() 在分页/截图前
+           主动调用；本内嵌脚本服务无外层 JS 的场景（如直接打开导出的 HTML 文件）。 */
+        (function () {
+            function fit() {
+                var grids = document.querySelectorAll('.r-contact');
+                for (var g = 0; g < grids.length; g++) {
+                    var grid = grids[g];
+                    var cs = getComputedStyle(grid);
+                    if (cs.display.indexOf('grid') === -1) continue;
+                    var gridW = grid.clientWidth;
+                    if (gridW < 40) continue; /* 隐藏或极窄时跳过 */
+                    var cols = cs.gridTemplateColumns.split(' ').length;
+                    if (cols < 2) continue;
+                    var colGap = parseFloat(cs.columnGap) || 0;
+                    var unit = (gridW - colGap * (cols - 1)) / cols;
+                    var items = grid.querySelectorAll('.r-contact-item');
+                    for (var i = 0; i < items.length; i++) {
+                        var it = items[i];
+                        it.style.gridColumn = '';
+                        var label = it.querySelector('.r-contact-label');
+                        var value = it.querySelector('.r-contact-value');
+                        if (!value) continue;
+                        var labelW = 0;
+                        var innerGap = 0;
+                        if (label) {
+                            labelW = label.offsetWidth;
+                            innerGap = parseFloat(getComputedStyle(it).columnGap) || 0;
+                        }
+                        value.style.whiteSpace = 'nowrap';
+                        var need = labelW + innerGap + value.scrollWidth;
+                        value.style.whiteSpace = '';
+                        var span = 1;
+                        if (need > unit + 0.5) {
+                            span = Math.min(cols, Math.ceil((need + colGap) / (unit + colGap)));
+                        }
+                        if (span > 1) it.style.gridColumn = 'span ' + span;
+                    }
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fit);
+            } else {
+                fit();
+            }
+            window.addEventListener('load', fit);   /* 字体/图片就绪后复测 */
+            window.addEventListener('resize', fit); /* 预览宽度变化时重算 */
+        })();
+    </script>
 </body>
 
 </html>

@@ -17,6 +17,7 @@ import {
 import { RESUME_CUSTOM_STYLE_ID } from '../../lib/layoutPresets'
 import { sectionTitleId } from '../../lib/resumeSections'
 import { parseCustomCss } from '../../lib/customCss'
+import { applyContactFit } from '../../lib/contactFit'
 
 /** 预览交互高亮样式 id（模板切换重写 doc 后重建）。 */
 const INTERACT_STYLE_ID = 'preview-section-interact-style'
@@ -431,6 +432,8 @@ export function PreviewPanel() {
       await waitForDocumentReady(doc)
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       if (cancelled) return
+
+      applyContactFit(doc)
 
       // 分页：从隐藏源容器派生到展示层（源容器保留，供下一次 diff）
       // 记录滚动位置，分页重建（iframe 高度可能变化）后恢复，避免视觉跳变。

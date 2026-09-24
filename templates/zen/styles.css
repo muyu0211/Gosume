@@ -60,20 +60,28 @@ body {
 .r-avatar { margin-bottom: 10pt; }
 .r-avatar img { width: 48pt; height: 48pt; object-fit: cover; border-radius: 50%; border: 0.75pt solid var(--border-color); }
 
-/* 联系方式：居中横向信息带（隐藏小节标题） */
+/* 联系方式：连续无缝 4 列栅格信息带（隐藏小节标题） */
 .r-subtitle { display: none; }
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 3pt 16pt;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3pt 6pt;
+    width: 100%;
+    text-align: left;
     font-size: 8pt;
     color: var(--muted-color);
     letter-spacing: 1pt;
     margin-top: 8pt;
 }
-.r-contact-item { display: flex; gap: 2pt; }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { font-weight: 500; color: var(--heading-color); }
 .r-langs { display: flex; flex-wrap: wrap; justify-content: center; gap: 4pt 16pt; font-size: 9.5pt; color: var(--text-color); }
 

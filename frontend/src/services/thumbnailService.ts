@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas'
 import { renderTemplate } from '../lib/templateEngine'
 import { loadTemplateContent } from './templateService'
+import { applyContactFit } from '../lib/contactFit'
 import { DEFAULT_FONT_SIZE } from '../types/resume'
 import { resolvePaper } from '../lib/paper'
 import type { Resume } from '../types/resume'
@@ -155,9 +156,10 @@ async function captureOne(templateId: string, tmpl: TemplateSet): Promise<string
       setTimeout(() => resolve(), 5000)
     })
 
-    const body = iframe.contentDocument?.body
-    if (!body) throw new Error('iframe body not accessible')
-
+    const doc = iframe.contentDocument
+    const body = doc?.body
+    if (!body || !doc) throw new Error('iframe body not accessible')
+    applyContactFit(doc)
     const canvas = await html2canvas(body, {
       scale: 1,
       useCORS: true,

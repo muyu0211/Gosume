@@ -60,22 +60,32 @@ body {
 
 .r-avatar img { width: 57pt; height: 76pt; object-fit: cover; border: 1.5pt solid var(--primary-color); border-radius: 2pt; filter: brightness(0.9); }
 
-/* 联系方式：横向信息带（隐藏小节标题） */
+/* 联系方式：连续无缝 4 列栅格（隐藏小节标题）
+   条目按 contact→basic→links 顺序进入同一 4 列网格连续填充（无组间断行），
+   标签定宽使值起始位置成列，
+   行距统一（保留虚线分隔与终端风配色）。 */
 .r-subtitle { display: none; }
 .r-contact {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 3pt 12pt;
-    font-size: 8pt;
-    color: var(--text-color);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2.5pt 12pt;
     margin-top: 10pt;
     padding-top: 8pt;
     border-top: 1pt dashed var(--border-color);
+    font-size: 8pt;
+    color: var(--text-color);
 }
-.r-contact-item { display: flex; gap: 2pt; font-size: 8pt; color: var(--text-color); }
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2pt;
+    min-width: 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 .r-contact-label { font-weight: 700; color: var(--primary-color); }
-.r-langs { display: flex; flex-wrap: wrap; gap: 3pt 10pt; font-size: 8pt; color: var(--text-color); margin-top: 4pt; }
+.r-langs { display: flex; flex-wrap: wrap; gap: 3pt 6pt; font-size: 8pt; color: var(--text-color); margin-top: 4pt; }
 
 /* ── 主内容区 ── */
 
