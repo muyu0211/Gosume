@@ -114,7 +114,7 @@ export function headerLayoutOverlayCss(hl: HeaderLayout | null): string {
     case 'avatar-left':
       return [
         '.r-header{grid-template-columns:auto 1fr!important;grid-template-areas:"avatar text" "avatar contact" "avatar langs"!important;align-items:center!important;text-align:left!important;justify-items:stretch!important;column-gap:12pt!important;}',
-        '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;}',
+        '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;align-self:start!important;}',
         '.r-header-text{grid-area:text!important;text-align:left!important;}',
         '.r-contact{grid-area:contact!important;justify-content:flex-start!important;text-align:left!important;}',
         '.r-langs{grid-area:langs!important;justify-content:flex-start!important;text-align:left!important;}',
@@ -122,7 +122,7 @@ export function headerLayoutOverlayCss(hl: HeaderLayout | null): string {
     case 'avatar-right':
       return [
         '.r-header{grid-template-columns:1fr auto!important;grid-template-areas:"text avatar" "contact avatar" "langs avatar"!important;align-items:center!important;text-align:left!important;justify-items:stretch!important;column-gap:12pt!important;}',
-        '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;}',
+        '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;align-self:start!important;}',
         '.r-header-text{grid-area:text!important;text-align:left!important;}',
         '.r-contact{grid-area:contact!important;justify-content:flex-start!important;text-align:left!important;}',
         '.r-langs{grid-area:langs!important;justify-content:flex-start!important;text-align:left!important;}',
@@ -303,15 +303,31 @@ export function stripHeaderLayoutCss(css: string): string {
  * `justify-self:center`——把满宽 4 列栅格收缩为内容宽，1fr 列退化为
  * 不等宽内容列，条目起点参差。统一替换为满宽形态（stretch + width:100%
  * + 条目左对齐），与居中头部模板原生形态一致。
+ *
+ * 已知旧值 2：headerLayout=avatar-left/avatar-right 段的 .r-avatar 曾生成
+ * 无 `align-self:start` 的形态——头像跨 text/contact/langs 三行，被
+ * `.r-header` 的 `align-items:center` 垂直居中而整体下坠。补
+ * `align-self:start` 使头像上边框与姓名组件上边框顶对齐。
  */
 const LEGACY_CENTER_CONTACT =
   '.r-contact{grid-area:contact!important;justify-self:center!important;}'
 const FIXED_CENTER_CONTACT =
   '.r-contact{grid-area:contact!important;justify-self:stretch!important;width:100%!important;text-align:left!important;}'
+const LEGACY_SIDE_AVATAR =
+  '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;}'
+const FIXED_SIDE_AVATAR =
+  '.r-avatar{grid-area:avatar!important;margin:0!important;justify-self:center!important;align-self:start!important;}'
 
 export function normalizeLegacyCustomCss(css: string): string {
-  if (!css || !css.includes(LEGACY_CENTER_CONTACT)) return css
-  return css.split(LEGACY_CENTER_CONTACT).join(FIXED_CENTER_CONTACT)
+  if (!css) return css
+  let out = css
+  if (out.includes(LEGACY_CENTER_CONTACT)) {
+    out = out.split(LEGACY_CENTER_CONTACT).join(FIXED_CENTER_CONTACT)
+  }
+  if (out.includes(LEGACY_SIDE_AVATAR)) {
+    out = out.split(LEGACY_SIDE_AVATAR).join(FIXED_SIDE_AVATAR)
+  }
+  return out
 }
 
 /** 返回当前简历的注入规则；空串表示无样式定制（渲染原生外观）。 */
