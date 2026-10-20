@@ -119,6 +119,9 @@ func (s *RecruitService) CreateJob(dto recruitmodel.JobProcess, strategy *string
 		!validEnum(modelStatuses, dto.Status) || !validEnum(modelSources, dto.Source) {
 		return util.DoRsp(util.ErrCode, "无效的环节/状态/来源", nil)
 	}
+	if !recruitmodel.ValidStatusForStage(dto.Stage, dto.Status) {
+		return util.DoRsp(util.ErrCode, "该状态不适用于投递阶段的记录", nil)
+	}
 
 	j := dto
 	j.ID = "" // 新建必由后端生成；前端不传 id
@@ -199,6 +202,11 @@ func (s *RecruitService) UpdateJob(dto recruitmodel.JobProcess) *util.Response {
 
 	j := dto
 	j.CompanyNorm = normalizeCompany(j.Company)
+	if !recruitmodel.ValidStatusForStage(j.Stage, j.Status) {
+		if j.Stage != cur.Stage || j.Status != cur.Status {
+			return util.DoRsp(util.ErrCode, "该状态不适用于投递阶段的记录", nil)
+		}
+	}
 	if !s.settingsRepo.Get().SaveRawText && j.RawText != nil && *j.RawText == "" {
 		j.RawText = nil
 	}
@@ -276,6 +284,17 @@ func (s *RecruitService) DeleteJob(id string, cascade bool) *util.Response {
 func (s *RecruitService) SetStatus(id, status string) *util.Response {
 	if !validEnum(modelStatuses, status) {
 		return util.DoRsp(util.ErrCode, "无效的状态", nil)
+	}
+	cur, err := s.jobRepo.Get(id)
+	if err != nil {
+		log.Errorf("[recruit_service] SetStatus get: %v", err)
+		return util.DoRsp(util.ErrCode, "状态更新失败", nil)
+	}
+	if cur == nil {
+		return util.DoRsp(util.ErrCode, "条目不存在", nil)
+	}
+	if !recruitmodel.ValidStatusForStage(cur.Stage, status) {
+		return util.DoRsp(util.ErrCode, "该状态不适用于投递阶段的记录", nil)
 	}
 	if err := s.jobRepo.SetStatus(id, status); err != nil {
 		log.Errorf("[recruit_service] SetStatus: %v", err)

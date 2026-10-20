@@ -1,10 +1,10 @@
 import { CheckCircle2, CircleSlash, ExternalLink, Mail, MessageSquare, PencilLine, Trash2, XCircle, MapPin, Video } from 'lucide-react'
-import type { JobProcess, JobStatus } from '../../types/recruit'
+import type { JobProcess, JobKind, JobStatus } from '../../types/recruit'
 import { useT } from '../../lib/i18n'
 import { Tooltip } from '../ui/Tooltip'
 import { jobUrgencyMeta } from '../../lib/recruit/urgency'
 import { fmtDateTime, fmtRelative } from '../../lib/recruit/time'
-import { STAGE_KEYS } from '../../lib/recruit/options'
+import { STAGE_KEYS, kindOfStage, statusLabelKey } from '../../lib/recruit/options'
 
 interface Props {
   job: JobProcess
@@ -52,6 +52,15 @@ const ARCHIVED_STATUS_META = {
 /** 全部终态（归档直达切换的遍历源，渲染时剔除当前状态）。 */
 const TERMINAL_STATUSES = ['done', 'missed', 'dropped'] as const
 
+/** 终态联合（与 ARCHIVED_STATUS_META 的键一一对应）。 */
+type TerminalStatus = (typeof TERMINAL_STATUSES)[number]
+
+/** 快捷状态操作的 tooltip key：投递记录的 done 展示为「标记已投递」而非「标记完成」。 */
+function markKeyOf(status: TerminalStatus, kind: JobKind): string {
+  if (kind === 'apply' && status === 'done') return 'markApplied'
+  return ARCHIVED_STATUS_META[status].markKey
+}
+
 /** 时间行文案：优先事件时间，其次截止时间，都没有则为「时间待定」。 */
 function timeText(job: JobProcess, t: (k: string) => string): string {
   if (job.event_time) return fmtDateTime(job.event_time, job.all_day)
@@ -76,11 +85,13 @@ export function JobCard({
   onOpenCompany,
 }: Props) {
   const t = useT()
+  const kind: JobKind = kindOfStage(job.stage)
   const meta = jobUrgencyMeta(job, now, thresholdHours)
   const rel = fmtRelative(job.event_time ?? job.deadline, now)
   const SourceIcon = SOURCE_ICON[job.source]
-  // 归档条目的状态视觉（pending 为 null）：图标 + 语义色 chip
-  const statusMeta = job.status === 'pending' ? null : ARCHIVED_STATUS_META[job.status]
+  // 归档条目的状态视觉（pending / archived 无 chip——archived 不在 ARCHIVED_STATUS_META 中）
+  const statusMeta =
+    job.status === 'pending' || job.status === 'archived' ? null : ARCHIVED_STATUS_META[job.status]
   const StatusIcon = statusMeta?.icon
 
   const relLabel = rel
@@ -146,12 +157,21 @@ export function JobCard({
                 {t(meta.labelKey)}
               </span>
             )}
+            {/* 投递记录的状态消息：不参与 urgency 告警（投递日期是既成事实，不是截止线），
+                pending 态由「已投递」接管告警徽章位；非 pending 的 chip 由下方 statusMeta
+                渲染（done→已投递 / dropped→已放弃 / missed→已错过），三者视觉同语言。 */}
+            {kind === 'apply' && job.status === 'pending' && (
+              <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-sm bg-success-600/10 text-success-600">
+                <CheckCircle2 className="size-icon-sm" />
+                {t('statusApplied')}
+              </span>
+            )}
             {statusMeta && StatusIcon && (
               <span
                 className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-sm ${statusMeta.chipClass} ${statusMeta.textClass}`}
               >
                 <StatusIcon className="size-icon-sm" />
-                {t(`status${cap(job.status)}`)}
+                {t(statusLabelKey(job.status, kind))}
               </span>
             )}
           </div>
@@ -191,7 +211,7 @@ export function JobCard({
         <div className="relative shrink-0 flex items-center gap-0.5">
           {job.status === 'pending' ? (
             <>
-              <Tooltip label={t('markDone')}>
+              <Tooltip label={t(markKeyOf('done', kind))}>
                 <button
                   type="button"
                   onClick={() => onSetStatus(job.id, 'done')}
@@ -225,7 +245,7 @@ export function JobCard({
               const m = ARCHIVED_STATUS_META[st]
               const Icon = m.icon
               return (
-                <Tooltip key={st} label={t(m.markKey)}>
+                <Tooltip key={st} label={t(markKeyOf(st, kind))}>
                   <button
                     type="button"
                     onClick={() => onSetStatus(job.id, st)}

@@ -55,6 +55,24 @@ var (
 	Sources  = []string{"manual", "email", "sms", "other"}
 )
 
+// 按环节（stage）派生状态子集，与前端 lib/recruit/options.ts 同口径：
+//   - 投递（apply）不接受 archived：归档是人工整理态，不是投递进度；
+//   - 「已过期」从来不是处理状态（那是时间告警 urgency），不设此枚举值。
+var ApplyStatuses = []string{"pending", "done", "dropped", "missed"}
+
+// StatusesForStage 返回该环节合法的状态白名单（非投递环节 = 全量 5 态）。
+func StatusesForStage(stage string) []string {
+	if stage == "apply" {
+		return ApplyStatuses
+	}
+	return Statuses
+}
+
+// ValidStatusForStage 判断状态对该环节是否合法（投递记录禁「已归档」等非进度态）。
+func ValidStatusForStage(stage, status string) bool {
+	return Contains(StatusesForStage(stage), status)
+}
+
 // Contains 判断枚举值是否合法。
 func Contains(list []string, v string) bool {
 	for _, x := range list {

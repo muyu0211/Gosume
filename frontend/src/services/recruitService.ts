@@ -13,7 +13,6 @@ import type {
   CreateJobResult,
   DeleteJobResult,
   DuplicateCandidate,
-  ImportReport,
   JobCompany,
   JobProcess,
   JobProcessDraft,
@@ -30,7 +29,6 @@ import {
   mockGetCompany,
   mockGetJob,
   mockGetSettings,
-  mockImportJobs,
   mockLinkNotice,
   mockListCompanies,
   mockListJobs,
@@ -163,12 +161,4 @@ export function setJobSettings(patch: Partial<JobSettings>): Promise<JobSettings
 export function exportJobs(format: 'csv' | 'json'): Promise<{ path: string }> {
   if (USE_MOCK) return mockExportJobs(format)
   return callService<{ path: string }>(S, 'ExportJobs', format).then((d) => d ?? { path: '' })
-}
-
-/** 由后端弹选择框并读文件；返回条数报告供前端展示。 */
-export function importJobs(strategy: 'skip' | 'overwrite' | 'new'): Promise<ImportReport> {
-  if (USE_MOCK) return mockImportJobs(strategy)
-  return callService<ImportReport>(S, 'ImportJobs', strategy).then(
-    (d) => d ?? { created: 0, skipped: 0, overwritten: 0 },
-  )
 }

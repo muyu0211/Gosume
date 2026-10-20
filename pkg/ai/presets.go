@@ -74,7 +74,7 @@ var providerPresets = []ProviderPreset{
 		Value:   ProviderQWen,
 		Label:   "通义千问",
 		LabelEN: "Qwen",
-		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+		BaseURL: "https://maas.qianwenaiapi.com/compatible-mode/v1",
 		Model:   "qwen-plus",
 		Models: []string{
 			"qwen-plus",

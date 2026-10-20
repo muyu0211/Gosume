@@ -10,7 +10,7 @@ import { DateTimePicker } from '../ui/DateTimePicker'
 import { Checkbox } from '../ui/Checkbox'
 import { useRecruitStore } from '../../stores/recruitStore'
 import { cancelParse } from '../../services/recruitService'
-import { optionsOf, STAGE_LIST, STAGE_KEYS } from '../../lib/recruit/options'
+import { optionsOf, STAGE_LIST, STAGE_KEYS, statusOptionsOf, statusListOf, kindOfStage } from '../../lib/recruit/options'
 import { composeRFC3339, toDateInput, toTimeInput } from '../../lib/recruit/time'
 import { normalizeCompany } from '../../lib/recruit/normalize'
 import { companyOptions } from '../../lib/recruit/stats'
@@ -21,6 +21,7 @@ import type {
   JobProcessDraft,
   JobSource,
   JobStage,
+  JobStatus,
   ParseResult,
 } from '../../types/recruit'
 
@@ -35,11 +36,13 @@ interface Props {
 type EntryTab = 'manual' | 'paste'
 
 /** 表单内部状态：时间拆成 date/time 两个字符串，保存前再合成 RFC3339。
- *  类型不再单独存状态：`stage === 'apply'` 即投递，其余环节均为通知（保存时派生）。 */
+ *  类型不再单独存状态：`stage === 'apply'` 即投递，其余环节均为通知（保存时派生）。
+ *  状态按类型取子集（投递无「已归档」，done 展示为「已投递」），见 statusOptionsOf。 */
 interface FormState {
   company: string
   position: string
   stage: JobStage
+  status: JobStatus
   round_no: number
   eventDate: string
   eventTime: string
@@ -62,6 +65,8 @@ function emptyForm(): FormState {
     company: '',
     position: '',
     stage: DEFAULT_STAGE,
+    // PRD F1.1：新建默认待处理（apply 即「待投递」语义）
+    status: 'pending',
     round_no: 0,
     eventDate: '',
     eventTime: '',
@@ -82,6 +87,7 @@ function formOf(job: JobProcess): FormState {
     company: job.company,
     position: job.position,
     stage: job.stage,
+    status: job.status,
     round_no: job.round_no,
     eventDate: toDateInput(job.event_time),
     eventTime: toTimeInput(job.event_time),
@@ -135,7 +141,8 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
 
   // 类型由环节值派生（合并控件）：环节选「投递」即投递记录，其余环节均为通知。
   // 存储契约层的 kind 字段保持不变，仅表单内部不再单独维护状态。
-  const kind: JobKind = form.stage === 'apply' ? 'apply' : 'notice'
+  // 口径与 options.kindOfStage 单一权威源一致。
+  const kind: JobKind = kindOfStage(form.stage)
 
   // 公司组合输入候选：已有记录的公司（companyOptions 按 norm 去重 + 排序，展示名唯一）。
   // 无记录时为空数组 → 面板不展开，纯手动输入，不报错。
@@ -286,7 +293,7 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
       location: form.location.trim(),
       online: form.online,
       source: form.source,
-      status: initial?.status ?? 'pending',
+      status: form.status,
       note: form.note.trim(),
       // 原文只在开关打开时提交（PRD Q2：默认不保存）
       raw_text: settings.saveRawText ? raw.trim() || null : null,
@@ -436,7 +443,15 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
           <Field label={t('fieldStage')}>
             <CustomSelect
               value={form.stage}
-              onChange={(v) => patch({ stage: v as JobStage })}
+              onChange={(v) => {
+                const next = v as JobStage
+                // 类型切换后状态子集变化：越界值（如通知的「已归档」切到投递）
+                // 重置为默认 pending，避免提交后端会拒绝的组合（后端同口径校验）
+                const nextStatus = statusListOf(kindOfStage(next)).includes(form.status)
+                  ? form.status
+                  : 'pending'
+                patch({ stage: next, status: nextStatus })
+              }}
               options={optionsOf(t, STAGE_LIST, STAGE_KEYS)}
             />
           </Field>
@@ -484,6 +499,17 @@ export function JobEntryDialog({ onClose, initial, onDuplicate }: Props) {
               />
               <Checkbox checked={form.online} onChange={(v) => patch({ online: v })} label={t('online')} />
             </div>
+          </Field>
+
+          {/* 状态下拉：按类型（kind）取子集——投递只有 待处理/已投递/已放弃/已错过，
+              「已过期」是时间告警不是状态，任何类型都不出现在此；
+              编辑历史越界值（如旧数据「投递+已归档」）时追加回显当前值。 */}
+          <Field label={t('fieldStatus')}>
+            <CustomSelect
+              value={form.status}
+              onChange={(v) => patch({ status: v as JobStatus })}
+              options={statusOptionsOf(t, kind, initial?.status)}
+            />
           </Field>
 
           {kind === 'notice' && (

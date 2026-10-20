@@ -8,10 +8,13 @@ import (
 	"gosume/pkg/log"
 	recruitrepo "gosume/pkg/recruit/repo"
 	"gosume/pkg/util"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // RecruitService 求职进程模块的后端服务。
 type RecruitService struct {
+	app          *application.App
 	settingsRepo *recruitrepo.SettingsRepo
 	jobRepo      *recruitrepo.JobRepo
 	companyRepo  *recruitrepo.CompanyRepo
@@ -27,10 +30,11 @@ func (s *RecruitService) ServiceName() string {
 	return "RecruitService"
 }
 
-// Inject 注入存储（全部复用 gosume.db 共享连接）与 AI 对话能力。
-// chat 由装配层传 ai.NewDynamicChat(...)：每次调用实时读取当前启用配置，
-// 热切换/改配置即时生效，本服务不感知数据目录。
-func (s *RecruitService) Inject(jobRepo *recruitrepo.JobRepo, companyRepo *recruitrepo.CompanyRepo, settingsRepo *recruitrepo.SettingsRepo, chat ai.ChatFunc) {
+// Inject 注入应用句柄（原生对话框）、存储（全部复用 gosume.db 共享连接）
+// 与 AI 对话能力。chat 由装配层传 ai.NewDynamicChat(...)：每次调用实时读取
+// 当前启用配置，热切换/改配置即时生效，本服务不感知数据目录。
+func (s *RecruitService) Inject(app *application.App, jobRepo *recruitrepo.JobRepo, companyRepo *recruitrepo.CompanyRepo, settingsRepo *recruitrepo.SettingsRepo, chat ai.ChatFunc) {
+	s.app = app
 	s.jobRepo = jobRepo
 	s.companyRepo = companyRepo
 	s.settingsRepo = settingsRepo

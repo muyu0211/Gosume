@@ -12,7 +12,6 @@ import { create } from 'zustand'
 import type {
   CreateJobResult,
   DuplicateCandidate,
-  ImportReport,
   JobCompany,
   JobFilters,
   JobProcess,
@@ -29,7 +28,6 @@ import {
   exportJobs,
   findDuplicates,
   getJobSettings,
-  importJobs,
   linkNotice,
   listCompanies,
   listJobs,
@@ -109,7 +107,6 @@ interface RecruitState {
   removeCompany: (id: string) => Promise<void>
   setSettings: (patch: Partial<JobSettings>) => Promise<void>
   exportJobs: (format: 'csv' | 'json') => Promise<{ path: string }>
-  importJobs: (strategy: 'skip' | 'overwrite' | 'new') => Promise<ImportReport>
   setView: (view: JobView) => void
   setFilters: (patch: Partial<JobFilters>) => void
   resetFilters: () => void
@@ -257,12 +254,6 @@ export const useRecruitStore = create<RecruitState>((set, get) => ({
   },
 
   exportJobs: (format) => exportJobs(format),
-
-  importJobs: async (strategy) => {
-    const report = await importJobs(strategy)
-    await get().load()
-    return report
-  },
 
   setView: (view) => set({ view }),
 

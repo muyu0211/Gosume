@@ -158,7 +158,7 @@ func New(assets, builtinTemplates embed.FS) *App {
 	aiSvc.Inject(aiChat)
 	autofillSvc.Inject(app, autofillBridge)
 	toolSvc.Inject(app)
-	recruitSvc.Inject(jobRepo, companyRepo, settingsRepo, aiChat)
+	recruitSvc.Inject(app, jobRepo, companyRepo, settingsRepo, aiChat)
 
 	// 事件注册
 	event.AddEvent(event.EXPORT_PROGRESS, 1)

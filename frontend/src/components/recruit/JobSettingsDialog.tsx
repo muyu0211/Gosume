@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react'
-import { Download, Upload } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { Modal, type ModalHandle } from '../ui/Modal'
 import { CustomSelect } from '../ui/CustomSelect'
 import { Checkbox } from '../ui/Checkbox'
-import { RadioGroup } from '../ui/RadioGroup'
 import { useRecruitStore } from '../../stores/recruitStore'
 import { extractErrorMessage } from '../../lib/errorUtils'
-import type { ImportReport } from '../../types/recruit'
 
 interface Props {
   onClose: () => void
@@ -15,13 +13,10 @@ interface Props {
 
 const THRESHOLDS = [12, 24, 48, 72]
 
-/** 导入重复处理策略。 */
-type ImportStrategy = 'skip' | 'overwrite' | 'new'
-
 /**
- * 求职进程模块设置：临近阈值、原文保存开关、导出 / 导入。
+ * 求职进程模块设置：临近阈值、原文保存开关、导出。
  *
- * 用 Modal 而非浮层：导出/导入有结果反馈与策略选择，浮层承载不下。
+ * 用 Modal 而非浮层：导出有结果反馈，浮层承载不下。
  *
  * 版式纪律：分组之间只用一条 `--hairline` 分隔线，**不给分组再套矩形边框**——
  * 边框 + 玻璃材质会叠加出「双层描边」的脏感；复选框与单选都用自绘组件
@@ -33,9 +28,7 @@ export function JobSettingsDialog({ onClose }: Props) {
   const settings = useRecruitStore((s) => s.settings)
   const setSettings = useRecruitStore((s) => s.setSettings)
   const exportJobs = useRecruitStore((s) => s.exportJobs)
-  const importJobs = useRecruitStore((s) => s.importJobs)
 
-  const [strategy, setStrategy] = useState<ImportStrategy>('skip')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [failed, setFailed] = useState(false)
@@ -57,16 +50,9 @@ export function JobSettingsDialog({ onClose }: Props) {
   const handleExport = (format: 'csv' | 'json') =>
     run(async () => {
       const res = await exportJobs(format)
+      // 用户在另存对话框取消：后端返回成功 + 空路径
+      if (!res.path) return t('cancel')
       return t('jobExportDone').replace('{path}', res.path)
-    })
-
-  const handleImport = () =>
-    run(async () => {
-      const r: ImportReport = await importJobs(strategy)
-      return t('importReport')
-        .replace('{created}', String(r.created))
-        .replace('{skipped}', String(r.skipped))
-        .replace('{overwritten}', String(r.overwritten))
     })
 
   return (
@@ -129,32 +115,6 @@ export function JobSettingsDialog({ onClose }: Props) {
               {t('exportJson')}
             </button>
           </div>
-        </Section>
-
-        <Divider />
-
-        {/* 导入 */}
-        <Section title={t('importJson')}>
-          <p className="text-xs text-surface-400 mb-2">{t('importStrategy')}</p>
-          <RadioGroup<ImportStrategy>
-            value={strategy}
-            onChange={setStrategy}
-            ariaLabel={t('importStrategy')}
-            options={[
-              { value: 'skip', label: t('importSkip') },
-              { value: 'overwrite', label: t('importOverwrite') },
-              { value: 'new', label: t('importNew') },
-            ]}
-          />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void handleImport()}
-            className="btn btn-secondary mt-3"
-          >
-            <Upload className="size-icon-md" strokeWidth={1.75} />
-            {t('importJson')}
-          </button>
         </Section>
 
         {message && (

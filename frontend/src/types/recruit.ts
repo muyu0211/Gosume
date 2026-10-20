@@ -13,7 +13,14 @@ export type JobKind = 'apply' | 'notice'
 /** 环节。apply 条目恒为 'apply'。 */
 export type JobStage = 'apply' | 'assessment' | 'written' | 'interview' | 'talk' | 'offer' | 'other'
 
-/** 条目自身处理状态。 */
+/**
+ * 条目自身处理状态（存储枚举 5 态，与后端 pkg/recruit/model 一致）。
+ *
+ * 按类型（kind）可选子集与差异化文案见 `lib/recruit/options.ts`：
+ *  · 投递（apply）仅 pending / done / dropped / missed，且 `done` 展示为「已投递」；
+ *  · 通知（notice）为全量 5 态（含 archived）。
+ * 「已过期」是时间告警（urgency）而非处理状态，任何环节都不作为状态选项。
+ */
 export type JobStatus = 'pending' | 'done' | 'dropped' | 'missed' | 'archived'
 
 /** 信息来源。 */
@@ -22,7 +29,12 @@ export type JobSource = 'manual' | 'email' | 'sms' | 'other'
 /** 字段置信度。 */
 export type Confidence = 'high' | 'medium' | 'low' | 'unknown'
 
-/** 临近标签（互斥，取最高优先级）。 */
+/**
+ * 临近标签（互斥，取最高优先级）。
+ *
+ * 仅时效性通知（面试 / 笔试 / offer 等）参与判定；**投递（apply）记录恒为
+ * `none`**——投递日期是既成事实不是截止线，统一展示「已投递」状态消息。
+ */
 export type Urgency = 'overdue' | 'today' | 'near' | 'unknown' | 'none'
 
 /** 可被解析/编辑的字段集合（用于置信度 key）。 */
@@ -145,13 +157,6 @@ export interface JobFilters {
 
 /** 主区视图。 */
 export type JobView = 'list' | 'timeline' | 'calendar'
-
-/** 导入结果报告。 */
-export interface ImportReport {
-  created: number
-  skipped: number
-  overwritten: number
-}
 
 /** 创建新条目时后端返回的负载。 */
 export interface CreateJobResult {

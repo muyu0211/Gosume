@@ -784,6 +784,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   // 状态流转与条目操作
   markPending: { zh: '恢复待处理', en: 'Mark pending' },
   markDone: { zh: '标记完成', en: 'Mark done' },
+  markApplied: { zh: '标记已投递', en: 'Mark submitted' },
   markMissed: { zh: '标记错过', en: 'Mark missed' },
   markDropped: { zh: '标记放弃', en: 'Mark dropped' },
   jobAdd: { zh: '添加通知', en: 'Add notice' },
@@ -821,6 +822,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   fieldCompany: { zh: '公司', en: 'Company' },
   fieldPosition: { zh: '岗位', en: 'Position' },
   fieldStage: { zh: '环节', en: 'Stage' },
+  fieldStatus: { zh: '状态', en: 'Status' },
   fieldRound: { zh: '轮次', en: 'Round' },
   roundN: { zh: '第 {count} 轮', en: 'Round {count}' },
   fieldEventTime: { zh: '举办时间', en: 'Event time' },
@@ -875,15 +877,6 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   settingsSaveRaw: { zh: '保存通知原文', en: 'Keep original text' },
   exportCsv: { zh: '导出 CSV', en: 'Export CSV' },
   exportJson: { zh: '导出 JSON', en: 'Export JSON' },
-  importJson: { zh: '导入 JSON', en: 'Import JSON' },
-  importStrategy: { zh: '重复条目处理策略', en: 'On duplicate entries' },
-  importSkip: { zh: '跳过', en: 'Skip' },
-  importOverwrite: { zh: '覆盖', en: 'Overwrite' },
-  importNew: { zh: '作为新条目', en: 'Add as new' },
-  importReport: {
-    zh: '导入完成：新增 {created}、覆盖 {overwritten}、跳过 {skipped}',
-    en: 'Imported: {created} added, {overwritten} updated, {skipped} skipped',
-  },
   jobExportDone: { zh: '已导出到：{path}', en: 'Exported to: {path}' },
 
   // 枚举：环节 / 状态 / 来源
@@ -896,6 +889,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   stageOther: { zh: '其他', en: 'Other' },
   statusPending: { zh: '待处理', en: 'Pending' },
   statusDone: { zh: '已完成', en: 'Done' },
+  statusApplied: { zh: '已投递', en: 'Submitted' },
   statusDropped: { zh: '已放弃', en: 'Dropped' },
   statusMissed: { zh: '已错过', en: 'Missed' },
   statusArchived: { zh: '已归档', en: 'Archived' },

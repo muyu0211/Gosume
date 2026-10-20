@@ -10,7 +10,6 @@ import type {
   CreateJobResult,
   DeleteJobResult,
   DuplicateCandidate,
-  ImportReport,
   JobCompany,
   JobProcess,
   JobProcessDraft,
@@ -402,14 +401,6 @@ export function mockSetSettings(patch: Partial<JobSettings>): Promise<JobSetting
 
 export const mockExportJobs = (format: 'csv' | 'json'): Promise<{ path: string }> =>
   withLatency(() => ({ path: `gosume-recruit.${format}` }))
-
-export function mockImportJobs(strategy: 'skip' | 'overwrite' | 'new'): Promise<ImportReport> {
-  return withLatency(() => {
-    if (strategy === 'skip') return { created: 3, skipped: 2, overwritten: 0 }
-    if (strategy === 'overwrite') return { created: 3, skipped: 0, overwritten: 2 }
-    return { created: 5, skipped: 0, overwritten: 0 }
-  })
-}
 
 // ───────────────────── 临时解析器（联调通过后删除） ─────────────────────
 
