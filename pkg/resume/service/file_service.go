@@ -16,7 +16,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// FileService 处理 .gosume 简历文件的导出、解析预览与导入。
+// FileService 处理简历 JSON 文件（.json，信封结构见 ExportEnvelope）的导出、解析预览与导入。
+// 历史上曾用自定义扩展名 .gosume，其内容本就是 JSON，2026-10 起统一改为 .json。
 type FileService struct {
 	app            *application.App
 	resumeStore    *repo.ResumeRepo
@@ -37,7 +38,7 @@ func (s *FileService) Inject(app *application.App, resumeStore *repo.ResumeRepo,
 	s.resumeSvc = resumeSvc
 }
 
-// ExportFile 把当前简历导出为 .gosume 文件。
+// ExportFile 把当前简历导出为 JSON 简历文件（.json）。
 //
 // 弹出保存对话框让用户选择路径；用户取消时返回成功响应且 data 为空串。
 func (s *FileService) ExportFile() *util.Response {
@@ -69,9 +70,9 @@ func (s *FileService) ExportFile() *util.Response {
 	// 弹出保存对话框
 	filePath, err := s.app.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
 		Title:    "导出简历文件",
-		Filename: fmt.Sprintf("%s.gosume", resume.Meta.Name),
+		Filename: fmt.Sprintf("%s.json", resume.Meta.Name),
 		Filters: []application.FileFilter{
-			{DisplayName: "Gosume 简历文件 (*.gosume)", Pattern: "*.gosume"},
+			{DisplayName: "Gosume 简历文件 (*.json)", Pattern: "*.json"},
 			{DisplayName: "所有文件 (*.*)", Pattern: "*.*"},
 		},
 	}).PromptForSingleSelection()
@@ -95,12 +96,12 @@ func (s *FileService) ExportFile() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", filePath)
 }
 
-// ParseFile 弹出文件选择对话框，解析并校验 .gosume 文件，
-// 返回预览数据（已校验、未落库）。
+// ParseFile 弹出文件选择对话框，解析并校验 JSON 简历文件，
+// 返回预览数据（已校验、未落库）。按内容解析信封，不依赖扩展名。
 func (s *FileService) ParseFile() *util.Response {
 	filePath, err := s.app.Dialog.OpenFile().
 		SetTitle("打开简历文件").
-		AddFilter("Gosume 简历文件 (*.gosume)", "*.gosume").
+		AddFilter("Gosume 简历文件 (*.json)", "*.json").
 		AddFilter("所有文件 (*.*)", "*.*").
 		CanChooseFiles(true).
 		PromptForSingleSelection()
@@ -148,7 +149,7 @@ func (s *FileService) ParseFile() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", &result)
 }
 
-// ImportFile 导入 .gosume 简历：target_id 为空时新建，否则覆盖。
+// ImportFile 导入 JSON 简历：target_id 为空时新建，否则覆盖。
 //
 // 应用用户最终选定的模板后落库，并发出 file:imported 事件。
 func (s *FileService) ImportFile(req FileImportRequest) *util.Response {
@@ -235,7 +236,7 @@ func summarizeResume(r *model.Resume) ResumeSummary {
 // 与简历数据 schema 版本（model.SchemaVersion）相互独立。
 const FormatVersion = "1.0"
 
-// ExportEnvelope .gosume 文件的最外层结构。
+// ExportEnvelope 简历 JSON 文件的最外层结构。
 type ExportEnvelope struct {
 	FormatVersion string        `json:"format_version"`          // 信封格式版本，恒为 FormatVersion
 	Data          *model.Resume `json:"data"`                    // 简历完整数据（与 DB 存储结构一致）

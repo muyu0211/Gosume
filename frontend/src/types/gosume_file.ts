@@ -2,13 +2,14 @@ import type { Resume } from './resume'
 import type { TemplateMeta } from './template'
 
 /**
- * 简历中间态文件（.gosume）相关类型。
+ * 简历中间态文件（.json，信封结构见后端 ExportEnvelope）相关类型。
+ * 历史上扩展名为 .gosume，内容本就是 JSON，已统一改为 .json。
  *
  * 与后端 pkg/resume/service 包及 service.FileService 的
  * FileParseResult / FileImportRequest / FileImportResponse 结构对齐。
  */
 
-/** .gosume 文件最外层信封（与 Go ExportEnvelope 对齐）。 */
+/** 简历 JSON 文件最外层信封（与 Go ExportEnvelope 对齐）。 */
 export interface ExportEnvelope {
   format_version: string
   exported_at: string

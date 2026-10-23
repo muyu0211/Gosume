@@ -372,7 +372,7 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   fmtPngDesc: { zh: '高清截图，用于在线预览和分享', en: 'High-res screenshot for online preview & sharing' },
   fmtSinglePdf: { zh: '单页 PDF', en: 'One-page PDF' },
   fmtSinglePdfDesc: { zh: '将全部内容压缩为单页，内容超高时字体会缩小，适合内容略微超出一页的场景', en: 'Compress everything onto one page (scales text down if too tall)' },
-  fmtGosume: { zh: '可编辑简历 (.gosume)', en: 'Editable resume (.gosume)' },
+  fmtGosume: { zh: '可编辑简历 (.json)', en: 'Editable resume (.json)' },
   fmtGosumeDesc: { zh: '保存为可继续编辑的简历，可暂存备份、发送他人或换设备继续编辑', en: 'Save an editable resume for backup, sharing, or continuing on another device' },
   clarity: { zh: '清晰度', en: 'Resolution' },
   exportFailedRetry: { zh: '导出失败，请重试', en: 'Export failed, please retry' },
