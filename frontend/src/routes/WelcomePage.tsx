@@ -77,6 +77,8 @@ export function WelcomePage() {
   // Tab 或点「新建简历」时，且为会话级状态、不跨启动保留。
   const homeTab = useAppStore((s) => s.homeTab)
   const setHomeTab = useAppStore((s) => s.setHomeTab)
+  // prod 环境隐藏模板社区入口（功能暂未实现，仅 dev/test 开放）
+  const isProd = useAppStore((s) => s.isProd)
 
   useEffect(() => {
     loadData()
@@ -322,13 +324,15 @@ export function WelcomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 min-w-0">
-          <button
-            onClick={() => navigate('/community')}
-            className="btn-primary btn-sm"
-          >
-            <Globe className="size-icon-md shrink-0" />
-            <span className="hidden md:inline">{t('templateCommunity')}</span>
-          </button>
+          {!isProd && (
+            <button
+              onClick={() => navigate('/community')}
+              className="btn-primary btn-sm"
+            >
+              <Globe className="size-icon-md shrink-0" />
+              <span className="hidden md:inline">{t('templateCommunity')}</span>
+            </button>
+          )}
           <button
             onClick={handleOpenImportLogs}
             className="btn-secondary btn-sm"

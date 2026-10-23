@@ -4,6 +4,13 @@ import {
   readBackground,
   type BackgroundId,
 } from '../lib/background'
+import { callService } from '../services/backend'
+
+/** 后端 GetServerEnv 返回的环境信息。 */
+interface ServerEnvInfo {
+  env: string
+  isProd: boolean
+}
 
 /**
  * 应用 UI 语言（Gosume 界面语言），与「简历语言」（resume.meta.language）解耦：
@@ -38,6 +45,13 @@ interface AppState {
 
   homeTab: HomeTab
   setHomeTab: (tab: HomeTab) => void
+
+  /** 运行环境标识（config.yaml 的 server.env，如 prod/dev/test）。 */
+  serverEnv: string
+  /** 是否为发布环境（prod）。默认 false：非 Wails（纯 Vite）或后端不可用时按开发态处理，功能入口正常显示。 */
+  isProd: boolean
+  /** 启动时向后端拉取环境标识（应用生命周期内只调一次）。 */
+  loadServerEnv: () => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -55,4 +69,18 @@ export const useAppStore = create<AppState>((set) => ({
 
   homeTab: 'resumes',
   setHomeTab: (tab) => set({ homeTab: tab }),
+
+  serverEnv: '',
+  isProd: false,
+  loadServerEnv: async () => {
+    try {
+      const info = await callService<ServerEnvInfo>('SystemService', 'GetServerEnv')
+      set({
+        serverEnv: info?.env ?? '',
+        isProd: !!info?.isProd,
+      })
+    } catch {
+      /* 后端不可用：保持默认（非 prod），不阻塞启动 */
+    }
+  },
 }))

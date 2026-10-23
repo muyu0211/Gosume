@@ -123,6 +123,20 @@ func (s *SystemService) GetAppVersion() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", config.GlobalConfig.App.Version)
 }
 
+// GetServerEnv 返回当前运行环境标识及其是否为发布状态。
+// env 取自 config.yaml 的 server.env（如 prod/dev/test）；isProd 供前端控制
+// 功能入口显隐（例如 prod 下隐藏模板社区按钮），判断口径与后端 util.IsProd 一致。
+func (s *SystemService) GetServerEnv() *util.Response {
+	env := ""
+	if config.GlobalConfig != nil {
+		env = config.GlobalConfig.Server.Env
+	}
+	return util.DoRsp(util.SuccCode, "成功", struct {
+		Env    string `json:"env"`
+		IsProd bool   `json:"isProd"`
+	}{Env: env, IsProd: util.IsProd()})
+}
+
 // GetTheme 返回用户当前的主题选项（system/classic/wheat/obsidian）。
 func (s *SystemService) GetTheme() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", s.configMgr.GetTheme())

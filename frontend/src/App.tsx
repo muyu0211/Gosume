@@ -45,6 +45,8 @@ export default function App() {
   // 但 DOM 属性要在这里补一次，否则首屏仍是纯底色）。
   useEffect(() => {
     applyBackgroundToDocument(useAppStore.getState().background)
+    // 拉取运行环境标识（config.yaml 的 server.env），prod 下用于隐藏功能入口
+    useAppStore.getState().loadServerEnv().catch(() => { /* default applies */ })
   }, [])
 
   useEffect(() => {
