@@ -41,6 +41,7 @@ docs
 ehthumbs.db
 Thumbs.db
 Desktop.ini
+CertificateSigningRequest.certSigningRequest
 
 # --- Environment ---
 .env
