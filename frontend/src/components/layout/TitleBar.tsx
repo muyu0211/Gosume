@@ -59,13 +59,13 @@ export function TitleBar() {
   return (
     <div className="titlebar">
       <div className="titlebar-drag" onDoubleClick={handleMaximize}>
+        {/* 标题栏保留小图标与拖拽区，不再显示「Gosume」文字 */}
         <img
           src="/gosume-logo.svg"
           alt=""
           draggable={false}
           className="titlebar-logo select-none"
         />
-        <span className="titlebar-title">Gosume</span>
       </div>
 
       {!isMac && (

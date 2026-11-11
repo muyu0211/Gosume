@@ -6,6 +6,7 @@
 build/linux/appimage/build
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 bin/
+images
 
 # --- Frontend ---
 frontend/dist/

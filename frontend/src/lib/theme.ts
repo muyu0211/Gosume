@@ -6,8 +6,10 @@
 export type ThemeMode = 'system' | 'classic' | 'wheat' | 'obsidian'
 export type AppliedTheme = 'classic' | 'wheat' | 'obsidian'
 
-/** 默认选项：跟随系统深浅。系统浅色 → 麦色，深色 → 深色。 */
-export const DEFAULT_MODE: ThemeMode = 'system'
+/** 默认选项：经典浅色（固定，不跟随系统）。
+ *  首次启动 / 无持久化值时使用 classic，避免系统深色偏好把应用直接带进深色主题；
+ *  用户仍可在设置页主动选择「跟随系统」。须与后端 config.DefaultTheme 保持一致。 */
+export const DEFAULT_MODE: ThemeMode = 'classic'
 export const ALLOWED_MODES: ReadonlyArray<ThemeMode> = ['system', 'classic', 'wheat', 'obsidian']
 
 /** 校验字符串是否为合法的主题选项。 */

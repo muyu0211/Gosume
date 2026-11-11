@@ -32,8 +32,9 @@ type ChangeFunc = func(oldDir, newDir string)
 
 // Theme 相关的合法取值集合。
 const (
-	// 默认主题：跟随系统深浅（预置主题枚举在此基础上 add classic/wheat/obsidian）。
-	DefaultTheme = "system"
+	// 默认主题：经典浅色。须与前端 lib/theme.ts 的 DEFAULT_MODE 保持一致；
+	// 「跟随系统」仍作为可选项保留，由用户在设置页主动选择。
+	DefaultTheme = "classic"
 )
 
 // IsValidTheme 校验主题取值是否合法（system/classic/wheat/obsidian）。

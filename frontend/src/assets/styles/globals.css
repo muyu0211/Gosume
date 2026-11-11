@@ -1695,14 +1695,6 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   display: block;
 }
 
-.titlebar-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgb(var(--surface-600));
-  /* 苹果风：小标签不加正字距 */
-  letter-spacing: 0;
-}
-
 .titlebar-controls {
   display: flex;
   height: 100%;
