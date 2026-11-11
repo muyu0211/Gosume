@@ -100,6 +100,7 @@ Gosume 是一个装在电脑上的简历制作工具。左边填内容，右边�
 ### 怎么开始？
 
 1. 到 [Releases 页面](https://github.com/muyu0211/Gosume/releases) 下载你电脑系统的安装包
+    (Windows 64 位系统，下载 `Gosume-amd64-installer.exe`)
 2. 装好后打开 Gosume，挑一个顺眼的模板
 3. 按提示填写教育、工作、项目这些经历
 4. 点「导出」，选 PDF 或图片 —— 搞定 ✅
