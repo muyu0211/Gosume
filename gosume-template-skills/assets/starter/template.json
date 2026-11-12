@@ -1,20 +1,20 @@
 {
-    "id": "starter-template",
+    "id": "b3f2c1a8-6d4e-4f7b-9a2c-5e8d1c0f7b36",
     "name": "起手模板",
     "name_en": "Starter Template",
     "version": "1.0.0",
     "author": {
-        "name": "Your Name",
-        "email": "you@example.com"
+        "name": "Gosume",
+        "email": "team@resume-craft.app"
     },
-    "description": "一个干净的起手模板，单栏布局，适合作为自定义模板的起点",
-    "description_en": "A clean starter template with single-column layout, ideal as a base for custom templates",
+    "description": "一个干净的单栏起手模板，头像右置、联系方式 4 列栅格，已接入页边距/字体/字号/信息区布局等运行时定制，适合作为自定义模板的起点",
+    "description_en": "A clean single-column starter with right-aligned avatar and 4-column contact grid, wired for all per-resume style overrides",
     "category": "general",
     "tags": ["起手", "基础", "单栏", "starter", "clean"],
     "target_language": ["zh-CN", "en-US"],
     "page_count": {
         "min": 1,
-        "max": 4,
+        "max": 5,
         "default": 1
     },
     "paper_size": "A4",
@@ -36,6 +36,6 @@
     "sections": {
         "required": ["personal", "jobs", "education"],
         "optional": ["projects", "skills", "languages", "awards", "custom"],
-        "layout": ["personal", "summary", "jobs", "projects", "education", "skills", "languages", "awards", "custom"]
+        "layout": ["personal", "jobs", "education", "skills", "projects", "languages", "awards", "custom"]
     }
 }

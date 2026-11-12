@@ -3,6 +3,7 @@ package util
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"gosume/pkg/config"
 	"gosume/pkg/log"
 	"gosume/pkg/resume/dto"
@@ -18,6 +19,24 @@ import (
 // isDev 判断当前是否为发布状态
 func IsProd() bool {
 	return strings.EqualFold(strings.TrimSpace(config.GlobalConfig.Server.Env), "prod")
+}
+
+// NormalizeFilePath 归一化用户输入或系统拖入的本地文件路径：
+// 去掉首尾空白及 Windows 资源管理器「复制为路径」带上的双引号，转成绝对路径并 Clean；
+// 空路径与 UNC/设备路径（\\ 开头）一律拒绝，避免目录浏览越出本机。
+func NormalizeFilePath(raw string) (string, error) {
+	p := strings.Trim(strings.TrimSpace(raw), `"`)
+	if p == "" {
+		return "", fmt.Errorf("empty path")
+	}
+	if strings.HasPrefix(p, `\\`) {
+		return "", fmt.Errorf("network or device path is not supported")
+	}
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(abs), nil
 }
 
 // GetRootPath 返回配置的锚点目录。

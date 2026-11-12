@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Events } from '@wailsio/runtime'
 import { callService, isWails } from '../../services/backend'
 import { useResumeStore } from '../../stores/resumeStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { BADGE_SRC } from '../../lib/brandAssets'
 import { isMacOS } from '../../lib/platform'
 import { useT } from '../../lib/i18n'
 import { Tooltip } from '../ui/Tooltip'
@@ -10,6 +12,7 @@ export function TitleBar() {
   const t = useT()
   const [isMaximised, setIsMaximised] = useState(false)
   const requestLeave = useResumeStore((s) => s.requestLeave)
+  const appliedTheme = useThemeStore((s) => s.applied)
   // macOS 使用原生红绿灯（关闭/最小化/全屏），不渲染自绘的 Windows 风格按钮
   const isMac = isMacOS()
 
@@ -59,9 +62,9 @@ export function TitleBar() {
   return (
     <div className="titlebar">
       <div className="titlebar-drag" onDoubleClick={handleMaximize}>
-        {/* 标题栏保留小图标与拖拽区，不再显示「Gosume」文字 */}
+        {/* 标题栏保留小图标与拖拽区，不再显示「Gosume」文字；徽章随主题切换配色 */}
         <img
-          src="/gosume-logo.svg"
+          src={BADGE_SRC[appliedTheme]}
           alt=""
           draggable={false}
           className="titlebar-logo select-none"

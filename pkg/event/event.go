@@ -18,6 +18,7 @@ const (
 	WINDOW_MAXIMISE_STATE  = "window:maximise-state" // 窗口最大化状态变化：bool（true=已最大化）
 	UPDATE_PROGRESS        = "update:progress"       // 更新包下载进度：int（0-100 百分比；总大小未知时为已下载字节数）
 	UPDATE_RESULT          = "update:result"         // 更新包后台下载结果：string（"ok" 成功；"error:<原因>" 失败）
+	TEMPLATE_FILES_DROPPED = "template:files-dropped" // 系统文件拖入：[]string（.zip 模板包的绝对路径）
 )
 
 // application.RegisterEvent[int]("export:progress")
@@ -57,6 +58,8 @@ func RegisterEvents() {
 			application.RegisterEvent[int](k)
 		case string:
 			application.RegisterEvent[string](k)
+		case []string:
+			application.RegisterEvent[[]string](k)
 		}
 	}
 }

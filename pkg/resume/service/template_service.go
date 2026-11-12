@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -115,6 +117,26 @@ func (s *TemplateService) ImportSharePackage() *util.Response {
 	return s.importPackageViaDialog("share")
 }
 
+// ImportTemplatePackageFromPath 从前端给定的绝对路径导入 .zip 模板包。
+// 供自绘「导入模板」模态使用（拖入 / 路径选择），不再弹出原生文件对话框；
+// zip 校验、ID 冲突检查、入库与导入历史全部复用原有实现。
+func (s *TemplateService) ImportTemplatePackageFromPath(filePath, source string) *util.Response {
+	if source != "local" && source != "share" {
+		source = "local"
+	}
+	p, err := util.NormalizeFilePath(filePath)
+	if err != nil {
+		return util.DoRsp(util.ErrCode, "模板包路径无效", nil)
+	}
+	if !strings.EqualFold(filepath.Ext(p), ".zip") {
+		return util.DoRsp(util.ErrCode, "仅支持 .zip 格式的模板包", nil)
+	}
+	if info, err := os.Stat(p); err != nil || !info.Mode().IsRegular() {
+		return util.DoRsp(util.ErrCode, "模板包文件不存在或无法读取", nil)
+	}
+	return s.importTemplatePackageFromPath(p, source)
+}
+
 // importPackageViaDialog 弹出原生文件对话框选择 .zip 模板包，并以指定来源记录导入历史。
 func (s *TemplateService) importPackageViaDialog(source string) *util.Response {
 	if s.App == nil {
@@ -149,7 +171,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath, source string)
 	pkg, err := template.LoadPackageFromZip(filePath)
 	if err != nil {
 		log.Errorf("[template_service] importTemplatePackageFromPath: 解析模板包失败 %s: %v", filePath, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("解析模板包失败, 请确认zip为合法模板包", err), nil)
+		return util.DoRsp(util.ErrCode, "解析模板包失败，请确认 zip 为合法模板包", nil)
 	}
 
 	// 检查模板 ID 是否已经存在，存在则判断version
@@ -161,7 +183,7 @@ func (s *TemplateService) importTemplatePackageFromPath(filePath, source string)
 
 	if err := s.tempRepo.Create(pkg.Meta, pkg.CSS); err != nil {
 		log.Errorf("[template_service] importTemplatePackageFromPath: 保存模板失败 id=%s: %v", pkg.Meta.ID, err)
-		return util.DoRsp(util.ErrCode, fmt.Sprintf("保存模板失败", err), nil)
+		return util.DoRsp(util.ErrCode, "保存模板失败", nil)
 	}
 
 	// 记录导入历史（本地导入/分享包导入），失败仅告警不阻断导入流程

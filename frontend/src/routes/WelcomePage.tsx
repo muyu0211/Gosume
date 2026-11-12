@@ -17,7 +17,8 @@ import { MyResumesPanel } from '../components/resume/MyResumesPanel'
 import { TemplateGalleryPanel } from '../components/template/TemplateGalleryPanel'
 import { JobSummaryCard } from '../components/recruit/JobSummaryCard'
 import { RecruitPanel } from '../components/recruit/RecruitPanel'
-import { importTemplatePackage, loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
+import { loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
+import { TemplateImportDialog } from '../components/template/TemplateImportDialog'
 import { renderTemplate } from '../lib/templateEngine'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { createSampleResume } from '../services/sampleData'
@@ -49,7 +50,7 @@ export function WelcomePage() {
     useThemeStore.getState().setMode(nextExplicitTheme(themeMode))
   }
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
-  const [importingTemplate, setImportingTemplate] = useState(false)
+  const [showTemplateImport, setShowTemplateImport] = useState(false)
   const [importError, setImportError] = useState('')
   const [importingGosume, setImportingGosume] = useState(false)
   const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
@@ -177,21 +178,14 @@ export function WelcomePage() {
     navigate('/editor')
   }
 
-  const handleImportTemplate = async () => {
-    setImportingTemplate(true)
-    setImportError('')
-    try {
-      const result = await importTemplatePackage()
-      if (result) {
-        setActiveTemplate(result.id)
-        await loadData()
-      }
-    } catch (err) {
-      console.error('Import template failed:', err)
-      setImportError(extractErrorMessage(err, t('importTemplateFailedCheck')))
-    } finally {
-      setImportingTemplate(false)
-    }
+  // 点击「导入模板」只打开自绘模态；拖入 / 路径选择 / 入库都在模态内完成。
+  const handleImportTemplate = () => setShowTemplateImport(true)
+
+  // 模态导入成功后：选中新模板、重拉列表并给一条成功提示（沿用原有刷新方式）。
+  const handleTemplateImported = async (id: string) => {
+    setActiveTemplate(id)
+    await loadData()
+    setImportSuccess(t('importTemplateSuccess'))
   }
 
   // 中间态导入第一步：选择文件 → 后端解析校验 → 返回预览数据（未落库）
@@ -344,10 +338,9 @@ export function WelcomePage() {
           </button>
           <button
             onClick={handleImportTemplate}
-            disabled={importingTemplate}
             className="btn-secondary btn-sm"
           >
-            {importingTemplate ? <Loader2 className="size-icon-md animate-spin" /> : <Upload className="size-icon-md shrink-0" />}
+            <Upload className="size-icon-md shrink-0" />
             <span className="hidden md:inline">{t('importTemplate')}</span>
           </button>
           <button
@@ -453,6 +446,14 @@ export function WelcomePage() {
           preview={importPreview}
           onClose={() => setImportPreview(null)}
           onImported={handleImported}
+        />
+      )}
+
+      {/* 自封装导入模板模态（拖入 zip / 路径选择），不再弹原生文件框 */}
+      {showTemplateImport && (
+        <TemplateImportDialog
+          onClose={() => setShowTemplateImport(false)}
+          onImported={handleTemplateImported}
         />
       )}
 

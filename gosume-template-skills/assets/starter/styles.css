@@ -1,10 +1,25 @@
-/* Starter Template Styles
- * Gosume 一期改造：统一 HTML 契约（单栏）。
- * .r-header 为顶部块（头像右置示例），.r-main 为下方章节。 */
+/* Gosume 起手模板（单栏 · 头像右置）
+ * ===================================================================
+ * 模板包只含本文件 + template.json；HTML 由应用内置 templates/template.html 承载。
+ * 契约要点（详见 skill 的 references/style-guide.md）：
+ *   - 单栏 .resume-container 为 block；页边距落在 .resume-page 的 padding 变量上
+ *   - .r-header 四子块必须写全 grid-area（运行时会注入「信息区布局」三预设）
+ *   - 联系方式为三组 .r-contact-group，单栏覆盖为连续 4 列栅格
+ *   - 字体一律经 --font-family* 变量消费（运行时可覆盖全局字体）
+ *   - 节奏间距只用 margin-bottom；富文本列表样式交给 resume-global.css
+ *   - 不使用 :first-child / :nth-child() 等随分页克隆变化的结构选择器
+ * =================================================================== */
+
 :root {
+    /* 字体变量：所有 font-family 声明都经 var() 消费 */
     --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --font-family-heading: var(--font-family);
+    --mono-font: 'JetBrains Mono', 'Consolas', 'Microsoft YaHei', monospace;
+
     --font-size-base: 10.5pt;
     --line-height: 1.6;
+
+    /* 与 template.json 的 colors 保持一致（6 位 HEX） */
     --primary-color: #1F2937;
     --heading-color: #111827;
     --text-color: #1F2937;
@@ -12,8 +27,10 @@
     --border-color: #E5E7EB;
     --accent-color: #374151;
     --accent-bg: #F3F4F6;
+    --background-color: #FFFFFF;
 }
 
+/* 全局 reset：同时收掉 md 渲染出的 <p>/<ul>/<ol> 自带 margin */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -21,21 +38,23 @@ body {
     font-size: var(--font-size-base);
     line-height: var(--line-height);
     color: var(--text-color);
-    background: #fff;
+    background: var(--background-color);
 }
 
-/* ── 单页单元（页边距经变量消费）── */
+a { color: var(--primary-color); text-decoration: none; }
+
+/* ── 单页单元：A4 + 页边距（必须经变量消费）── */
 .resume-page {
     width: 210mm;
     min-height: 297mm;
     padding: var(--resume-padding, 14mm 18mm);
-    background: #fff;
+    background: var(--background-color);
 }
 
-/* 单栏：内容包裹层 block */
-.resume-container { max-width: 100%; }
+/* 单栏：display 必须显式为 block（分页核心据此判定） */
+.resume-container { display: block; max-width: 100%; }
 
-/* ── 个人信息区（r-header 顶部块，头像右置示例）── */
+/* ── 个人信息区：头像右置，四子块 grid-area 写全 ── */
 .r-header {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -51,21 +70,21 @@ body {
 }
 
 .r-header-text { grid-area: text; }
-.r-avatar { grid-area: avatar; }
-.r-contact { grid-area: contact; }
-.r-langs { grid-area: langs; }
+.r-avatar      { grid-area: avatar; align-self: start; }
+.r-contact     { grid-area: contact; }
+.r-langs       { grid-area: langs; }
 
 .r-name {
+    font-family: var(--font-family-heading);
     font-size: 22pt;
     font-weight: 700;
     color: var(--heading-color);
     letter-spacing: 1pt;
     margin-bottom: 4pt;
 }
-
-.r-ename { font-size: 10pt; color: var(--muted-color); margin-bottom: 4pt; }
-.r-jobtitle { font-size: 11pt; color: var(--primary-color); font-weight: 500; margin-bottom: 8pt; }
-.r-yoe { font-size: 9.5pt; color: var(--muted-color); }
+.r-ename    { font-size: 10pt;  color: var(--muted-color); margin-bottom: 4pt; }
+.r-jobtitle { font-size: 11pt;  color: var(--primary-color); font-weight: 500; margin-bottom: 8pt; }
+.r-yoe      { font-size: 9.5pt; color: var(--muted-color); }
 
 .r-avatar img {
     width: 72pt;
@@ -75,24 +94,36 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.r-subtitle {
-    font-size: 9pt;
-    font-weight: 700;
-    color: var(--primary-color);
-    text-transform: uppercase;
-    letter-spacing: 1pt;
-    margin-bottom: 4pt;
-}
+/* 单栏横排信息带不需要小节标题；双栏侧栏通常保留 */
+.r-subtitle { display: none; }
 
-.r-contact { display: flex; flex-wrap: wrap; gap: 3pt 16pt; }
-.r-contact-item { font-size: 9.5pt; color: var(--muted-color); }
-.r-contact-label { color: var(--muted-color); }
+/* ── 联系方式：三组包裹层透明化 + 连续 4 列栅格 ── */
+.r-contact {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3pt 6pt;
+    width: 100%;
+    text-align: left;
+    font-size: 9.5pt;
+    color: var(--muted-color);
+}
+.r-contact-group { display: contents; }
+.r-contact-item {
+    display: flex;
+    align-items: baseline;
+    gap: 3pt;                 /* 标签不定宽，间距统一 */
+    min-width: 0;             /* 允许前端设置 grid-column: span 2/3/4 */
+    overflow-wrap: anywhere;  /* 跨满列仍放不下时兜底 */
+}
+.r-contact-label { font-weight: 600; color: var(--heading-color); }
+.r-contact-value { color: var(--muted-color); }
 
 .r-langs { display: flex; flex-wrap: wrap; gap: 3pt 16pt; font-size: 9.5pt; }
-.r-lang { color: var(--muted-color); }
+.r-lang  { color: var(--muted-color); }
 
-/* ── 章节标题 ── */
+/* ── 章节标题（所有板块用同一套样式，不依赖顺序）── */
 .section-title {
+    font-family: var(--font-family-heading);
     font-size: 11pt;
     font-weight: 700;
     color: var(--heading-color);
@@ -103,7 +134,7 @@ body {
     letter-spacing: 1.5pt;
 }
 
-/* ── 个人总结 ── */
+/* ── 个人总结（md 块级富文本容器）── */
 .summary {
     margin-bottom: 18pt;
     font-size: 10pt;
@@ -121,15 +152,18 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 8pt;
     margin-bottom: 3pt;
 }
-
 .exp-header .company { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
-.exp-header .title { font-weight: 400; color: var(--accent-color); }
-.exp-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
+.exp-header .title   { font-weight: 400; color: var(--accent-color); }
+.date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
 
-.exp-location { font-size: 9pt; color: var(--muted-color); margin-bottom: 3pt; }
-.exp-summary { font-size: 10pt; color: var(--text-color); margin-bottom: 4pt; }
+.exp-location { font-size: 9pt;  color: var(--muted-color); margin-bottom: 3pt; }
+.exp-summary  { font-size: 10pt; color: var(--text-color);  margin-bottom: 4pt; }
+
+/* .exp-summary / .summary / .extra-value 内的 Markdown 列表样式
+   由 templates/resume-global.css 全局提供，此处不要重复定义 list-style / li::before */
 
 .highlights { list-style: none; padding-left: 0; }
 .highlights li {
@@ -148,16 +182,15 @@ body {
 
 /* ── 教育 ── */
 .education-item { margin-bottom: 10pt; }
-.edu-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+.edu-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8pt; margin-bottom: 2pt; }
 .edu-header .edu-school { font-weight: 700; font-size: 10.5pt; color: var(--heading-color); }
-.edu-header .date { font-size: 9pt; color: var(--muted-color); white-space: nowrap; flex-shrink: 0; }
-.edu-detail { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
+.edu-detail  { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
 .edu-courses { font-size: 9.5pt; color: var(--muted-color); margin-bottom: 2pt; }
 
 /* ── 技能 ── */
 .skills-grid { display: flex; flex-wrap: wrap; gap: 8pt 18pt; }
 .skill-category { margin-bottom: 8pt; }
-.skill-category h4 { font-size: 10pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
+.skill-category h4 { font-family: var(--font-family-heading); font-size: 10pt; font-weight: 600; color: var(--heading-color); margin-bottom: 4pt; }
 .skill-item { display: inline-flex; align-items: center; gap: 6pt; font-size: 10pt; margin-bottom: 2pt; margin-right: 14pt; }
 .skill-dots { display: flex; gap: 2pt; }
 
@@ -174,20 +207,19 @@ body {
 
 /* ── 奖项 ── */
 .award-item { margin-bottom: 8pt; }
-.award-header { display: flex; justify-content: space-between; align-items: baseline; }
+.award-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8pt; margin-bottom: 2pt; }
 .award-title { font-weight: 600; font-size: 10.5pt; color: var(--heading-color); }
-.award-header .date { font-size: 9pt; color: var(--muted-color); }
 .award-issuer { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
 
 /* ── 自定义区块 ── */
 .custom-item { margin-bottom: 8pt; }
-.custom-item h4 { font-size: 10.5pt; font-weight: 600; color: var(--heading-color); }
+.custom-item h4 { font-family: var(--font-family-heading); font-size: 10.5pt; font-weight: 600; color: var(--heading-color); margin-bottom: 2pt; }
 .subtitle { font-size: 9pt; color: var(--muted-color); margin-bottom: 1pt; }
 
 /* ── 项目扩展字段 ── */
 .extra-row { font-size: 9.5pt; margin-bottom: 3pt; line-height: 1.5; }
 .extra-label { font-weight: 600; }
-.extra-value { color: inherit; }
+.extra-value { color: var(--text-color); }
 
 /* ── 打印 ── */
 @media print {
@@ -196,10 +228,7 @@ body {
         margin: 0;
         padding: var(--resume-padding, 14mm 18mm);
     }
-    @page {
-        size: A4;
-        margin: 0;
-    }
+    @page { size: A4; margin: 0; }
 }
 
 .page-break {

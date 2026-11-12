@@ -355,7 +355,10 @@ export function PersonalSection() {
 
       {/* Avatar Upload */}
       <div className="flex items-start gap-4 mb-4">
+        {/* 窗口开启 EnableFileDrop 后，Wails runtime 只把带该标记的区域视为有效拖放目标；
+            标记为 avatar，后端钩子按属性值过滤，不会把它当成模板包。 */}
         <div
+          data-file-drop-target="avatar"
           className={`relative w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 transition-colors ${
             isDragging ? 'border-primary-500 bg-primary-50' : 'border-surface-300 bg-surface-50'
           }`}

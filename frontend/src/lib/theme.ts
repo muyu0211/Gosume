@@ -1,3 +1,5 @@
+import { BADGE_SRC } from './brandAssets'
+
 // 主题（theme）机制的类型与解析工具。
 // 用户可选：跟随系统 / 三种显式主题。
 // 实际写入 <html data-theme> 的只有三种显式主题（跟随系统时由系统偏好解析而来）。
@@ -25,9 +27,12 @@ export function resolveApplied(mode: ThemeMode): AppliedTheme {
   return mode
 }
 
-/** 将实际主题写入 <html data-theme>，触发 globals.css 中的令牌变量切换。 */
+/** 将实际主题写入 <html data-theme>，触发 globals.css 中的令牌变量切换；
+ *  同时把 favicon 切到对应配色的圆形徽章（桌面任务栏图标固定麦色，不受此影响）。 */
 export function applyThemeToDocument(theme: AppliedTheme): void {
   document.documentElement.dataset.theme = theme
+  const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"][data-app-favicon]')
+  if (icon) icon.href = BADGE_SRC[theme]
 }
 
 /** 三种显式主题的循环顺序（经典 → 麦色 → 深色）。 */

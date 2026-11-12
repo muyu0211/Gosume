@@ -174,6 +174,29 @@
     color var(--dur-hover) var(--ease-apple);
 }
 
+/* 导入模板模态的滚动区：刻意不挂 .overlay-scroll。
+   通用悬浮滑块的 transform 会被计入 scrollHeight，滚动时形成
+   「滑块下移 → 可滚动距离变大」的正反馈；这里只隐藏原生滚动条，
+   由内容区定高滚动，滚动范围恒等于真实内容高度。 */
+.template-import-scroll {
+  scrollbar-width: none;
+  /* 禁止滚动链：内容滚到底后不把滚轮事件传给背后的页面 */
+  overscroll-behavior: contain;
+}
+.template-import-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 导入模板模态的拖入区高亮（方案 A：Wails 系统文件拖放）。
+   Wails runtime 会在拖放命中 [data-file-drop-target] 元素时自动挂上
+   .file-drop-target-active；这里只给导入模板的拖入区加样式，避免影响
+   头像拖放等其它同样带标记的区域。颜色全部走主题令牌。 */
+.template-import-dropzone.file-drop-target-active {
+  border-color: rgb(var(--primary-500));
+  background: rgb(var(--primary-500) / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(var(--primary-500) / 0.35), var(--shadow-focus);
+}
+
 /* useLayoutTransition 三拍写值法的拍1 抑制类：把上面的过渡整条按住，
    供「写旧起点值」那一拍使用；摘掉即自然回落，绝不手动改 el.style.transition
    （留空 inline 声明会永久废掉该元素的过渡）。 */

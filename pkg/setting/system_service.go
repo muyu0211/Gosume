@@ -60,6 +60,9 @@ func (s *SystemService) Inject(app *application.App, configMgr *config.Manager, 
 	win.RegisterHook(events.Common.WindowUnMaximise, func(wEvent *application.WindowEvent) {
 		s.App.Event.Emit(event.WINDOW_MAXIMISE_STATE, false)
 	})
+
+	// 系统文件拖放：把「导入模板模态」拖入区的 .zip 路径广播给前端。
+	s.registerFileDropHook(win)
 }
 
 // ConfirmWindowClose 前端完成未保存确认（保存或不保存）后调用，真正关闭窗口。
