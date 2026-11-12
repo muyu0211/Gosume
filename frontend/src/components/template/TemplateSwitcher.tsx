@@ -2,11 +2,12 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useResumeStore } from '../../stores/resumeStore'
 import { generateAllThumbnails, getCachedThumbnails } from '../../services/thumbnailService'
-import { importTemplatePackage, loadTemplateMetas, deleteTemplate } from '../../services/templateService'
+import { importTemplatePackageFromPath, loadTemplateMetas, deleteTemplate } from '../../services/templateService'
 import { extractErrorMessage } from '../../lib/errorUtils'
 import { useT } from '../../lib/i18n'
 import { Tooltip } from '../ui/Tooltip'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { FilePickerDialog } from '../ui/FilePickerDialog'
 import { Check, ChevronDown, Layout, Loader2, Upload, Trash2 } from 'lucide-react'
 
 const FALLBACK_COLORS: Record<string, string> = {
@@ -29,7 +30,7 @@ export function TemplateSwitcher() {
 
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
-  const [importing, setImporting] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [importError, setImportError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
@@ -85,26 +86,18 @@ export function TemplateSwitcher() {
     close()
   }, [setActiveTemplate, updateField, close])
 
-  const handleImport = useCallback(async () => {
-    setImporting(true)
-    setImportError('')
-    try {
-      const result = await importTemplatePackage()
-      if (!result) return
+  // 模态确认选中模板包后：入库并刷新列表 / 缩略图（错误由模态内展示）。
+  const handleImportPick = useCallback(async (path: string) => {
+    const result = await importTemplatePackageFromPath(path)
+    if (!result) throw new Error(t('importTemplateFailed'))
 
-      const metas = await loadTemplateMetas()
-      setTemplates(metas)
-      setActiveTemplate(result.id)
-      updateField('meta.template_id', result.id)
+    const metas = await loadTemplateMetas()
+    setTemplates(metas)
+    setActiveTemplate(result.id)
+    updateField('meta.template_id', result.id)
 
-      const ids = metas.map((m) => m.id)
-      generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
-    } catch (err) {
-      console.error('Import template failed:', err)
-      setImportError(extractErrorMessage(err, t('importTemplateFailed')))
-    } finally {
-      setImporting(false)
-    }
+    const ids = metas.map((m) => m.id)
+    generateAllThumbnails(ids).then((thumbs) => setThumbnails(thumbs))
   }, [setActiveTemplate, setTemplates, setThumbnails, updateField, t])
 
   const handleDeleteClick = useCallback((e: React.MouseEvent, id: string, name: string) => {
@@ -224,11 +217,10 @@ export function TemplateSwitcher() {
               </div>
             )}
             <button
-              onClick={handleImport}
-              disabled={importing}
+              onClick={() => setShowImport(true)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-60"
             >
-              {importing ? <Loader2 className="size-icon-sm animate-spin" /> : <Upload className="size-icon-sm" />}
+              <Upload className="size-icon-sm" />
               {t('importPackage')}
             </button>
           </div>
@@ -245,6 +237,20 @@ export function TemplateSwitcher() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* 自封装文件选择模态：拖入 / 路径选择导入模板包，不再弹原生文件框 */}
+      {showImport && (
+        <FilePickerDialog
+          title={t('importTemplateTitle')}
+          dropTarget="template-import"
+          accept={['.zip']}
+          dropTitle={t('importTemplateDropTitle')}
+          confirmLabel={t('importTemplateImportBtn')}
+          hint={t('importTemplatePackageHint')}
+          onClose={() => setShowImport(false)}
+          onPick={handleImportPick}
+        />
+      )}
     </div>
   )
 }

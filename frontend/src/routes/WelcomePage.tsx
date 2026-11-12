@@ -17,8 +17,8 @@ import { MyResumesPanel } from '../components/resume/MyResumesPanel'
 import { TemplateGalleryPanel } from '../components/template/TemplateGalleryPanel'
 import { JobSummaryCard } from '../components/recruit/JobSummaryCard'
 import { RecruitPanel } from '../components/recruit/RecruitPanel'
-import { loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
-import { TemplateImportDialog } from '../components/template/TemplateImportDialog'
+import { importTemplatePackageFromPath, loadTemplateMetas, loadTemplateContent, deleteTemplate, setTemplateFavorite, listImportLogs, deleteImportLog, exportTemplatePackage } from '../services/templateService'
+import { FilePickerDialog } from '../components/ui/FilePickerDialog'
 import { renderTemplate } from '../lib/templateEngine'
 import { extractErrorMessage } from '../lib/errorUtils'
 import { createSampleResume } from '../services/sampleData'
@@ -51,8 +51,8 @@ export function WelcomePage() {
   }
   const [previewHtmls, setPreviewHtmls] = useState<Record<string, string>>({})
   const [showTemplateImport, setShowTemplateImport] = useState(false)
+  const [showResumeImport, setShowResumeImport] = useState(false)
   const [importError, setImportError] = useState('')
-  const [importingGosume, setImportingGosume] = useState(false)
   const [importPreview, setImportPreview] = useState<FileParseResult | null>(null)
   const [importSuccess, setImportSuccess] = useState('')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(sessionUpdateInfo)
@@ -181,27 +181,23 @@ export function WelcomePage() {
   // 点击「导入模板」只打开自绘模态；拖入 / 路径选择 / 入库都在模态内完成。
   const handleImportTemplate = () => setShowTemplateImport(true)
 
-  // 模态导入成功后：选中新模板、重拉列表并给一条成功提示（沿用原有刷新方式）。
-  const handleTemplateImported = async (id: string) => {
-    setActiveTemplate(id)
+  // 模态确认选中模板包后：入库、选中新模板、重拉列表并给一条成功提示。
+  const handleTemplatePick = async (path: string) => {
+    const result = await importTemplatePackageFromPath(path)
+    if (!result) throw new Error(t('importTemplateFailedCheck'))
+    setActiveTemplate(result.id)
     await loadData()
     setImportSuccess(t('importTemplateSuccess'))
   }
 
-  // 中间态导入第一步：选择文件 → 后端解析校验 → 返回预览数据（未落库）
-  const handleImportGosume = async () => {
-    setImportingGosume(true)
-    setImportSuccess('')
-    try {
-      const result = await callService<FileParseResult>('FileService', 'ParseFile')
-      if (!result?.resume) return // 用户取消，静默关闭
-      setImportPreview(result)
-    } catch (err) {
-      console.error('Parse gosume file failed:', err)
-      setImportError(extractErrorMessage(err, t('importFailedCheckFile')))
-    } finally {
-      setImportingGosume(false)
-    }
+  // 点击「导入简历」打开自绘模态；确认选中文件后解析出预览数据，
+  // 交给 ImportPreviewDialog 完成确认与落库（与原原生对话框流程一致）。
+  const handleImportGosume = () => setShowResumeImport(true)
+
+  const handleResumePick = async (path: string) => {
+    const result = await callService<FileParseResult>('FileService', 'ParseFileFromPath', path)
+    if (!result?.resume) throw new Error(t('importFailedCheckFile'))
+    setImportPreview(result)
   }
 
   // 中间态导入第二步：预览确认后执行导入（新建/覆盖均进入编辑器）
@@ -345,10 +341,9 @@ export function WelcomePage() {
           </button>
           <button
             onClick={handleImportGosume}
-            disabled={importingGosume}
             className="btn-secondary btn-sm"
           >
-            {importingGosume ? <Loader2 className="size-icon-md animate-spin" /> : <FileUp className="size-icon-md shrink-0" />}
+            <FileUp className="size-icon-md shrink-0" />
             <span className="hidden md:inline">{t('importResume')}</span>
           </button>
           <Tooltip label={themeTitle}>
@@ -449,11 +444,30 @@ export function WelcomePage() {
         />
       )}
 
-      {/* 自封装导入模板模态（拖入 zip / 路径选择），不再弹原生文件框 */}
+      {/* 自封装文件选择模态（拖入 / 路径选择），不再弹原生文件框 */}
       {showTemplateImport && (
-        <TemplateImportDialog
+        <FilePickerDialog
+          title={t('importTemplateTitle')}
+          dropTarget="template-import"
+          accept={['.zip']}
+          dropTitle={t('importTemplateDropTitle')}
+          confirmLabel={t('importTemplateImportBtn')}
+          hint={t('importTemplatePackageHint')}
           onClose={() => setShowTemplateImport(false)}
-          onImported={handleTemplateImported}
+          onPick={handleTemplatePick}
+        />
+      )}
+
+      {showResumeImport && (
+        <FilePickerDialog
+          title={t('importResume')}
+          dropTarget="resume-import"
+          accept={['.json', '.gosume']}
+          dropTitle={t('resumeImportDropTitle')}
+          confirmLabel={t('filePickerConfirm')}
+          hint={t('resumeImportHint')}
+          onClose={() => setShowResumeImport(false)}
+          onPick={handleResumePick}
         />
       )}
 

@@ -169,64 +169,12 @@ export async function loadTemplateContent(templateId: string): Promise<TemplateS
     : { html: '', css: '' }
 }
 
-export async function importTemplatePackage(): Promise<ImportTemplateResult | null> {
-  if (!isWails()) {
-    throw new Error('模板导入需要在 Gosume 桌面应用中使用')
-  }
-  return callService<ImportTemplateResult>('TemplateService', 'ImportTemplatePackage')
-}
-
-// ---------------------------------------------------------------------------
-// 自绘「导入模板」模态：拖入 / 路径选择 → 绝对路径 → 后端校验入库
-// ---------------------------------------------------------------------------
-
-export interface FileStat {
-  path: string
-  name: string
-  size: number
-  ext: string
-  isZip: boolean
-}
-
-export interface DirectoryEntry {
-  name: string
-  path: string
-  isDir: boolean
-  size: number
-  ext: string
-}
-
-export interface FileBrowserRoot {
-  key: string
-  path: string
-}
-
-export interface DirectoryListing {
-  path: string
-  parent: string
-  roots: FileBrowserRoot[]
-  entries: DirectoryEntry[]
-  truncated: boolean
-}
-
-/** 从自绘模态选中的绝对路径导入模板包（不再弹原生文件对话框）。 */
+/** 从自绘文件选择模态选中的绝对路径导入模板包（不再弹原生文件对话框）。 */
 export async function importTemplatePackageFromPath(path: string): Promise<ImportTemplateResult | null> {
   if (!isWails()) {
     throw new Error('模板导入需要在 Gosume 桌面应用中使用')
   }
   return callService<ImportTemplateResult>('TemplateService', 'ImportTemplatePackageFromPath', path, 'local')
-}
-
-/** 枚举目录（空路径 = 用户主目录）；只返回目录与 .zip 文件的元数据。 */
-export async function listDirectory(path: string): Promise<DirectoryListing | null> {
-  if (!isWails()) return null
-  return callService<DirectoryListing>('SystemService', 'ListDirectory', path)
-}
-
-/** 校验并返回一个待导入 .zip 的基本信息。 */
-export async function statFile(path: string): Promise<FileStat | null> {
-  if (!isWails()) return null
-  return callService<FileStat>('SystemService', 'StatFile', path)
 }
 
 /**

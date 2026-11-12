@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gosume/pkg/log"
@@ -97,4 +98,71 @@ func imageFormat(format string) (suffix, filterName, pattern string) {
 	default:
 		return "", "", ""
 	}
+}
+
+// imageMimeByExt 返回扩展名对应的 MIME 类型；不支持的扩展名返回空串。
+func imageMimeByExt(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".webp":
+		return "image/webp"
+	default:
+		return ""
+	}
+}
+
+// ImageFile 是 ReadImageAsBase64 的返回负载：图片文件的内容与元信息。
+type ImageFile struct {
+	Name string `json:"name"`
+	Mime string `json:"mime"`
+	Size int64  `json:"size"`
+	Data string `json:"data"` // 图片字节的 base64（不含 data URI 前缀）
+}
+
+// ReadImageAsBase64 读取本地图片文件并返回 base64 内容，供头像等场景
+// 在自绘文件选择模态中按路径取图。只接受普通图片文件且不超过 maxBytes
+// （≤0 时按 3 MB 处理，与头像上传约束一致）；不做任何格式转换。
+func (s *ToolService) ReadImageAsBase64(path string, maxBytes int64) *util.Response {
+	p, err := util.NormalizeFilePath(path)
+	if err != nil {
+		return util.DoRsp(util.ErrCode, "图片路径无效", nil)
+	}
+	ext := filepath.Ext(p)
+	mime := imageMimeByExt(ext)
+	if mime == "" {
+		return util.DoRsp(util.ErrCode, "仅支持 JPG / PNG / WebP 格式图片", nil)
+	}
+
+	info, err := os.Stat(p)
+	if err != nil {
+		log.Errorf("[tool_service] ReadImageAsBase64: 读取文件失败 %s: %v", p, err)
+		return util.DoRsp(util.ErrCode, "文件不存在或无法读取", nil)
+	}
+	if !info.Mode().IsRegular() {
+		return util.DoRsp(util.ErrCode, "请选择图片文件", nil)
+	}
+	limit := maxBytes
+	if limit <= 0 {
+		limit = 3 << 20
+	}
+	if info.Size() > limit {
+		return util.DoRsp(util.ErrCode, "图片不能超过 3 MB", nil)
+	}
+
+	data, err := os.ReadFile(p)
+	if err != nil {
+		log.Errorf("[tool_service] ReadImageAsBase64: 读取文件失败 %s: %v", p, err)
+		return util.DoRsp(util.ErrCode, "读取文件失败", nil)
+	}
+
+	log.Infof("[tool_service] ReadImageAsBase64: 已读取图片 %s (%d bytes)", p, info.Size())
+	return util.DoRsp(util.SuccCode, "成功", &ImageFile{
+		Name: filepath.Base(p),
+		Mime: mime,
+		Size: info.Size(),
+		Data: base64.StdEncoding.EncodeToString(data),
+	})
 }

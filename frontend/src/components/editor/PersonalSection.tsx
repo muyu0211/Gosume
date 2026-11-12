@@ -4,9 +4,13 @@ import { getSectionTitle } from '../../lib/resumeSections'
 import { AVATAR_RADIUS_MIN, AVATAR_RADIUS_MAX, type HeaderLayout, isDoubleColumnCss, detectHeaderLayoutCss } from '../../lib/layoutPresets'
 import { parseCustomCss } from '../../lib/customCss'
 import { loadTemplateContent } from '../../services/templateService'
+import { callService, isWails } from '../../services/backend'
+import { extractErrorMessage } from '../../lib/errorUtils'
 import { useT } from '../../lib/i18n'
+import { Events } from '@wailsio/runtime'
 import { User, Camera, Trash2, AlertCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { FilePickerDialog } from '../ui/FilePickerDialog'
 import { Tooltip } from '../ui/Tooltip'
 import { Checkbox } from '../ui/Checkbox'
 import { CustomSelect, type SelectOption } from '../ui/CustomSelect'
@@ -111,8 +115,7 @@ export function PersonalSection() {
   const p = resume?.personal
   // 样式定制统一从 custom_css 解析（头像尺寸/圆角/信息区布局）。
   const styleState = parseCustomCss(resume?.custom_css ?? '')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
+  const [showPicker, setShowPicker] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [avatarW, setAvatarW] = useState<number>(styleState.avatarWidth ?? avatarRenderedSize?.width ?? 100)
   const [avatarH, setAvatarH] = useState<number>(styleState.avatarHeight ?? avatarRenderedSize?.height ?? 100)
@@ -229,57 +232,44 @@ export function PersonalSection() {
     }
   }, [])
 
+  // 从绝对路径读取图片并压缩为头像数据 URL：自绘文件选择模态确认、
+  // 以及头像圆上的系统拖入（模态未打开时）共用这条链路。
+  const applyAvatarFromPath = useCallback(async (path: string) => {
+    const img = await callService<{ name: string; mime: string; data: string }>(
+      'ToolService', 'ReadImageAsBase64', path, MAX_PHOTO_SIZE,
+    )
+    if (!img?.data) throw new Error(t('avatarErrProcess'))
+    const blob = await (await fetch(`data:${img.mime};base64,${img.data}`)).blob()
+    const compressed = await compressImage(new File([blob], img.name, { type: img.mime }))
+    updateField('personal.avatar', compressed)
+  }, [t, updateField])
+
+  // 头像圆上的系统拖入（模态未打开时）：直接读取并应用，不经模态。
+  // 模态打开时忽略——拖入落在模态拖入区，由模态自行处理，避免双重响应。
+  useEffect(() => {
+    if (!isWails()) return
+    const off = Events.On('file:dropped', (ev) => {
+      if (showPicker) return
+      const payload = ev.data as { target?: string; paths?: unknown[] } | undefined
+      if (payload?.target !== 'avatar') return
+      const first = (payload.paths ?? []).find((p): p is string => typeof p === 'string' && !!p.trim())
+      if (!first) return
+      applyAvatarFromPath(first).catch((err) => {
+        setPhotoError(extractErrorMessage(err, t('avatarErrProcess')))
+      })
+    })
+    return off
+  }, [showPicker, applyAvatarFromPath, t])
+
   if (!p) return null
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     updateField(`personal.${field}`, e.target.value)
   }
 
-  const readFile = async (file: File) => {
-    setPhotoError(null)
-    if (!file.type.startsWith('image/')) {
-      setPhotoError(t('avatarErrType'))
-      return
-    }
-    if (file.size > MAX_PHOTO_SIZE) {
-      setPhotoError(t('avatarErrSize'))
-      return
-    }
-    try {
-      const compressed = await compressImage(file)
-      updateField('personal.avatar', compressed)
-    } catch {
-      setPhotoError(t('avatarErrProcess'))
-    }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) readFile(file)
-    // Reset so re-selecting the same file triggers onChange
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) readFile(file)
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
   const removeAvatar = () => {
     setPhotoError(null)
     updateField('personal.avatar', '')
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const clampDim = (v: number) => Math.min(200, Math.max(40, v))
@@ -356,15 +346,12 @@ export function PersonalSection() {
       {/* Avatar Upload */}
       <div className="flex items-start gap-4 mb-4">
         {/* 窗口开启 EnableFileDrop 后，Wails runtime 只把带该标记的区域视为有效拖放目标；
-            标记为 avatar，后端钩子按属性值过滤，不会把它当成模板包。 */}
+            模态未打开时把图片拖到头像圆上即直接应用（后端按扩展名过滤并回传内容）。 */}
         <div
           data-file-drop-target="avatar"
-          className={`relative w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 transition-colors ${
-            isDragging ? 'border-primary-500 bg-primary-50' : 'border-surface-300 bg-surface-50'
+          className={`avatar-dropzone relative w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 transition-colors ${
+            photoError ? 'border-danger-400' : 'border-surface-300 bg-surface-50'
           }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
         >
           {p.avatar ? (
             <>
@@ -381,7 +368,7 @@ export function PersonalSection() {
             </>
           ) : (
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setShowPicker(true)}
               className="flex flex-col items-center gap-0.5 text-surface-400 hover:text-primary-500 transition-colors"
             >
               <Camera className="size-icon-lg" />
@@ -398,13 +385,6 @@ export function PersonalSection() {
               {photoError}
             </p>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
         </div>
       </div>
 
@@ -638,6 +618,21 @@ export function PersonalSection() {
           />
         </div>
       </div>
+
+      {/* 自封装文件选择模态：拖入 / 路径选择头像图片，不再弹原生文件框 */}
+      {showPicker && (
+        <FilePickerDialog
+          title={t('avatarPickerTitle')}
+          dropTarget="avatar"
+          accept={['.jpg', '.jpeg', '.png', '.webp']}
+          dropTitle={t('avatarDropTitle')}
+          confirmLabel={t('filePickerConfirm')}
+          maxBytes={MAX_PHOTO_SIZE}
+          hint={t('photoHint')}
+          onClose={() => setShowPicker(false)}
+          onPick={applyAvatarFromPath}
+        />
+      )}
     </div>
   )
 }

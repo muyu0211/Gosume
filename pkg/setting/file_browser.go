@@ -10,7 +10,6 @@ import (
 
 	"gosume/pkg/event"
 	"gosume/pkg/log"
-	"gosume/pkg/resume/template"
 	"gosume/pkg/util"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -23,6 +22,17 @@ const maxBrowserEntries = 500
 // fileBrowserComputerRoot 是「此电脑」虚拟根节点：Windows 下列出所有磁盘，
 // 非 Windows 下列出文件系统根。磁盘根的上一级回到该节点，从而可跨盘浏览。
 const fileBrowserComputerRoot = "@root"
+
+// StatFile / ReadImage 未显式给体积上限时的默认值。
+const defaultStatMaxBytes = 10 << 20
+
+// fileDropTargets 把拖放目标标记（data-file-drop-target 属性值）映射到该目标
+// 允许的文件扩展名（小写）。窗口钩子据此过滤拖入的文件，再按目标广播给前端。
+var fileDropTargets = map[string][]string{
+	"template-import": {".zip"},
+	"resume-import":   {".json", ".gosume"},
+	"avatar":          {".jpg", ".jpeg", ".png", ".webp"},
+}
 
 // FileBrowserRoot 是路径选择器的快捷位置（key 由前端映射为 i18n 文案）。
 type FileBrowserRoot struct {
@@ -51,43 +61,60 @@ type DirectoryListing struct {
 
 // FileStat 是 StatFile 的返回负载，用于路径输入框的即时校验。
 type FileStat struct {
-	Path  string `json:"path"`
-	Name  string `json:"name"`
-	Size  int64  `json:"size"`
-	Ext   string `json:"ext"`
-	IsZip bool   `json:"isZip"`
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	Ext     string `json:"ext"`
+	Matched bool   `json:"matched"`
 }
 
-// registerFileDropHook 接收 Wails 的系统文件拖放事件，把「导入模板模态」拖入区
-// 收到的 .zip 绝对路径广播给前端。
+// registerFileDropHook 接收 Wails 的系统文件拖放事件，把落在带
+// data-file-drop-target 标记元素上的文件绝对路径按目标广播给前端。
 //
-// Wails runtime 只把落在带 data-file-drop-target 标记元素上的拖放上报为有效目标，
-// 且 DropTargetDetails 会带上该元素的属性；这里按属性值过滤，避免头像拖入等
-// 其他区域的文件被模态误当成模板包。
+// Wails runtime 只把落在带标记元素上的拖放上报为有效目标，且 DropTargetDetails
+// 会带上该元素的属性；这里按属性值查 fileDropTargets 过滤扩展名，避免模板模态
+// 收到图片、头像区收到 zip 之类的串扰。
 func (s *SystemService) registerFileDropHook(win *application.WebviewWindow) {
 	win.OnWindowEvent(events.Common.WindowFilesDropped, func(wEvent *application.WindowEvent) {
 		details := wEvent.Context().DropTargetDetails()
-		if details == nil || details.Attributes["data-file-drop-target"] != "template-import" {
+		if details == nil {
+			return
+		}
+		target := details.Attributes["data-file-drop-target"]
+		exts, ok := fileDropTargets[target]
+		if !ok {
 			return
 		}
 
 		paths := make([]string, 0, 1)
 		for _, p := range wEvent.Context().DroppedFiles() {
-			if strings.EqualFold(filepath.Ext(strings.TrimSpace(p)), ".zip") {
+			if matchesExt(p, exts) {
 				paths = append(paths, p)
 			}
 		}
 		if len(paths) == 0 {
-			log.Warnf("[setting.file_browser] 拖入目标不含 .zip 文件，忽略")
+			log.Warnf("[setting.file_browser] 拖入目标 %s 不含可接受扩展名的文件，忽略", target)
 			return
 		}
-		s.App.Event.Emit(event.TEMPLATE_FILES_DROPPED, paths)
+		s.App.Event.Emit(event.FILE_DROPPED, event.FileDropped{Target: target, Paths: paths})
 	})
 }
 
-// ListDirectory 返回指定目录的元数据列表，供导入模板模态内的路径选择器使用。
-// path 为空时从用户主目录开始；列表只含目录与 .zip 文件，不读取任何文件内容。
-func (s *SystemService) ListDirectory(path string) *util.Response {
+// matchesExt 判断路径扩展名（大小写不敏感）是否在允许列表内。
+func matchesExt(path string, exts []string) bool {
+	ext := strings.ToLower(filepath.Ext(strings.TrimSpace(path)))
+	for _, e := range exts {
+		if ext == strings.ToLower(e) {
+			return true
+		}
+	}
+	return false
+}
+
+// ListDirectory 返回指定目录的元数据列表，供自绘文件选择模态内的路径选择器使用。
+// path 为空时从用户主目录开始；列表只含目录与扩展名命中 accept 的文件，
+// 不读取任何文件内容。accept 为空时放行所有普通文件。
+func (s *SystemService) ListDirectory(path string, accept []string) *util.Response {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Errorf("[setting.file_browser] 获取用户主目录失败: %v", err)
@@ -137,7 +164,7 @@ func (s *SystemService) ListDirectory(path string) *util.Response {
 		}
 		isDir := fi.IsDir()
 		ext := strings.ToLower(filepath.Ext(name))
-		if !isDir && ext != ".zip" {
+		if !isDir && len(accept) > 0 && !matchesExt(name, accept) {
 			continue
 		}
 		entries = append(entries, DirectoryEntry{
@@ -176,17 +203,16 @@ func (s *SystemService) ListDirectory(path string) *util.Response {
 	})
 }
 
-// StatFile 校验并返回一个待导入模板包的基本信息。
-// 只接受普通 .zip 文件且压缩体积不超过模板包上限；不做任何解压与内容读取。
-func (s *SystemService) StatFile(path string) *util.Response {
+// StatFile 校验并返回一个待选用文件的基本信息。
+// accept 为允许的扩展名列表（小写，含点，如 ".zip"），为空时放行任意普通文件；
+// maxBytes 为文件体积上限（字节），≤0 时使用默认 10 MB。不做任何内容读取。
+func (s *SystemService) StatFile(path string, accept []string, maxBytes int64) *util.Response {
 	p, err := util.NormalizeFilePath(path)
 	if err != nil {
 		return util.DoRsp(util.ErrCode, "路径无效", nil)
 	}
 	ext := strings.ToLower(filepath.Ext(p))
-	if ext != ".zip" {
-		return util.DoRsp(util.ErrCode, "仅支持 .zip 格式的模板包", nil)
-	}
+	matched := len(accept) == 0 || matchesExt(p, accept)
 
 	info, err := os.Stat(p)
 	if err != nil {
@@ -194,18 +220,23 @@ func (s *SystemService) StatFile(path string) *util.Response {
 		return util.DoRsp(util.ErrCode, "文件不存在或无法读取", nil)
 	}
 	if !info.Mode().IsRegular() {
-		return util.DoRsp(util.ErrCode, "请选择 .zip 文件", nil)
+		return util.DoRsp(util.ErrCode, "请选择普通文件", nil)
 	}
-	if info.Size() > template.MaxTemplatePackageSize {
-		return util.DoRsp(util.ErrCode, "模板包不能超过 10 MB", nil)
+	limit := maxBytes
+	if limit <= 0 {
+		limit = defaultStatMaxBytes
+	}
+	if info.Size() > limit {
+		mb := int64(1) << 20
+		return util.DoRsp(util.ErrCode, fmt.Sprintf("文件不能超过 %d MB", (limit+mb-1)/mb), nil)
 	}
 
 	return util.DoRsp(util.SuccCode, "成功", &FileStat{
-		Path:  p,
-		Name:  filepath.Base(p),
-		Size:  info.Size(),
-		Ext:   ext,
-		IsZip: true,
+		Path:    p,
+		Name:    filepath.Base(p),
+		Size:    info.Size(),
+		Ext:     ext,
+		Matched: matched,
 	})
 }
 

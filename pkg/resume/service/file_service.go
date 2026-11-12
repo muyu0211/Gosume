@@ -96,35 +96,24 @@ func (s *FileService) ExportFile() *util.Response {
 	return util.DoRsp(util.SuccCode, "成功", filePath)
 }
 
-// ParseFile 弹出文件选择对话框，解析并校验 JSON 简历文件，
-// 返回预览数据（已校验、未落库）。按内容解析信封，不依赖扩展名。
-func (s *FileService) ParseFile() *util.Response {
-	filePath, err := s.app.Dialog.OpenFile().
-		SetTitle("打开简历文件").
-		AddFilter("Gosume 简历文件 (*.json)", "*.json").
-		AddFilter("所有文件 (*.*)", "*.*").
-		CanChooseFiles(true).
-		PromptForSingleSelection()
+// ParseFileFromPath 从前端给定的绝对路径解析并校验 JSON 简历文件，
+// 返回预览数据（已校验、未落库）。供自绘文件选择模态使用（拖入 / 路径选择），
+// 不再弹出原生文件对话框。按内容解析信封，不依赖扩展名。
+func (s *FileService) ParseFileFromPath(filePath string) *util.Response {
+	p, err := util.NormalizeFilePath(filePath)
 	if err != nil {
-		if util.IsCancel(err) {
-			return util.DoRsp(util.SuccCode, "已取消", nil)
-		}
-		log.Errorf("[file_service] ParseFile: 打开文件对话框失败: %v", err)
-		return util.DoRsp(util.ErrCode, "打开文件对话框失败", nil)
-	}
-	if filePath == "" {
-		return util.DoRsp(util.SuccCode, "已取消", nil)
+		return util.DoRsp(util.ErrCode, "简历文件路径无效", nil)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(p)
 	if err != nil {
-		log.Errorf("[file_service] ParseFile: 读取文件失败 %s: %v", filePath, err)
+		log.Errorf("[file_service] ParseFileFromPath: 读取文件失败 %s: %v", p, err)
 		return util.DoRsp(util.ErrCode, "读取文件失败", nil)
 	}
 
 	var envelope ExportEnvelope
 	if err := json.Unmarshal(data, &envelope); err != nil {
-		log.Errorf("[file_service] ParseFile: 解析信封失败: %v", err)
+		log.Errorf("[file_service] ParseFileFromPath: 解析信封失败: %v", err)
 		return util.DoRsp(util.ErrCode, "文件格式不正确，无法解析", nil)
 	}
 	if envelope.Data == nil {

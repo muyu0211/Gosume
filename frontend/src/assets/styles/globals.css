@@ -197,6 +197,13 @@
   box-shadow: inset 0 0 0 1px rgb(var(--primary-500) / 0.35), var(--shadow-focus);
 }
 
+/* 编辑器头像圆：拖入图片时的高亮（同导入模板拖入区的视觉语言）。 */
+.avatar-dropzone.file-drop-target-active {
+  border-color: rgb(var(--primary-500));
+  background: rgb(var(--primary-500) / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(var(--primary-500) / 0.35), var(--shadow-focus);
+}
+
 /* useLayoutTransition 三拍写值法的拍1 抑制类：把上面的过渡整条按住，
    供「写旧起点值」那一拍使用；摘掉即自然回落，绝不手动改 el.style.transition
    （留空 inline 声明会永久废掉该元素的过渡）。 */
