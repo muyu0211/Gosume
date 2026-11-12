@@ -437,6 +437,8 @@ const STRINGS: Record<string, { zh: string; en: string }> = {
   all: { zh: '全部', en: 'All' },
   uncategorized: { zh: '未分类', en: 'Uncategorized' },
   myFavorites: { zh: '我的收藏', en: 'Collection' },
+  myImports: { zh: '我的导入', en: 'My Imports' },
+  noImportedTemplate: { zh: '还没有导入过模板', en: 'No imported templates yet' },
   noTemplateInCategory: { zh: '当前分类下没有模板', en: 'No templates in this category' },
   recentOpened: { zh: '最近打开', en: 'Recent' },
   newVersionTip: { zh: '发现新版本 v{v}，点击查看', en: 'New version v{v} available, click to view' },

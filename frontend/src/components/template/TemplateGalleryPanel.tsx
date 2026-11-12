@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react'
-import { Eye, Trash2, Loader2, Heart, Download, Star } from 'lucide-react'
+import { Eye, Trash2, Loader2, Heart, Download, Star, Upload } from 'lucide-react'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useT } from '../../lib/i18n'
 import { Tooltip } from '../ui/Tooltip'
@@ -27,7 +27,7 @@ const PAGE_SIZE = 8
 
 /**
  * 【简历模板】面板 —— 由 `routes/WelcomePage` 的模板区整段迁移而来，
- * 视觉与交互保持原样：分类/收藏筛选胶囊、4 列卡片网格、卡片 hover 浮层、分页。
+ * 视觉与交互保持原样：分类/收藏/导入筛选胶囊、4 列卡片网格、卡片 hover 浮层、分页。
  */
 export function TemplateGalleryPanel({
   previewHtmls,
@@ -44,6 +44,7 @@ export function TemplateGalleryPanel({
   const [marketCategories, setMarketCategories] = useState<TemplateCategory[]>([])
   const [activeCategory, setActiveCategory] = useState('')
   const [favoriteOnly, setFavoriteOnly] = useState(false)
+  const [importedOnly, setImportedOnly] = useState(false)
   const [favLoadingId, setFavLoadingId] = useState<string | null>(null)
   const [exportingId, setExportingId] = useState<string | null>(null)
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
@@ -57,9 +58,11 @@ export function TemplateGalleryPanel({
       templates.filter((tpl) => {
         if (activeCategory && categoryOf(tpl) !== activeCategory) return false
         if (favoriteOnly && !tpl.is_favorite) return false
+        // 用户导入的模板：数据库 is_builtin=0（内置模板同步入库时恒为 1）
+        if (importedOnly && tpl.is_builtin) return false
         return true
       }),
-    [templates, activeCategory, favoriteOnly],
+    [templates, activeCategory, favoriteOnly, importedOnly],
   )
 
   const totalPages = Math.max(1, Math.ceil(marketTemplates.length / PAGE_SIZE))
@@ -82,6 +85,7 @@ export function TemplateGalleryPanel({
   const handleSelectCategory = (category: string) => {
     setActiveCategory(category)
     setFavoriteOnly(false)
+    setImportedOnly(false)
     setCurrentPage(1)
   }
 
@@ -123,13 +127,14 @@ export function TemplateGalleryPanel({
         </h2>
         <div className="flex-1 h-px bg-surface-200" />
       </div>
-      {/* 分类筛选 / 收藏（模板市场能力整合到主页） */}
+      {/* 分类筛选 / 收藏 / 我的导入（模板市场能力整合到主页） */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <FilterChip
-          active={!activeCategory && !favoriteOnly}
+          active={!activeCategory && !favoriteOnly && !importedOnly}
           onClick={() => {
             setActiveCategory('')
             setFavoriteOnly(false)
+            setImportedOnly(false)
             setCurrentPage(1)
           }}
         >
@@ -138,7 +143,7 @@ export function TemplateGalleryPanel({
         {marketCategories.map((cat) => (
           <FilterChip
             key={cat.name}
-            active={activeCategory === cat.name && !favoriteOnly}
+            active={activeCategory === cat.name && !favoriteOnly && !importedOnly}
             onClick={() => handleSelectCategory(cat.name)}
           >
             {cat.name === 'custom' ? t('uncategorized') : cat.name}
@@ -146,9 +151,21 @@ export function TemplateGalleryPanel({
         ))}
         <div className="flex-1" />
         <FilterChip
+          active={importedOnly}
+          onClick={() => {
+            setImportedOnly(!importedOnly)
+            setFavoriteOnly(false)
+            setCurrentPage(1)
+          }}
+        >
+          <Upload className="size-icon-sm" />
+          {t('myImports')}
+        </FilterChip>
+        <FilterChip
           active={favoriteOnly}
           onClick={() => {
             setFavoriteOnly(!favoriteOnly)
+            setImportedOnly(false)
             setCurrentPage(1)
           }}
         >
@@ -159,7 +176,9 @@ export function TemplateGalleryPanel({
       {paginatedTemplates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-surface-300">
           <Star className="size-ctl-lg mb-2" />
-          <p className="text-sm">{t('noTemplateInCategory')}</p>
+          <p className="text-sm">
+            {t(importedOnly ? 'noImportedTemplate' : 'noTemplateInCategory')}
+          </p>
         </div>
       ) : (
         <div className={HOME_CARD_GRID} key={currentPage}>
